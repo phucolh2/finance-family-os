@@ -27,16 +27,16 @@ export const Sidebar: React.FC<SidebarProps> = ({ activeTab, setActiveTab, onClo
     {
       title: 'Tổng quan',
       items: [
-        { id: 'dashboard', name: 'Dashboard Gia đình', icon: Home },
+        { id: 'dashboard', name: 'Tổng quan tài chính gia đình', icon: Home },
       ],
     },
     {
       title: 'Lịch trình & Giai đoạn',
       items: [
-        { id: 'income', name: 'Thu nhập theo thời gian', icon: Wallet },
-        { id: 'budget_history', name: 'Lịch sử tỷ lệ ngân sách', icon: Calendar },
+        { id: 'income', name: 'Kế hoạch Nguồn thu', icon: Wallet },
+        { id: 'budget_history', name: 'Lịch sử Phân bổ Ngân sách', icon: Calendar },
         { id: 'life_stages', name: 'Giai đoạn linh hoạt', icon: Milestone },
-        { id: 'portfolio', name: 'Danh mục đầu tư', icon: Briefcase },
+        { id: 'portfolio', name: 'Tài sản Tích lũy', icon: Briefcase },
       ],
     },
     {

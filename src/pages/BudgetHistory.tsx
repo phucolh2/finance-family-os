@@ -320,7 +320,7 @@ export const BudgetHistory: React.FC = () => {
       {/* Top Page Header */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
-          <h1 className="text-3xl font-serif font-bold text-family-text">Nhật ký Lịch sử Ngân sách</h1>
+          <h1 className="text-3xl font-serif font-bold text-family-text">Lịch sử Phân bổ Ngân sách</h1>
           <p className="text-sm text-family-textMuted mt-1">
             Quản lý và trực quan hóa cơ cấu ngân sách gia đình qua các mốc thời gian cuộc đời.
           </p>

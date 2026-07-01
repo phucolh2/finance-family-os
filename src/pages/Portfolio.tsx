@@ -125,7 +125,7 @@ export const Portfolio: React.FC = () => {
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
           <h1 className="text-3xl font-serif font-bold text-family-text flex items-center gap-3">
-            <Briefcase className="w-8 h-8 text-family-accent" /> Danh mục đầu tư
+            <Briefcase className="w-8 h-8 text-family-accent" /> Tài sản Tích lũy
           </h1>
           <p className="text-sm text-family-textMuted mt-1">
             Quản lý và trực quan hóa phân bổ tài sản thực tế dựa trên danh sách thương vụ chi tiết.

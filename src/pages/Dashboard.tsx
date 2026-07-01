@@ -205,7 +205,7 @@ export const Dashboard: React.FC = () => {
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
           <h1 className="text-3xl font-serif font-bold text-family-text flex items-center gap-2">
-            Dashboard Gia đình
+            Tổng quan tài chính gia đình
             <HelpTooltip text="Bản sao kỹ thuật số hiển thị KPIs động, AI Twin Advisor và phân tích tài sản ròng/dòng tiền." />
           </h1>
           <p className="text-sm text-family-textMuted mt-1">
@@ -221,7 +221,7 @@ export const Dashboard: React.FC = () => {
         <Card isKpi className="border-l-family-accent bg-white/70 backdrop-blur-md shadow-sm transition-all hover:-translate-y-0.5">
           <CardContent className="p-4 flex flex-col justify-between h-24">
             <div className="flex items-center justify-between text-family-textMuted text-[10px] uppercase font-bold tracking-wider">
-              <span className="flex items-center gap-1.5"><Wallet className="w-3.5 h-3.5 text-family-accent" /> Thu nhập</span>
+              <span className="flex items-center gap-1.5"><Wallet className="w-3.5 h-3.5 text-family-accent" /> Khoản thu</span>
               <button onClick={() => setExplanationId('permanent_income_hypothesis')} className="text-[9px] text-family-accent hover:underline font-normal">Explain</button>
             </div>
             <div>
@@ -235,7 +235,7 @@ export const Dashboard: React.FC = () => {
         <Card isKpi className="border-l-green bg-white/70 backdrop-blur-md shadow-sm transition-all hover:-translate-y-0.5">
           <CardContent className="p-4 flex flex-col justify-between h-24">
             <div className="flex items-center justify-between text-family-textMuted text-[10px] uppercase font-bold tracking-wider">
-              <span className="flex items-center gap-1.5"><TrendingUp className="w-3.5 h-3.5 text-green-700" /> Ngân sách ĐT</span>
+              <span className="flex items-center gap-1.5"><TrendingUp className="w-3.5 h-3.5 text-green-700" /> Khoản đầu tư</span>
               <button onClick={() => setExplanationId('modern_portfolio_theory')} className="text-[9px] text-family-accent hover:underline font-normal">Explain</button>
             </div>
             <div>
@@ -249,7 +249,7 @@ export const Dashboard: React.FC = () => {
         <Card isKpi className="border-l-teal bg-white/70 backdrop-blur-md shadow-sm transition-all hover:-translate-y-0.5">
           <CardContent className="p-4 flex flex-col justify-between h-24">
             <div className="flex items-center justify-between text-family-textMuted text-[10px] uppercase font-bold tracking-wider">
-              <span className="flex items-center gap-1.5"><BadgeDollarSign className="w-3.5 h-3.5 text-teal-700" /> Chi phí</span>
+              <span className="flex items-center gap-1.5"><BadgeDollarSign className="w-3.5 h-3.5 text-teal-700" /> Khoản chi</span>
               <button onClick={() => setExplanationId('harvard_study')} className="text-[9px] text-family-accent hover:underline font-normal">Explain</button>
             </div>
             <div>
@@ -403,14 +403,14 @@ export const Dashboard: React.FC = () => {
               <span>📊</span> Cấu trúc luồng tiền tháng
             </CardTitle>
             <CardDescription className="text-xs">
-              Mô tả phân rã phân bổ thu nhập tháng {activeRow?.period.month}/{activeRow?.period.year}.
+              Mô tả phân rã phân bổ Khoản thu tháng {activeRow?.period.month}/{activeRow?.period.year}.
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-3.5 flex-1 flex flex-col justify-center">
             {/* Inflow */}
             <div className="bg-family-accent/5 border border-family-accent/15 p-3 rounded-2xl">
               <div className="flex justify-between items-center text-xs font-bold text-family-text">
-                <span>Thu nhập (Inflow)</span>
+                <span>Khoản thu (Tiền vào)</span>
                 <span className="text-family-accent">{formatTableMoneyVNDMillion(currentIncome)}</span>
               </div>
             </div>
@@ -418,11 +418,11 @@ export const Dashboard: React.FC = () => {
             {/* Outflow Breakdown */}
             <div className="space-y-2 border-l-2 border-dashed border-family-accent/20 pl-4 py-1 ml-4">
               <div className="flex justify-between items-center text-[11px] font-semibold text-family-textMuted">
-                <span className="flex items-center gap-1">🔴 Chi tiêu sinh hoạt:</span>
+                <span className="flex items-center gap-1">🔴 Khoản chi sinh hoạt:</span>
                 <span>-{formatTableMoneyVNDMillion(currentExpenses)}</span>
               </div>
               <div className="flex justify-between items-center text-[11px] font-semibold text-green-700">
-                <span className="flex items-center gap-1">🟢 Tích lũy đầu tư:</span>
+                <span className="flex items-center gap-1">🟢 Đầu tư tích lũy:</span>
                 <span>+{formatTableMoneyVNDMillion(currentInvestment)}</span>
               </div>
               <div className="flex justify-between items-center text-[11px] font-semibold text-purple-700">
@@ -435,7 +435,7 @@ export const Dashboard: React.FC = () => {
             <div className="bg-family-bgDark/30 border border-family-accent/5 p-3 rounded-2xl mt-auto">
               <div className="flex justify-between items-center text-[10px] text-family-textMuted">
                 <span className="font-bold">Phương trình ngân sách:</span>
-                <span>Thu nhập = Chi tiêu + Đầu tư + Tiết kiệm</span>
+                <span>Khoản thu = Khoản chi + Đầu tư + Tiết kiệm</span>
               </div>
             </div>
           </CardContent>
@@ -537,7 +537,7 @@ export const Dashboard: React.FC = () => {
         {/* Yearly Cashflow Chart */}
         <Card className="border-family-accent/10 shadow-sm bg-white/70 backdrop-blur-md">
           <CardHeader>
-            <CardTitle className="text-base font-serif font-bold text-family-text">Thu nhập vs Chi phí hàng năm</CardTitle>
+            <CardTitle className="text-base font-serif font-bold text-family-text">Khoản thu vs Khoản chi hàng năm</CardTitle>
             <CardDescription className="text-xs text-family-textMuted">Mô phỏng tích lũy dòng tiền hàng năm qua các giai đoạn.</CardDescription>
           </CardHeader>
           <CardContent className="h-72">
@@ -549,8 +549,8 @@ export const Dashboard: React.FC = () => {
                   <YAxis stroke="#6f5d50" fontSize={10} tickFormatter={formatAxisMoneyVNDMillion} />
                   <Tooltip formatter={(value) => formatTooltipMoneyVNDMillion(value)} />
                   <Legend wrapperStyle={{ fontSize: 10 }} />
-                  <Bar name="Tổng thu nhập" dataKey="Tổng thu nhập" fill="#d97706" radius={[4, 4, 0, 0]} />
-                  <Bar name="Tổng chi phí" dataKey="Tổng chi phí" fill="#dc2626" radius={[4, 4, 0, 0]} />
+                  <Bar name="Tổng khoản thu" dataKey="Tổng thu nhập" fill="#d97706" radius={[4, 4, 0, 0]} />
+                  <Bar name="Tổng khoản chi" dataKey="Tổng chi phí" fill="#dc2626" radius={[4, 4, 0, 0]} />
                 </BarChart>
               </ResponsiveContainer>
             ) : (

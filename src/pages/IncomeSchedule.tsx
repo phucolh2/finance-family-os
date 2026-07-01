@@ -81,7 +81,7 @@ export const IncomeSchedule: React.FC = () => {
       year: p.year,
       month: p.month,
       dateStr: `Tháng ${p.month}/${p.year}`,
-      'Thu nhập tháng': Math.round(inc.incomeMonthly * 10) / 10,
+      'Khoản thu tháng': Math.round(inc.incomeMonthly * 10) / 10,
     };
   });
 
@@ -150,7 +150,7 @@ export const IncomeSchedule: React.FC = () => {
       {/* Top Page Header */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
-          <h1 className="text-3xl font-serif font-bold text-family-text">Thu nhập theo thời gian</h1>
+          <h1 className="text-3xl font-serif font-bold text-family-text">Kế hoạch Nguồn thu</h1>
           <p className="text-sm text-family-textMuted mt-1">
             Quản lý và trực quan hóa lịch trình phát triển các nguồn thu nhập theo thời gian.
           </p>
@@ -215,7 +215,7 @@ export const IncomeSchedule: React.FC = () => {
                   required
                 />
                 <Input
-                  label="Thu nhập tháng"
+                  label="Khoản thu tháng"
                   type="number"
                   suffix="Tr VND"
                   value={newIncome}
@@ -254,7 +254,7 @@ export const IncomeSchedule: React.FC = () => {
             </Card>
             <Card isKpi className="border-l-green">
               <CardHeader>
-                <CardDescription className="uppercase tracking-wider font-bold">Thu nhập khởi điểm</CardDescription>
+                <CardDescription className="uppercase tracking-wider font-bold">Khoản thu khởi điểm</CardDescription>
                 <CardTitle className="text-2xl mt-1">{formatKpiMoneyVNDMillion(startIncomeResult.incomeMonthly)}</CardTitle>
               </CardHeader>
             </Card>
@@ -279,7 +279,7 @@ export const IncomeSchedule: React.FC = () => {
           <Card className="border border-family-accent/10 p-5 bg-family-bgDark/5">
             <div className="border-b border-family-accent/5 pb-3 mb-4">
               <h4 className="font-bold text-sm text-family-text uppercase tracking-wider">
-                Xu hướng thu nhập theo thời gian (2026 - 2060)
+                Kế hoạch Nguồn thu theo thời gian (2026 - 2060)
               </h4>
               <p className="text-xs text-family-textMuted mt-0.5">
                 Dự báo dòng thu nhập tháng theo các thời kỳ hiệu lực.
@@ -310,12 +310,12 @@ export const IncomeSchedule: React.FC = () => {
                     contentStyle={{ backgroundColor: '#1e293b', border: '1px solid rgba(226, 180, 76, 0.15)', borderRadius: '12px' }}
                     itemStyle={{ color: '#f8fafc', fontSize: 11 }}
                     labelStyle={{ color: '#94a3b8', fontWeight: 'bold', fontSize: 11 }}
-                    formatter={(value) => [`${value} tr VND`, 'Thu nhập tháng']}
+                    formatter={(value) => [`${value} tr VND`, 'Khoản thu tháng']}
                     labelFormatter={(label, items) => items[0]?.payload ? items[0].payload.dateStr : label}
                   />
                   <Area 
                     type="monotone" 
-                    dataKey="Thu nhập tháng" 
+                    dataKey="Khoản thu tháng" 
                     stroke="#e2b44c" 
                     strokeWidth={2}
                     fillOpacity={1} 
@@ -336,7 +336,7 @@ export const IncomeSchedule: React.FC = () => {
                 <thead>
                   <tr className="border-b border-family-accent/10 text-family-textMuted font-bold bg-family-bgDark/30">
                     <th className="p-3">Thời điểm hiệu lực</th>
-                    <th className="p-3">Mức thu nhập tháng khởi điểm</th>
+                    <th className="p-3">Khoản thu tháng khởi điểm</th>
                     <th className="p-3">Ghi chú hoàn cảnh</th>
                   </tr>
                 </thead>
@@ -474,7 +474,7 @@ export const IncomeSchedule: React.FC = () => {
                         Biên tập mốc: <span className="text-family-accent">Tháng {editMonth}/{editYear}</span>
                       </CardTitle>
                       <CardDescription>
-                        Tinh chỉnh ngày hiệu lực và thu nhập tháng của mốc.
+                        Tinh chỉnh ngày hiệu lực và khoản thu tháng của mốc.
                       </CardDescription>
                     </div>
                     
@@ -508,7 +508,7 @@ export const IncomeSchedule: React.FC = () => {
                       onChange={(e) => setEditYear(safeNumber(Number(e.target.value)))}
                     />
                     <Input
-                      label="Thu nhập tháng"
+                      label="Khoản thu tháng"
                       type="number"
                       suffix="Tr VND"
                       value={editIncome}
