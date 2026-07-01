@@ -36,7 +36,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ activeTab, setActiveTab, onClo
         { id: 'income', name: 'Kế hoạch Nguồn thu', icon: Wallet },
         { id: 'budget_history', name: 'Lịch sử Phân bổ Ngân sách', icon: Calendar },
         { id: 'life_stages', name: 'Giai đoạn linh hoạt', icon: Milestone },
-        { id: 'portfolio', name: 'Tài sản Tích lũy', icon: Briefcase },
+        { id: 'portfolio', name: 'Danh mục đầu tư', icon: Briefcase },
       ],
     },
     {
