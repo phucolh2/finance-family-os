@@ -143,7 +143,7 @@ export const LifeStages: React.FC = () => {
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
           <h1 className="text-3xl font-serif font-bold text-family-text flex items-center gap-3">
-            <Milestone className="w-8 h-8 text-family-accent" /> Giai đoạn & Sự kiện cuộc đời
+            <Milestone className="w-8 h-8 text-family-accent" /> Sự kiện cuộc đời
           </h1>
           <p className="text-sm text-family-textMuted mt-1">
             Hiểu rõ các giai đoạn linh hoạt của gia đình và tùy chỉnh các cột mốc sự kiện lớn trên dòng thời gian.
