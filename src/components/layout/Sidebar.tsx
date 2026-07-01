@@ -13,6 +13,7 @@ import {
   BookOpen,
   Settings,
   X,
+  MessageSquare,
 } from 'lucide-react';
 
 interface SidebarProps {
@@ -51,6 +52,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ activeTab, setActiveTab, onClo
       title: 'Dự phòng & Tri thức',
       items: [
         { id: 'knowledge_center', name: 'Knowledge Center', icon: BookOpen },
+        { id: 'ai_chat', name: 'Hỏi đáp AI', icon: MessageSquare },
         { id: 'settings', name: 'Cấu hình hệ thống', icon: Settings },
       ],
     },

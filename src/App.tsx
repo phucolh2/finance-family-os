@@ -14,6 +14,7 @@ import { FireCenter } from './pages/FireCenter';
 import { HealthAndFinalRest } from './pages/HealthAndFinalRest';
 import { KnowledgeCenter } from './pages/KnowledgeCenter';
 import { Settings } from './pages/Settings';
+import { AIChat } from './pages/AIChat';
 
 function AppContent() {
   const [activeTab, setActiveTab] = useState<string>('dashboard');
@@ -46,6 +47,8 @@ function AppContent() {
         return <KnowledgeCenter />;
       case 'settings':
         return <Settings />;
+      case 'ai_chat':
+        return <AIChat />;
       default:
         return <Dashboard />;
     }
