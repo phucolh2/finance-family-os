@@ -72,11 +72,13 @@ export const AIChat: React.FC = () => {
     setIsLoading(true);
 
     try {
-      // Map message history to Gemini API format
-      const apiContents = updatedMessages.map((msg) => ({
-        role: msg.role,
-        parts: [{ text: msg.text }]
-      }));
+      // Map message history to Gemini API format, skipping the initial greeting (index 0) if it is from the model
+      const apiContents = updatedMessages
+        .slice(1)
+        .map((msg) => ({
+          role: msg.role,
+          parts: [{ text: msg.text }]
+        }));
 
       const response = await fetch(API_URL, {
         method: 'POST',
@@ -92,7 +94,9 @@ export const AIChat: React.FC = () => {
       });
 
       if (!response.ok) {
-        throw new Error('API Request failed. Vui lòng kiểm tra lại API Key hoặc mạng.');
+        const errorBody = await response.json().catch(() => null);
+        const detailedMsg = errorBody?.error?.message || 'Yêu cầu API thất bại.';
+        throw new Error(`Gemini API Error: ${detailedMsg}`);
       }
 
       const data = await response.json();
@@ -100,7 +104,7 @@ export const AIChat: React.FC = () => {
 
       setMessages([...updatedMessages, { role: 'model', text: answer }]);
     } catch (err: any) {
-      setError(err.message || 'Lỗi không xác định khi kết nối với Gemini.');
+      setError(err.message || 'Lỗi không xác định khi kết nối với Gemini. Vui lòng kiểm tra lại API Key hoặc mạng.');
     } finally {
       setIsLoading(false);
     }
