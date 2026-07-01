@@ -8,9 +8,6 @@ interface ChatMessage {
   text: string;
 }
 
-const GEMINI_API_KEY = 'AIzaSyAS1AcPoqzpqemcgo0IXZkAchMrwRyVHQU';
-const API_URL = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${GEMINI_API_KEY}`;
-
 const SYSTEM_INSTRUCTION = `
 Bạn là chuyên gia tư vấn tài chính và hôn nhân gia đình AI Twin Advisor (Tài Sản Song Sinh) tích hợp trong hệ thống quản lý gia đình Family OS. Nhiệm vụ của bạn là giải đáp tất cả thắc mắc của hai vợ chồng về các chỉ số tài chính, kịch bản, thuật ngữ và cẩm nang sống tỉnh thức trong hệ thống.
 
@@ -38,6 +35,7 @@ const SUGGESTED_QUESTIONS = [
 ];
 
 export const AIChat: React.FC = () => {
+  const [apiKey, setApiKey] = useState(() => localStorage.getItem('gemini_api_key') || 'AIzaSyAS1AcPoqzpqemcgo0IXZkAchMrwRyVHQU');
   const [messages, setMessages] = useState<ChatMessage[]>([
     {
       role: 'model',
@@ -80,7 +78,8 @@ export const AIChat: React.FC = () => {
           parts: [{ text: msg.text }]
         }));
 
-      const response = await fetch(API_URL, {
+      const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey}`;
+      const response = await fetch(url, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json'
@@ -198,7 +197,47 @@ export const AIChat: React.FC = () => {
         {/* Suggested Questions Side panel */}
         <Card className="w-full lg:w-80 shrink-0 bg-family-bgDark/25 border-family-accent/15 flex flex-col justify-between p-4 space-y-4">
           <div className="space-y-4">
-            <h4 className="text-xs font-bold text-family-text uppercase tracking-wider flex items-center gap-1.5">
+            {/* API Key configuration */}
+            <div className="bg-amber-50 border border-amber-200 p-3 rounded-xl space-y-2 text-[11px] leading-relaxed">
+              <span className="font-bold text-amber-800 flex items-center gap-1">🔑 Cấu hình Gemini API Key</span>
+              <p className="text-amber-700">
+                API Key mặc định đã bị Google khóa bảo mật. Hãy dán API Key cá nhân của bạn vào đây để chạy chat:
+              </p>
+              <div className="flex gap-1.5">
+                <input
+                  type="password"
+                  value={apiKey}
+                  onChange={(e) => {
+                    const val = e.target.value;
+                    setApiKey(val);
+                    localStorage.setItem('gemini_api_key', val);
+                  }}
+                  placeholder="Dán API Key..."
+                  className="flex-1 bg-white border border-amber-200 rounded-lg px-2.5 py-1 focus:outline-none focus:ring-1 focus:ring-amber-500 font-mono text-[10px]"
+                />
+                {apiKey !== 'AIzaSyAS1AcPoqzpqemcgo0IXZkAchMrwRyVHQU' && (
+                  <button
+                    onClick={() => {
+                      setApiKey('AIzaSyAS1AcPoqzpqemcgo0IXZkAchMrwRyVHQU');
+                      localStorage.removeItem('gemini_api_key');
+                    }}
+                    className="text-[9px] font-bold text-amber-800 hover:underline"
+                  >
+                    Xóa
+                  </button>
+                )}
+              </div>
+              <a
+                href="https://aistudio.google.com/app/apikey"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-[9px] text-amber-800 hover:underline font-bold block"
+              >
+                ➔ Lấy API Key miễn phí tại Google AI Studio
+              </a>
+            </div>
+
+            <h4 className="text-xs font-bold text-family-text uppercase tracking-wider flex items-center gap-1.5 pt-2 border-t border-family-accent/5">
               <HelpCircle className="w-4 h-4 text-family-accent" /> Câu hỏi gợi ý nhanh
             </h4>
             <div className="space-y-2.5">
