@@ -112,6 +112,32 @@ export const LifeStages: React.FC = () => {
     { value: 'external', label: 'Nguồn tài trợ bên ngoài' },
   ];
 
+  const getEventLabel = (type: string) => {
+    switch (type) {
+      case 'buy_property': return 'Mua nhà / BĐS';
+      case 'buy_car': return 'Mua xe';
+      case 'child_birth': return 'Sinh con';
+      case 'medical': return 'Y tế hiểm nghèo';
+      case 'job_loss': return 'Mất việc làm';
+      case 'bonus': return 'Thưởng đột xuất';
+      case 'inheritance': return 'Nhận thừa kế';
+      case 'retirement': return 'Nghỉ hưu';
+      case 'travel': return 'Du lịch lớn';
+      default: return 'Khác';
+    }
+  };
+
+  const getSourceLabel = (source: string) => {
+    switch (source?.toLowerCase()) {
+      case 'cash': return 'Tiền mặt';
+      case 'investment': return 'Đầu tư';
+      case 'saving': return 'Tiết kiệm';
+      case 'debt': return 'Vay nợ';
+      case 'external': return 'Tài trợ';
+      default: return source;
+    }
+  };
+
   return (
     <div className="space-y-6">
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
@@ -276,7 +302,7 @@ export const LifeStages: React.FC = () => {
                     <td className="p-3 font-semibold text-family-text">{event.name}</td>
                     <td className="p-3">
                       <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-family-bgDark/60 text-family-textLight">
-                        {event.type}
+                        {getEventLabel(event.type)}
                       </span>
                     </td>
                     <td className="p-3 font-medium">Tháng {event.month}/{event.year}</td>
@@ -285,10 +311,10 @@ export const LifeStages: React.FC = () => {
                     </td>
                     <td className={`p-3 text-right font-semibold ${safeNumber(event.recurringMonthlyImpact) < 0 ? 'text-red-700' : 'text-green-700'}`}>
                       {safeNumber(event.recurringMonthlyImpact) !== 0 
-                        ? `${safeNumber(event.recurringMonthlyImpact) > 0 ? '+' : ''}${event.recurringMonthlyImpact} tr/tháng` 
-                        : '---'}
+                      ? `${safeNumber(event.recurringMonthlyImpact) > 0 ? '+' : ''}${event.recurringMonthlyImpact} tr/tháng` 
+                      : '---'}
                     </td>
-                    <td className="p-3 font-medium uppercase text-family-textLight">{event.source}</td>
+                    <td className="p-3 font-medium text-family-textLight">{getSourceLabel(event.source)}</td>
                     <td className="p-3 text-family-textMuted max-w-[120px] truncate">{event.note || '---'}</td>
                     <td className="p-3 text-right space-x-1.5 whitespace-nowrap">
                       <button
