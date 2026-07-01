@@ -1,0 +1,16 @@
+---
+description: UI style rules
+alwaysApply: true
+---
+
+Keep warm family-first style:
+- cream background
+- orange accent
+- rounded cards
+- Vietnamese language
+- not corporate
+- not trading terminal
+
+All charts must have tooltip.
+All tables must have empty state.
+Warnings must be visible in UI.

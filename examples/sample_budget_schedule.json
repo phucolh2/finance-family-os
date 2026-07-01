@@ -1,0 +1,50 @@
+[
+  {
+    "id": "budget-2026-10",
+    "effectiveMonth": 10,
+    "effectiveYear": 2026,
+    "note": "Default 5 nhóm",
+    "ratios": [
+      {
+        "categoryId": "housing-basic",
+        "categoryName": "Nhà cửa & sinh hoạt cơ bản",
+        "group": "housing_basic",
+        "ratioPercent": 29,
+        "ruleType": "percent",
+        "isActive": true
+      },
+      {
+        "categoryId": "future-investing",
+        "categoryName": "Tương lai & đầu tư",
+        "group": "future_investing",
+        "ratioPercent": 40,
+        "ruleType": "percent",
+        "isActive": true
+      },
+      {
+        "categoryId": "safety-reserve",
+        "categoryName": "Bình an & dự phòng",
+        "group": "safety_reserve",
+        "ratioPercent": 10,
+        "ruleType": "percent",
+        "isActive": true
+      },
+      {
+        "categoryId": "family-experience",
+        "categoryName": "Gia đình & trải nghiệm",
+        "group": "family_experience",
+        "ratioPercent": 11,
+        "ruleType": "percent",
+        "isActive": true
+      },
+      {
+        "categoryId": "health-growth",
+        "categoryName": "Sức khỏe & phát triển",
+        "group": "health_growth",
+        "ratioPercent": 10,
+        "ruleType": "percent",
+        "isActive": true
+      }
+    ]
+  }
+]

@@ -1,0 +1,23 @@
+{
+  "schemaVersion": 1,
+  "updatedAt": "2026-01-01T00:00:00.000Z",
+  "data": {
+    "familyProfile": {
+      "husbandName": "A. Phước",
+      "wifeName": "Quế",
+      "husbandAgeAtStart": 35,
+      "wifeAgeAtStart": 31,
+      "planningStartMonth": 10,
+      "planningStartYear": 2026,
+      "planningEndMonth": 12,
+      "planningEndYear": 2060,
+      "childBirthMonth": 1,
+      "childBirthYear": 2031,
+      "currency": "VND_MILLION"
+    },
+    "incomeSchedule": "see sample_income_schedule.json",
+    "budgetSchedule": "see sample_budget_schedule.json",
+    "lifeEvents": "see sample_life_events.json",
+    "scenarios": "see sample_scenarios.json"
+  }
+}

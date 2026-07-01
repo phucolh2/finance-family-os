@@ -1,0 +1,18 @@
+[
+  {
+    "id": "income-2026-10",
+    "effectiveMonth": 10,
+    "effectiveYear": 2026,
+    "incomeMonthly": 80,
+    "incomeGrowthRateAnnual": 5,
+    "note": "Bắt đầu tích lũy"
+  },
+  {
+    "id": "income-2028-01",
+    "effectiveMonth": 1,
+    "effectiveYear": 2028,
+    "incomeMonthly": 95,
+    "incomeGrowthRateAnnual": 6,
+    "note": "Tăng thu nhập từ 2028"
+  }
+]

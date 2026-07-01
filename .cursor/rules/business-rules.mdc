@@ -1,0 +1,21 @@
+---
+description: Business rules for Family Financial OS
+alwaysApply: true
+---
+
+Default budget allocation is ratio-based:
+- Nhà cửa & sinh hoạt cơ bản: 29%
+- Tương lai & đầu tư: 40%
+- Bình an & dự phòng: 10%
+- Gia đình & trải nghiệm: 11%
+- Sức khỏe & phát triển: 10%
+
+Do not use fixed default amounts.
+
+"Tài sản phụ & hình ảnh" was removed and merged into "Sức khỏe & phát triển".
+
+Child cost:
+- active from child birth event/config
+- separate budget category
+- not subtracted directly from investment
+- no default 63tr/month university cost

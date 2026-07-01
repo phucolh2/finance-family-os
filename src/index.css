@@ -1,0 +1,62 @@
+@import url('https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;500;600;700&family=Playfair+Display:ital,wght@0,400;0,700;1,400&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --bg: #fff8ef;
+  --bg2: rgba(255, 255, 255, 0.88);
+  --bg3: #fff0dd;
+  --bg4: #f7dec1;
+
+  --border: rgba(125, 83, 45, 0.13);
+  --border2: rgba(125, 83, 45, 0.20);
+
+  --text: #2f241d;
+  --text2: #6f5d50;
+  --text3: #9c816d;
+
+  --accent: #d97706;
+  --accent2: #b45309;
+
+  --green: #4d7c0f;
+  --yellow: #f59e0b;
+  --red: #dc2626;
+  --purple: #8b5cf6;
+  --teal: #0f766e;
+}
+
+body {
+  margin: 0;
+  padding: 0;
+  background-color: var(--bg);
+  background:
+    radial-gradient(circle at top left, rgba(251, 191, 36, 0.12), transparent 32%),
+    radial-gradient(circle at top right, rgba(244, 114, 182, 0.08), transparent 30%),
+    linear-gradient(135deg, #fff8ef 0%, #fffdf8 48%, #f0fdf4 100%);
+  color: var(--text);
+  font-family: "Be Vietnam Pro", system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
+  min-height: 100vh;
+}
+
+.font-serif {
+  font-family: "Playfair Display", Georgia, serif;
+}
+
+.font-sans {
+  font-family: "Be Vietnam Pro", system-ui, sans-serif;
+}
+
+/* Glassmorphism panel */
+.glass-panel {
+  background: var(--bg2);
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+  border: 1px solid var(--border);
+}
+
+.glass-panel-hover:hover {
+  border: 1px solid var(--border2);
+  box-shadow: 0 10px 25px -5px rgba(125, 83, 45, 0.08);
+}

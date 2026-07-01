@@ -1,0 +1,16 @@
+---
+description: Family Financial OS architecture rules
+alwaysApply: true
+---
+
+Family Financial OS uses Timeline-first, Engine-based, Event-driven architecture.
+
+Rules:
+- UI never calculates.
+- Engines calculate everything.
+- Dashboard only renders engine output.
+- Projection runs monthly and aggregates yearly.
+- Scenario = base input + overrides + same engines.
+- No hardcoded money.
+- No hardcoded FIRE year.
+- No child 2035 scenario.

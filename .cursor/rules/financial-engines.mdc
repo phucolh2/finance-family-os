@@ -1,0 +1,14 @@
+---
+description: Financial engine rules
+alwaysApply: true
+---
+
+Engine dependency:
+Timeline → Income → LifeStage → Budget → Cashflow → Portfolio → Projection → FIRE → MonteCarlo → Scenario.
+
+Engines:
+- pure functions
+- no React import
+- no LocalStorage direct access
+- return warnings
+- no UI dependencies

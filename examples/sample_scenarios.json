@@ -1,0 +1,21 @@
+[
+  {
+    "id": "base",
+    "name": "Kịch bản gốc",
+    "description": "Không có con, chưa mua nhà",
+    "overrides": {}
+  },
+  {
+    "id": "child-2031",
+    "name": "Kịch bản có con 2031",
+    "description": "Sinh con từ 01/2031, lifestyle cao vừa phải",
+    "overrides": {
+      "childConfig": {
+        "childBirthMonth": 1,
+        "childBirthYear": 2031,
+        "lifestyle": "premium",
+        "budgetCapMonthly": 35
+      }
+    }
+  }
+]

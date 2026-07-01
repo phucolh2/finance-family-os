@@ -1,0 +1,27 @@
+[
+  {
+    "id": "event-child-2031",
+    "month": 1,
+    "year": 2031,
+    "name": "Sinh con 2031",
+    "type": "child_birth",
+    "amount": 0,
+    "source": "cash",
+    "recurringMonthlyImpact": 0,
+    "affectsNetWorth": false,
+    "note": "Child engine xử lý chi phí con"
+  },
+  {
+    "id": "event-buy-house-2030",
+    "month": 6,
+    "year": 2030,
+    "name": "Mua nhà dự kiến",
+    "type": "buy_property",
+    "amount": 4000,
+    "source": "investment",
+    "targetAssetId": "property",
+    "recurringMonthlyImpact": 0,
+    "affectsNetWorth": true,
+    "note": "Chuyển một phần tài sản sang BĐS"
+  }
+]
