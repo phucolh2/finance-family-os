@@ -118,6 +118,7 @@ export interface InvestmentDeal {
   endYear?: number;
   realizedProfit?: number; // realized profit/loss in VND Million
   isEarmarked?: boolean; // If true, this is earmarked cash and does not generate ROI
+  expectedSavingRate?: number; // Saving interest rate for earmarked deals (%/year)
   notes?: string;
 }
 
