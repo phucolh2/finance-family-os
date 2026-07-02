@@ -221,9 +221,14 @@ export const Dashboard: React.FC = () => {
         {/* Income Card */}
         <Card isKpi className="border-l-family-accent bg-white/70 backdrop-blur-md shadow-sm transition-all hover:-translate-y-0.5">
           <CardContent className="p-4 flex flex-col justify-between h-24">
-            <div className="flex items-center justify-between text-family-textMuted text-[10px] uppercase font-bold tracking-wider">
-              <span className="flex items-center gap-1.5"><Wallet className="w-3.5 h-3.5 text-family-accent" /> Khoản thu</span>
-              <button onClick={() => setExplanationId('permanent_income_hypothesis')} className="text-[9px] text-family-accent hover:underline font-normal">Explain</button>
+            <div className="flex items-start justify-between text-family-textMuted text-[10px] uppercase font-bold tracking-wider mb-2">
+              <span className="flex items-center gap-1.5 whitespace-nowrap overflow-hidden">
+                <Wallet className="w-3.5 h-3.5 shrink-0 text-family-accent" />
+                <span className="truncate">Khoản thu</span>
+              </span>
+              <button onClick={() => setExplanationId('permanent_income_hypothesis')} className="shrink-0 ml-1 text-family-accent hover:text-family-accent/80 transition-colors mt-0.5" title="Giải thích ý nghĩa">
+                <Info className="w-3.5 h-3.5" />
+              </button>
             </div>
             <div>
               <div className="text-lg font-bold text-family-text">{formatKpiMoneyVNDMillion(currentIncome)}</div>
@@ -235,9 +240,14 @@ export const Dashboard: React.FC = () => {
         {/* Investment Card */}
         <Card isKpi className="border-l-green bg-white/70 backdrop-blur-md shadow-sm transition-all hover:-translate-y-0.5">
           <CardContent className="p-4 flex flex-col justify-between h-24">
-            <div className="flex items-center justify-between text-family-textMuted text-[10px] uppercase font-bold tracking-wider">
-              <span className="flex items-center gap-1.5"><TrendingUp className="w-3.5 h-3.5 text-green-700" /> Khoản đầu tư</span>
-              <button onClick={() => setExplanationId('modern_portfolio_theory')} className="text-[9px] text-family-accent hover:underline font-normal">Explain</button>
+            <div className="flex items-start justify-between text-family-textMuted text-[10px] uppercase font-bold tracking-wider mb-2">
+              <span className="flex items-center gap-1.5 whitespace-nowrap overflow-hidden">
+                <TrendingUp className="w-3.5 h-3.5 shrink-0 text-green-700" />
+                <span className="truncate">Khoản đầu tư</span>
+              </span>
+              <button onClick={() => setExplanationId('modern_portfolio_theory')} className="shrink-0 ml-1 text-family-accent hover:text-family-accent/80 transition-colors mt-0.5" title="Giải thích ý nghĩa">
+                <Info className="w-3.5 h-3.5" />
+              </button>
             </div>
             <div>
               <div className="text-lg font-bold text-family-text">{formatKpiMoneyVNDMillion(currentInvestment)}</div>
@@ -249,9 +259,14 @@ export const Dashboard: React.FC = () => {
         {/* Expense Card */}
         <Card isKpi className="border-l-teal bg-white/70 backdrop-blur-md shadow-sm transition-all hover:-translate-y-0.5">
           <CardContent className="p-4 flex flex-col justify-between h-24">
-            <div className="flex items-center justify-between text-family-textMuted text-[10px] uppercase font-bold tracking-wider">
-              <span className="flex items-center gap-1.5"><BadgeDollarSign className="w-3.5 h-3.5 text-teal-700" /> Khoản chi</span>
-              <button onClick={() => setExplanationId('harvard_study')} className="text-[9px] text-family-accent hover:underline font-normal">Explain</button>
+            <div className="flex items-start justify-between text-family-textMuted text-[10px] uppercase font-bold tracking-wider mb-2">
+              <span className="flex items-center gap-1.5 whitespace-nowrap overflow-hidden">
+                <BadgeDollarSign className="w-3.5 h-3.5 shrink-0 text-teal-700" />
+                <span className="truncate">Khoản chi</span>
+              </span>
+              <button onClick={() => setExplanationId('harvard_study')} className="shrink-0 ml-1 text-family-accent hover:text-family-accent/80 transition-colors mt-0.5" title="Giải thích ý nghĩa">
+                <Info className="w-3.5 h-3.5" />
+              </button>
             </div>
             <div>
               <div className="text-lg font-bold text-family-text">{formatKpiMoneyVNDMillion(currentExpenses)}</div>
@@ -263,9 +278,14 @@ export const Dashboard: React.FC = () => {
         {/* Savings Rate Card */}
         <Card isKpi className="border-l-purple bg-white/70 backdrop-blur-md shadow-sm transition-all hover:-translate-y-0.5">
           <CardContent className="p-4 flex flex-col justify-between h-24">
-            <div className="flex items-center justify-between text-family-textMuted text-[10px] uppercase font-bold tracking-wider">
-              <span className="flex items-center gap-1.5"><ArrowRightLeft className="w-3.5 h-3.5 text-purple-700" /> Tỷ lệ tích lũy</span>
-              <button onClick={() => setExplanationId('trinity_study')} className="text-[9px] text-family-accent hover:underline font-normal">Explain</button>
+            <div className="flex items-start justify-between text-family-textMuted text-[10px] uppercase font-bold tracking-wider mb-2">
+              <span className="flex items-center gap-1.5 whitespace-nowrap overflow-hidden">
+                <ArrowRightLeft className="w-3.5 h-3.5 shrink-0 text-purple-700" />
+                <span className="truncate">Tỷ lệ tích lũy</span>
+              </span>
+              <button onClick={() => setExplanationId('trinity_study')} className="shrink-0 ml-1 text-family-accent hover:text-family-accent/80 transition-colors mt-0.5" title="Giải thích ý nghĩa">
+                <Info className="w-3.5 h-3.5" />
+              </button>
             </div>
             <div>
               <div className="text-lg font-bold text-family-text">{savingsRate.toFixed(1)}%</div>
@@ -277,9 +297,14 @@ export const Dashboard: React.FC = () => {
         {/* PCF Card */}
         <Card isKpi className="border-l-blue bg-white/70 backdrop-blur-md shadow-sm transition-all hover:-translate-y-0.5">
           <CardContent className="p-4 flex flex-col justify-between h-24">
-            <div className="flex items-center justify-between text-family-textMuted text-[10px] uppercase font-bold tracking-wider">
-              <span className="flex items-center gap-1.5"><Sparkles className="w-3.5 h-3.5 text-blue-600" /> Dòng tiền thụ động</span>
-              <button onClick={() => setExplanationId('trinity_study')} className="text-[9px] text-family-accent hover:underline font-normal">Explain</button>
+            <div className="flex items-start justify-between text-family-textMuted text-[10px] uppercase font-bold tracking-wider mb-2">
+              <span className="flex items-center gap-1.5 whitespace-nowrap overflow-hidden">
+                <Sparkles className="w-3.5 h-3.5 shrink-0 text-blue-600" />
+                <span className="truncate">Dòng tiền thụ động</span>
+              </span>
+              <button onClick={() => setExplanationId('trinity_study')} className="shrink-0 ml-1 text-family-accent hover:text-family-accent/80 transition-colors mt-0.5" title="Giải thích ý nghĩa">
+                <Info className="w-3.5 h-3.5" />
+              </button>
             </div>
             <div>
               <div className="text-lg font-bold text-family-text">{formatKpiMoneyVNDMillion(currentPcf)}</div>
