@@ -196,7 +196,7 @@ export const Dashboard: React.FC = () => {
   const healthMeta = getHealthLabel(healthScore);
 
   // SVG Circular progress configurations
-  const radius = 30;
+  const radius = 22;
   const circumference = 2 * Math.PI * radius;
   const strokeDashoffset = circumference - (Math.max(1, Math.min(100, healthScore)) / 100) * circumference;
 
@@ -315,29 +315,29 @@ export const Dashboard: React.FC = () => {
 
         {/* Health Score Circular Dial Card */}
         <Card className="border-l-yellow-600 bg-white/70 backdrop-blur-md shadow-sm transition-all hover:-translate-y-0.5 md:col-span-3 lg:col-span-1">
-          <CardContent className="p-3 flex items-center justify-between h-24">
-            <div className="space-y-1">
-              <span className="text-[10px] text-family-textMuted font-bold uppercase tracking-wider block">Sức khỏe tài chính</span>
-              <div className={`text-[9px] font-bold px-2 py-0.5 rounded-lg inline-block ${healthMeta.color}`}>
+          <CardContent className="p-3 flex items-center justify-between gap-2 h-24">
+            <div className="space-y-1 min-w-0">
+              <span className="text-[9px] text-family-textMuted font-bold uppercase tracking-wider block leading-tight truncate">Sức khỏe T.Chính</span>
+              <div className={`text-[9px] font-bold px-1.5 py-0.5 rounded-lg inline-block max-w-full truncate ${healthMeta.color}`}>
                 {healthMeta.label}
               </div>
             </div>
-            <div className="relative w-16 h-16 flex items-center justify-center">
+            <div className="relative w-[52px] h-[52px] shrink-0 flex items-center justify-center">
               <svg className="w-full h-full transform -rotate-90">
                 <circle
-                  cx="32"
-                  cy="32"
+                  cx="26"
+                  cy="26"
                   r={radius}
                   className="stroke-family-accent/10"
-                  strokeWidth="4.5"
+                  strokeWidth="4"
                   fill="transparent"
                 />
                 <circle
-                  cx="32"
-                  cy="32"
+                  cx="26"
+                  cy="26"
                   r={radius}
                   className="stroke-yellow-600 transition-all duration-500"
-                  strokeWidth="4.5"
+                  strokeWidth="4"
                   fill="transparent"
                   strokeDasharray={circumference}
                   strokeDashoffset={strokeDashoffset}
