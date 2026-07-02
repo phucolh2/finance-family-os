@@ -316,9 +316,9 @@ export const Dashboard: React.FC = () => {
         {/* Health Score Circular Dial Card */}
         <Card className="border-l-yellow-600 bg-white/70 backdrop-blur-md shadow-sm transition-all hover:-translate-y-0.5 md:col-span-3 lg:col-span-1">
           <CardContent className="p-3 flex items-center justify-between gap-2 h-24">
-            <div className="space-y-1 min-w-0">
-              <span className="text-[9px] text-family-textMuted font-bold uppercase tracking-wider block leading-tight truncate">Sức khỏe T.Chính</span>
-              <div className={`text-[9px] font-bold px-1.5 py-0.5 rounded-lg inline-block max-w-full truncate ${healthMeta.color}`}>
+            <div className="space-y-1">
+              <span className="text-[9px] text-family-textMuted font-bold uppercase tracking-wider block leading-tight">Sức khỏe T.Chính</span>
+              <div className={`text-[9px] font-bold px-1.5 py-0.5 rounded-lg inline-block ${healthMeta.color}`}>
                 {healthMeta.label}
               </div>
             </div>
