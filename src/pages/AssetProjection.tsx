@@ -61,7 +61,7 @@ export const AssetProjection: React.FC = () => {
     <div className="space-y-6">
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
-          <h1 className="text-3xl font-serif font-bold text-family-text">Dự phóng tài sản</h1>
+          <h1 className="text-3xl font-serif font-bold text-family-text">Dự phóng tài sản và dòng tiền</h1>
           <p className="text-sm text-family-textMuted mt-1">
             Bảng dự phóng tài sản ròng, số dư quỹ và sức mua thực tế qua các giai đoạn cuộc đời.
           </p>
@@ -179,9 +179,14 @@ export const AssetProjection: React.FC = () => {
                   <th className="p-3 text-right">Thu nhập cuối năm</th>
                   <th className="p-3 text-right">Tổng thu năm</th>
                   <th className="p-3 text-right">Tổng chi năm</th>
+                  <th className="p-3 text-right">Chi phí con cái</th>
                   <th className="p-3 text-right">Đầu tư TB/tháng</th>
+                  <th className="p-3 text-right">Lãi suất ĐT/năm</th>
                   <th className="p-3 text-right">Số dư đầu tư</th>
+                  <th className="p-3 text-right">Tiết kiệm TB/tháng</th>
+                  <th className="p-3 text-right">Lãi suất TK/năm</th>
                   <th className="p-3 text-right">Số dư tiết kiệm</th>
+                  <th className="p-3 text-right">PCF/Tháng</th>
                   <th className="p-3 text-right">Net Worth</th>
                   <th className="p-3 text-right">Sức mua hiện tại</th>
                   <th className="p-3">Sự kiện / Ghi chú</th>
@@ -196,9 +201,14 @@ export const AssetProjection: React.FC = () => {
                     <td className="p-3 text-right">{formatTableMoneyVNDMillion(row.monthlyIncomeEndYear)}</td>
                     <td className="p-3 text-right font-semibold">{formatTableMoneyVNDMillion(row.totalIncomeYearly)}</td>
                     <td className="p-3 text-right text-red-600 font-semibold">{formatTableMoneyVNDMillion(row.totalExpensesYearly)}</td>
+                    <td className="p-3 text-right text-orange-600 font-medium">{formatTableMoneyVNDMillion(row.averageChildCostMonthly)}</td>
                     <td className="p-3 text-right">{formatTableMoneyVNDMillion(row.averageInvestmentMonthly)}</td>
-                    <td className="p-3 text-right">{formatTableMoneyVNDMillion(row.endingInvestmentBalance)}</td>
-                    <td className="p-3 text-right">{formatTableMoneyVNDMillion(row.endingSavingBalance)}</td>
+                    <td className="p-3 text-right text-family-textMuted">{row.investmentReturnRateAnnual}%</td>
+                    <td className="p-3 text-right font-bold text-lime-600">{formatTableMoneyVNDMillion(row.endingInvestmentBalance)}</td>
+                    <td className="p-3 text-right">{formatTableMoneyVNDMillion(row.averageSavingMonthly)}</td>
+                    <td className="p-3 text-right text-family-textMuted">{row.savingInterestRateAnnual}%</td>
+                    <td className="p-3 text-right font-bold text-blue-600">{formatTableMoneyVNDMillion(row.endingSavingBalance)}</td>
+                    <td className="p-3 text-right font-bold text-emerald-600">{formatTableMoneyVNDMillion(row.passiveCashFlowMonthly)}</td>
                     <td className="p-3 text-right font-bold text-family-accent bg-family-bgDark/20">
                       {formatTableMoneyVNDMillion(row.nominalNetWorth)}
                     </td>

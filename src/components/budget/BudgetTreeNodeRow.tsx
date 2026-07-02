@@ -69,14 +69,14 @@ export const BudgetTreeNodeRow: React.FC<BudgetTreeNodeRowProps> = ({
                 type="text"
                 value={editName}
                 onChange={(e) => setEditName(e.target.value)}
-                className="text-xs font-bold bg-family-bgDeep border border-family-accent/20 rounded-xl px-2.5 py-1 text-family-text focus:ring-1 focus:ring-family-accent/40 w-full sm:w-48"
+                className="text-base md:text-xs font-bold bg-family-bgDeep border border-family-accent/20 rounded-xl px-2.5 py-1 text-family-text focus:ring-1 focus:ring-family-accent/40 w-full sm:w-48"
                 placeholder="Tên hạng mục..."
               />
               <input
                 type="text"
                 value={editNote}
                 onChange={(e) => setEditNote(e.target.value)}
-                className="text-xs bg-family-bgDeep border border-family-accent/10 rounded-xl px-2.5 py-1 text-family-textMuted focus:ring-1 focus:ring-family-accent/20 w-full sm:flex-grow"
+                className="text-base md:text-xs bg-family-bgDeep border border-family-accent/10 rounded-xl px-2.5 py-1 text-family-textMuted focus:ring-1 focus:ring-family-accent/20 w-full sm:flex-grow"
                 placeholder="Ghi chú..."
               />
             </div>
@@ -117,7 +117,7 @@ export const BudgetTreeNodeRow: React.FC<BudgetTreeNodeRowProps> = ({
                 const clamped = Math.max(0, Math.min(100, isNaN(val) ? 0 : val));
                 onUpdate(node.id, { ratioPercent: clamped });
               }}
-              className="w-16 text-right font-bold text-sm bg-family-bgDeep border border-family-accent/20 rounded-xl px-2 py-1 text-family-accent focus:ring-1 focus:ring-family-accent"
+              className="w-16 text-right font-bold text-base md:text-sm bg-family-bgDeep border border-family-accent/20 rounded-xl px-2 py-1 text-family-accent focus:ring-1 focus:ring-family-accent"
             />
             <span className="text-xs font-bold text-family-accent">%</span>
           </div>
@@ -179,17 +179,15 @@ export const BudgetTreeNodeRow: React.FC<BudgetTreeNodeRowProps> = ({
                   }`} />
                 </button>
 
-                {/* Only level 1 & 2 items can be deleted */}
-                {!isGroup && (
-                  <button
-                    type="button"
-                    onClick={() => onDelete(node.id)}
-                    title="Xóa hạng mục"
-                    className="h-7 w-7 flex items-center justify-center rounded-lg bg-red-500/10 border border-red-500/30 text-red-500 hover:bg-red-600 hover:text-white transition-all shadow-sm"
-                  >
-                    <Trash2 className="w-3.5 h-3.5" />
-                  </button>
-                )}
+                {/* Root groups and level 1 & 2 items can be deleted */}
+                <button
+                  type="button"
+                  onClick={() => onDelete(node.id)}
+                  title="Xóa hạng mục"
+                  className="h-7 w-7 flex items-center justify-center rounded-lg bg-red-500/10 border border-red-500/30 text-red-500 hover:bg-red-600 hover:text-white transition-all shadow-sm"
+                >
+                  <Trash2 className="w-3.5 h-3.5" />
+                </button>
               </>
             )}
           </div>

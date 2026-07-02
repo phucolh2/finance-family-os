@@ -17,6 +17,35 @@ export const BudgetHistoryTrendChart: React.FC<BudgetHistoryTrendChartProps> = (
     return a.effectiveMonth - b.effectiveMonth;
   });
 
+  // Collect display names and build unique group mapping from the latest schedule
+  const latestSchedule = sorted.length > 0 ? sorted[sorted.length - 1] : null;
+  const groupDisplayNames: Record<string, string> = {
+    housing_basic: 'Nhà cửa & sinh hoạt',
+    future_investing: 'Tương lai & đầu tư',
+    safety_reserve: 'Bình an & dự phòng',
+    family_experience: 'Yêu thương & sự kiện',
+    health_growth: 'Sức khỏe & phát triển'
+  };
+
+  if (latestSchedule?.rootGroups && latestSchedule.rootGroups.length > 0) {
+    latestSchedule.rootGroups.forEach(group => {
+      const stableKey = group.groupId || group.id;
+      groupDisplayNames[stableKey] = group.name;
+    });
+  }
+
+  // Pre-define colors for legacy/known groups, and a fallback palette for custom groups
+  const knownColors: Record<string, string> = {
+    housing_basic: '#d97706',
+    future_investing: '#4d7c0f',
+    safety_reserve: '#0f766e',
+    family_experience: '#8b5cf6',
+    health_growth: '#2563eb'
+  };
+  const fallbackColors = ['#f43f5e', '#ec4899', '#d946ef', '#a855f7', '#6366f1', '#3b82f6', '#0ea5e9'];
+  
+  const activeSeriesNames = new Set<string>();
+
   const data = sorted.map((version) => {
     const key = `Tháng ${version.effectiveMonth}/${version.effectiveYear}`;
     
@@ -26,46 +55,35 @@ export const BudgetHistoryTrendChart: React.FC<BudgetHistoryTrendChartProps> = (
     );
     const income = dbItem ? dbItem.income : 80;
 
-    let housing = 0;
-    let future = 0;
-    let safety = 0;
-    let experience = 0;
-    let health = 0;
+    const dataRow: any = { version: key };
 
     if (version.rootGroups && version.rootGroups.length > 0) {
       version.rootGroups.forEach((group) => {
         const isGroupActive = group.isActive !== false;
         const val = isGroupActive ? group.ratioPercent : 0;
+        const stableKey = group.groupId || group.id;
+        const dispName = groupDisplayNames[stableKey] || group.name;
+        activeSeriesNames.add(dispName);
         
-        if (group.groupId === 'housing_basic') housing = val;
-        else if (group.groupId === 'future_investing') future = val;
-        else if (group.groupId === 'safety_reserve') safety = val;
-        else if (group.groupId === 'family_experience') experience = val;
-        else if (group.groupId === 'health_growth') health = val;
+        // Sum values if duplicate names occur
+        dataRow[dispName] = (dataRow[dispName] || 0) + Math.round((income * val / 100) * 10) / 10;
       });
     } else if (version.ratios && version.ratios.length > 0) {
+      // Legacy flat ratios
       version.ratios.forEach((ratio) => {
         const isRatioActive = ratio.isActive !== false;
         const val = isRatioActive ? ratio.ratioPercent : 0;
-        
-        if (ratio.group === 'housing_basic') housing = val;
-        else if (ratio.group === 'future_investing') future = val;
-        else if (ratio.group === 'safety_reserve') safety = val;
-        else if (ratio.group === 'family_experience') experience = val;
-        else if (ratio.group === 'health_growth') health = val;
+        const dispName = groupDisplayNames[ratio.group] || ratio.categoryName || ratio.group;
+        activeSeriesNames.add(dispName);
+        dataRow[dispName] = (dataRow[dispName] || 0) + Math.round((income * val / 100) * 10) / 10;
       });
     }
 
-    // Convert percentages to absolute money amounts based on the real milestone income
-    return {
-      version: key,
-      'Nhà cửa & sinh hoạt': Math.round((income * housing / 100) * 10) / 10,
-      'Tương lai & đầu tư': Math.round((income * future / 100) * 10) / 10,
-      'Bình an & dự phòng': Math.round((income * safety / 100) * 10) / 10,
-      'Yêu thương & sự kiện': Math.round((income * experience / 100) * 10) / 10,
-      'Sức khỏe & phát triển': Math.round((income * health / 100) * 10) / 10,
-    };
+    return dataRow;
   });
+
+  // Extract unique series names in order
+  const seriesArray = Array.from(activeSeriesNames);
 
   return (
     <div className="w-full h-full min-h-[250px]">
@@ -84,11 +102,16 @@ export const BudgetHistoryTrendChart: React.FC<BudgetHistoryTrendChartProps> = (
               labelStyle={{ color: '#94a3b8', fontWeight: 'bold', fontSize: 11 }}
             />
             <Legend wrapperStyle={{ fontSize: 11 }} />
-            <Bar dataKey="Nhà cửa & sinh hoạt" fill="#d97706" radius={[4, 4, 0, 0]} />
-            <Bar dataKey="Tương lai & đầu tư" fill="#4d7c0f" radius={[4, 4, 0, 0]} />
-            <Bar dataKey="Bình an & dự phòng" fill="#0f766e" radius={[4, 4, 0, 0]} />
-            <Bar dataKey="Yêu thương & sự kiện" fill="#8b5cf6" radius={[4, 4, 0, 0]} />
-            <Bar dataKey="Sức khỏe & phát triển" fill="#2563eb" radius={[4, 4, 0, 0]} />
+            {seriesArray.map((name, index) => {
+              // Try to find the original group key by matching display name
+              const originalKeyEntry = Object.entries(groupDisplayNames).find(([_, val]) => val === name);
+              const originalKey = originalKeyEntry ? originalKeyEntry[0] : '';
+              const barColor = knownColors[originalKey] || fallbackColors[index % fallbackColors.length];
+              
+              return (
+                <Bar key={name} dataKey={name} fill={barColor} radius={[4, 4, 0, 0]} />
+              );
+            })}
           </BarChart>
         </ResponsiveContainer>
       ) : (

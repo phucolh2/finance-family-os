@@ -318,7 +318,7 @@ export const Portfolio: React.FC = () => {
               }}
               className="bg-family-bgDark/35 p-4 rounded-xl border border-family-accent/10 space-y-4"
             >
-              <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
                 <div>
                   <label className="block text-xs font-semibold text-family-text mb-1">Tên thương vụ</label>
                   <input
@@ -555,7 +555,8 @@ export const Portfolio: React.FC = () => {
                     <th className="p-3">Thời điểm giữ</th>
                     <th className="p-3">Vốn đầu tư</th>
                     <th className="p-3">Lợi nhuận thực tế</th>
-                    <th className="p-3">Hiệu suất ROI</th>
+                    <th className="p-3">Lãi suất ROI</th>
+                    <th className="p-3">Hiệu suất/Năm</th>
                     <th className="p-3 text-right">Thao tác</th>
                   </tr>
                 </thead>
@@ -571,6 +572,9 @@ export const Portfolio: React.FC = () => {
                       .filter((deal) => deal.status === 'settled')
                       .map((deal) => {
                         const roi = deal.capital > 0 ? (deal.realizedProfit ?? 0) / deal.capital * 100 : 0;
+                        const holdingMonths = Math.max(1, (deal.endYear! - deal.startYear) * 12 + (deal.endMonth! - deal.startMonth) + 1);
+                        const annualizedRoi = (roi / holdingMonths) * 12;
+                        
                         return (
                           <tr key={deal.id} className="border-b border-family-accent/5 hover:bg-family-bgDark/5">
                             <td className="p-3 font-semibold text-family-textMuted">{deal.name}</td>
@@ -582,6 +586,7 @@ export const Portfolio: React.FC = () => {
                             </td>
                             <td className="p-3 font-medium">
                               {deal.startMonth}/{deal.startYear} ➔ {deal.endMonth}/{deal.endYear}
+                              <span className="block text-[10px] text-family-textMuted">{holdingMonths} tháng</span>
                             </td>
                             <td className="p-3 font-bold">{formatTableMoneyVNDMillion(deal.capital)}</td>
                             <td className={`p-3 font-bold ${deal.realizedProfit && deal.realizedProfit >= 0 ? 'text-green-700' : 'text-red-600'}`}>
@@ -589,6 +594,9 @@ export const Portfolio: React.FC = () => {
                             </td>
                             <td className={`p-3 font-bold ${roi >= 0 ? 'text-green-700' : 'text-red-600'}`}>
                               {roi >= 0 ? '+' : ''}{roi.toFixed(1)}%
+                            </td>
+                            <td className={`p-3 font-bold ${annualizedRoi >= 0 ? 'text-green-700' : 'text-red-600'}`}>
+                              {annualizedRoi >= 0 ? '+' : ''}{annualizedRoi.toFixed(1)}%/năm
                             </td>
                             <td className="p-3 text-right">
                               <button

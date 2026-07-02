@@ -7,20 +7,31 @@ interface BudgetDecompositionTreeProps {
   income: number;
 }
 
-const getGroupColorStyles = (groupId: BudgetMainGroupId) => {
+const getFallbackColorStyles = (index: number) => {
+  const fallbacks = [
+    { border: 'border-rose-500/35', text: 'text-rose-500', bg: 'bg-rose-500/5', bullet: 'bg-rose-500' },
+    { border: 'border-pink-500/35', text: 'text-pink-500', bg: 'bg-pink-500/5', bullet: 'bg-pink-500' },
+    { border: 'border-fuchsia-500/35', text: 'text-fuchsia-500', bg: 'bg-fuchsia-500/5', bullet: 'bg-fuchsia-500' },
+    { border: 'border-indigo-500/35', text: 'text-indigo-500', bg: 'bg-indigo-500/5', bullet: 'bg-indigo-500' },
+    { border: 'border-sky-500/35', text: 'text-sky-500', bg: 'bg-sky-500/5', bullet: 'bg-sky-500' }
+  ];
+  return fallbacks[index % fallbacks.length];
+};
+
+const getGroupColorStyles = (groupId: string, index: number) => {
   switch (groupId) {
     case 'housing_basic': 
-      return { border: 'border-amber-500/35', text: 'text-amber-500', bg: 'bg-amber-500/5' };
+      return { border: 'border-amber-500/35', text: 'text-amber-500', bg: 'bg-amber-500/5', bullet: 'bg-amber-500' };
     case 'future_investing': 
-      return { border: 'border-lime-500/35', text: 'text-lime-500', bg: 'bg-lime-500/5' };
+      return { border: 'border-lime-500/35', text: 'text-lime-500', bg: 'bg-lime-500/5', bullet: 'bg-lime-500' };
     case 'safety_reserve': 
-      return { border: 'border-teal-500/35', text: 'text-teal-500', bg: 'bg-teal-500/5' };
+      return { border: 'border-teal-500/35', text: 'text-teal-500', bg: 'bg-teal-500/5', bullet: 'bg-teal-500' };
     case 'family_experience': 
-      return { border: 'border-purple-500/35', text: 'text-purple-500', bg: 'bg-purple-500/5' };
+      return { border: 'border-purple-500/35', text: 'text-purple-500', bg: 'bg-purple-500/5', bullet: 'bg-purple-500' };
     case 'health_growth': 
-      return { border: 'border-blue-500/35', text: 'text-blue-500', bg: 'bg-blue-500/5' };
+      return { border: 'border-blue-500/35', text: 'text-blue-500', bg: 'bg-blue-500/5', bullet: 'bg-blue-500' };
     default: 
-      return { border: 'border-family-accent/20', text: 'text-family-accent', bg: 'bg-family-bgDark/45' };
+      return getFallbackColorStyles(index);
   }
 };
 
@@ -42,10 +53,10 @@ export const BudgetDecompositionTree: React.FC<BudgetDecompositionTreeProps> = (
 
       {/* Main Groups & Children Decomposition Tree */}
       <div className="space-y-4">
-        {rootGroups.map((group) => {
+        {rootGroups.map((group, index) => {
           if (group.isActive === false) return null;
           
-          const styles = getGroupColorStyles(group.groupId as BudgetMainGroupId);
+          const styles = getGroupColorStyles(group.groupId, index);
           const activeChildren = group.children 
             ? group.children.filter((c) => c.isActive !== false) 
             : [];
@@ -84,7 +95,7 @@ export const BudgetDecompositionTree: React.FC<BudgetDecompositionTreeProps> = (
                       >
                         <div className="flex items-center gap-1.5 truncate">
                           {/* Small indentation bullet */}
-                          <span className={`w-1.5 h-1.5 rounded-full shrink-0 ${group.groupId === 'housing_basic' ? 'bg-amber-500' : group.groupId === 'future_investing' ? 'bg-lime-500' : group.groupId === 'safety_reserve' ? 'bg-teal-500' : group.groupId === 'family_experience' ? 'bg-purple-500' : 'bg-blue-500'}`} />
+                          <span className={`w-1.5 h-1.5 rounded-full shrink-0 ${styles.bullet}`} />
                           <span className="text-[11px] text-family-text font-medium truncate">
                             {child.name}
                           </span>

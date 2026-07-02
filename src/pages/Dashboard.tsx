@@ -81,6 +81,7 @@ export const Dashboard: React.FC = () => {
   const currentInvestment = activeRow ? activeRow.investmentMonthly : 0;
   const currentSaving = activeRow ? activeRow.savingMonthly : 0;
   const currentNetWorth = activeRow ? activeRow.nominalNetWorth : 0;
+  const currentPcf = (currentNetWorth * 4 / 100) / 12;
   const currentFireProgress = activeRow ? activeRow.fireProgress : 0;
   const currentExpenses = activeRow ? activeRow.expensesMonthly : 0;
 
@@ -216,7 +217,7 @@ export const Dashboard: React.FC = () => {
       </div>
 
       {/* KPI & Health Score Row */}
-      <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-5 gap-4">
+      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
         {/* Income Card */}
         <Card isKpi className="border-l-family-accent bg-white/70 backdrop-blur-md shadow-sm transition-all hover:-translate-y-0.5">
           <CardContent className="p-4 flex flex-col justify-between h-24">
@@ -269,6 +270,20 @@ export const Dashboard: React.FC = () => {
             <div>
               <div className="text-lg font-bold text-family-text">{savingsRate.toFixed(1)}%</div>
               <div className="text-[9px] text-family-textMuted mt-0.5">Mục tiêu: &ge; 20%</div>
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* PCF Card */}
+        <Card isKpi className="border-l-blue bg-white/70 backdrop-blur-md shadow-sm transition-all hover:-translate-y-0.5">
+          <CardContent className="p-4 flex flex-col justify-between h-24">
+            <div className="flex items-center justify-between text-family-textMuted text-[10px] uppercase font-bold tracking-wider">
+              <span className="flex items-center gap-1.5"><Sparkles className="w-3.5 h-3.5 text-blue-600" /> Dòng tiền thụ động</span>
+              <button onClick={() => setExplanationId('trinity_study')} className="text-[9px] text-family-accent hover:underline font-normal">Explain</button>
+            </div>
+            <div>
+              <div className="text-lg font-bold text-family-text">{formatKpiMoneyVNDMillion(currentPcf)}</div>
+              <div className="text-[9px] text-family-textMuted mt-0.5">Quy đổi từ Net Worth (4%)</div>
             </div>
           </CardContent>
         </Card>
@@ -520,7 +535,7 @@ export const Dashboard: React.FC = () => {
                     </linearGradient>
                   </defs>
                   <CartesianGrid strokeDasharray="3 3" stroke="rgba(125, 83, 45, 0.08)" />
-                  <XAxis dataKey="year" stroke="#6f5d50" fontSize={10} />
+                  <XAxis dataKey="year" stroke="#6f5d50" fontSize={10} tick={{ fontSize: 9, angle: -45, textAnchor: 'end' }} height={60} />
                   <YAxis stroke="#6f5d50" fontSize={10} tickFormatter={formatAxisMoneyVNDMillion} />
                   <Tooltip formatter={(value) => formatTooltipMoneyVNDMillion(value)} />
                   <Legend wrapperStyle={{ fontSize: 10 }} />
@@ -545,7 +560,7 @@ export const Dashboard: React.FC = () => {
               <ResponsiveContainer width="100%" height="100%">
                 <BarChart data={yearlyChartData} margin={{ top: 16, right: 30, left: 10, bottom: 20 }}>
                   <CartesianGrid strokeDasharray="3 3" stroke="rgba(125, 83, 45, 0.08)" />
-                  <XAxis dataKey="year" stroke="#6f5d50" fontSize={10} />
+                  <XAxis dataKey="year" stroke="#6f5d50" fontSize={10} tick={{ fontSize: 9, angle: -45, textAnchor: 'end' }} height={60} />
                   <YAxis stroke="#6f5d50" fontSize={10} tickFormatter={formatAxisMoneyVNDMillion} />
                   <Tooltip formatter={(value) => formatTooltipMoneyVNDMillion(value)} />
                   <Legend wrapperStyle={{ fontSize: 10 }} />

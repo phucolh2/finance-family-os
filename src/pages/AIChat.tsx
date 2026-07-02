@@ -110,7 +110,7 @@ export const AIChat: React.FC = () => {
   };
 
   return (
-    <div className="space-y-6 flex flex-col h-[calc(100vh-140px)]">
+    <div className="space-y-6 flex flex-col h-auto lg:h-[calc(100vh-140px)] min-h-[calc(100vh-140px)]">
       {/* Page Header */}
       <div className="shrink-0 flex items-center justify-between">
         <div>
@@ -125,7 +125,7 @@ export const AIChat: React.FC = () => {
 
       <div className="flex-1 flex flex-col lg:flex-row gap-6 min-h-0">
         {/* Chat Area */}
-        <Card className="flex-1 flex flex-col min-h-0 bg-white/70 backdrop-blur-md border-family-accent/15">
+        <Card className="flex-1 flex flex-col min-h-[400px] lg:min-h-0 bg-white/70 backdrop-blur-md border-family-accent/15">
           {/* Scrollable messages container */}
           <div className="flex-1 overflow-y-auto p-4 space-y-4">
             {messages.map((msg, index) => {
@@ -195,7 +195,7 @@ export const AIChat: React.FC = () => {
         </Card>
 
         {/* Suggested Questions Side panel */}
-        <Card className="w-full lg:w-80 shrink-0 bg-family-bgDark/25 border-family-accent/15 flex flex-col justify-between p-4 space-y-4">
+        <Card className="w-full lg:w-80 shrink-0 bg-family-bgDark/25 border-family-accent/15 flex flex-col p-4 space-y-4 lg:overflow-y-auto">
           <div className="space-y-4">
             {/* API Key configuration */}
             <div className="bg-amber-50 border border-amber-200 p-3 rounded-xl space-y-2 text-[11px] leading-relaxed">

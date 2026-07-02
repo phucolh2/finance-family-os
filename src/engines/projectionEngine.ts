@@ -268,6 +268,8 @@ export function runProjection(input: ProjectionEngineInput): ProjectionOutput {
     const totalExpenses = yearRows.reduce((sum, r) => sum + r.expensesMonthly, 0);
     const avgInvestment = yearRows.reduce((sum, r) => sum + r.investmentMonthly, 0) / yearRows.length;
     const avgSaving = yearRows.reduce((sum, r) => sum + r.savingMonthly, 0) / yearRows.length;
+    const avgChildCost = yearRows.reduce((sum, r) => sum + r.childCostMonthly, 0) / yearRows.length;
+    const passiveCashFlowMonthly = (lastRow.nominalNetWorth * 4 / 100) / 12;
 
     const eventNotes = Array.from(
       new Set(yearRows.flatMap((r) => r.notes).filter(Boolean))
@@ -290,6 +292,10 @@ export function runProjection(input: ProjectionEngineInput): ProjectionOutput {
       totalExpensesYearly: totalExpenses,
       averageInvestmentMonthly: avgInvestment,
       averageSavingMonthly: avgSaving,
+      investmentReturnRateAnnual: assumptions.investmentYieldExpectationAnnual,
+      savingInterestRateAnnual: assumptions.savingsInterestRateAnnual,
+      averageChildCostMonthly: avgChildCost,
+      passiveCashFlowMonthly: passiveCashFlowMonthly,
       endingInvestmentBalance: lastRow.portfolio.totalEndingBalance,
       endingSavingBalance: lastRow.savingBalance,
       lifeEventNotes: eventNotes,

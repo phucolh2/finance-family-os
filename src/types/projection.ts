@@ -45,6 +45,10 @@ export interface ProjectionYearlyRow {
   totalExpensesYearly: number;
   averageInvestmentMonthly: number;
   averageSavingMonthly: number;
+  investmentReturnRateAnnual: number;
+  savingInterestRateAnnual: number;
+  averageChildCostMonthly: number;
+  passiveCashFlowMonthly: number;
   endingInvestmentBalance: number;
   endingSavingBalance: number;
   lifeEventNotes: string[];
