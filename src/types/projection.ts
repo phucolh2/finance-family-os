@@ -1,6 +1,18 @@
 import type { TimelinePeriod } from './finance';
 import type { PortfolioMonthlyOutput } from './portfolio';
 
+export interface ProjectionAdjustmentRecord {
+  id: string;
+  startMonth: number;
+  startYear: number;
+  endMonth: number;
+  endYear: number;
+  annualInvestmentProfit?: number | null; // Lợi nhuận đầu tư hằng năm
+  monthlyInvestmentProfit?: number | null; // Lợi nhuận đầu tư hằng tháng
+  oneTimeInvestmentProfit?: number | null; // Lợi nhuận không định kỳ
+  adjustedSavingRate?: number | null; // Lãi suất tiết kiệm điều chỉnh (%/năm)
+}
+
 export interface ProjectionMonthlyRow {
   period: TimelinePeriod;
   incomeMonthly: number;

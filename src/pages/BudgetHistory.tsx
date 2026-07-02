@@ -15,6 +15,9 @@ import { BudgetTreeNodeRow } from '../components/budget/BudgetTreeNodeRow';
 import { rebuildTreeFromFlatRatios, calculateBudget } from '../engines/budgetEngine';
 import { DEFAULT_BUDGET_TREE } from '../data/defaultInputs';
 import { ObservationControls } from '../components/ui/ObservationControls';
+import { DndContext, closestCenter, KeyboardSensor, PointerSensor, useSensor, useSensors } from '@dnd-kit/core';
+import type { DragEndEvent } from '@dnd-kit/core';
+import { arrayMove, SortableContext, sortableKeyboardCoordinates, verticalListSortingStrategy } from '@dnd-kit/sortable';
 
 export const BudgetHistory: React.FC = () => {
   const { 
@@ -32,6 +35,13 @@ export const BudgetHistory: React.FC = () => {
     }
     return a.effectiveMonth - b.effectiveMonth;
   });
+
+  const sensors = useSensors(
+    useSensor(PointerSensor),
+    useSensor(KeyboardSensor, {
+      coordinateGetter: sortableKeyboardCoordinates,
+    })
+  );
 
   const [selectedVersionId, setSelectedVersionId] = useState<string | null>(() => {
     return sortedHistory.length > 0 ? sortedHistory[0].id : null;
@@ -207,6 +217,50 @@ export const BudgetHistory: React.FC = () => {
     setRootGroups(updateRecursive(rootGroups));
   };
 
+  const handleDragEnd = (event: DragEndEvent) => {
+    const { active, over } = event;
+    if (!over || active.id === over.id) return;
+
+    const activeId = active.id as string;
+    const overId = over.id as string;
+
+    let activeParentId: string | null = null;
+    let overParentId: string | null = null;
+    let isActiveRoot = false;
+    let isOverRoot = false;
+
+    rootGroups.forEach(g => {
+      if (g.id === activeId) isActiveRoot = true;
+      if (g.id === overId) isOverRoot = true;
+      if (g.children?.some(c => c.id === activeId)) activeParentId = g.id;
+      if (g.children?.some(c => c.id === overId)) overParentId = g.id;
+    });
+
+    if (isActiveRoot && isOverRoot) {
+      const oldIndex = rootGroups.findIndex(g => g.id === activeId);
+      const newIndex = rootGroups.findIndex(g => g.id === overId);
+      setRootGroups(arrayMove(rootGroups, oldIndex, newIndex));
+    } else if (activeParentId && overParentId && activeParentId === overParentId) {
+      const updateRecursive = (nodes: BudgetTreeNode[]): BudgetTreeNode[] => {
+        return nodes.map(node => {
+          if (node.id === activeParentId && node.children) {
+            const oldIndex = node.children.findIndex(c => c.id === activeId);
+            const newIndex = node.children.findIndex(c => c.id === overId);
+            return {
+              ...node,
+              children: arrayMove(node.children, oldIndex, newIndex)
+            };
+          }
+          if (node.children && node.children.length > 0) {
+            return { ...node, children: updateRecursive(node.children) };
+          }
+          return node;
+        });
+      };
+      setRootGroups(updateRecursive(rootGroups));
+    }
+  };
+
   const handleDeleteNode = (id: string) => {
     const deleteRecursive = (nodes: BudgetTreeNode[]): BudgetTreeNode[] => {
       return nodes
@@ -343,7 +397,7 @@ export const BudgetHistory: React.FC = () => {
       {/* Top Page Header */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
-          <h1 className="text-3xl font-serif font-bold text-family-text">Lịch sử Phân bổ Ngân sách</h1>
+          <h1 className="text-3xl font-serif font-bold text-family-text">Phân Bổ Ngân Sách</h1>
           <p className="text-sm text-family-textMuted mt-1">
             Quản lý và trực quan hóa cơ cấu ngân sách gia đình qua các mốc thời gian cuộc đời.
           </p>
@@ -689,32 +743,41 @@ export const BudgetHistory: React.FC = () => {
                     />
                   )}
                   <div className="space-y-4">
-                    {rootGroups.map((group) => {
-                      const isExpanded = !!expandedGroups[group.id];
-                      return (
-                        <div key={group.id} className="space-y-2 border border-family-accent/10 rounded-2xl p-2.5 bg-family-bgDark/5">
-                          <BudgetTreeNodeRow
-                            node={group}
-                            onUpdate={handleUpdateNode}
-                            onDelete={handleDeleteNode}
-                            onAddChild={handleAddChild}
-                            isExpanded={isExpanded}
-                            onToggleExpand={() => handleToggleExpand(group.id)}
-                          />
-                          {isExpanded && group.children && group.children.map((child) => (
-                            <BudgetTreeNodeRow
-                              key={child.id}
-                              node={child}
-                              onUpdate={handleUpdateNode}
-                              onDelete={handleDeleteNode}
-                              onAddChild={handleAddChild}
-                              isExpanded={false}
-                              onToggleExpand={() => {}}
-                            />
-                          ))}
-                        </div>
-                      );
-                    })}
+                    <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
+                      <SortableContext items={rootGroups.map(g => g.id)} strategy={verticalListSortingStrategy}>
+                        {rootGroups.map((group) => {
+                          const isExpanded = !!expandedGroups[group.id];
+                          const childIds = group.children ? group.children.map(c => c.id) : [];
+                          return (
+                            <div key={group.id} className="space-y-2 border border-family-accent/10 rounded-2xl p-2.5 bg-family-bgDark/5">
+                              <BudgetTreeNodeRow
+                                node={group}
+                                onUpdate={handleUpdateNode}
+                                onDelete={handleDeleteNode}
+                                onAddChild={handleAddChild}
+                                isExpanded={isExpanded}
+                                onToggleExpand={() => handleToggleExpand(group.id)}
+                              />
+                              {isExpanded && group.children && group.children.length > 0 && (
+                                <SortableContext items={childIds} strategy={verticalListSortingStrategy}>
+                                  {group.children.map((child) => (
+                                    <BudgetTreeNodeRow
+                                      key={child.id}
+                                      node={child}
+                                      onUpdate={handleUpdateNode}
+                                      onDelete={handleDeleteNode}
+                                      onAddChild={handleAddChild}
+                                      isExpanded={false}
+                                      onToggleExpand={() => {}}
+                                    />
+                                  ))}
+                                </SortableContext>
+                              )}
+                            </div>
+                          );
+                        })}
+                      </SortableContext>
+                    </DndContext>
                     <Button variant="outline" type="button" onClick={handleAddRootGroup} className="w-full border-dashed text-family-textMuted hover:text-family-text border-family-accent/20">
                       <Plus className="w-4 h-4 mr-2" /> Tạo nhóm phân bổ mới
                     </Button>

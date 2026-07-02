@@ -1,7 +1,7 @@
 import type { FamilyProfile, IncomeScheduleItem, LifeEvent, Assumptions, InvestmentDeal } from '../types/finance';
 import type { BudgetRatioScheduleItem } from '../types/budget';
 import type { AssetConfig, AssetType } from '../types/portfolio';
-import type { ProjectionMonthlyRow, ProjectionYearlyRow, ProjectionOutput } from '../types/projection';
+import type { ProjectionMonthlyRow, ProjectionYearlyRow, ProjectionOutput, ProjectionAdjustmentRecord } from '../types/projection';
 import { generateTimeline } from './timelineEngine';
 import { calculateIncome } from './incomeEngine';
 import { calculateBudget } from './budgetEngine';
@@ -19,6 +19,7 @@ export interface ProjectionEngineInput {
   assets: AssetConfig[];
   assumptions: Assumptions;
   investmentDeals?: InvestmentDeal[];
+  projectionAdjustments?: ProjectionAdjustmentRecord[];
 }
 
 /**
@@ -35,6 +36,7 @@ export function runProjection(input: ProjectionEngineInput): ProjectionOutput {
   const assets = safeArray(input.assets);
   const assumptions = input.assumptions;
   const investmentDeals = safeArray(input.investmentDeals);
+  const projectionAdjustments = safeArray(input.projectionAdjustments);
 
   // 1. Generate monthly timeline
   const timelineResult = generateTimeline({
@@ -122,18 +124,6 @@ export function runProjection(input: ProjectionEngineInput): ProjectionOutput {
       }
     });
 
-    // Accumulate Saving Balance
-    const savingsInterestRate = safeNumber(assumptions.savingsInterestRateAnnual, 0);
-    const savingsRateRate = savingsInterestRate > 1 ? savingsInterestRate / 100 : savingsInterestRate;
-    const savingsMonthlyYield = savingsRateRate / 12;
-    const savingMonthlyContribution = cashflowRes.savingMonthly;
-    const savingPnl = (currentSavingBalance + savingMonthlyContribution * 0.5) * savingsMonthlyYield;
-    currentSavingBalance = currentSavingBalance + savingMonthlyContribution + savingPnl;
-
-    // Accumulate total investable capital and resolve monthly deal balances
-    const monthlyContribution = cashflowRes.investmentMonthly;
-    totalInvestable += monthlyContribution;
-
     // Check for settled deals in this month
     const activePeriodDeals = investmentDeals.filter(
       (d) => d.status === 'settled' && safeNumber(d.endMonth, 0) === period.month && safeNumber(d.endYear, 0) === period.year
@@ -148,6 +138,59 @@ export function runProjection(input: ProjectionEngineInput): ProjectionOutput {
     });
 
     totalInvestable += monthRealizedProfit;
+
+    // Evaluate adjustments for the current month
+    let adjustedSavingRate: number | null = null;
+    let manualAnnualProfit = 0;
+    let manualMonthlyProfit = 0;
+    let manualOneTimeProfit = 0;
+
+    let hasManualInvestmentAdj = false;
+
+    projectionAdjustments.forEach(adj => {
+      const isWithinPeriod = (period.year > adj.startYear || (period.year === adj.startYear && period.month >= adj.startMonth)) &&
+                             (period.year < adj.endYear || (period.year === adj.endYear && period.month <= adj.endMonth));
+      if (isWithinPeriod) {
+        if (adj.adjustedSavingRate != null) adjustedSavingRate = adj.adjustedSavingRate;
+        if (adj.annualInvestmentProfit != null || adj.monthlyInvestmentProfit != null || adj.oneTimeInvestmentProfit != null) {
+          hasManualInvestmentAdj = true;
+          if (adj.annualInvestmentProfit) manualAnnualProfit += adj.annualInvestmentProfit;
+          if (adj.monthlyInvestmentProfit) manualMonthlyProfit += adj.monthlyInvestmentProfit;
+          // One-time profit is only applied in the start month of the record
+          if (adj.oneTimeInvestmentProfit && period.month === adj.startMonth && period.year === adj.startYear) {
+            manualOneTimeProfit += adj.oneTimeInvestmentProfit;
+          }
+        }
+      }
+    });
+
+    const activeSavingRate = adjustedSavingRate != null ? adjustedSavingRate : safeNumber(assumptions.savingsInterestRateAnnual, 0);
+    const savingsRateRatio = activeSavingRate > 1 ? activeSavingRate / 100 : activeSavingRate;
+    const savingsMonthlyYield = savingsRateRatio / 12;
+
+    const savingMonthlyContribution = cashflowRes.savingMonthly;
+    // Standard compound interest: balance earns interest, contribution earns half-month or full interest.
+    // The user's requested formula was: prev + contribution * (1+rate), but that ignores compound interest on prev. 
+    // We will use standard compounding on prev balance, and add contribution.
+    const savingPnl = currentSavingBalance * savingsMonthlyYield + savingMonthlyContribution * (savingsMonthlyYield / 2);
+    currentSavingBalance = currentSavingBalance + savingMonthlyContribution + savingPnl;
+
+    const monthlyContribution = cashflowRes.investmentMonthly;
+    
+    // Calculate investment profit (either from manual override or default compounding)
+    let investmentPnl = 0;
+    if (hasManualInvestmentAdj) {
+      investmentPnl = (manualAnnualProfit / 12) + manualMonthlyProfit + manualOneTimeProfit;
+    } else {
+      const defaultInvRate = safeNumber(assumptions.investmentYieldExpectationAnnual, 0) / 100;
+      investmentPnl = totalInvestable * (defaultInvRate / 12);
+    }
+    
+    const previousTotalInvestable = totalInvestable;
+    totalInvestable += monthlyContribution + investmentPnl;
+
+    // Derived actual monthly rate based on custom profit
+    const actualInvestmentRateMonthly = previousTotalInvestable > 0 ? investmentPnl / previousTotalInvestable : 0;
 
     // Calculate active deals in this month to compute balances of the 5 asset classes
     const monthActiveDeals = investmentDeals.filter((deal) => {
@@ -254,6 +297,15 @@ export function runProjection(input: ProjectionEngineInput): ProjectionOutput {
       fireGap: fireRes.fireGap,
       notes,
     });
+    
+    // Attach additional runtime metrics to the row object dynamically for aggregation later
+    (monthlyRows[monthlyRows.length - 1] as any)._savingInterestRateAnnual = activeSavingRate;
+    (monthlyRows[monthlyRows.length - 1] as any)._customProfit = investmentPnl;
+    (monthlyRows[monthlyRows.length - 1] as any)._hasManualInvestmentAdj = hasManualInvestmentAdj;
+    (monthlyRows[monthlyRows.length - 1] as any)._savingPnl = savingPnl;
+    (monthlyRows[monthlyRows.length - 1] as any)._childCost1 = childCostRes.breakdown?.child1 || 0;
+    (monthlyRows[monthlyRows.length - 1] as any)._childCost2 = childCostRes.breakdown?.child2 || 0;
+    (monthlyRows[monthlyRows.length - 1] as any)._childCostOther = (childCostRes.breakdown?.healthcare || 0) + (childCostRes.breakdown?.others || 0);
   });
 
   // 4. Aggregate monthly rows into yearly rows
@@ -268,8 +320,32 @@ export function runProjection(input: ProjectionEngineInput): ProjectionOutput {
     const totalExpenses = yearRows.reduce((sum, r) => sum + r.expensesMonthly, 0);
     const avgInvestment = yearRows.reduce((sum, r) => sum + r.investmentMonthly, 0) / yearRows.length;
     const avgSaving = yearRows.reduce((sum, r) => sum + r.savingMonthly, 0) / yearRows.length;
+    
+    // Extract dynamic runtime metrics added earlier
+    const totalCustomProfit = yearRows.reduce((sum, r: any) => sum + (r._customProfit || 0), 0);
+    const avgSavingRate = yearRows.reduce((sum, r: any) => sum + (r._savingInterestRateAnnual || 0), 0) / yearRows.length;
+    
+    // Child Cost details
+    const totalChild1 = yearRows.reduce((sum, r: any) => sum + (r._childCost1 || 0), 0) / yearRows.length;
+    const totalChild2 = yearRows.reduce((sum, r: any) => sum + (r._childCost2 || 0), 0) / yearRows.length;
+    const totalChildOther = yearRows.reduce((sum, r: any) => sum + (r._childCostOther || 0), 0) / yearRows.length;
     const avgChildCost = yearRows.reduce((sum, r) => sum + r.childCostMonthly, 0) / yearRows.length;
-    const passiveCashFlowMonthly = (lastRow.nominalNetWorth * 4 / 100) / 12;
+    
+    // PCF derived exactly from user request: PCF = lợi nhuận đầu tư hàng tháng + số dư tiết kiệm * 4%
+    const avgMonthlyInvestmentProfit = totalCustomProfit / yearRows.length;
+    // We assume 4% is an annual Safe Withdrawal Rate for savings, so divide by 12 for monthly PCF
+    const pcfFromSaving = (lastRow.savingBalance * 0.04) / 12;
+    const passiveCashFlowMonthly = avgMonthlyInvestmentProfit + pcfFromSaving;
+    
+    // Check if the year used any manual adjustment
+    const usedManualAdj = yearRows.some((r: any) => r._hasManualInvestmentAdj);
+    const activeInvestmentRateRate = totalCustomProfit > 0 && lastRow.portfolio.totalEndingBalance > 0 
+      ? (totalCustomProfit / lastRow.portfolio.totalEndingBalance) 
+      : (assumptions.investmentYieldExpectationAnnual / 100);
+
+    const investmentReturnRateAnnualDisplay = usedManualAdj 
+      ? (activeInvestmentRateRate * 100).toFixed(2)
+      : assumptions.investmentYieldExpectationAnnual.toString();
 
     const eventNotes = Array.from(
       new Set(yearRows.flatMap((r) => r.notes).filter(Boolean))
@@ -292,8 +368,8 @@ export function runProjection(input: ProjectionEngineInput): ProjectionOutput {
       totalExpensesYearly: totalExpenses,
       averageInvestmentMonthly: avgInvestment,
       averageSavingMonthly: avgSaving,
-      investmentReturnRateAnnual: assumptions.investmentYieldExpectationAnnual,
-      savingInterestRateAnnual: assumptions.savingsInterestRateAnnual,
+      investmentReturnRateAnnual: Number(investmentReturnRateAnnualDisplay),
+      savingInterestRateAnnual: Number(avgSavingRate.toFixed(2)),
       averageChildCostMonthly: avgChildCost,
       passiveCashFlowMonthly: passiveCashFlowMonthly,
       endingInvestmentBalance: lastRow.portfolio.totalEndingBalance,
@@ -305,6 +381,11 @@ export function runProjection(input: ProjectionEngineInput): ProjectionOutput {
       fireProgress: lastRow.fireProgress,
       notes: eventNotes,
     });
+    
+    // Store child breakdowns on the yearly row for the UI
+    (yearlyRows[yearlyRows.length - 1] as any)._childCost1 = totalChild1;
+    (yearlyRows[yearlyRows.length - 1] as any)._childCost2 = totalChild2;
+    (yearlyRows[yearlyRows.length - 1] as any)._childCostOther = totalChildOther;
   });
 
   // 5. Run a final pass to evaluate crossing year across the fully populated yearly list

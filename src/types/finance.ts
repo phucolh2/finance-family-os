@@ -129,6 +129,7 @@ export interface AppState {
   assets: AssetConfig[];
   assumptions: Assumptions;
   investmentDeals?: InvestmentDeal[];
+  projectionAdjustments?: import('./projection').ProjectionAdjustmentRecord[];
   resolvedMonthlyDb?: ResolvedMonthlyDbItem[];
   resolvedMonthlyDbMap?: Record<string, ResolvedMonthlyDbItem>;
 }

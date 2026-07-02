@@ -1,5 +1,7 @@
 import React, { useState } from 'react';
-import { Plus, Trash2, Edit3, Save, X, ChevronRight, ChevronDown, Check, AlertCircle } from 'lucide-react';
+import { Plus, Trash2, Edit3, Save, X, ChevronRight, ChevronDown, Check, AlertCircle, GripVertical } from 'lucide-react';
+import { useSortable } from '@dnd-kit/sortable';
+import { CSS } from '@dnd-kit/utilities';
 import type { BudgetTreeNode } from '../../types/budget';
 import { Input } from '../ui/Input';
 import { Button } from '../ui/Button';
@@ -21,6 +23,7 @@ export const BudgetTreeNodeRow: React.FC<BudgetTreeNodeRowProps> = ({
   isExpanded,
   onToggleExpand,
 }) => {
+  const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id: node.id });
   const [isEditing, setIsEditing] = useState(false);
   const [editName, setEditName] = useState(node.name);
   const [editNote, setEditNote] = useState(node.note || '');
@@ -43,8 +46,16 @@ export const BudgetTreeNodeRow: React.FC<BudgetTreeNodeRowProps> = ({
   // Indentation style based on level
   const indentClass = node.level === 1 ? 'ml-6 border-l border-family-accent/15 pl-4' : node.level === 2 ? 'ml-12 border-l border-family-accent/15 pl-4' : '';
 
+  const style = {
+    transform: CSS.Transform.toString(transform),
+    transition,
+    opacity: isDragging ? 0.5 : 1,
+    position: 'relative' as const,
+    zIndex: isDragging ? 1 : 0,
+  };
+
   return (
-    <div className={`space-y-2 ${indentClass}`}>
+    <div ref={setNodeRef} style={style} className={`space-y-2 ${indentClass}`}>
       <div className={`flex flex-col sm:flex-row sm:items-center justify-between gap-4 p-4 rounded-xl border transition-all ${
         isGroup 
           ? 'bg-family-bgDark/40 border-family-accent/15 shadow-md' 
@@ -53,6 +64,10 @@ export const BudgetTreeNodeRow: React.FC<BudgetTreeNodeRowProps> = ({
         
         {/* Left Side: Expand toggle, Name, Notes, Type info */}
         <div className="flex items-center gap-2 flex-grow min-w-0">
+          <div {...attributes} {...listeners} className="cursor-grab hover:bg-family-bgDeep p-1 rounded">
+            <GripVertical className="w-4 h-4 text-family-textMuted" />
+          </div>
+
           {isGroup && (
             <button 
               type="button"

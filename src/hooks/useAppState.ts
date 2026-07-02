@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import type { AppState, PersistedAppState, FamilyProfile, IncomeScheduleItem, Assumptions, LifeEvent, InvestmentDeal } from '../types/finance';
+import type { ProjectionAdjustmentRecord } from '../types/projection';
 import type { BudgetRatioScheduleItem } from '../types/budget';
 import type { AssetConfig } from '../types/portfolio';
 import { migrateState, validateAppState } from '../utils/migration';
@@ -259,6 +260,32 @@ export function useAppState() {
     saveState(INITIAL_APP_STATE);
   };
 
+  // Projection Adjustment Actions
+  const addProjectionAdjustment = (item: Omit<ProjectionAdjustmentRecord, 'id'>) => {
+    const newItem: ProjectionAdjustmentRecord = {
+      ...item,
+      id: `adj_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+    };
+    saveState({
+      ...state,
+      projectionAdjustments: [...(state.projectionAdjustments || []), newItem],
+    });
+  };
+
+  const updateProjectionAdjustment = (updated: ProjectionAdjustmentRecord) => {
+    saveState({
+      ...state,
+      projectionAdjustments: (state.projectionAdjustments || []).map((item) => (item.id === updated.id ? updated : item)),
+    });
+  };
+
+  const deleteProjectionAdjustment = (id: string) => {
+    saveState({
+      ...state,
+      projectionAdjustments: (state.projectionAdjustments || []).filter((item) => item.id !== id),
+    });
+  };
+
   // Safe import JSON helper with strict schema checks
   const importState = (imported: any): { success: boolean; error?: string } => {
     try {
@@ -295,6 +322,9 @@ export function useAppState() {
     updateInvestmentDeal,
     deleteInvestmentDeal,
     settleInvestmentDeal,
+    addProjectionAdjustment,
+    updateProjectionAdjustment,
+    deleteProjectionAdjustment,
     resetToDefault,
     importState,
   };

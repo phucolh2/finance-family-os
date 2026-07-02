@@ -36,6 +36,7 @@ export const Portfolio: React.FC = () => {
     assets: state.assets,
     assumptions: state.assumptions,
     investmentDeals: state.investmentDeals,
+    projectionAdjustments: state.projectionAdjustments,
   });
 
   const hasData = projection.monthlyRows.length > 0;
@@ -70,6 +71,8 @@ export const Portfolio: React.FC = () => {
     endMonth: 10,
     endYear: 2027,
     realizedProfit: 0,
+    reinvestAsUnallocated: false,
+    reinvestAssetType: 'stocks' as AssetType,
   });
 
   const [formError, setFormError] = useState<string | null>(null);
@@ -122,10 +125,10 @@ export const Portfolio: React.FC = () => {
   return (
     <div className="space-y-6">
       {/* Top Page Header */}
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-        <div>
+      <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
+        <div className="w-full">
           <h1 className="text-3xl font-serif font-bold text-family-text flex items-center gap-3">
-            <Briefcase className="w-8 h-8 text-family-accent" /> Danh mục đầu tư
+            <Briefcase className="w-8 h-8 text-family-accent" /> Đầu tư
           </h1>
           <p className="text-sm text-family-textMuted mt-1">
             Quản lý và trực quan hóa phân bổ tài sản thực tế dựa trên danh sách thương vụ chi tiết.
@@ -283,16 +286,16 @@ export const Portfolio: React.FC = () => {
 
       {/* Deals Tracking Section */}
       <Card className="border-family-accent/20">
-        <CardHeader className="flex flex-row items-center justify-between">
-          <div>
+        <CardHeader className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
+          <div className="w-full md:w-3/4">
             <CardTitle className="text-xl font-serif font-bold text-family-text flex items-center gap-2">
               🤝 Quản lý Thương vụ đầu tư chi tiết (Deals Tracking)
             </CardTitle>
-            <CardDescription>
+            <CardDescription className="w-full">
               Theo dõi chi tiết hoạt động đầu tư thực tế của vợ chồng. Lợi nhuận/Lỗ chỉ khi **Tất toán** mới được tái đầu tư vào các lớp tài sản.
             </CardDescription>
           </div>
-          <Button onClick={() => setShowAddDealForm(!showAddDealForm)} size="sm" className="gap-1 text-xs py-1 h-8">
+          <Button onClick={() => setShowAddDealForm(!showAddDealForm)} size="sm" className="gap-1 text-xs py-1 h-8 shrink-0">
             <Plus className="w-3.5 h-3.5" /> Thêm thương vụ
           </Button>
         </CardHeader>
@@ -460,6 +463,8 @@ export const Portfolio: React.FC = () => {
                                         endMonth: 12,
                                         endYear: 2026,
                                         realizedProfit: 0,
+                                        reinvestAsUnallocated: false,
+                                        reinvestAssetType: deal.assetType,
                                       });
                                     }
                                   }}
@@ -518,10 +523,44 @@ export const Portfolio: React.FC = () => {
                                       />
                                       <span className="font-bold text-family-textMuted">Tr VND</span>
                                     </div>
+                                    <div className="flex items-center gap-2 w-full pt-2 border-t border-green-700/10">
+                                      <input 
+                                        type="checkbox" 
+                                        id="reinvest"
+                                        checked={settleForm.reinvestAsUnallocated}
+                                        onChange={(e) => setSettleForm({ ...settleForm, reinvestAsUnallocated: e.target.checked })}
+                                        className="w-4 h-4 text-green-700 rounded border-family-accent/20"
+                                      />
+                                      <label htmlFor="reinvest" className="text-xs font-semibold text-family-text">Tự động tạo thương vụ "Chờ phân bổ" với tổng tiền vốn + lời?</label>
+                                      {settleForm.reinvestAsUnallocated && (
+                                        <select
+                                          value={settleForm.reinvestAssetType}
+                                          onChange={(e) => setSettleForm({ ...settleForm, reinvestAssetType: e.target.value as AssetType })}
+                                          className="text-xs bg-white rounded-lg border border-family-accent/15 px-2 py-1 ml-2"
+                                        >
+                                          <option value="stocks">Chứng Khoán</option>
+                                          <option value="real_estate">Bất Động Sản</option>
+                                          <option value="gold">Vàng</option>
+                                          <option value="fx_reserve_usd">USD</option>
+                                          <option value="crypto">Crypto</option>
+                                        </select>
+                                      )}
+                                    </div>
                                     <button
                                       type="button"
                                       onClick={() => {
                                         settleInvestmentDeal(deal.id, settleForm.endMonth, settleForm.endYear, settleForm.realizedProfit);
+                                        if (settleForm.reinvestAsUnallocated) {
+                                          addInvestmentDeal({
+                                            name: 'Tiền chờ phân bổ',
+                                            assetType: settleForm.reinvestAssetType,
+                                            capital: deal.capital + settleForm.realizedProfit,
+                                            startMonth: settleForm.endMonth,
+                                            startYear: settleForm.endYear,
+                                            status: 'active',
+                                            notes: `Tái đầu tư từ tất toán thương vụ ${deal.name}`,
+                                          });
+                                        }
                                         setSettlingDealId(null);
                                       }}
                                       className="ml-auto bg-green-700 hover:bg-green-800 text-white font-bold py-1 px-3 rounded-lg shadow-sm"
@@ -555,8 +594,8 @@ export const Portfolio: React.FC = () => {
                     <th className="p-3">Thời điểm giữ</th>
                     <th className="p-3">Vốn đầu tư</th>
                     <th className="p-3">Lợi nhuận thực tế</th>
-                    <th className="p-3">Lãi suất ROI</th>
-                    <th className="p-3">Hiệu suất/Năm</th>
+                    <th className="p-3">Hiệu suất (ROI)</th>
+                    <th className="p-3">Return/year</th>
                     <th className="p-3 text-right">Thao tác</th>
                   </tr>
                 </thead>
