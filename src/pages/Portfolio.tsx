@@ -109,17 +109,31 @@ export const Portfolio: React.FC = () => {
     };
   });
 
-  // Only show unallocated if it's positive and there is no deficit
-  const unallocatedBalance = Math.max(0, rawObservedBalance - totalActiveCapital);
-  const unallocatedPercent = totalObservedBalance > 0
-    ? (unallocatedBalance / totalObservedBalance) * 100
+  const totalEarmarkedCapital = state.assets.reduce((sum, asset) => {
+    return sum + (activeRow ? (activeRow.portfolio.assets[asset.type].earmarkedEndingBalance || 0) : 0);
+  }, 0);
+
+  state.assets.forEach((asset) => {
+    const earmarkedBalance = activeRow ? (activeRow.portfolio.assets[asset.type].earmarkedEndingBalance || 0) : 0;
+    if (earmarkedBalance > 0) {
+      chartData.push({
+        name: `${asset.name} (Chờ pb)`,
+        value: Math.round((earmarkedBalance / totalObservedBalance) * 100 * 10) / 10,
+        balance: earmarkedBalance,
+      });
+    }
+  });
+
+  const genericUnallocatedBalance = Math.max(0, rawObservedBalance - totalActiveCapital - totalEarmarkedCapital);
+  const genericUnallocatedPercent = totalObservedBalance > 0
+    ? (genericUnallocatedBalance / totalObservedBalance) * 100
     : 100;
 
-  if (unallocatedPercent > 0.01) {
+  if (genericUnallocatedPercent > 0.01) {
     chartData.push({
-      name: 'Tiền chờ phân bổ / Chưa đầu tư',
-      value: Math.round(unallocatedPercent * 10) / 10,
-      balance: unallocatedBalance,
+      name: 'Tiền nhàn rỗi (Chung)',
+      value: Math.round(genericUnallocatedPercent * 10) / 10,
+      balance: genericUnallocatedBalance,
     });
   }
 
@@ -227,26 +241,44 @@ export const Portfolio: React.FC = () => {
                     return isStarted && isNotEnded;
                   }) || [];
 
-                  const activeDealsCount = observedDeals.filter(d => d.assetType === asset.type).length;
-                  const activeDealsCapital = observedDeals.filter(d => d.assetType === asset.type).reduce((sum, d) => sum + d.capital, 0);
+                  const activeDealsCount = observedDeals.filter(d => d.assetType === asset.type && !d.isEarmarked).length;
+                  const activeDealsCapital = observedDeals.filter(d => d.assetType === asset.type && !d.isEarmarked).reduce((sum, d) => sum + d.capital, 0);
+
+                  const earmarkedBalance = activeRow
+                    ? (activeRow.portfolio.assets[asset.type].earmarkedEndingBalance || 0)
+                    : 0;
+                  const earmarkedPercent = totalObservedBalance > 0 ? (earmarkedBalance / totalObservedBalance) * 100 : 0;
+                  const earmarkedDealsCount = observedDeals.filter(d => d.assetType === asset.type && d.isEarmarked).length;
+                  const earmarkedDealsCapital = observedDeals.filter(d => d.assetType === asset.type && d.isEarmarked).reduce((sum, d) => sum + d.capital, 0);
 
                   return (
-                    <tr key={asset.type} className="border-b border-family-accent/5 hover:bg-family-bgDark/10">
-                      <td className="p-3 font-semibold text-family-text">{asset.name}</td>
-                      <td className="p-3 font-medium">{formatTableMoneyVNDMillion(assetBalance)}</td>
-                      <td className="p-3 font-bold text-family-accent">{actualPercent.toFixed(1)}%</td>
-                      <td className="p-3 font-semibold text-family-text">{activeDealsCount} thương vụ</td>
-                      <td className="p-3 font-medium text-family-textMuted">{formatTableMoneyVNDMillion(activeDealsCapital)}</td>
-                    </tr>
+                    <React.Fragment key={asset.type}>
+                      <tr className="border-b border-family-accent/5 hover:bg-family-bgDark/10">
+                        <td className="p-3 font-semibold text-family-text">{asset.name}</td>
+                        <td className="p-3 font-medium">{formatTableMoneyVNDMillion(assetBalance)}</td>
+                        <td className="p-3 font-bold text-family-accent">{actualPercent.toFixed(1)}%</td>
+                        <td className="p-3 font-semibold text-family-text">{activeDealsCount} thương vụ</td>
+                        <td className="p-3 font-medium text-family-textMuted">{formatTableMoneyVNDMillion(activeDealsCapital)}</td>
+                      </tr>
+                      {earmarkedBalance > 0 && (
+                        <tr className="border-b border-family-accent/5 bg-slate-500/5 hover:bg-slate-500/10">
+                          <td className="p-3 font-semibold text-slate-500 pl-8">↳ {asset.name} (Chờ pb)</td>
+                          <td className="p-3 font-medium text-slate-500">{formatTableMoneyVNDMillion(earmarkedBalance)}</td>
+                          <td className="p-3 font-bold text-slate-500">{earmarkedPercent.toFixed(1)}%</td>
+                          <td className="p-3 text-slate-400 font-semibold">{earmarkedDealsCount} thương vụ</td>
+                          <td className="p-3 text-slate-400 font-medium">{formatTableMoneyVNDMillion(earmarkedDealsCapital)}</td>
+                        </tr>
+                      )}
+                    </React.Fragment>
                   );
                 })}
-                {unallocatedPercent > 0.01 && (
+                {genericUnallocatedPercent > 0.01 && (
                   <tr className="border-b border-family-accent/5 bg-slate-500/5 hover:bg-slate-500/10">
-                    <td className="p-3 font-semibold text-slate-500">Tiền chờ phân bổ / Chưa đầu tư</td>
+                    <td className="p-3 font-semibold text-slate-500">Tiền mặt nhàn rỗi (Chung)</td>
                     <td className="p-3 font-medium text-slate-500">
-                      {formatTableMoneyVNDMillion(unallocatedBalance)}
+                      {formatTableMoneyVNDMillion(genericUnallocatedBalance)}
                     </td>
-                    <td className="p-3 font-bold text-slate-500">{unallocatedPercent.toFixed(1)}%</td>
+                    <td className="p-3 font-bold text-slate-500">{genericUnallocatedPercent.toFixed(1)}%</td>
                     <td className="p-3 text-slate-400 font-bold">---</td>
                     <td className="p-3 text-slate-400 font-medium">---</td>
                   </tr>

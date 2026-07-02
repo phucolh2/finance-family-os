@@ -211,9 +211,22 @@ export function runProjection(input: ProjectionEngineInput): ProjectionOutput {
       stocks: 0,
       crypto: 0,
     };
+    const earmarkedBalances: Record<AssetType, number> = {
+      fx_reserve_usd: 0,
+      gold: 0,
+      real_estate: 0,
+      stocks: 0,
+      crypto: 0,
+    };
 
+    let totalEarmarkedCapital = 0;
     monthActiveDeals.forEach((deal) => {
-      assetBalances[deal.assetType] = Math.max(0, assetBalances[deal.assetType] + safeNumber(deal.capital, 0));
+      if (deal.isEarmarked) {
+        earmarkedBalances[deal.assetType] = Math.max(0, earmarkedBalances[deal.assetType] + safeNumber(deal.capital, 0));
+        totalEarmarkedCapital += safeNumber(deal.capital, 0);
+      } else {
+        assetBalances[deal.assetType] = Math.max(0, assetBalances[deal.assetType] + safeNumber(deal.capital, 0));
+      }
     });
 
     const standardTypes: AssetType[] = ['fx_reserve_usd', 'gold', 'real_estate', 'stocks', 'crypto'];
@@ -222,19 +235,20 @@ export function runProjection(input: ProjectionEngineInput): ProjectionOutput {
     });
 
     const totalActiveCapital = Object.values(assetBalances).reduce((sum, v) => sum + v, 0);
-    const unallocatedCash = Math.max(0, totalInvestable - totalActiveCapital);
+    const unallocatedCash = Math.max(0, totalInvestable - totalActiveCapital - totalEarmarkedCapital);
+    const safeTotalEndingBalance = Math.max(totalInvestable, totalActiveCapital + totalEarmarkedCapital);
 
-    if (totalActiveCapital > totalInvestable) {
-      warnings.push(`[Đầu tư] Tháng ${period.month}/${period.year}: Tổng vốn thương vụ hoạt động (${totalActiveCapital}M) vượt quá tổng ngân sách đầu tư khả dụng (${totalInvestable}M).`);
+    if (totalActiveCapital + totalEarmarkedCapital > totalInvestable) {
+      warnings.push(`[Đầu tư] Tháng ${period.month}/${period.year}: Tổng vốn thương vụ hoạt động và chờ phân bổ (${totalActiveCapital + totalEarmarkedCapital}M) vượt quá tổng ngân sách đầu tư khả dụng (${totalInvestable}M).`);
     }
 
     const portfolioOutput = {
       assets: {
-        fx_reserve_usd: { beginningBalance: 0, contribution: 0, pnl: 0, endingBalance: assetBalances.fx_reserve_usd, actualReturnApplied: false },
-        gold: { beginningBalance: 0, contribution: 0, pnl: 0, endingBalance: assetBalances.gold, actualReturnApplied: false },
-        real_estate: { beginningBalance: 0, contribution: 0, pnl: 0, endingBalance: assetBalances.real_estate, actualReturnApplied: false },
-        stocks: { beginningBalance: 0, contribution: 0, pnl: 0, endingBalance: assetBalances.stocks, actualReturnApplied: false },
-        crypto: { beginningBalance: 0, contribution: 0, pnl: 0, endingBalance: assetBalances.crypto, actualReturnApplied: false },
+        fx_reserve_usd: { beginningBalance: 0, contribution: 0, pnl: 0, endingBalance: assetBalances.fx_reserve_usd, earmarkedEndingBalance: earmarkedBalances.fx_reserve_usd, actualReturnApplied: false },
+        gold: { beginningBalance: 0, contribution: 0, pnl: 0, endingBalance: assetBalances.gold, earmarkedEndingBalance: earmarkedBalances.gold, actualReturnApplied: false },
+        real_estate: { beginningBalance: 0, contribution: 0, pnl: 0, endingBalance: assetBalances.real_estate, earmarkedEndingBalance: earmarkedBalances.real_estate, actualReturnApplied: false },
+        stocks: { beginningBalance: 0, contribution: 0, pnl: 0, endingBalance: assetBalances.stocks, earmarkedEndingBalance: earmarkedBalances.stocks, actualReturnApplied: false },
+        crypto: { beginningBalance: 0, contribution: 0, pnl: 0, endingBalance: assetBalances.crypto, earmarkedEndingBalance: earmarkedBalances.crypto, actualReturnApplied: false },
       },
       totalBeginningBalance: totalInvestable - monthlyContribution - monthRealizedProfit,
       totalContribution: monthlyContribution,

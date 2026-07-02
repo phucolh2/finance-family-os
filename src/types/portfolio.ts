@@ -42,6 +42,7 @@ export interface AssetPeriodStatus {
   contribution: number;
   pnl: number;
   endingBalance: number;
+  earmarkedEndingBalance?: number;
   actualReturnApplied: boolean;
 }
 
