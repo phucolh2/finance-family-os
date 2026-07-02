@@ -87,7 +87,13 @@ export const Portfolio: React.FC = () => {
   const COLORS = ['#d97706', '#eab308', '#4d7c0f', '#8b5cf6', '#0f766e', '#64748b'];
   
   const totalStartingBalance = safeNumber(state.profile.startingCapital, 100);
-  const totalObservedBalance = activeRow ? activeRow.portfolio.totalEndingBalance : totalStartingBalance;
+  const rawObservedBalance = activeRow ? activeRow.portfolio.totalEndingBalance : totalStartingBalance;
+
+  const totalActiveCapital = state.assets.reduce((sum, asset) => {
+    return sum + (activeRow ? activeRow.portfolio.assets[asset.type].endingBalance : 0);
+  }, 0);
+
+  const totalObservedBalance = Math.max(rawObservedBalance, totalActiveCapital);
 
   const chartData = state.assets.map((asset) => {
     const assetBalance = activeRow
@@ -103,7 +109,8 @@ export const Portfolio: React.FC = () => {
     };
   });
 
-  const unallocatedBalance = activeRow ? (activeRow.portfolio.unallocatedEndingBalance ?? 0) : totalStartingBalance;
+  // Only show unallocated if it's positive and there is no deficit
+  const unallocatedBalance = Math.max(0, rawObservedBalance - totalActiveCapital);
   const unallocatedPercent = totalObservedBalance > 0
     ? (unallocatedBalance / totalObservedBalance) * 100
     : 100;
