@@ -313,40 +313,31 @@ export const Dashboard: React.FC = () => {
           </CardContent>
         </Card>
 
-        {/* Health Score Circular Dial Card */}
-        <Card className="border-l-yellow-600 bg-white/70 backdrop-blur-md shadow-sm transition-all hover:-translate-y-0.5 md:col-span-3 lg:col-span-1">
-          <CardContent className="p-3 flex items-center justify-between gap-2 h-24">
-            <div className="space-y-1">
-              <span className="text-[9px] text-family-textMuted font-bold uppercase tracking-wider block leading-tight">Sức khỏe T.Chính</span>
-              <div className={`text-[9px] font-bold px-1.5 py-0.5 rounded-lg inline-block ${healthMeta.color}`}>
-                {healthMeta.label}
+        {/* Health Score Card */}
+        <Card isKpi className="border-l-yellow-600 bg-white/70 backdrop-blur-md shadow-sm transition-all hover:-translate-y-0.5 md:col-span-3 lg:col-span-1 relative overflow-hidden">
+          <CardContent className="p-4 flex flex-col justify-between h-24">
+            <div className="flex items-start justify-between text-family-textMuted text-[10px] uppercase font-bold tracking-wider mb-2">
+              <span className="flex items-center gap-1.5 whitespace-nowrap overflow-hidden">
+                <HeartPulse className="w-3.5 h-3.5 shrink-0 text-yellow-600" />
+                <span className="truncate">Sức khỏe</span>
+              </span>
+            </div>
+            <div>
+              <div className="text-lg font-bold text-family-text">
+                {healthScore} <span className="text-[10px] font-normal text-family-textMuted">/ 100</span>
+              </div>
+              <div className={`text-[9px] mt-1 font-bold line-clamp-2 ${healthMeta.color}`}>
+                Trạng thái: {healthMeta.label}
               </div>
             </div>
-            <div className="relative w-[52px] h-[52px] shrink-0 flex items-center justify-center">
-              <svg className="w-full h-full transform -rotate-90">
-                <circle
-                  cx="26"
-                  cy="26"
-                  r={radius}
-                  className="stroke-family-accent/10"
-                  strokeWidth="4"
-                  fill="transparent"
-                />
-                <circle
-                  cx="26"
-                  cy="26"
-                  r={radius}
-                  className="stroke-yellow-600 transition-all duration-500"
-                  strokeWidth="4"
-                  fill="transparent"
-                  strokeDasharray={circumference}
-                  strokeDashoffset={strokeDashoffset}
-                  strokeLinecap="round"
-                />
-              </svg>
-              <span className="absolute text-sm font-extrabold text-family-text">{healthScore}</span>
-            </div>
           </CardContent>
+          {/* Linear Progress Bar */}
+          <div className="absolute bottom-0 left-0 w-full h-1 bg-yellow-600/15">
+            <div 
+              className="h-full bg-yellow-500 transition-all duration-1000 ease-out" 
+              style={{ width: `${Math.max(0, Math.min(100, healthScore))}%` }}
+            />
+          </div>
         </Card>
       </div>
 
