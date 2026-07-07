@@ -124,27 +124,36 @@ export function runProjection(input: ProjectionEngineInput): ProjectionOutput {
       }
     });
 
-    // Check for settled deals in this month
-    const activePeriodDeals = investmentDeals.filter(
-      (d) => d.status === 'settled' && safeNumber(d.endMonth, 0) === period.month && safeNumber(d.endYear, 0) === period.year
-    );
-
-    let monthRealizedProfit = 0;
-    const dealSettleNotes: string[] = [];
-    activePeriodDeals.forEach((deal) => {
-      const profit = safeNumber(deal.realizedProfit, 0);
-      monthRealizedProfit += profit;
-      dealSettleNotes.push(`Tất toán ${deal.name}: ${profit >= 0 ? `Lãi +` : `Lỗ `}${profit}M`);
+    // We will calculate Active Deal Values up to LAST month, to find unallocated compounding base
+    let activeValueUpToLastMonth = 0;
+    investmentDeals.forEach(deal => {
+      const start = deal.startYear * 12 + deal.startMonth;
+      const current = period.year * 12 + period.month;
+      const end = deal.status === 'settled' && deal.endYear && deal.endMonth 
+        ? deal.endYear * 12 + deal.endMonth 
+        : Infinity;
+      
+      if (current >= start && current <= end) {
+        const monthsActiveUpToLastMonth = current - start;
+        let acc = 0;
+        if (deal.status === 'settled') {
+          const duration = end - start + 1;
+          acc = (safeNumber(deal.realizedProfit, 0) / duration) * monthsActiveUpToLastMonth;
+        } else if (deal.isEarmarked) {
+          const rate = safeNumber(deal.expectedSavingRate, 0);
+          acc = safeNumber(deal.capital, 0) * (rate / 100 / 12) * monthsActiveUpToLastMonth;
+        }
+        activeValueUpToLastMonth += safeNumber(deal.capital, 0) + acc;
+      }
     });
 
-    totalInvestable += monthRealizedProfit;
+    const unallocatedForCompounding = Math.max(0, totalInvestable - activeValueUpToLastMonth);
 
     // Evaluate adjustments for the current month
     let adjustedSavingRate: number | null = null;
     let manualAnnualProfit = 0;
     let manualMonthlyProfit = 0;
     let manualOneTimeProfit = 0;
-
     let hasManualInvestmentAdj = false;
 
     projectionAdjustments.forEach(adj => {
@@ -156,7 +165,6 @@ export function runProjection(input: ProjectionEngineInput): ProjectionOutput {
           hasManualInvestmentAdj = true;
           if (adj.annualInvestmentProfit) manualAnnualProfit += adj.annualInvestmentProfit;
           if (adj.monthlyInvestmentProfit) manualMonthlyProfit += adj.monthlyInvestmentProfit;
-          // One-time profit is only applied in the start month of the record
           if (adj.oneTimeInvestmentProfit && period.month === adj.startMonth && period.year === adj.startYear) {
             manualOneTimeProfit += adj.oneTimeInvestmentProfit;
           }
@@ -169,63 +177,85 @@ export function runProjection(input: ProjectionEngineInput): ProjectionOutput {
     const savingsMonthlyYield = savingsRateRatio / 12;
 
     const savingMonthlyContribution = cashflowRes.savingMonthly;
-    // Standard compound interest: balance earns interest, contribution earns half-month or full interest.
-    // The user's requested formula was: prev + contribution * (1+rate), but that ignores compound interest on prev. 
-    // We will use standard compounding on prev balance, and add contribution.
     const savingPnl = currentSavingBalance * savingsMonthlyYield + savingMonthlyContribution * (savingsMonthlyYield / 2);
     currentSavingBalance = currentSavingBalance + savingMonthlyContribution + savingPnl;
 
     const monthlyContribution = cashflowRes.investmentMonthly;
     
-    // Calculate investment profit (either from manual override or default compounding)
-    let investmentPnl = 0;
+    // Calculate generic investment profit (on unallocated cash only)
+    let genericPnl = 0;
     if (hasManualInvestmentAdj) {
-      investmentPnl = (manualAnnualProfit / 12) + manualMonthlyProfit + manualOneTimeProfit;
+      genericPnl = (manualAnnualProfit / 12) + manualMonthlyProfit + manualOneTimeProfit;
     } else {
       const defaultInvRate = safeNumber(assumptions.investmentYieldExpectationAnnual, 0) / 100;
-      investmentPnl = totalInvestable * (defaultInvRate / 12);
+      genericPnl = unallocatedForCompounding * (defaultInvRate / 12);
     }
     
+    // Calculate specific deals PnL for THIS month
+    let totalDealPnlThisMonth = 0;
+    const dealSettleNotes: string[] = [];
+    
+    investmentDeals.forEach(deal => {
+      const start = deal.startYear * 12 + deal.startMonth;
+      const current = period.year * 12 + period.month;
+      const end = deal.status === 'settled' && deal.endYear && deal.endMonth 
+        ? deal.endYear * 12 + deal.endMonth 
+        : Infinity;
+      
+      if (current >= start && current <= end) {
+        if (deal.status === 'settled') {
+          const duration = end - start + 1;
+          totalDealPnlThisMonth += safeNumber(deal.realizedProfit, 0) / duration;
+        } else if (deal.isEarmarked) {
+          const rate = safeNumber(deal.expectedSavingRate, 0);
+          totalDealPnlThisMonth += safeNumber(deal.capital, 0) * (rate / 100 / 12);
+        }
+      }
+      
+      if (deal.status === 'settled' && deal.endMonth === period.month && deal.endYear === period.year) {
+        const profit = safeNumber(deal.realizedProfit, 0);
+        dealSettleNotes.push(`Tất toán ${deal.name}: ${profit >= 0 ? `Lãi +` : `Lỗ `}${profit}M`);
+      }
+    });
+
+    const investmentPnl = genericPnl + totalDealPnlThisMonth;
     const previousTotalInvestable = totalInvestable;
     totalInvestable += monthlyContribution + investmentPnl;
 
     // Derived actual monthly rate based on custom profit
     const actualInvestmentRateMonthly = previousTotalInvestable > 0 ? investmentPnl / previousTotalInvestable : 0;
 
-    // Calculate active deals in this month to compute balances of the 5 asset classes
-    const monthActiveDeals = investmentDeals.filter((deal) => {
-      // Started on or before this month
-      const isStarted = (deal.startYear < period.year) || 
-                        (deal.startYear === period.year && deal.startMonth <= period.month);
-      // Not ended before this month
-      const isNotEnded = deal.status === 'active' || 
-                         (deal.endYear !== undefined && deal.endMonth !== undefined && (deal.endYear > period.year || 
-                         (deal.endYear === period.year && deal.endMonth > period.month)));
-      return isStarted && isNotEnded;
-    });
-
-    const assetBalances: Record<AssetType, number> = {
-      fx_reserve_usd: 0,
-      gold: 0,
-      real_estate: 0,
-      stocks: 0,
-      crypto: 0,
-    };
-    const earmarkedBalances: Record<AssetType, number> = {
-      fx_reserve_usd: 0,
-      gold: 0,
-      real_estate: 0,
-      stocks: 0,
-      crypto: 0,
-    };
-
+    const assetBalances: Record<AssetType, number> = { fx_reserve_usd: 0, gold: 0, real_estate: 0, stocks: 0, crypto: 0 };
+    const earmarkedBalances: Record<AssetType, number> = { fx_reserve_usd: 0, gold: 0, real_estate: 0, stocks: 0, crypto: 0 };
     let totalEarmarkedCapital = 0;
-    monthActiveDeals.forEach((deal) => {
-      if (deal.isEarmarked) {
-        earmarkedBalances[deal.assetType] = Math.max(0, earmarkedBalances[deal.assetType] + safeNumber(deal.capital, 0));
-        totalEarmarkedCapital += safeNumber(deal.capital, 0);
-      } else {
-        assetBalances[deal.assetType] = Math.max(0, assetBalances[deal.assetType] + safeNumber(deal.capital, 0));
+
+    // Distribute accumulated PnL into asset classes
+    investmentDeals.forEach((deal) => {
+      const start = deal.startYear * 12 + deal.startMonth;
+      const current = period.year * 12 + period.month;
+      const end = deal.status === 'settled' && deal.endYear && deal.endMonth 
+        ? deal.endYear * 12 + deal.endMonth 
+        : Infinity;
+      
+      if (current >= start && current <= end) {
+        const monthsActiveSoFar = current - start + 1;
+        let accumulatedPnl = 0;
+        if (deal.status === 'settled') {
+          const duration = end - start + 1;
+          accumulatedPnl = (safeNumber(deal.realizedProfit, 0) / duration) * monthsActiveSoFar;
+        } else if (deal.isEarmarked) {
+          const rate = safeNumber(deal.expectedSavingRate, 0);
+          accumulatedPnl = safeNumber(deal.capital, 0) * (rate / 100 / 12) * monthsActiveSoFar;
+        }
+        
+        const totalValue = safeNumber(deal.capital, 0) + accumulatedPnl;
+        
+        if (deal.isEarmarked) {
+          earmarkedBalances[deal.assetType] += totalValue;
+          totalEarmarkedCapital += totalValue;
+        } else {
+          assetBalances[deal.assetType] += totalValue;
+        }
       }
     });
 
@@ -238,8 +268,8 @@ export function runProjection(input: ProjectionEngineInput): ProjectionOutput {
     const unallocatedCash = Math.max(0, totalInvestable - totalActiveCapital - totalEarmarkedCapital);
     const safeTotalEndingBalance = Math.max(totalInvestable, totalActiveCapital + totalEarmarkedCapital);
 
-    if (totalActiveCapital + totalEarmarkedCapital > totalInvestable) {
-      warnings.push(`[Đầu tư] Tháng ${period.month}/${period.year}: Tổng vốn thương vụ hoạt động và chờ phân bổ (${totalActiveCapital + totalEarmarkedCapital}M) vượt quá tổng ngân sách đầu tư khả dụng (${totalInvestable}M).`);
+    if (totalActiveCapital + totalEarmarkedCapital > totalInvestable + 0.01) {
+      warnings.push(`[Đầu tư] Tháng ${period.month}/${period.year}: Tổng vốn thương vụ hoạt động và chờ phân bổ (${(totalActiveCapital + totalEarmarkedCapital).toFixed(1)}M) vượt quá tổng ngân sách đầu tư khả dụng (${totalInvestable.toFixed(1)}M).`);
     }
 
     const portfolioOutput = {
@@ -250,9 +280,9 @@ export function runProjection(input: ProjectionEngineInput): ProjectionOutput {
         stocks: { beginningBalance: 0, contribution: 0, pnl: 0, endingBalance: assetBalances.stocks, earmarkedEndingBalance: earmarkedBalances.stocks, actualReturnApplied: false },
         crypto: { beginningBalance: 0, contribution: 0, pnl: 0, endingBalance: assetBalances.crypto, earmarkedEndingBalance: earmarkedBalances.crypto, actualReturnApplied: false },
       },
-      totalBeginningBalance: totalInvestable - monthlyContribution - monthRealizedProfit,
+      totalBeginningBalance: previousTotalInvestable,
       totalContribution: monthlyContribution,
-      totalPnl: monthRealizedProfit,
+      totalPnl: investmentPnl,
       totalEndingBalance: totalInvestable,
       unallocatedEndingBalance: unallocatedCash,
     };

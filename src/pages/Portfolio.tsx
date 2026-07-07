@@ -64,6 +64,7 @@ export const Portfolio: React.FC = () => {
     startMonth: 10,
     startYear: 2026,
     isEarmarked: false,
+    expectedSavingRate: 5,
     notes: '',
   });
 
@@ -355,9 +356,10 @@ export const Portfolio: React.FC = () => {
                   startYear: dealForm.startYear,
                   status: 'active',
                   isEarmarked: dealForm.isEarmarked,
+                  expectedSavingRate: dealForm.isEarmarked ? dealForm.expectedSavingRate : undefined,
                   notes: dealForm.notes,
                 });
-                setDealForm({ name: '', assetType: 'stocks', capital: 0, startMonth: 10, startYear: 2026, isEarmarked: false, notes: '' });
+                setDealForm({ name: '', assetType: 'stocks', capital: 0, startMonth: 10, startYear: 2026, isEarmarked: false, expectedSavingRate: 5, notes: '' });
                 setShowAddDealForm(false);
               }}
               className="bg-family-bgDark/35 p-4 rounded-xl border border-family-accent/10 space-y-4"
@@ -424,17 +426,33 @@ export const Portfolio: React.FC = () => {
                 </div>
               </div>
               
-              <div className="flex items-center gap-2 mt-2">
-                <input
-                  type="checkbox"
-                  id="isEarmarked"
-                  checked={dealForm.isEarmarked}
-                  onChange={(e) => setDealForm({ ...dealForm, isEarmarked: e.target.checked })}
-                  className="w-4 h-4 text-family-accent rounded border-family-accent/20 cursor-pointer"
-                />
-                <label htmlFor="isEarmarked" className="text-xs font-semibold text-family-text cursor-pointer">
-                  Đánh dấu đây là khoản Tiền nhàn rỗi chờ phân bổ (chưa đầu tư, không tính tỷ suất sinh lời)
-                </label>
+              <div className="flex flex-col gap-3 mt-2">
+                <div className="flex items-center gap-2">
+                  <input
+                    type="checkbox"
+                    id="isEarmarked"
+                    checked={dealForm.isEarmarked}
+                    onChange={(e) => setDealForm({ ...dealForm, isEarmarked: e.target.checked })}
+                    className="w-4 h-4 text-family-accent rounded border-family-accent/20 cursor-pointer"
+                  />
+                  <label htmlFor="isEarmarked" className="text-xs font-semibold text-family-text cursor-pointer">
+                    Đánh dấu đây là khoản Tiền nhàn rỗi chờ phân bổ (chưa đầu tư, không tính tỷ suất sinh lời ảo)
+                  </label>
+                </div>
+                {dealForm.isEarmarked && (
+                  <div className="pl-6 flex items-center gap-2">
+                    <label className="text-xs font-semibold text-family-text">Mức lãi suất tiết kiệm kỳ vọng:</label>
+                    <input
+                      type="number"
+                      step="0.1"
+                      min={0}
+                      value={dealForm.expectedSavingRate}
+                      onChange={(e) => setDealForm({ ...dealForm, expectedSavingRate: safeNumber(Number(e.target.value), 0) })}
+                      className="w-20 text-center text-xs bg-white rounded-lg border border-family-accent/15 px-2 py-1 focus:outline-none focus:ring-1 focus:ring-family-accent"
+                    />
+                    <span className="text-xs font-bold text-family-textMuted">%/năm</span>
+                  </div>
+                )}
               </div>
               
               {isDealCapitalOverLimit && (
@@ -513,28 +531,26 @@ export const Portfolio: React.FC = () => {
                               <td className="p-3 font-semibold">{deal.startMonth < 10 ? `0${deal.startMonth}` : deal.startMonth}/{deal.startYear}</td>
                               <td className="p-3 text-family-textMuted max-w-[200px] truncate">{deal.notes || '---'}</td>
                               <td className="p-3 text-right space-x-2">
-                                {!deal.isEarmarked && (
-                                  <button
-                                    type="button"
-                                    onClick={() => {
-                                      if (isSettling) {
-                                        setSettlingDealId(null);
-                                      } else {
-                                        setSettlingDealId(deal.id);
-                                        setSettleForm({
-                                          endMonth: 12,
-                                          endYear: 2026,
-                                          realizedProfit: 0,
-                                          reinvestAsUnallocated: false,
-                                          reinvestAssetType: deal.assetType,
-                                        });
-                                      }
-                                    }}
-                                    className="text-[10px] font-bold py-1 px-2.5 rounded-lg bg-green-700 text-white hover:bg-green-800 transition-all shadow-sm"
-                                  >
-                                    {isSettling ? 'Hủy' : 'Tất toán chốt sổ'}
-                                  </button>
-                                )}
+                                <button
+                                  type="button"
+                                  onClick={() => {
+                                    if (isSettling) {
+                                      setSettlingDealId(null);
+                                    } else {
+                                      setSettlingDealId(deal.id);
+                                      setSettleForm({
+                                        endMonth: 12,
+                                        endYear: 2026,
+                                        realizedProfit: 0,
+                                        reinvestAsUnallocated: false,
+                                        reinvestAssetType: deal.assetType,
+                                      });
+                                    }
+                                  }}
+                                  className={`text-[10px] font-bold py-1 px-2.5 rounded-lg text-white transition-all shadow-sm ${deal.isEarmarked ? 'bg-slate-500 hover:bg-slate-600' : 'bg-green-700 hover:bg-green-800'}`}
+                                >
+                                  {isSettling ? 'Hủy' : (deal.isEarmarked ? 'Phân bổ / Chốt lãi' : 'Tất toán chốt sổ')}
+                                </button>
                                 <button
                                   type="button"
                                   onClick={() => deleteInvestmentDeal(deal.id)}
@@ -576,12 +592,12 @@ export const Portfolio: React.FC = () => {
                                       />
                                     </div>
                                     <div className="flex items-center gap-2">
-                                      <label className="font-semibold text-family-text">Lợi nhuận/Lỗ thực tế:</label>
+                                      <label className="font-semibold text-family-text">{deal.isEarmarked ? 'Tiền lãi thực nhận:' : 'Lợi nhuận/Lỗ thực tế:'}</label>
                                       <input
                                         type="number"
                                         value={settleForm.realizedProfit}
                                         onChange={(e) => setSettleForm({ ...settleForm, realizedProfit: safeNumber(Number(e.target.value), 0) })}
-                                        className="w-20 text-center bg-white rounded-lg border border-family-accent/15 p-1 font-bold text-green-700"
+                                        className={`w-20 text-center bg-white rounded-lg border border-family-accent/15 p-1 font-bold ${deal.isEarmarked ? 'text-slate-600' : 'text-green-700'}`}
                                         required
                                       />
                                       <span className="font-bold text-family-textMuted">Tr VND</span>
