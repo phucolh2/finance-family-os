@@ -6,13 +6,16 @@ import { Input } from '../components/ui/Input';
 import { Select } from '../components/ui/Select';
 import { WarningBox } from '../components/ui/WarningBox';
 import { formatTableMoneyVNDMillion } from '../utils/format';
-import { safeNumber, safeArray } from '../utils/math';
+import { safeNumber } from '../utils/math';
 import { EmptyState } from '../components/ui/EmptyState';
-import { Milestone, CalendarRange, Plus, Trash2, Edit3, Save, RotateCcw, AlertTriangle } from 'lucide-react';
+import { 
+  Milestone, CalendarRange, Plus, Trash2, Edit3, 
+  Home, Car, Baby, HeartPulse, Gift, Briefcase, Plane, Wallet, TrendingUp, TrendingDown 
+} from 'lucide-react';
 import type { LifeEvent } from '../types/finance';
 
 export const LifeStages: React.FC = () => {
-  const { state, addLifeEvent, updateLifeEvent, deleteLifeEvent, resetToDefault } = useAppContext();
+  const { state, addLifeEvent, updateLifeEvent, deleteLifeEvent } = useAppContext();
 
   // Local state for event form editing
   const [editingId, setEditingId] = useState<string | null>(null);
@@ -25,7 +28,7 @@ export const LifeStages: React.FC = () => {
     month: 1,
     year: 2030,
     amount: 0,
-    source: 'investment',
+    source: 'safety_reserve',
     recurringMonthlyImpact: 0,
     affectsNetWorth: true,
     note: '',
@@ -46,6 +49,7 @@ export const LifeStages: React.FC = () => {
       note: event.note || '',
     });
     setFormError(null);
+    window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
   const handleAddClick = () => {
@@ -57,12 +61,13 @@ export const LifeStages: React.FC = () => {
       month: 1,
       year: 2030,
       amount: 0,
-      source: 'investment',
+      source: 'safety_reserve',
       recurringMonthlyImpact: 0,
       affectsNetWorth: true,
       note: '',
     });
     setFormError(null);
+    window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
   const handleSave = (e: React.FormEvent) => {
@@ -105,9 +110,11 @@ export const LifeStages: React.FC = () => {
   ];
 
   const sourceTypes: { value: LifeEvent['source']; label: string }[] = [
-    { value: 'cash', label: 'Dòng tiền mặt (Tiền tiêu dùng)' },
-    { value: 'investment', label: 'Danh mục chứng khoán' },
-    { value: 'saving', label: 'Quỹ tiết kiệm/Bình an' },
+    { value: 'housing_basic', label: 'Sinh hoạt & Cố định' },
+    { value: 'future_investing', label: 'Tương lai & Đầu tư' },
+    { value: 'safety_reserve', label: 'Bình an & Dự phòng' },
+    { value: 'family_experience', label: 'Yêu thương & Sự kiện' },
+    { value: 'health_growth', label: 'Sức khỏe & Phát triển' },
     { value: 'debt', label: 'Vay nợ' },
     { value: 'external', label: 'Nguồn tài trợ bên ngoài' },
   ];
@@ -128,15 +135,33 @@ export const LifeStages: React.FC = () => {
   };
 
   const getSourceLabel = (source: string) => {
-    switch (source?.toLowerCase()) {
-      case 'cash': return 'Tiền mặt';
-      case 'investment': return 'Đầu tư';
-      case 'saving': return 'Tiết kiệm';
-      case 'debt': return 'Vay nợ';
-      case 'external': return 'Tài trợ';
-      default: return source;
+    return sourceTypes.find(t => t.value === source)?.label || source;
+  };
+
+  const getEventIcon = (type: string) => {
+    switch (type) {
+      case 'buy_property': return <Home className="w-5 h-5 text-white" />;
+      case 'buy_car': return <Car className="w-5 h-5 text-white" />;
+      case 'child_birth': return <Baby className="w-5 h-5 text-white" />;
+      case 'medical': return <HeartPulse className="w-5 h-5 text-white" />;
+      case 'job_loss': return <Briefcase className="w-5 h-5 text-white" />;
+      case 'bonus': return <Gift className="w-5 h-5 text-white" />;
+      case 'inheritance': return <Wallet className="w-5 h-5 text-white" />;
+      case 'retirement': return <Milestone className="w-5 h-5 text-white" />;
+      case 'travel': return <Plane className="w-5 h-5 text-white" />;
+      default: return <CalendarRange className="w-5 h-5 text-white" />;
     }
   };
+
+  // Dashboard calculations
+  const totalEvents = state.lifeEvents.length;
+  const netOneTime = state.lifeEvents.reduce((sum, e) => sum + safeNumber(e.amount), 0);
+  const netRecurring = state.lifeEvents.reduce((sum, e) => sum + safeNumber(e.recurringMonthlyImpact), 0);
+  
+  const sortedEvents = [...state.lifeEvents].sort((a, b) => {
+    if (a.year !== b.year) return a.year - b.year;
+    return a.month - b.month;
+  });
 
   return (
     <div className="space-y-6">
@@ -154,11 +179,52 @@ export const LifeStages: React.FC = () => {
         </Button>
       </div>
 
+      {/* Dashboard Summary */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <Card className="bg-white/80 border-family-accent/10">
+          <CardContent className="p-4 flex items-center justify-between">
+            <div>
+              <p className="text-xs font-semibold text-family-textMuted uppercase tracking-wider mb-1">Tổng sự kiện</p>
+              <h3 className="text-2xl font-bold text-family-text">{totalEvents}</h3>
+            </div>
+            <div className="w-12 h-12 rounded-full bg-blue-100 flex items-center justify-center text-blue-600">
+              <CalendarRange className="w-6 h-6" />
+            </div>
+          </CardContent>
+        </Card>
+        <Card className="bg-white/80 border-family-accent/10">
+          <CardContent className="p-4 flex items-center justify-between">
+            <div>
+              <p className="text-xs font-semibold text-family-textMuted uppercase tracking-wider mb-1">Tác động 1 lần (Net)</p>
+              <h3 className={`text-2xl font-bold ${netOneTime >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+                {netOneTime > 0 ? '+' : ''}{formatTableMoneyVNDMillion(netOneTime)}
+              </h3>
+            </div>
+            <div className={`w-12 h-12 rounded-full flex items-center justify-center ${netOneTime >= 0 ? 'bg-green-100 text-green-600' : 'bg-red-100 text-red-600'}`}>
+              {netOneTime >= 0 ? <TrendingUp className="w-6 h-6" /> : <TrendingDown className="w-6 h-6" />}
+            </div>
+          </CardContent>
+        </Card>
+        <Card className="bg-white/80 border-family-accent/10">
+          <CardContent className="p-4 flex items-center justify-between">
+            <div>
+              <p className="text-xs font-semibold text-family-textMuted uppercase tracking-wider mb-1">Tác động dòng tiền (Net)</p>
+              <h3 className={`text-2xl font-bold ${netRecurring >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+                {netRecurring > 0 ? '+' : ''}{formatTableMoneyVNDMillion(netRecurring)}<span className="text-sm font-medium">/tháng</span>
+              </h3>
+            </div>
+            <div className={`w-12 h-12 rounded-full flex items-center justify-center ${netRecurring >= 0 ? 'bg-green-100 text-green-600' : 'bg-red-100 text-red-600'}`}>
+              {netRecurring >= 0 ? <TrendingUp className="w-6 h-6" /> : <TrendingDown className="w-6 h-6" />}
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+
       {formError && <WarningBox type="danger" message={formError} />}
 
       {/* Add / Edit Form Drawer */}
       {(isAdding || editingId) && (
-        <Card className="border-family-accent/30 bg-family-bgDark/20">
+        <Card className="border-family-accent/30 bg-family-bgDark/20 shadow-md transform transition-all">
           <CardHeader>
             <CardTitle>{isAdding ? 'Thêm sự kiện mới' : 'Chỉnh sửa sự kiện'}</CardTitle>
             <CardDescription>
@@ -234,8 +300,8 @@ export const LifeStages: React.FC = () => {
                 onChange={(e) => setFormData({ ...formData, note: e.target.value })}
               />
 
-              <div className="flex justify-end gap-2">
-                <Button variant="outline" onClick={() => { setIsAdding(false); setEditingId(null); }}>Hủy</Button>
+              <div className="flex justify-end gap-2 pt-2">
+                <Button variant="outline" type="button" onClick={() => { setIsAdding(false); setEditingId(null); }}>Hủy</Button>
                 <Button type="submit">Lưu sự kiện</Button>
               </div>
             </form>
@@ -243,7 +309,93 @@ export const LifeStages: React.FC = () => {
         </Card>
       )}
 
-      {/* Explain Flexible Stages */}
+      {/* Timeline View */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center justify-between">
+            <span>Dòng thời gian sự kiện (Timeline)</span>
+          </CardTitle>
+          <CardDescription>
+            Bức tranh toàn cảnh về các biến cố và cột mốc tài chính được sắp xếp theo thời gian.
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          {sortedEvents.length > 0 ? (
+            <div className="relative border-l-2 border-family-accent/20 ml-4 md:ml-6 space-y-6 py-4">
+              {sortedEvents.map((event, index) => {
+                const isIncome = event.amount >= 0;
+                const isRecurringIncome = safeNumber(event.recurringMonthlyImpact) >= 0;
+                
+                return (
+                  <div key={event.id} className="relative pl-8 md:pl-10">
+                    {/* Icon Node */}
+                    <div className={`absolute -left-[21px] top-1 w-10 h-10 rounded-full border-4 border-white flex items-center justify-center shadow-md ${isIncome ? 'bg-green-500' : 'bg-orange-500'}`}>
+                      {getEventIcon(event.type)}
+                    </div>
+                    
+                    {/* Content Card */}
+                    <div className="bg-white rounded-xl border border-family-accent/10 p-5 shadow-sm hover:shadow-md transition-shadow group relative">
+                      <div className="flex flex-col md:flex-row md:items-start justify-between gap-4">
+                        <div className="space-y-2 flex-1">
+                          <div className="flex flex-wrap items-center gap-2">
+                            <span className="text-sm font-bold text-family-accent bg-family-bgDeep/30 px-2.5 py-0.5 rounded-full">
+                              Tháng {event.month}/{event.year}
+                            </span>
+                            <span className="text-xs font-semibold text-family-textLight border border-family-textLight/20 px-2 py-0.5 rounded-full">
+                              {getEventLabel(event.type)}
+                            </span>
+                            <span className="text-xs font-semibold text-family-textMuted bg-gray-100 px-2 py-0.5 rounded-full">
+                              {getSourceLabel(event.source)}
+                            </span>
+                          </div>
+                          <h4 className="text-lg font-bold text-family-text">{event.name}</h4>
+                          {event.note && <p className="text-sm text-family-textMuted mt-1">{event.note}</p>}
+                        </div>
+                        
+                        {/* Impacts */}
+                        <div className="flex flex-col gap-2 items-start md:items-end min-w-[140px] pt-1">
+                          <div className={`px-3 py-1.5 rounded-lg text-sm font-bold w-full md:w-auto text-center ${isIncome ? 'bg-green-50 text-green-700' : 'bg-red-50 text-red-700'}`}>
+                            {isIncome ? '+' : ''}{formatTableMoneyVNDMillion(event.amount)}
+                          </div>
+                          {safeNumber(event.recurringMonthlyImpact) !== 0 && (
+                            <div className={`px-3 py-1 rounded-lg text-xs font-semibold w-full md:w-auto text-center ${isRecurringIncome ? 'bg-green-50 text-green-600' : 'bg-red-50 text-red-600'}`}>
+                              Dòng tiền: {isRecurringIncome ? '+' : ''}{event.recurringMonthlyImpact} tr/tháng
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                      
+                      {/* Hover Actions */}
+                      <div className="absolute top-4 right-4 opacity-0 group-hover:opacity-100 transition-opacity flex items-center gap-1 bg-white shadow-sm border border-gray-100 rounded-lg overflow-hidden">
+                        <button
+                          type="button"
+                          onClick={() => handleEditClick(event)}
+                          className="p-2 text-family-textLight hover:text-family-accent hover:bg-gray-50 transition-colors"
+                          title="Chỉnh sửa"
+                        >
+                          <Edit3 className="w-4 h-4" />
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => handleDelete(event.id)}
+                          className="p-2 text-family-textLight hover:text-red-500 hover:bg-gray-50 transition-colors"
+                          title="Xóa sự kiện"
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          ) : (
+            <EmptyState title="Chưa có sự kiện nào" description="Nhấn nút Thêm sự kiện mới ở trên để bắt đầu." />
+          )}
+        </CardContent>
+      </Card>
+      
+      {/* Explain Flexible Stages (moved to bottom) */}
       <Card className="bg-gradient-to-r from-family-bgDark/30 to-family-bgDeep/15 border-family-accent/10">
         <CardHeader className="pb-2">
           <CardTitle className="text-sm flex items-center gap-2">
@@ -268,77 +420,6 @@ export const LifeStages: React.FC = () => {
               Tài sản tích lũy tạo thu nhập thụ động đủ nuôi sống gia đình, vợ chồng tuyên bố tự do tài chính dài hạn.
             </div>
           </div>
-        </CardContent>
-      </Card>
-
-      {/* Life Events Management Table */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center justify-between">
-            <span>Danh sách Sự kiện lớn trong đời (Life Events)</span>
-          </CardTitle>
-          <CardDescription>
-            Tùy chọn thêm bớt các sự kiện tác động trực tiếp tới tài sản ròng danh nghĩa và dòng tiền ròng của tháng.
-          </CardDescription>
-        </CardHeader>
-        <CardContent className="overflow-x-auto">
-          {state.lifeEvents.length > 0 ? (
-            <table className="w-full text-left text-xs border-collapse">
-              <thead>
-                <tr className="border-b border-family-accent/10 text-family-textMuted font-bold bg-family-bgDark/30">
-                  <th className="p-3">Tên sự kiện</th>
-                  <th className="p-3">Loại</th>
-                  <th className="p-3">Mốc thời gian</th>
-                  <th className="p-3 text-right">Tác động một lần</th>
-                  <th className="p-3 text-right">Tác động hàng tháng</th>
-                  <th className="p-3">Nguồn phân phối</th>
-                  <th className="p-3">Ghi chú</th>
-                  <th className="p-3 text-right">Thao tác</th>
-                </tr>
-              </thead>
-              <tbody>
-                {state.lifeEvents.map((event) => (
-                  <tr key={event.id} className="border-b border-family-accent/5 hover:bg-family-bgDark/10">
-                    <td className="p-3 font-semibold text-family-text">{event.name}</td>
-                    <td className="p-3">
-                      <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-family-bgDark/60 text-family-textLight">
-                        {getEventLabel(event.type)}
-                      </span>
-                    </td>
-                    <td className="p-3 font-medium">Tháng {event.month}/{event.year}</td>
-                    <td className={`p-3 text-right font-bold ${event.amount < 0 ? 'text-red-700' : 'text-green-700'}`}>
-                      {event.amount > 0 ? '+' : ''}{formatTableMoneyVNDMillion(event.amount)}
-                    </td>
-                    <td className={`p-3 text-right font-semibold ${safeNumber(event.recurringMonthlyImpact) < 0 ? 'text-red-700' : 'text-green-700'}`}>
-                      {safeNumber(event.recurringMonthlyImpact) !== 0 
-                      ? `${safeNumber(event.recurringMonthlyImpact) > 0 ? '+' : ''}${event.recurringMonthlyImpact} tr/tháng` 
-                      : '---'}
-                    </td>
-                    <td className="p-3 font-medium text-family-textLight">{getSourceLabel(event.source)}</td>
-                    <td className="p-3 text-family-textMuted max-w-[120px] truncate">{event.note || '---'}</td>
-                    <td className="p-3 text-right space-x-1.5 whitespace-nowrap">
-                      <button
-                        onClick={() => handleEditClick(event)}
-                        className="p-1.5 rounded-lg text-family-accent hover:bg-family-bgDeep/40 transition-colors"
-                        title="Chỉnh sửa"
-                      >
-                        <Edit3 className="w-4 h-4" />
-                      </button>
-                      <button
-                        onClick={() => handleDelete(event.id)}
-                        className="p-1.5 rounded-lg text-red-600 hover:bg-red-50 transition-colors"
-                        title="Xóa sự kiện"
-                      >
-                        <Trash2 className="w-4 h-4" />
-                      </button>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          ) : (
-            <EmptyState title="Chưa có sự kiện nào" description="Nhấn nút Thêm sự kiện mới ở trên để bắt đầu." />
-          )}
         </CardContent>
       </Card>
     </div>

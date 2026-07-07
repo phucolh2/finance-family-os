@@ -109,18 +109,19 @@ export function runProjection(input: ProjectionEngineInput): ProjectionOutput {
     );
 
     activePeriodEvents.forEach((event) => {
-      if (event.source === 'investment') {
-        const amt = Math.abs(event.amount);
+      const amt = event.amount; // âm là chi tiền, dương là nhận tiền
+      if (event.source === 'investment' || event.source === 'future_investing') {
         if (event.type === 'buy_property') {
-          assetAdjustments['stocks'] -= amt;
-          assetAdjustments['real_estate'] += amt;
+          // Chỉ chuyển đổi tài sản từ stocks sang real_estate (amount là số âm khi mua)
+          assetAdjustments['stocks'] += amt; // amt âm -> trừ stocks
+          assetAdjustments['real_estate'] -= amt; // trừ trừ thành cộng
         } else {
-          assetAdjustments['stocks'] -= amt;
-          totalInvestable = Math.max(0, totalInvestable - amt);
+          assetAdjustments['stocks'] += amt;
+          totalInvestable = Math.max(0, totalInvestable + amt);
         }
-      } else if (event.source === 'saving') {
-        const amt = Math.abs(event.amount);
-        currentSavingBalance = Math.max(0, currentSavingBalance - amt);
+      } else {
+        // safety_reserve, family_experience, housing_basic, health_growth, saving, v.v...
+        currentSavingBalance = Math.max(0, currentSavingBalance + amt);
       }
     });
 

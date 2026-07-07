@@ -14,7 +14,7 @@ import { FireCenter } from './pages/FireCenter';
 import { HealthAndFinalRest } from './pages/HealthAndFinalRest';
 import { KnowledgeCenter } from './pages/KnowledgeCenter';
 import { Settings } from './pages/Settings';
-import { AIChat } from './pages/AIChat';
+import { CopilotChat } from './components/copilot/CopilotChat';
 
 function AppContent() {
   const [activeTab, setActiveTab] = useState<string>('dashboard');
@@ -47,8 +47,6 @@ function AppContent() {
         return <KnowledgeCenter />;
       case 'settings':
         return <Settings />;
-      case 'ai_chat':
-        return <AIChat />;
       default:
         return <Dashboard />;
     }
@@ -57,6 +55,7 @@ function AppContent() {
   return (
     <Layout activeTab={activeTab} setActiveTab={setActiveTab}>
       {renderActivePage()}
+      <CopilotChat />
     </Layout>
   );
 }

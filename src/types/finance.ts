@@ -65,7 +65,7 @@ export interface LifeEvent {
     | 'travel'
     | 'other';
   amount: number;
-  source: 'cash' | 'investment' | 'saving' | 'debt' | 'external';
+  source: 'housing_basic' | 'future_investing' | 'safety_reserve' | 'family_experience' | 'health_growth' | 'children' | 'parents' | 'saving' | 'investment' | 'debt' | 'external';
   targetAssetId?: string;
   recurringMonthlyImpact?: number;
   affectsNetWorth: boolean;

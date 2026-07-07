@@ -3,8 +3,8 @@ import type { BudgetRatio, BudgetRatioScheduleItem, BudgetTreeNode } from '../ty
 import type { AssetConfig } from '../types/portfolio';
 
 export const DEFAULT_FAMILY_PROFILE: FamilyProfile = {
-  husbandName: 'Gia Khánh',
-  wifeName: 'Minh Anh',
+  husbandName: 'Hoài Phước',
+  wifeName: 'Diệu Hồng',
   husbandAgeAtStart: 30,
   wifeAgeAtStart: 28,
   planningStartMonth: 10,
