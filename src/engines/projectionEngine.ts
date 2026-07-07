@@ -347,9 +347,9 @@ export function runProjection(input: ProjectionEngineInput): ProjectionOutput {
     (monthlyRows[monthlyRows.length - 1] as any)._customProfit = investmentPnl;
     (monthlyRows[monthlyRows.length - 1] as any)._hasManualInvestmentAdj = hasManualInvestmentAdj;
     (monthlyRows[monthlyRows.length - 1] as any)._savingPnl = savingPnl;
-    (monthlyRows[monthlyRows.length - 1] as any)._childCost1 = childCostRes.breakdown?.child1 || 0;
-    (monthlyRows[monthlyRows.length - 1] as any)._childCost2 = childCostRes.breakdown?.child2 || 0;
-    (monthlyRows[monthlyRows.length - 1] as any)._childCostOther = (childCostRes.breakdown?.healthcare || 0) + (childCostRes.breakdown?.others || 0);
+    (monthlyRows[monthlyRows.length - 1] as any)._childCost1 = childCostRes.totalMonthly;
+    (monthlyRows[monthlyRows.length - 1] as any)._childCost2 = 0;
+    (monthlyRows[monthlyRows.length - 1] as any)._childCostOther = 0;
   });
 
   // 4. Aggregate monthly rows into yearly rows
