@@ -14,6 +14,7 @@ import {
   Settings,
   X,
   MessageSquare,
+  Map,
 } from 'lucide-react';
 
 interface SidebarProps {
@@ -42,7 +43,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ activeTab, setActiveTab, onClo
     {
       title: 'Công cụ hữu ích',
       items: [
-        { id: 'asset_projection', name: 'Dự phóng tài sản', icon: TrendingUp },
+        { id: 'scenario_base', name: 'Kịch bản cơ sở', icon: Map },
         { id: 'fire_center', name: 'FIRE Center', icon: Flame },
         { id: 'health_rest', name: 'Bệnh tật & hậu sự', icon: HeartPulse },
         { id: 'scenario_child_2031', name: 'Kịch bản có con 2031', icon: GitBranch },

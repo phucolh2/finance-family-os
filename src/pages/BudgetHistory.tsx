@@ -9,8 +9,7 @@ import { safeNumber } from '../utils/math';
 import type { BudgetRatioScheduleItem, BudgetTreeNode } from '../types/budget';
 import { BudgetVersionCompareChart } from '../components/budget/BudgetVersionCompareChart';
 import { BudgetHistoryTrendChart } from '../components/budget/BudgetHistoryTrendChart';
-import { BudgetHierarchyDoubleDonut } from '../components/budget/BudgetHierarchyDoubleDonut';
-import { BudgetDecompositionTree } from '../components/budget/BudgetDecompositionTree';
+import { BudgetDetailedList } from '../components/budget/BudgetDetailedList';
 import { BudgetTreeNodeRow } from '../components/budget/BudgetTreeNodeRow';
 import { rebuildTreeFromFlatRatios, calculateBudget } from '../engines/budgetEngine';
 import { DEFAULT_BUDGET_TREE } from '../data/defaultInputs';
@@ -62,7 +61,6 @@ export const BudgetHistory: React.FC = () => {
   const activePeriodKey = `${activeVersion.effectiveYear}-${String(activeVersion.effectiveMonth).padStart(2, '0')}`;
   const activeDbItem = state.resolvedMonthlyDbMap?.[activePeriodKey];
   const milestoneIncome = activeDbItem ? activeDbItem.income : 80;
-  const [chartMode, setChartMode] = useState<'donut' | 'tree'>('tree');
   const [formError, setFormError] = useState<string | null>(null);
 
   // New version creator state
@@ -499,50 +497,24 @@ export const BudgetHistory: React.FC = () => {
             </div>
           </div>
 
-          {/* Top Row: Side-by-side Charts */}
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            
-            {/* Card 1: Active Milestone Hierarchy (Power BI Tree / Sunburst) */}
-            <Card className="border border-family-accent/10 p-4 bg-family-bgDark/5 flex flex-col">
-              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-family-accent/5 pb-3 mb-4">
-                <div>
-                  <h4 className="font-bold text-sm text-family-text uppercase tracking-wider">
-                    Cơ cấu mốc hiện tại
-                  </h4>
-                  <p className="text-xs text-family-textMuted mt-0.5">Biểu đồ phân cấp danh mục con</p>
-                </div>
-                
-                <div className="flex bg-family-bgDark p-1 rounded-xl border border-family-accent/10 h-8 w-44">
-                  <button
-                    type="button"
-                    onClick={() => setChartMode('tree')}
-                    className={`flex-1 text-[9px] rounded-lg font-bold transition-all ${
-                      chartMode === 'tree' ? 'bg-family-accent text-white shadow-sm' : 'text-family-textMuted'
-                    }`}
-                  >
-                    Power BI Tree
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => setChartMode('donut')}
-                    className={`flex-1 text-[9px] rounded-lg font-bold transition-all ${
-                      chartMode === 'donut' ? 'bg-family-accent text-white shadow-sm' : 'text-family-textMuted'
-                    }`}
-                  >
-                    Sunburst
-                  </button>
-                </div>
+          {/* Top Row: Detailed List (Full Width) */}
+          <Card className="border border-family-accent/10 p-4 bg-family-bgDark/5 flex flex-col mb-6">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-family-accent/5 pb-3 mb-4">
+              <div>
+                <h4 className="font-bold text-sm text-family-text uppercase tracking-wide">
+                  Cơ cấu phân bổ ngân sách
+                </h4>
+                <p className="text-xs text-family-textMuted mt-0.5">Danh sách các khoản chi tiêu và tích lũy chi tiết</p>
               </div>
+            </div>
 
-              <div className="h-80 flex items-center justify-center bg-family-bgDark/20 rounded-xl p-2 shadow-inner mt-auto overflow-y-auto">
-                {chartMode === 'tree' ? (
-                  <BudgetDecompositionTree rootGroups={rootGroups} income={milestoneIncome} />
-                ) : (
-                  <BudgetHierarchyDoubleDonut rootGroups={rootGroups} income={milestoneIncome} />
-                )}
-              </div>
-            </Card>
+            <div className="bg-family-bgDark/20 rounded-xl p-4 shadow-inner">
+              <BudgetDetailedList rootGroups={rootGroups} income={milestoneIncome} />
+            </div>
+          </Card>
 
+          {/* Middle Row: Charts */}
+          <div className="grid grid-cols-1 gap-6">
             {/* Card 2: Historical Compare Stacked Bar (%) */}
             <Card className="border border-family-accent/10 p-4 bg-family-bgDark/5 flex flex-col">
               <div className="border-b border-family-accent/5 pb-3 mb-4">

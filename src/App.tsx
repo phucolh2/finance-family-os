@@ -8,7 +8,6 @@ import { LifeStages } from './pages/LifeStages';
 import { ScenarioBase } from './pages/ScenarioBase';
 import { ScenarioChild2031 } from './pages/ScenarioChild2031';
 import { ScenarioManagement } from './pages/ScenarioManagement';
-import { AssetProjection } from './pages/AssetProjection';
 import { Portfolio } from './pages/Portfolio';
 import { FireCenter } from './pages/FireCenter';
 import { HealthAndFinalRest } from './pages/HealthAndFinalRest';
@@ -35,8 +34,6 @@ function AppContent() {
         return <ScenarioChild2031 />;
       case 'scenario_mgmt':
         return <ScenarioManagement />;
-      case 'asset_projection':
-        return <AssetProjection />;
       case 'portfolio':
         return <Portfolio />;
       case 'fire_center':

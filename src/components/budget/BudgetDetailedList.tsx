@@ -1,0 +1,55 @@
+import React from 'react';
+import { formatTableMoneyVNDMillion } from '../../utils/format';
+import type { BudgetTreeNode } from '../../types/budget';
+
+interface BudgetDetailedListProps {
+  rootGroups: BudgetTreeNode[];
+  income: number;
+}
+
+export const BudgetDetailedList: React.FC<BudgetDetailedListProps> = ({ rootGroups, income }) => {
+  return (
+    <div className="w-full h-auto">
+      <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4 items-start">
+        {rootGroups.map((group, groupIdx) => {
+          const groupAmt = (group.ratioPercent / 100) * income;
+          return (
+            <div key={group.id} className="border border-family-accent/10 rounded-xl overflow-hidden bg-family-bgDeep flex flex-col">
+              {/* Group Header */}
+              <div className="bg-family-bgDark/40 px-4 py-3 flex justify-between items-center border-b border-family-accent/10">
+                <div className="flex items-center gap-2">
+                  <div className="w-2 h-2 rounded-full bg-family-accent" />
+                  <span className="font-bold text-sm text-family-text uppercase tracking-wide">{group.name}</span>
+                </div>
+                <div className="flex flex-col items-end">
+                  <span className="font-bold text-family-text text-sm">{formatTableMoneyVNDMillion(groupAmt)}</span>
+                  <span className="text-[10px] text-family-textMuted font-bold">{group.ratioPercent.toFixed(1)}% Tổng Thu</span>
+                </div>
+              </div>
+
+              {/* Items List */}
+              <div className="flex flex-col divide-y divide-family-accent/5">
+                {group.children?.map((item) => {
+                  const itemAmt = (item.ratioPercent / 100) * groupAmt;
+                  const absRatio = (item.ratioPercent / 100) * group.ratioPercent;
+                  return (
+                    <div key={item.id} className="px-4 py-2.5 flex justify-between items-center hover:bg-family-accent/5 transition-colors">
+                      <span className="text-xs text-family-textMuted font-medium pl-4 relative">
+                        <span className="absolute left-0 top-1.5 w-2 h-[1px] bg-family-accent/20"></span>
+                        {item.name}
+                      </span>
+                      <div className="flex items-center gap-4 text-xs">
+                        <span className="text-family-textMuted w-10 text-right">{absRatio.toFixed(1)}%</span>
+                        <span className="text-family-text font-bold min-w-[4rem] text-right">{formatTableMoneyVNDMillion(itemAmt)}</span>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  );
+};
