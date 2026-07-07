@@ -9,16 +9,10 @@ export const buildSystemContext = (state: AppState): string => {
   const currentBudget = budgetSchedule.length > 0 ? budgetSchedule[0] : null;
 
   let budgetText = '';
-  if (currentBudget) {
-    budgetText = `
-- Nhu cầu sống cơ bản (housing_basic): ${currentBudget.housing_basic}%
-- Đầu tư tương lai (future_investing): ${currentBudget.future_investing}%
-- Quỹ dự phòng (safety_reserve): ${currentBudget.safety_reserve}%
-- Trải nghiệm gia đình (family_experience): ${currentBudget.family_experience}%
-- Sức khỏe & phát triển (health_growth): ${currentBudget.health_growth}%
-- Con cái (children): ${currentBudget.children}%
-- Báo hiếu (parents): ${currentBudget.parents}%
-`;
+  if (currentBudget && currentBudget.rootGroups) {
+    budgetText = currentBudget.rootGroups
+      .map(group => `- ${group.name}: ${group.ratioPercent}%`)
+      .join('\n');
   }
 
   return `Bạn là "Finance Family OS Copilot" - một trợ lý tài chính AI thông minh được nhúng trực tiếp vào phần mềm quản lý gia đình.
