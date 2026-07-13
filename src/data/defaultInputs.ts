@@ -103,6 +103,7 @@ export const DEFAULT_BUDGET_TREE: BudgetTreeNode[] = [
     ratioPercent: 30,
     isActive: true,
     sortOrder: 1,
+    classification: 'expense',
     children: [
       { id: 'item_rent', parentId: 'group_housing_basic', level: 1, nodeType: 'item', groupId: 'housing_basic', name: 'Nhà ở / thuê nhà', ratioPercent: 13, isActive: true, sortOrder: 1 },
       { id: 'item_food', parentId: 'group_housing_basic', level: 1, nodeType: 'item', groupId: 'housing_basic', name: 'Ăn uống gia đình', ratioPercent: 10, isActive: true, sortOrder: 2 },
@@ -121,6 +122,7 @@ export const DEFAULT_BUDGET_TREE: BudgetTreeNode[] = [
     ratioPercent: 40,
     isActive: true,
     sortOrder: 2,
+    classification: 'investment',
     children: [
       { id: 'item_liquidity', parentId: 'group_future_investing', level: 1, nodeType: 'item', groupId: 'future_investing', name: 'Quỹ thanh khoản', ratioPercent: 5, isActive: true, sortOrder: 1 },
       { id: 'item_medical_fund', parentId: 'group_future_investing', level: 1, nodeType: 'item', groupId: 'future_investing', name: 'Quỹ y tế', ratioPercent: 5, isActive: true, sortOrder: 2 },
@@ -138,6 +140,7 @@ export const DEFAULT_BUDGET_TREE: BudgetTreeNode[] = [
     ratioPercent: 10,
     isActive: true,
     sortOrder: 3,
+    classification: 'savings',
     children: [
       { id: 'item_parents_support', parentId: 'group_safety_reserve', level: 1, nodeType: 'item', groupId: 'safety_reserve', name: 'Cha mẹ hàng tháng', ratioPercent: 5, isActive: true, sortOrder: 1 },
       { id: 'item_emergency', parentId: 'group_safety_reserve', level: 1, nodeType: 'item', groupId: 'safety_reserve', name: 'Khẩn cấp', ratioPercent: 5, isActive: true, sortOrder: 2 },
@@ -154,6 +157,7 @@ export const DEFAULT_BUDGET_TREE: BudgetTreeNode[] = [
     ratioPercent: 10,
     isActive: true,
     sortOrder: 4,
+    classification: 'expense',
     children: [
       { id: 'item_dating', parentId: 'group_family_experience', level: 1, nodeType: 'item', groupId: 'family_experience', name: 'Hẹn hò / trải nghiệm', ratioPercent: 4, isActive: true, sortOrder: 1 },
       { id: 'item_clothing', parentId: 'group_family_experience', level: 1, nodeType: 'item', groupId: 'family_experience', name: 'Khăn / cặp', ratioPercent: 1, isActive: true, sortOrder: 2 },
@@ -170,6 +174,7 @@ export const DEFAULT_BUDGET_TREE: BudgetTreeNode[] = [
     ratioPercent: 10,
     isActive: true,
     sortOrder: 5,
+    classification: 'expense',
     children: [
       { id: 'item_sports', parentId: 'group_health_growth', level: 1, nodeType: 'item', groupId: 'health_growth', name: 'Thể thao & sức khỏe', ratioPercent: 4, isActive: true, sortOrder: 1 },
       { id: 'item_self_care', parentId: 'group_health_growth', level: 1, nodeType: 'item', groupId: 'health_growth', name: 'Chăm sóc bản thân', ratioPercent: 3, isActive: true, sortOrder: 2 },

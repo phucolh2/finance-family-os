@@ -1,10 +1,11 @@
 import { useState, useEffect } from 'react';
-import type { AppState, PersistedAppState, FamilyProfile, IncomeScheduleItem, Assumptions, LifeEvent, InvestmentDeal } from '../types/finance';
+import type { AppState, PersistedAppState, FamilyProfile, IncomeScheduleItem, Assumptions, LifeEvent, InvestmentDeal, SavingsDeposit } from '../types/finance';
 import type { ProjectionAdjustmentRecord } from '../types/projection';
 import type { BudgetRatioScheduleItem } from '../types/budget';
 import type { AssetConfig } from '../types/portfolio';
 import { migrateState, validateAppState } from '../utils/migration';
 import { generateResolvedMonthlyDb } from '../engines/databaseResolver';
+import { runProjection } from '../engines/projectionEngine';
 import {
   DEFAULT_FAMILY_PROFILE,
   DEFAULT_INCOME_SCHEDULE,
@@ -36,6 +37,7 @@ const INITIAL_APP_STATE: AppState = {
   assets: DEFAULT_ASSETS,
   assumptions: DEFAULT_ASSUMPTIONS,
   investmentDeals: DEFAULT_INVESTMENT_DEALS,
+  savingsDeposits: [],
   resolvedMonthlyDb: initialDb.list,
   resolvedMonthlyDbMap: initialDb.map,
 };
@@ -119,10 +121,52 @@ export function useAppState() {
       newState.assets,
       newState.assumptions
     );
+
+    const projection = runProjection({
+      profile: newState.profile,
+      incomeSchedule: newState.incomeSchedule,
+      budgetSchedule: newState.budgetSchedule,
+      lifeEvents: newState.lifeEvents || [],
+      assets: newState.assets,
+      assumptions: newState.assumptions,
+      investmentDeals: newState.investmentDeals || [],
+      savingsDeposits: newState.savingsDeposits || [],
+      projectionAdjustments: newState.projectionAdjustments,
+    });
+
+    const updatedList = resolvedDb.list.map(dbItem => {
+      const projRow = projection.monthlyRows.find(r => r.period.key === dbItem.periodKey);
+      if (projRow) {
+        const port = projRow.portfolio;
+        const invested = newState.assets.reduce((sum, asset) => sum + port.assets[asset.type].endingBalance, 0);
+        const planned = newState.assets.reduce((sum, asset) => sum + (port.assets[asset.type].earmarkedEndingBalance || 0), 0);
+        const idle = Math.max(0, port.totalEndingBalance - invested - planned);
+
+        return {
+          ...dbItem,
+          investmentFlow: {
+            beginningBalance: port.totalBeginningBalance,
+            contribution: port.totalContribution,
+            pnl: port.totalPnl,
+            endingBalance: port.totalEndingBalance,
+            invested,
+            planned,
+            idle,
+          }
+        };
+      }
+      return dbItem;
+    });
+
+    const updatedMap: Record<string, typeof resolvedDb.list[0]> = {};
+    updatedList.forEach(item => {
+      updatedMap[item.periodKey] = item;
+    });
+
     setState({
       ...newState,
-      resolvedMonthlyDb: resolvedDb.list,
-      resolvedMonthlyDbMap: resolvedDb.map,
+      resolvedMonthlyDb: updatedList,
+      resolvedMonthlyDbMap: updatedMap,
     });
   };
 
@@ -140,9 +184,49 @@ export function useAppState() {
       ...item,
       id: `income_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
     };
+
+    let updatedSchedule = [...state.incomeSchedule];
+    const newMonthValue = newItem.effectiveYear * 12 + newItem.effectiveMonth;
+
+    // Find the immediately preceding item
+    const precedingItems = updatedSchedule.filter(
+      (it) => it.effectiveYear * 12 + it.effectiveMonth < newMonthValue
+    );
+
+    if (precedingItems.length > 0) {
+      precedingItems.sort(
+        (a, b) =>
+          b.effectiveYear * 12 + b.effectiveMonth - (a.effectiveYear * 12 + a.effectiveMonth)
+      );
+      const prevItem = precedingItems[0];
+
+      // Only auto-end it if it doesn't already have an end date
+      if (!prevItem.endYear) {
+        let endMonth = newItem.effectiveMonth - 1;
+        let endYear = newItem.effectiveYear;
+        if (endMonth === 0) {
+          endMonth = 12;
+          endYear -= 1;
+        }
+
+        const updatedPrevItem: IncomeScheduleItem = {
+          ...prevItem,
+          endMonth,
+          endYear,
+          status: 'settled',
+        };
+
+        updatedSchedule = updatedSchedule.map((it) =>
+          it.id === prevItem.id ? updatedPrevItem : it
+        );
+      }
+    }
+
+    updatedSchedule.push(newItem);
+
     saveState({
       ...state,
-      incomeSchedule: [...state.incomeSchedule, newItem],
+      incomeSchedule: updatedSchedule,
     });
   };
 
@@ -166,9 +250,49 @@ export function useAppState() {
       ...item,
       id: `budget_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
     };
+
+    let updatedSchedule = [...state.budgetSchedule];
+    const newMonthValue = newItem.effectiveYear * 12 + newItem.effectiveMonth;
+
+    // Find the immediately preceding item
+    const precedingItems = updatedSchedule.filter(
+      (it) => it.effectiveYear * 12 + it.effectiveMonth < newMonthValue
+    );
+
+    if (precedingItems.length > 0) {
+      precedingItems.sort(
+        (a, b) =>
+          b.effectiveYear * 12 + b.effectiveMonth - (a.effectiveYear * 12 + a.effectiveMonth)
+      );
+      const prevItem = precedingItems[0];
+
+      // Only auto-end it if it doesn't already have an end date
+      if (!prevItem.endYear) {
+        let endMonth = newItem.effectiveMonth - 1;
+        let endYear = newItem.effectiveYear;
+        if (endMonth === 0) {
+          endMonth = 12;
+          endYear -= 1;
+        }
+
+        const updatedPrevItem: BudgetRatioScheduleItem = {
+          ...prevItem,
+          endMonth,
+          endYear,
+          status: 'settled',
+        };
+
+        updatedSchedule = updatedSchedule.map((it) =>
+          it.id === prevItem.id ? updatedPrevItem : it
+        );
+      }
+    }
+
+    updatedSchedule.push(newItem);
+
     saveState({
       ...state,
-      budgetSchedule: [...state.budgetSchedule, newItem],
+      budgetSchedule: updatedSchedule,
     });
   };
 
@@ -263,6 +387,32 @@ export function useAppState() {
     });
   };
 
+  // Savings Deposit Actions
+  const addSavingsDeposit = (item: Omit<SavingsDeposit, 'id'>) => {
+    const newItem: SavingsDeposit = {
+      ...item,
+      id: `saving_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+    };
+    saveState({
+      ...state,
+      savingsDeposits: [...(state.savingsDeposits || []), newItem],
+    });
+  };
+
+  const updateSavingsDeposit = (updated: SavingsDeposit) => {
+    saveState({
+      ...state,
+      savingsDeposits: (state.savingsDeposits || []).map((item) => (item.id === updated.id ? updated : item)),
+    });
+  };
+
+  const deleteSavingsDeposit = (id: string) => {
+    saveState({
+      ...state,
+      savingsDeposits: (state.savingsDeposits || []).filter((item) => item.id !== id),
+    });
+  };
+
   const resetToDefault = () => {
     saveState(INITIAL_APP_STATE);
   };
@@ -329,6 +479,9 @@ export function useAppState() {
     updateInvestmentDeal,
     deleteInvestmentDeal,
     settleInvestmentDeal,
+    addSavingsDeposit,
+    updateSavingsDeposit,
+    deleteSavingsDeposit,
     addProjectionAdjustment,
     updateProjectionAdjustment,
     deleteProjectionAdjustment,

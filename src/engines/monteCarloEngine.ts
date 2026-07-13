@@ -80,6 +80,7 @@ export function runMonteCarlo(input: MonteCarloInput): MonteCarloOutput {
       lifeEvents: baseState.lifeEvents,
       assets: randomizedAssets,
       assumptions: randomizedAssumptions,
+      savingsDeposits: baseState.savingsDeposits,
     });
 
     // Find if this trial successfully reaches FIRE target

@@ -27,19 +27,21 @@ export const BudgetTreeNodeRow: React.FC<BudgetTreeNodeRowProps> = ({
   const [isEditing, setIsEditing] = useState(false);
   const [editName, setEditName] = useState(node.name);
   const [editNote, setEditNote] = useState(node.note || '');
+  const [editClassification, setEditClassification] = useState<BudgetTreeNode['classification']>(node.classification);
 
   const hasChildren = node.children && node.children.length > 0;
   const isGroup = node.nodeType === 'group';
 
   const handleSave = () => {
     if (!editName.trim()) return;
-    onUpdate(node.id, { name: editName, note: editNote });
+    onUpdate(node.id, { name: editName, note: editNote, classification: editClassification });
     setIsEditing(false);
   };
 
   const handleCancel = () => {
     setEditName(node.name);
     setEditNote(node.note || '');
+    setEditClassification(node.classification);
     setIsEditing(false);
   };
 
@@ -78,8 +80,8 @@ export const BudgetTreeNodeRow: React.FC<BudgetTreeNodeRowProps> = ({
             </button>
           )}
 
-          {isEditing ? (
-            <div className="flex flex-col sm:flex-row gap-2 w-full">
+           {isEditing ? (
+            <div className="flex flex-col sm:flex-row gap-2 w-full items-center">
               <input
                 type="text"
                 value={editName}
@@ -94,13 +96,46 @@ export const BudgetTreeNodeRow: React.FC<BudgetTreeNodeRowProps> = ({
                 className="text-base md:text-xs bg-family-bgDeep border border-family-accent/10 rounded-xl px-2.5 py-1 text-family-textMuted focus:ring-1 focus:ring-family-accent/20 w-full sm:flex-grow"
                 placeholder="Ghi chú..."
               />
+              {isGroup && (
+                <select
+                  value={editClassification || ''}
+                  onChange={(e) => setEditClassification(e.target.value ? e.target.value as any : undefined)}
+                  className="text-xs bg-family-bgDeep border border-family-accent/20 rounded-xl px-2 py-1 text-family-text focus:ring-1 focus:ring-family-accent/40"
+                >
+                  <option value="">Không phân loại</option>
+                  <option value="expense">Chi phí</option>
+                  <option value="investment">Đầu tư</option>
+                  <option value="savings">Tiết kiệm</option>
+                </select>
+              )}
             </div>
           ) : (
             <div className="min-w-0">
-              <div className="flex items-center gap-2">
+              <div className="flex items-center gap-2 flex-wrap">
                 <span className={`font-bold text-sm text-family-text truncate ${isGroup ? 'text-base font-serif' : ''}`}>
                   {node.name}
                 </span>
+                {isGroup ? (
+                  <select
+                    value={node.classification || ''}
+                    onChange={(e) => onUpdate(node.id, { classification: e.target.value ? e.target.value as any : undefined })}
+                    className="text-[10px] uppercase font-bold bg-family-bgDeep border border-family-accent/20 rounded-xl px-2.5 py-1 text-family-text focus:outline-none focus:ring-1 focus:ring-family-accent transition-all cursor-pointer"
+                  >
+                    <option value="">Không phân loại</option>
+                    <option value="expense">Chi phí</option>
+                    <option value="investment">Đầu tư</option>
+                    <option value="savings">Tiết kiệm</option>
+                  </select>
+                ) : node.classification && (
+                  <span className={`text-[9px] uppercase px-1.5 py-0.5 rounded font-bold tracking-wider ${
+                    node.classification === 'expense' ? 'bg-red-500/10 text-red-600 border border-red-500/20' :
+                    node.classification === 'investment' ? 'bg-emerald-500/10 text-emerald-600 border border-emerald-500/20' :
+                    'bg-purple-500/10 text-purple-600 border border-purple-500/20'
+                  }`}>
+                    {node.classification === 'expense' ? 'Chi phí' :
+                     node.classification === 'investment' ? 'Đầu tư' : 'Tiết kiệm'}
+                  </span>
+                )}
                 {!node.isActive && (
                   <span className="text-[9px] bg-family-bgDeep px-2 py-0.5 rounded-full text-family-textMuted font-bold border border-family-accent/5">
                     Tắt

@@ -1,4 +1,4 @@
-import type { FamilyProfile, IncomeScheduleItem, LifeEvent, Assumptions, InvestmentDeal } from '../types/finance';
+import type { FamilyProfile, IncomeScheduleItem, LifeEvent, Assumptions, InvestmentDeal, SavingsDeposit } from '../types/finance';
 import type { BudgetRatioScheduleItem } from '../types/budget';
 import type { AssetConfig, AssetType } from '../types/portfolio';
 import type { ProjectionMonthlyRow, ProjectionYearlyRow, ProjectionOutput, ProjectionAdjustmentRecord } from '../types/projection';
@@ -19,6 +19,7 @@ export interface ProjectionEngineInput {
   assets: AssetConfig[];
   assumptions: Assumptions;
   investmentDeals?: InvestmentDeal[];
+  savingsDeposits?: SavingsDeposit[];
   projectionAdjustments?: ProjectionAdjustmentRecord[];
 }
 
@@ -36,6 +37,7 @@ export function runProjection(input: ProjectionEngineInput): ProjectionOutput {
   const assets = safeArray(input.assets);
   const assumptions = input.assumptions;
   const investmentDeals = safeArray(input.investmentDeals);
+  const savingsDeposits = safeArray(input.savingsDeposits);
   const projectionAdjustments = safeArray(input.projectionAdjustments);
 
   // 1. Generate monthly timeline
@@ -57,6 +59,8 @@ export function runProjection(input: ProjectionEngineInput): ProjectionOutput {
   // 2. Initialize simulation balances
   let currentSavingBalance = 0;
   let totalInvestable = safeNumber(profile.startingCapital, 100);
+  let cumulativeContribution = 0;
+  let cumulativePnl = 0;
 
   const assetAdjustments: Record<AssetType, number> = {
     fx_reserve_usd: 0,
@@ -138,11 +142,11 @@ export function runProjection(input: ProjectionEngineInput): ProjectionOutput {
         const monthsActiveUpToLastMonth = current - start;
         let acc = 0;
         if (deal.status === 'settled') {
-          const duration = end - start + 1;
-          acc = (safeNumber(deal.realizedProfit, 0) / duration) * monthsActiveUpToLastMonth;
-        } else if (deal.isEarmarked) {
-          const rate = safeNumber(deal.expectedSavingRate, 0);
-          acc = safeNumber(deal.capital, 0) * (rate / 100 / 12) * monthsActiveUpToLastMonth;
+          const investStart = deal.isConverted && deal.conversionYear && deal.conversionMonth
+            ? deal.conversionYear * 12 + deal.conversionMonth
+            : start;
+          const duration = end - investStart + 1;
+          acc = (safeNumber(deal.realizedProfit, 0) / duration) * Math.max(0, current - investStart);
         }
         activeValueUpToLastMonth += safeNumber(deal.capital, 0) + acc;
       }
@@ -203,16 +207,41 @@ export function runProjection(input: ProjectionEngineInput): ProjectionOutput {
         ? deal.endYear * 12 + deal.endMonth 
         : Infinity;
       
+      const isOriginallyEarmarked = deal.isEarmarked || deal.isConverted;
+      const term = safeNumber(deal.savingTermMonths, 12);
+      const maturity = start + term;
+      const conversion = (deal.isConverted && deal.conversionYear && deal.conversionMonth)
+        ? (deal.conversionYear * 12 + deal.conversionMonth)
+        : Infinity;
+      const savingEnd = isOriginallyEarmarked ? Math.min(maturity, conversion, end) : start;
+
       if (current >= start && current <= end) {
         if (deal.status === 'settled') {
-          const duration = end - start + 1;
-          totalDealPnlThisMonth += safeNumber(deal.realizedProfit, 0) / duration;
-        } else if (deal.isEarmarked) {
-          const rate = safeNumber(deal.expectedSavingRate, 0);
-          totalDealPnlThisMonth += safeNumber(deal.capital, 0) * (rate / 100 / 12);
+          const investStart = deal.isConverted && deal.conversionYear && deal.conversionMonth
+            ? deal.conversionYear * 12 + deal.conversionMonth
+            : start;
+          if (current >= investStart && current <= end) {
+            const duration = end - investStart + 1;
+            totalDealPnlThisMonth += safeNumber(deal.realizedProfit, 0) / duration;
+          }
         }
       }
-      
+
+      // One-time savings interest payout at the savingEnd month
+      if (isOriginallyEarmarked && current === savingEnd) {
+        const monthsSavingsActive = savingEnd - start;
+        if (monthsSavingsActive > 0) {
+          const rate = safeNumber(deal.expectedSavingRate, 0);
+          const totalSavingsInterest = deal.capital * (rate / 100 / 12) * monthsSavingsActive;
+          totalDealPnlThisMonth += totalSavingsInterest;
+          
+          let cause = "đáo hạn";
+          if (savingEnd === conversion) cause = "chuyển sang đầu tư";
+          else if (savingEnd === end) cause = "tất toán";
+          dealSettleNotes.push(`Ghi nhận lãi tiết kiệm (${cause}) của ${deal.name}: +${totalSavingsInterest.toFixed(2)}M`);
+        }
+      }
+
       if (deal.status === 'settled' && deal.endMonth === period.month && deal.endYear === period.year) {
         const profit = safeNumber(deal.realizedProfit, 0);
         dealSettleNotes.push(`Tất toán ${deal.name}: ${profit >= 0 ? `Lãi +` : `Lỗ `}${profit}M`);
@@ -239,23 +268,42 @@ export function runProjection(input: ProjectionEngineInput): ProjectionOutput {
         : Infinity;
       
       if (current >= start && current <= end) {
-        const monthsActiveSoFar = current - start + 1;
+        const isOriginallyEarmarked = deal.isEarmarked || deal.isConverted;
+        const term = safeNumber(deal.savingTermMonths, 12);
+        const maturity = start + term;
+        const conversion = (deal.isConverted && deal.conversionYear && deal.conversionMonth)
+          ? (deal.conversionYear * 12 + deal.conversionMonth)
+          : Infinity;
+        const savingEnd = isOriginallyEarmarked ? Math.min(maturity, conversion, end) : start;
+
+        // Is it currently earmarked in this month?
+        const isCurrentlyEarmarked = isOriginallyEarmarked && current < conversion;
+
         let accumulatedPnl = 0;
         if (deal.status === 'settled') {
-          const duration = end - start + 1;
-          accumulatedPnl = (safeNumber(deal.realizedProfit, 0) / duration) * monthsActiveSoFar;
-        } else if (deal.isEarmarked) {
+          const investStart = deal.isConverted && deal.conversionYear && deal.conversionMonth
+            ? deal.conversionYear * 12 + deal.conversionMonth
+            : start;
+          if (current >= investStart) {
+            const duration = end - investStart + 1;
+            const monthsActiveSoFar = current - investStart + 1;
+            accumulatedPnl = (safeNumber(deal.realizedProfit, 0) / duration) * monthsActiveSoFar;
+          }
+        } else if (isCurrentlyEarmarked) {
+          // Earmarked saving interest accumulation
           const rate = safeNumber(deal.expectedSavingRate, 0);
-          accumulatedPnl = safeNumber(deal.capital, 0) * (rate / 100 / 12) * monthsActiveSoFar;
+          const monthsActive = current < savingEnd ? current - start + 1 : savingEnd - start;
+          accumulatedPnl = safeNumber(deal.capital, 0) * (rate / 100 / 12) * monthsActive;
         }
+
+        const totalValue = safeNumber(deal.capital, 0) + (isCurrentlyEarmarked ? accumulatedPnl : 0);
         
-        const totalValue = safeNumber(deal.capital, 0) + accumulatedPnl;
-        
-        if (deal.isEarmarked) {
+        if (isCurrentlyEarmarked) {
           earmarkedBalances[deal.assetType] += totalValue;
           totalEarmarkedCapital += totalValue;
         } else {
-          assetBalances[deal.assetType] += totalValue;
+          // If settled or regular active, add to active assets. Note that for settled deals we add the accrued profit too.
+          assetBalances[deal.assetType] += totalValue + (deal.status === 'settled' ? accumulatedPnl : 0);
         }
       }
     });
@@ -273,6 +321,42 @@ export function runProjection(input: ProjectionEngineInput): ProjectionOutput {
       warnings.push(`[Đầu tư] Tháng ${period.month}/${period.year}: Tổng vốn thương vụ hoạt động và chờ phân bổ (${(totalActiveCapital + totalEarmarkedCapital).toFixed(1)}M) vượt quá tổng ngân sách đầu tư khả dụng (${totalInvestable.toFixed(1)}M).`);
     }
 
+    // Calculate savings deposits at this period
+    let totalSavingsPrincipal = 0;
+    let totalSavingsInterest = 0;
+    savingsDeposits.forEach((dep) => {
+      if (dep.status !== 'active') return;
+      const depStart = dep.startYear * 12 + dep.startMonth;
+      const depEnd = depStart + dep.termMonths;
+      const current = period.year * 12 + period.month;
+      if (current >= depStart && current < depEnd) {
+        const monthsActive = current - depStart + 1;
+        const monthlyRate = safeNumber(dep.interestRateAnnual, 0) / 100 / 12;
+        const interest = dep.principal * monthlyRate * monthsActive;
+        totalSavingsPrincipal += dep.principal;
+        totalSavingsInterest += interest;
+      }
+    });
+
+    // Savings interest contributes to totalInvestable growth
+    const savingsInterestThisMonth = (() => {
+      let interest = 0;
+      savingsDeposits.forEach((dep) => {
+        if (dep.status !== 'active') return;
+        const depStart = dep.startYear * 12 + dep.startMonth;
+        const depEnd = depStart + dep.termMonths;
+        const current = period.year * 12 + period.month;
+        if (current >= depStart && current < depEnd) {
+          interest += dep.principal * (safeNumber(dep.interestRateAnnual, 0) / 100 / 12);
+        }
+      });
+      return interest;
+    })();
+    totalInvestable += savingsInterestThisMonth;
+    
+    cumulativeContribution += monthlyContribution;
+    cumulativePnl += (investmentPnl + savingsInterestThisMonth);
+
     const portfolioOutput = {
       assets: {
         fx_reserve_usd: { beginningBalance: 0, contribution: 0, pnl: 0, endingBalance: assetBalances.fx_reserve_usd, earmarkedEndingBalance: earmarkedBalances.fx_reserve_usd, actualReturnApplied: false },
@@ -283,9 +367,13 @@ export function runProjection(input: ProjectionEngineInput): ProjectionOutput {
       },
       totalBeginningBalance: previousTotalInvestable,
       totalContribution: monthlyContribution,
-      totalPnl: investmentPnl,
+      totalPnl: investmentPnl + savingsInterestThisMonth,
       totalEndingBalance: totalInvestable,
-      unallocatedEndingBalance: unallocatedCash,
+      unallocatedEndingBalance: Math.max(0, unallocatedCash - totalSavingsPrincipal),
+      savingsBalance: totalSavingsPrincipal,
+      savingsInterestAccrued: totalSavingsInterest,
+      cumulativeContribution,
+      cumulativePnl,
     };
 
     // Calculate Net Worth

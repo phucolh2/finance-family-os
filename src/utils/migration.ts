@@ -180,6 +180,7 @@ export function migrateState(stored: any, defaultState: AppState): AppState {
         ...data.assumptions,
       },
       investmentDeals: Array.isArray(data.investmentDeals) ? data.investmentDeals : defaultState.investmentDeals,
+      savingsDeposits: Array.isArray(data.savingsDeposits) ? data.savingsDeposits : [],
       resolvedMonthlyDb: Array.isArray(data.resolvedMonthlyDb) ? data.resolvedMonthlyDb : undefined,
       resolvedMonthlyDbMap: data.resolvedMonthlyDbMap && typeof data.resolvedMonthlyDbMap === 'object' ? data.resolvedMonthlyDbMap : undefined,
     };

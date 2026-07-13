@@ -17,9 +17,21 @@ export const BudgetDetailedList: React.FC<BudgetDetailedListProps> = ({ rootGrou
             <div key={group.id} className="border border-family-accent/10 rounded-xl overflow-hidden bg-family-bgDeep flex flex-col">
               {/* Group Header */}
               <div className="bg-family-bgDark/40 px-4 py-3 flex justify-between items-center border-b border-family-accent/10">
-                <div className="flex items-center gap-2">
-                  <div className="w-2 h-2 rounded-full bg-family-accent" />
-                  <span className="font-bold text-sm text-family-text uppercase tracking-wide">{group.name}</span>
+                <div className="flex flex-col gap-1">
+                  <div className="flex items-center gap-2">
+                    <div className="w-2 h-2 rounded-full bg-family-accent" />
+                    <span className="font-bold text-sm text-family-text uppercase tracking-wide">{group.name}</span>
+                  </div>
+                  {group.classification && (
+                    <span className={`text-[9px] uppercase px-1.5 py-0.5 rounded-md font-bold tracking-wider w-fit ${
+                      group.classification === 'expense' ? 'bg-red-500/10 text-red-600 border border-red-500/20' :
+                      group.classification === 'investment' ? 'bg-emerald-500/10 text-emerald-600 border border-emerald-500/20' :
+                      'bg-purple-500/10 text-purple-600 border border-purple-500/20'
+                    }`}>
+                      {group.classification === 'expense' ? 'Chi phí' :
+                       group.classification === 'investment' ? 'Đầu tư' : 'Tiết kiệm'}
+                    </span>
+                  )}
                 </div>
                 <div className="flex flex-col items-end">
                   <span className="font-bold text-family-text text-sm">{formatTableMoneyVNDMillion(groupAmt)}</span>

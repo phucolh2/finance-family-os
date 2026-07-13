@@ -25,6 +25,8 @@ export const Portfolio: React.FC = () => {
     updateInvestmentDeal,
     deleteInvestmentDeal,
     settleInvestmentDeal,
+    addSavingsDeposit,
+    deleteSavingsDeposit,
   } = useAppContext();
   
   // Run projection dynamically to get actual accumulated assets at the observed time
@@ -36,6 +38,7 @@ export const Portfolio: React.FC = () => {
     assets: state.assets,
     assumptions: state.assumptions,
     investmentDeals: state.investmentDeals,
+    savingsDeposits: state.savingsDeposits,
     projectionAdjustments: state.projectionAdjustments,
   });
 
@@ -65,6 +68,7 @@ export const Portfolio: React.FC = () => {
     startYear: 2026,
     isEarmarked: false,
     expectedSavingRate: 5,
+    savingTermMonths: 12,
     notes: '',
   });
 
@@ -77,7 +81,25 @@ export const Portfolio: React.FC = () => {
     reinvestAssetType: 'stocks' as AssetType,
   });
 
+  const [convertingDealId, setConvertingDealId] = useState<string | null>(null);
+  const [conversionForm, setConversionForm] = useState({
+    month: 10,
+    year: 2026,
+  });
+
   const [formError, setFormError] = useState<string | null>(null);
+
+  // Savings Deposit form states
+  const [showAddSavingsForm, setShowAddSavingsForm] = useState(false);
+  const [savingsForm, setSavingsForm] = useState({
+    name: '',
+    principal: 0,
+    interestRate: 5,
+    termMonths: 12,
+    startMonth: new Date().getMonth() + 1,
+    startYear: new Date().getFullYear(),
+    pool: 'idle' as 'idle' | 'planned',
+  });
 
   const handleReset = () => {
     resetToDefault();
@@ -145,6 +167,22 @@ export const Portfolio: React.FC = () => {
   const unallocatedAtStart = targetMonthRow ? (targetMonthRow.portfolio.unallocatedEndingBalance ?? 0) : totalStartingBalance;
   const isDealCapitalOverLimit = dealForm.capital > unallocatedAtStart;
 
+  // Calculate available savings pool balance for validation
+  const savingsTargetMonthRow = projection.monthlyRows.find(
+    (r) => r.period.month === savingsForm.startMonth && r.period.year === savingsForm.startYear
+  );
+  let availableSavingsPoolBalance = 0;
+  if (savingsTargetMonthRow) {
+    const port = savingsTargetMonthRow.portfolio;
+    const invested = state.assets.reduce((sum, asset) => sum + port.assets[asset.type].endingBalance, 0);
+    const planned = state.assets.reduce((sum, asset) => sum + (port.assets[asset.type].earmarkedEndingBalance || 0), 0);
+    const idle = Math.max(0, port.totalEndingBalance - invested - planned);
+    availableSavingsPoolBalance = savingsForm.pool === 'idle' ? idle : planned;
+  } else {
+    availableSavingsPoolBalance = totalStartingBalance;
+  }
+  const isSavingsOverLimit = savingsForm.principal > availableSavingsPoolBalance;
+
   return (
     <div className="space-y-6">
       {/* Top Page Header */}
@@ -169,38 +207,131 @@ export const Portfolio: React.FC = () => {
 
       {formError && <WarningBox type="danger" message={formError} />}
 
-      {/* Starting Capital Configuration Card */}
-      <Card className="bg-family-accent/5 border-family-accent/20">
-        <CardContent className="py-4 px-6 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-          <div className="space-y-1">
-            <h3 className="font-bold text-family-text flex items-center gap-2">
-              💼 Cấu hình Vốn gốc khởi điểm
-            </h3>
-            <p className="text-xs text-family-textMuted">
-              Vốn khởi điểm ban đầu của hai vợ chồng tại mốc quan sát bắt đầu kế hoạch ({state.profile.planningStartMonth}/{state.profile.planningStartYear}).
-            </p>
-          </div>
-          <div className="flex items-center gap-3">
-            <label className="text-xs font-semibold text-family-text shrink-0">Tổng vốn khởi điểm:</label>
-            <div className="flex items-center gap-2">
-              <input
-                type="number"
-                value={state.profile.startingCapital ?? 100}
-                onChange={(e) => {
-                  const val = Math.max(0, safeNumber(Number(e.target.value), 0));
-                  updateProfile({
-                    ...state.profile,
-                    startingCapital: val,
-                  });
-                }}
-                className="w-28 text-center text-xs font-bold text-family-accent bg-white rounded-xl border border-family-accent/15 px-3 py-1.5 focus:outline-none focus:ring-1 focus:ring-family-accent"
-              />
-              <span className="text-xs font-bold text-family-textMuted">Tr VND</span>
+      {/* 4 KPI Cards: Portfolio Breakdown */}
+      {(() => {
+        const totalInvestable = activeRow ? activeRow.portfolio.totalEndingBalance : totalStartingBalance;
+        const investedCapital = state.assets.reduce((sum, asset) => {
+          return sum + (activeRow ? activeRow.portfolio.assets[asset.type].endingBalance : 0);
+        }, 0);
+        const plannedCapital = totalEarmarkedCapital;
+        const savBal = activeRow?.portfolio.savingsBalance || 0;
+        const savInterest = activeRow?.portfolio.savingsInterestAccrued || 0;
+        const idleCash = Math.max(0, totalInvestable - investedCapital - plannedCapital);
+
+        const cumContribution = activeRow?.portfolio.cumulativeContribution || 0;
+        const cumPnl = activeRow?.portfolio.cumulativePnl || 0;
+
+        return (
+          <div className="space-y-4">
+            {/* Top overview card: Tổng tiền được phân bổ đầu tư */}
+            <Card className="bg-gradient-to-r from-family-accent/5 to-sky-500/5 border-family-accent/20">
+              <CardContent className="py-4 px-6 flex flex-col sm:flex-row justify-between sm:items-center gap-4">
+                <div>
+                  <div className="flex items-center gap-2 mb-1">
+                    <span className="text-xl">💼</span>
+                    <h3 className="font-bold text-base text-family-text uppercase tracking-wide font-serif">
+                      TỔNG TIỀN ĐÃ PHÂN BỔ ĐẦU TƯ
+                    </h3>
+                  </div>
+                  <p className="text-xs text-family-textMuted">
+                    Tổng quy mô tài sản đầu tư tích lũy của gia đình tính đến tháng quan sát (gốc + đóng góp hàng tháng + lãi lũy kế).
+                  </p>
+                </div>
+                <div className="text-right shrink-0">
+                  <span className="text-2xl font-extrabold text-family-accent">
+                    {formatKpiMoneyVNDMillion(totalInvestable)}
+                  </span>
+                  <p className="text-[10px] text-family-textMuted mt-0.5 font-semibold">
+                    Chia thành 3 cấu phần: Đã đầu tư, Lên kế hoạch, Chưa có kế hoạch
+                  </p>
+                </div>
+              </CardContent>
+            </Card>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4">
+              {/* KPI 1: Vốn gốc khởi điểm */}
+              <Card className="bg-gradient-to-br from-amber-50 to-orange-50 border-amber-200/50">
+                <CardContent className="py-4 px-5">
+                  <div className="flex items-center gap-2 mb-2">
+                    <span className="text-lg">💰</span>
+                    <span className="text-[10px] font-bold text-amber-700 uppercase tracking-wider">Vốn gốc khởi điểm</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <input
+                      type="number"
+                      value={state.profile.startingCapital ?? 0}
+                      onChange={(e) => {
+                        const val = Math.max(0, safeNumber(Number(e.target.value), 0));
+                        updateProfile({ ...state.profile, startingCapital: val });
+                      }}
+                      className="w-24 text-lg font-bold text-amber-800 bg-white/80 rounded-lg border border-amber-200 px-2 py-1 focus:outline-none focus:ring-1 focus:ring-amber-400"
+                    />
+                    <span className="text-xs font-semibold text-amber-600">Tr VND</span>
+                  </div>
+                  <p className="text-[10px] text-amber-600/70 mt-1.5">Tại mốc {state.profile.planningStartMonth}/{state.profile.planningStartYear}</p>
+                </CardContent>
+              </Card>
+
+              {/* KPI 2: Đã đầu tư */}
+              <Card className="bg-gradient-to-br from-emerald-50 to-green-50 border-emerald-200/50">
+                <CardContent className="py-4 px-5">
+                  <div className="flex items-center gap-2 mb-2">
+                    <span className="text-lg">📈</span>
+                    <span className="text-[10px] font-bold text-emerald-700 uppercase tracking-wider">Đã đầu tư</span>
+                  </div>
+                  <p className="text-xl font-bold text-emerald-800">{formatKpiMoneyVNDMillion(investedCapital)}</p>
+                  <p className="text-[10px] text-emerald-600/70 mt-1.5">
+                    {state.investmentDeals?.filter(d => d.status === 'active' && !d.isEarmarked).length || 0} thương vụ đang hoạt động
+                  </p>
+                </CardContent>
+              </Card>
+
+              {/* KPI 3: Đã lên kế hoạch */}
+              <Card className="bg-gradient-to-br from-violet-50 to-purple-50 border-violet-200/50">
+                <CardContent className="py-4 px-5">
+                  <div className="flex items-center gap-2 mb-2">
+                    <span className="text-lg">📋</span>
+                    <span className="text-[10px] font-bold text-violet-700 uppercase tracking-wider">Đã lên kế hoạch</span>
+                  </div>
+                  <p className="text-xl font-bold text-violet-800">{formatKpiMoneyVNDMillion(plannedCapital)}</p>
+                  <p className="text-[10px] text-violet-600/70 mt-1.5">
+                    {state.investmentDeals?.filter(d => d.isEarmarked && d.status === 'active').length || 0} khoản chờ phân bổ
+                  </p>
+                </CardContent>
+              </Card>
+
+              {/* KPI 4: Chưa có kế hoạch */}
+              <Card className="bg-gradient-to-br from-sky-50 to-blue-50 border-sky-200/50">
+                <CardContent className="py-4 px-5">
+                  <div className="flex items-center gap-2 mb-2">
+                    <span className="text-lg">🏦</span>
+                    <span className="text-[10px] font-bold text-sky-700 uppercase tracking-wider">Chưa có kế hoạch</span>
+                  </div>
+                  <p className="text-xl font-bold text-sky-800">{formatKpiMoneyVNDMillion(idleCash)}</p>
+                  <p className="text-[10px] text-sky-600/70 mt-1.5">
+                    Tiền nhàn rỗi{savBal > 0 ? ` (${formatKpiMoneyVNDMillion(savBal)} đang gửi TK)` : ''}
+                  </p>
+                </CardContent>
+              </Card>
+            </div>
+
+            {/* Source of Funds Details */}
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 p-3.5 bg-family-accent/5 border border-family-accent/10 rounded-xl text-xs">
+              <div className="font-semibold text-family-text flex items-center gap-1.5">
+                <span>📊</span>
+                Nguồn hình thành tổng tài sản tích lũy ({formatKpiMoneyVNDMillion(totalInvestable)}):
+              </div>
+              <div className="flex flex-wrap items-center gap-x-6 gap-y-2 text-family-textMuted font-medium">
+                <div>Vốn khởi điểm: <strong className="text-family-text">{formatKpiMoneyVNDMillion(state.profile.startingCapital ?? 0)}</strong></div>
+                <div>+ Lũy kế đóng góp từ lương: <strong className="text-emerald-700">+{formatKpiMoneyVNDMillion(cumContribution)}</strong></div>
+                <div>+ Lũy kế lãi/lỗ đầu tư phát sinh: <strong className={cumPnl >= 0 ? "text-emerald-700" : "text-red-600"}>{cumPnl >= 0 ? `+` : ``}{formatKpiMoneyVNDMillion(cumPnl)}</strong></div>
+              </div>
             </div>
           </div>
-        </CardContent>
-      </Card>
+        );
+      })()}
 
+      {/* Tổng quan nhanh + Biểu đồ */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Assets summary table */}
         <Card className="lg:col-span-2">
@@ -325,6 +456,211 @@ export const Portfolio: React.FC = () => {
         </Card>
       </div>
 
+      {/* Savings Deposits Section */}
+      <Card className="border-sky-200/30">
+        <CardHeader className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
+          <div className="w-full md:w-3/4">
+            <CardTitle className="text-xl font-serif font-bold text-family-text flex items-center gap-2">
+              🏦 Gửi Tiết kiệm Ngân hàng
+            </CardTitle>
+            <CardDescription className="w-full">
+              Tạo các khoản gửi tiết kiệm từ phần tiền <strong>nhàn rỗi</strong> hoặc <strong>đã lên kế hoạch</strong>. Lãi suất tính từ thời điểm tạo khoản.
+            </CardDescription>
+          </div>
+          <Button onClick={() => setShowAddSavingsForm(!showAddSavingsForm)} size="sm" className="gap-1 text-xs py-1 h-8 shrink-0">
+            <Plus className="w-3.5 h-3.5" /> Tạo khoản tiết kiệm
+          </Button>
+        </CardHeader>
+        <CardContent>
+          {/* Add Savings Form */}
+          {showAddSavingsForm && (
+            <div className="mb-6 p-4 bg-sky-50/50 border border-sky-200/30 rounded-xl space-y-4">
+              <h4 className="font-bold text-sm text-family-text">Tạo khoản Gửi tiết kiệm mới</h4>
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+                <Input
+                  label="Tên khoản"
+                  value={savingsForm.name}
+                  onChange={(e) => setSavingsForm({ ...savingsForm, name: e.target.value })}
+                  placeholder="VD: Tiết kiệm VCB 12 tháng"
+                />
+                <Input
+                  label="Số tiền gốc (Tr VND)"
+                  type="number"
+                  value={savingsForm.principal}
+                  onChange={(e) => setSavingsForm({ ...savingsForm, principal: safeNumber(Number(e.target.value), 0) })}
+                />
+                <div>
+                  <label className="block text-xs font-semibold text-family-textMuted uppercase tracking-wider mb-1">Kì hạn</label>
+                  <select
+                    className="block w-full rounded-xl border border-family-accent/20 bg-white/60 py-2.5 px-3 text-sm text-family-text focus:border-family-accent focus:bg-white focus:outline-none focus:ring-1 focus:ring-family-accent transition-colors"
+                    value={savingsForm.termMonths}
+                    onChange={(e) => setSavingsForm({ ...savingsForm, termMonths: Number(e.target.value) })}
+                  >
+                    <option value={1}>1 tháng</option>
+                    <option value={3}>3 tháng</option>
+                    <option value={6}>6 tháng</option>
+                    <option value={9}>9 tháng</option>
+                    <option value={12}>12 tháng</option>
+                    <option value={18}>18 tháng</option>
+                    <option value={24}>24 tháng</option>
+                    <option value={36}>36 tháng</option>
+                  </select>
+                </div>
+                <Input
+                  label="Lãi suất (%/năm)"
+                  type="number"
+                  value={savingsForm.interestRate}
+                  onChange={(e) => setSavingsForm({ ...savingsForm, interestRate: safeNumber(Number(e.target.value), 0) })}
+                />
+                <Input
+                  label="Tháng bắt đầu"
+                  type="number"
+                  min={1}
+                  max={12}
+                  value={savingsForm.startMonth}
+                  onChange={(e) => setSavingsForm({ ...savingsForm, startMonth: safeNumber(Number(e.target.value), 1) })}
+                />
+                <Input
+                  label="Năm bắt đầu"
+                  type="number"
+                  min={2024}
+                  max={2060}
+                  value={savingsForm.startYear}
+                  onChange={(e) => setSavingsForm({ ...savingsForm, startYear: safeNumber(Number(e.target.value), 2026) })}
+                />
+                <div>
+                  <label className="block text-xs font-semibold text-family-textMuted uppercase tracking-wider mb-1">Nguồn vốn</label>
+                  <select
+                    className="block w-full rounded-xl border border-family-accent/20 bg-white/60 py-2.5 px-3 text-sm text-family-text focus:border-family-accent focus:bg-white focus:outline-none focus:ring-1 focus:ring-family-accent transition-colors"
+                    value={savingsForm.pool}
+                    onChange={(e) => setSavingsForm({ ...savingsForm, pool: e.target.value as 'idle' | 'planned' })}
+                  >
+                    <option value="idle">Chưa có kế hoạch</option>
+                    <option value="planned">Đã lên kế hoạch</option>
+                  </select>
+                </div>
+              </div>
+
+              {isSavingsOverLimit && (
+                <WarningBox 
+                  type="danger" 
+                  message={`Số tiền gửi (${savingsForm.principal} Tr VND) vượt quá số dư khả dụng của nguồn vốn "${savingsForm.pool === 'idle' ? 'Chưa có kế hoạch' : 'Đã lên kế hoạch'}" tại tháng ${savingsForm.startMonth}/${savingsForm.startYear} (Số dư khả dụng: ${availableSavingsPoolBalance.toFixed(1)} Tr VND).`} 
+                />
+              )}
+
+              <div className="flex gap-2 pt-2">
+                <Button
+                  size="sm"
+                  className="gap-1"
+                  disabled={isSavingsOverLimit || savingsForm.principal <= 0 || !savingsForm.name.trim()}
+                  onClick={() => {
+                    if (isSavingsOverLimit) return;
+                    if (!savingsForm.name.trim()) {
+                      setFormError('Vui lòng nhập tên khoản tiết kiệm.');
+                      return;
+                    }
+                    if (savingsForm.principal <= 0) {
+                      setFormError('Số tiền gốc phải lớn hơn 0.');
+                      return;
+                    }
+                    addSavingsDeposit({
+                      name: savingsForm.name.trim(),
+                      principal: savingsForm.principal,
+                      interestRateAnnual: savingsForm.interestRate,
+                      termMonths: savingsForm.termMonths,
+                      startMonth: savingsForm.startMonth,
+                      startYear: savingsForm.startYear,
+                      pool: savingsForm.pool,
+                      status: 'active',
+                    });
+                    setShowAddSavingsForm(false);
+                    setSavingsForm({ name: '', principal: 0, interestRate: 5, termMonths: 12, startMonth: new Date().getMonth() + 1, startYear: new Date().getFullYear(), pool: 'idle' });
+                    setFormError(null);
+                  }}
+                >
+                  <Save className="w-3.5 h-3.5" /> Lưu
+                </Button>
+                <Button variant="secondary" size="sm" onClick={() => setShowAddSavingsForm(false)}>Hủy</Button>
+              </div>
+            </div>
+          )}
+
+          {/* Savings Deposits List */}
+          {(state.savingsDeposits || []).length > 0 ? (
+            <table className="w-full text-left text-xs border-collapse">
+              <thead>
+                <tr className="border-b border-sky-200/30 text-family-textMuted font-bold bg-sky-50/30">
+                  <th className="p-3">Tên khoản</th>
+                  <th className="p-3">Gốc</th>
+                  <th className="p-3">Lãi suất</th>
+                  <th className="p-3">Kì hạn</th>
+                  <th className="p-3">Bắt đầu</th>
+                  <th className="p-3">Đáo hạn</th>
+                  <th className="p-3">Lãi tích lũy</th>
+                  <th className="p-3">Nguồn</th>
+                  <th className="p-3">Trạng thái</th>
+                  <th className="p-3"></th>
+                </tr>
+              </thead>
+              <tbody>
+                {(state.savingsDeposits || []).map((dep) => {
+                  const maturityMonth = ((dep.startMonth - 1 + dep.termMonths) % 12) + 1;
+                  const maturityYear = dep.startYear + Math.floor((dep.startMonth - 1 + dep.termMonths) / 12);
+                  
+                  // Calculate accrued interest up to observed month
+                  const current = activeRow ? activeRow.period.year * 12 + activeRow.period.month : 0;
+                  const depStart = dep.startYear * 12 + dep.startMonth;
+                  const depEnd = depStart + dep.termMonths;
+                  const isActive = current >= depStart && current < depEnd && dep.status === 'active';
+                  const monthsActive = isActive ? current - depStart + 1 : (dep.status === 'active' ? 0 : dep.termMonths);
+                  const accruedInterest = dep.principal * (dep.interestRateAnnual / 100 / 12) * monthsActive;
+
+                  return (
+                    <tr key={dep.id} className="border-b border-sky-100/50 hover:bg-sky-50/30">
+                      <td className="p-3 font-semibold text-family-text">{dep.name}</td>
+                      <td className="p-3 font-medium">{formatTableMoneyVNDMillion(dep.principal)}</td>
+                      <td className="p-3 font-bold text-sky-600">{dep.interestRateAnnual}%/năm</td>
+                      <td className="p-3">{dep.termMonths} tháng</td>
+                      <td className="p-3">{dep.startMonth}/{dep.startYear}</td>
+                      <td className="p-3 font-medium">{maturityMonth}/{maturityYear}</td>
+                      <td className="p-3 font-bold text-emerald-600">+{formatTableMoneyVNDMillion(accruedInterest)}</td>
+                      <td className="p-3">
+                        <span className={`text-[10px] px-1.5 py-0.5 rounded ${dep.pool === 'idle' ? 'bg-sky-100 text-sky-700' : 'bg-violet-100 text-violet-700'}`}>
+                          {dep.pool === 'idle' ? 'Nhàn rỗi' : 'Kế hoạch'}
+                        </span>
+                      </td>
+                      <td className="p-3">
+                        {isActive ? (
+                          <span className="text-[10px] bg-emerald-100 text-emerald-700 px-1.5 py-0.5 rounded font-bold">Đang chạy</span>
+                        ) : current >= depEnd ? (
+                          <span className="text-[10px] bg-amber-100 text-amber-700 px-1.5 py-0.5 rounded font-bold">Đã đáo hạn</span>
+                        ) : (
+                          <span className="text-[10px] bg-gray-100 text-gray-500 px-1.5 py-0.5 rounded">Chưa bắt đầu</span>
+                        )}
+                      </td>
+                      <td className="p-3">
+                        <button
+                          onClick={() => deleteSavingsDeposit(dep.id)}
+                          className="p-1 rounded-md text-family-textMuted hover:text-red-500 hover:bg-red-500/10 transition-all"
+                          title="Xóa"
+                        >
+                          <Trash2 className="w-3.5 h-3.5" />
+                        </button>
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          ) : (
+            <EmptyState 
+              title="Chưa có khoản tiết kiệm nào" 
+              description="Nhấn 'Tạo khoản tiết kiệm' để gửi tiết kiệm từ phần tiền chưa có kế hoạch hoặc đã lên kế hoạch."
+            />
+          )}
+        </CardContent>
+      </Card>
+
       {/* Deals Tracking Section */}
       <Card className="border-family-accent/20">
         <CardHeader className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
@@ -357,9 +693,10 @@ export const Portfolio: React.FC = () => {
                   status: 'active',
                   isEarmarked: dealForm.isEarmarked,
                   expectedSavingRate: dealForm.isEarmarked ? dealForm.expectedSavingRate : undefined,
+                  savingTermMonths: dealForm.isEarmarked ? dealForm.savingTermMonths : undefined,
                   notes: dealForm.notes,
                 });
-                setDealForm({ name: '', assetType: 'stocks', capital: 0, startMonth: 10, startYear: 2026, isEarmarked: false, expectedSavingRate: 5, notes: '' });
+                setDealForm({ name: '', assetType: 'stocks', capital: 0, startMonth: 10, startYear: 2026, isEarmarked: false, expectedSavingRate: 5, savingTermMonths: 12, notes: '' });
                 setShowAddDealForm(false);
               }}
               className="bg-family-bgDark/35 p-4 rounded-xl border border-family-accent/10 space-y-4"
@@ -440,17 +777,36 @@ export const Portfolio: React.FC = () => {
                   </label>
                 </div>
                 {dealForm.isEarmarked && (
-                  <div className="pl-6 flex items-center gap-2">
-                    <label className="text-xs font-semibold text-family-text">Mức lãi suất tiết kiệm kỳ vọng:</label>
-                    <input
-                      type="number"
-                      step="0.1"
-                      min={0}
-                      value={dealForm.expectedSavingRate}
-                      onChange={(e) => setDealForm({ ...dealForm, expectedSavingRate: safeNumber(Number(e.target.value), 0) })}
-                      className="w-20 text-center text-xs bg-white rounded-lg border border-family-accent/15 px-2 py-1 focus:outline-none focus:ring-1 focus:ring-family-accent"
-                    />
-                    <span className="text-xs font-bold text-family-textMuted">%/năm</span>
+                  <div className="pl-6 flex flex-wrap items-center gap-4">
+                    <div className="flex items-center gap-2">
+                      <label className="text-xs font-semibold text-family-text">Mức lãi suất tiết kiệm kỳ vọng:</label>
+                      <input
+                        type="number"
+                        step="0.1"
+                        min={0}
+                        value={dealForm.expectedSavingRate}
+                        onChange={(e) => setDealForm({ ...dealForm, expectedSavingRate: safeNumber(Number(e.target.value), 0) })}
+                        className="w-20 text-center text-xs bg-white rounded-lg border border-family-accent/15 px-2 py-1 focus:outline-none focus:ring-1 focus:ring-family-accent"
+                      />
+                      <span className="text-xs font-bold text-family-textMuted">%/năm</span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <label className="text-xs font-semibold text-family-text">Kì hạn gửi tiết kiệm:</label>
+                      <select
+                        value={dealForm.savingTermMonths}
+                        onChange={(e) => setDealForm({ ...dealForm, savingTermMonths: Number(e.target.value) })}
+                        className="text-xs bg-white rounded-lg border border-family-accent/15 px-2 py-1 focus:outline-none focus:ring-1 focus:ring-family-accent"
+                      >
+                        <option value={1}>1 tháng</option>
+                        <option value={3}>3 tháng</option>
+                        <option value={6}>6 tháng</option>
+                        <option value={9}>9 tháng</option>
+                        <option value={12}>12 tháng</option>
+                        <option value={18}>18 tháng</option>
+                        <option value={24}>24 tháng</option>
+                        <option value={36}>36 tháng</option>
+                      </select>
+                    </div>
                   </div>
                 )}
               </div>
@@ -539,18 +895,38 @@ export const Portfolio: React.FC = () => {
                                     } else {
                                       setSettlingDealId(deal.id);
                                       setSettleForm({
-                                        endMonth: 12,
-                                        endYear: 2026,
+                                        endMonth: activeRow ? activeRow.period.month : 12,
+                                        endYear: activeRow ? activeRow.period.year : 2026,
                                         realizedProfit: 0,
                                         reinvestAsUnallocated: false,
                                         reinvestAssetType: deal.assetType,
                                       });
                                     }
                                   }}
-                                  className={`text-[10px] font-bold py-1 px-2.5 rounded-lg text-white transition-all shadow-sm ${deal.isEarmarked ? 'bg-slate-500 hover:bg-slate-600' : 'bg-green-700 hover:bg-green-800'}`}
+                                  className={`text-[10px] font-bold py-1 px-2.5 rounded-lg text-white transition-all shadow-sm ${isSettling ? 'bg-slate-500' : (deal.isEarmarked ? 'bg-slate-500 hover:bg-slate-600' : 'bg-green-700 hover:bg-green-800')}`}
                                 >
                                   {isSettling ? 'Hủy' : (deal.isEarmarked ? 'Phân bổ / Chốt lãi' : 'Tất toán chốt sổ')}
                                 </button>
+                                {deal.isEarmarked && (
+                                  <button
+                                    type="button"
+                                    onClick={() => {
+                                      const isCurrentlyConverting = convertingDealId === deal.id;
+                                      if (isCurrentlyConverting) {
+                                        setConvertingDealId(null);
+                                      } else {
+                                        setConvertingDealId(deal.id);
+                                        setConversionForm({
+                                          month: activeRow ? activeRow.period.month : 10,
+                                          year: activeRow ? activeRow.period.year : 2026,
+                                        });
+                                      }
+                                    }}
+                                    className={`text-[10px] font-bold py-1 px-2.5 rounded-lg text-white transition-all shadow-sm ${convertingDealId === deal.id ? 'bg-slate-500' : 'bg-blue-600 hover:bg-blue-700'}`}
+                                  >
+                                    {convertingDealId === deal.id ? 'Hủy' : 'Chuyển thành Đầu tư'}
+                                  </button>
+                                )}
                                 <button
                                   type="button"
                                   onClick={() => deleteInvestmentDeal(deal.id)}
@@ -645,6 +1021,56 @@ export const Portfolio: React.FC = () => {
                                       className="ml-auto bg-green-700 hover:bg-green-800 text-white font-bold py-1 px-3 rounded-lg shadow-sm"
                                     >
                                       Xác nhận chốt tất toán
+                                    </button>
+                                  </div>
+                                </td>
+                              </tr>
+                            )}
+                            {/* Conversion Inline Form */}
+                            {convertingDealId === deal.id && (
+                              <tr className="bg-blue-700/5 border-b border-family-accent/5">
+                                <td colSpan={6} className="p-3">
+                                  <div className="flex flex-wrap items-center gap-4 text-xs bg-white/70 p-3 rounded-xl border border-blue-700/20">
+                                    <div className="font-bold text-blue-800">Chuyển sang thương vụ đầu tư thực tế:</div>
+                                    <div className="flex items-center gap-2">
+                                      <label className="font-semibold text-family-text">Tháng chuyển:</label>
+                                      <input
+                                        type="number"
+                                        min={1}
+                                        max={12}
+                                        value={conversionForm.month}
+                                        onChange={(e) => setConversionForm({ ...conversionForm, month: safeNumber(Number(e.target.value), 12) })}
+                                        className="w-14 text-center bg-white rounded-lg border border-family-accent/15 p-1"
+                                        required
+                                      />
+                                    </div>
+                                    <div className="flex items-center gap-2">
+                                      <label className="font-semibold text-family-text">Năm chuyển:</label>
+                                      <input
+                                        type="number"
+                                        min={2020}
+                                        max={2060}
+                                        value={conversionForm.year}
+                                        onChange={(e) => setConversionForm({ ...conversionForm, year: safeNumber(Number(e.target.value), 2026) })}
+                                        className="w-18 text-center bg-white rounded-lg border border-family-accent/15 p-1"
+                                        required
+                                      />
+                                    </div>
+                                    <button
+                                      type="button"
+                                      onClick={() => {
+                                        updateInvestmentDeal({
+                                          ...deal,
+                                          isEarmarked: false,
+                                          isConverted: true,
+                                          conversionMonth: conversionForm.month,
+                                          conversionYear: conversionForm.year,
+                                        });
+                                        setConvertingDealId(null);
+                                      }}
+                                      className="ml-auto bg-blue-600 hover:bg-blue-700 text-white font-bold py-1 px-3 rounded-lg shadow-sm"
+                                    >
+                                      Xác nhận chuyển
                                     </button>
                                   </div>
                                 </td>

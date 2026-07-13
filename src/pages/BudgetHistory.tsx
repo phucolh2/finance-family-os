@@ -6,6 +6,7 @@ import { Input } from '../components/ui/Input';
 import { WarningBox } from '../components/ui/WarningBox';
 import { Trash2, Plus, Save, RotateCcw, Calendar, BarChart2, Check, Sliders, AlertTriangle } from 'lucide-react';
 import { safeNumber } from '../utils/math';
+import { formatTableMoneyVNDMillion, formatKpiMoneyVNDMillion } from '../utils/format';
 import type { BudgetRatioScheduleItem, BudgetTreeNode } from '../types/budget';
 import { BudgetVersionCompareChart } from '../components/budget/BudgetVersionCompareChart';
 import { BudgetHistoryTrendChart } from '../components/budget/BudgetHistoryTrendChart';
@@ -24,7 +25,8 @@ export const BudgetHistory: React.FC = () => {
     addBudgetScheduleItem, 
     updateBudgetScheduleItem, 
     deleteBudgetScheduleItem, 
-    resetToDefault 
+    resetToDefault,
+    selectedPeriodKey,
   } = useAppContext();
 
   // Sort schedule items by date
@@ -390,6 +392,9 @@ export const BudgetHistory: React.FC = () => {
 
   const totalRatio = rootGroups.reduce((sum, g) => sum + (g.isActive ? g.ratioPercent : 0), 0);
 
+  const observedDbItem = selectedPeriodKey ? state.resolvedMonthlyDbMap?.[selectedPeriodKey] : undefined;
+  const flow = observedDbItem?.investmentFlow;
+
   return (
     <div className="space-y-6">
       {/* Top Page Header */}
@@ -402,6 +407,27 @@ export const BudgetHistory: React.FC = () => {
         </div>
         <ObservationControls />
       </div>
+
+      {/* Dynamic Cashflow History Summary Banner */}
+      {flow && (
+        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 p-4 bg-family-accent/5 border border-family-accent/15 rounded-2xl text-xs shadow-sm">
+          <div className="font-bold text-family-text flex items-center gap-1.5 shrink-0">
+            <span>💸</span>
+            Dòng tiền đầu tư tại mốc quan sát ({selectedPeriodKey}):
+          </div>
+          <div className="flex flex-wrap items-center gap-x-6 gap-y-2 text-family-textMuted font-semibold">
+            <div>Số dư đầu: <strong className="text-family-text">{formatTableMoneyVNDMillion(flow.beginningBalance)}</strong></div>
+            <div>+ Phân bổ đầu tư: <strong className="text-emerald-700">+{formatTableMoneyVNDMillion(flow.contribution)}</strong></div>
+            <div>+ Lãi phát sinh: <strong className={flow.pnl >= 0 ? "text-emerald-700" : "text-red-600"}>{flow.pnl >= 0 ? `+` : ``}{formatTableMoneyVNDMillion(flow.pnl)}</strong></div>
+            <div>= Số dư cuối: <strong className="text-family-accent">{formatTableMoneyVNDMillion(flow.endingBalance)}</strong></div>
+            <div className="text-[10px] pl-3 border-l border-family-accent/20 flex gap-3 text-family-text shrink-0">
+              <span className="text-emerald-800">Đã ĐT: {formatTableMoneyVNDMillion(flow.invested)}</span>
+              <span className="text-violet-800">Kế hoạch: {formatTableMoneyVNDMillion(flow.planned)}</span>
+              <span className="text-sky-800">Chưa KH: {formatTableMoneyVNDMillion(flow.idle)}</span>
+            </div>
+          </div>
+        </div>
+      )}
       
       {/* Workspace tab selectors */}
       <div className="flex justify-end pt-1">
@@ -479,25 +505,38 @@ export const BudgetHistory: React.FC = () => {
       )}
 
       {/* TAB 1: PURE FULL-WIDTH BI VISUALIZATION CENTER */}
-      {workspaceTab === 'charts' && (
-        <div className="space-y-6">
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-family-bgDark/35 p-4 rounded-2xl border border-family-accent/10 shadow-sm">
-            <div>
-              <span className="text-xs text-family-textMuted uppercase font-bold tracking-wider">Cột mốc đang xem báo cáo</span>
-              <h2 className="text-lg font-bold text-family-accent mt-0.5">
-                Tháng {activeVersion?.effectiveMonth}/{activeVersion?.effectiveYear} — {activeVersion?.note || 'Không có ghi chú'}
-              </h2>
-            </div>
-            
-            <div className="text-right">
-              <span className="text-xs text-family-textMuted uppercase font-bold tracking-wider block">Thu nhập thực tế mốc</span>
-              <span className="text-xl font-extrabold text-family-text">
-                {milestoneIncome} Tr VND
-              </span>
-            </div>
-          </div>
+      {workspaceTab === 'charts' && (() => {
+        const expenseAmt = rootGroups
+          .filter(g => g.isActive && g.classification === 'expense')
+          .reduce((sum, g) => sum + (g.ratioPercent / 100) * milestoneIncome, 0);
 
-          {/* Top Row: Detailed List (Full Width) */}
+        const investmentAmt = rootGroups
+          .filter(g => g.isActive && g.classification === 'investment')
+          .reduce((sum, g) => sum + (g.ratioPercent / 100) * milestoneIncome, 0);
+
+        const savingsAmt = rootGroups
+          .filter(g => g.isActive && g.classification === 'savings')
+          .reduce((sum, g) => sum + (g.ratioPercent / 100) * milestoneIncome, 0);
+
+        return (
+          <div className="space-y-6">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-family-bgDark/35 p-4 rounded-2xl border border-family-accent/10 shadow-sm">
+              <div>
+                <span className="text-xs text-family-textMuted uppercase font-bold tracking-wider">Cột mốc đang xem báo cáo</span>
+                <h2 className="text-lg font-bold text-family-accent mt-0.5">
+                  Tháng {activeVersion?.effectiveMonth}/{activeVersion?.effectiveYear} — {activeVersion?.note || 'Không có ghi chú'}
+                </h2>
+              </div>
+              
+              <div className="text-right">
+                <span className="text-xs text-family-textMuted uppercase font-bold tracking-wider block">Thu nhập thực tế mốc</span>
+                <span className="text-xl font-extrabold text-family-text">
+                  {milestoneIncome} Tr VND
+                </span>
+              </div>
+            </div>
+
+            {/* Top Row: Detailed List (Full Width) */}
           <Card className="border border-family-accent/10 p-4 bg-family-bgDark/5 flex flex-col mb-6">
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-family-accent/5 pb-3 mb-4">
               <div>
@@ -545,7 +584,7 @@ export const BudgetHistory: React.FC = () => {
             </Card>
           </div>
         </div>
-      )}
+      )})()}
 
       {/* TAB 2: EDITING AND MILESTONE TREE CONFIGURATION */}
       {workspaceTab === 'editor' && (
@@ -600,8 +639,13 @@ export const BudgetHistory: React.FC = () => {
                         }`}
                       >
                         <div className="flex justify-between items-center gap-1.5">
-                          <span className="text-xs font-bold text-family-text">
+                          <span className="text-xs font-bold text-family-text flex flex-wrap items-center gap-1">
                             Tháng {item.effectiveMonth}/{item.effectiveYear}
+                            {item.status === 'cancelled' ? (
+                              <span className="text-[10px] text-red-400 bg-red-400/10 px-1.5 py-0.5 rounded">Đã hủy</span>
+                            ) : item.endYear ? (
+                              <span className="text-[10px] text-yellow-400 bg-yellow-400/10 px-1.5 py-0.5 rounded">Tới {item.endMonth}/{item.endYear}</span>
+                            ) : null}
                           </span>
                           
                           <div className="flex items-center gap-1.5 shrink-0">

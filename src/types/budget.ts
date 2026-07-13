@@ -1,3 +1,5 @@
+import type { LifecycleProps } from './ledger';
+
 export type BudgetMainGroupId =
   | 'housing_basic'
   | 'future_investing'
@@ -62,10 +64,12 @@ export interface BudgetTreeNode {
   isActive: boolean;
   sortOrder: number;
 
+  classification?: 'expense' | 'investment' | 'savings'; // Dimension classification
+
   children?: BudgetTreeNode[];
 }
 
-export interface BudgetRatioScheduleItem {
+export interface BudgetRatioScheduleItem extends Partial<LifecycleProps> {
   id: string;
   effectiveMonth: number;
   effectiveYear: number;

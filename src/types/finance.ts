@@ -1,5 +1,6 @@
 import type { BudgetRatioScheduleItem } from './budget';
 import type { AssetConfig } from './portfolio';
+import type { LifecycleProps } from './ledger';
 
 export interface FamilyProfile {
   husbandName: string;
@@ -25,7 +26,7 @@ export interface TimelinePeriod {
   wifeAge: number;
 }
 
-export interface IncomeScheduleItem {
+export interface IncomeScheduleItem extends Partial<LifecycleProps> {
   id: string;
   effectiveMonth: number;
   effectiveYear: number;
@@ -47,7 +48,7 @@ export interface LifeStage {
   notes?: string;
 }
 
-export interface LifeEvent {
+export interface LifeEvent extends Partial<LifecycleProps> {
   id: string;
   month: number;
   year: number;
@@ -104,6 +105,15 @@ export interface ResolvedMonthlyDbItem {
     children: number;
     parents: number;
   };
+  investmentFlow?: {
+    beginningBalance: number;
+    contribution: number;
+    pnl: number;
+    endingBalance: number;
+    invested: number;
+    planned: number;
+    idle: number;
+  };
 }
 
 export interface InvestmentDeal {
@@ -119,6 +129,23 @@ export interface InvestmentDeal {
   realizedProfit?: number; // realized profit/loss in VND Million
   isEarmarked?: boolean; // If true, this is earmarked cash and does not generate ROI
   expectedSavingRate?: number; // Saving interest rate for earmarked deals (%/year)
+  savingTermMonths?: number;   // Term of the savings period for earmarked deal (months)
+  isConverted?: boolean;       // If true, converted to active investment
+  conversionMonth?: number;
+  conversionYear?: number;
+  notes?: string;
+}
+
+export interface SavingsDeposit {
+  id: string;
+  name: string;                          // VD: "Tiết kiệm Vietcombank 12T"
+  principal: number;                     // Số tiền gốc (Tr VND)
+  interestRateAnnual: number;            // Lãi suất %/năm
+  termMonths: number;                    // Kì hạn (3, 6, 12, 24...)
+  startMonth: number;
+  startYear: number;
+  pool: 'planned' | 'idle';             // Thuộc phần tiền nào
+  status: 'active' | 'matured';         // matured = đáo hạn
   notes?: string;
 }
 
@@ -131,6 +158,7 @@ export interface AppState {
   assets: AssetConfig[];
   assumptions: Assumptions;
   investmentDeals?: InvestmentDeal[];
+  savingsDeposits?: SavingsDeposit[];
   projectionAdjustments?: import('./projection').ProjectionAdjustmentRecord[];
   resolvedMonthlyDb?: ResolvedMonthlyDbItem[];
   resolvedMonthlyDbMap?: Record<string, ResolvedMonthlyDbItem>;

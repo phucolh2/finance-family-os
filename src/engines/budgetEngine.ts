@@ -116,13 +116,7 @@ export function calculateBudget(input: BudgetEngineInput): MonthlyBudgetOutput {
       });
       activeItem = pastOrActiveItems[pastOrActiveItems.length - 1];
     } else {
-      const sortedAll = [...schedule].sort((a, b) => {
-        if (a.effectiveYear !== b.effectiveYear) {
-          return a.effectiveYear - b.effectiveYear;
-        }
-        return a.effectiveMonth - b.effectiveMonth;
-      });
-      activeItem = sortedAll[0];
+      warnings.push(`Mốc thời gian hiện tại (${period.year}-${String(period.month).padStart(2, '0')}) trước thời điểm hiệu lực của phân bổ đầu tiên. Mặc định chưa phân bổ.`);
     }
 
     if (activeItem) {

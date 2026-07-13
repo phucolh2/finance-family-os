@@ -39,20 +39,10 @@ export function calculateIncome(input: IncomeEngineInput): IncomeOutput {
   });
 
   if (pastOrActiveItems.length === 0) {
-    // If current period is before the first schedule item, use the first schedule item as fallback
-    // but generate a warning.
-    const sortedAll = [...schedule].sort((a, b) => {
-      if (a.effectiveYear !== b.effectiveYear) {
-        return a.effectiveYear - b.effectiveYear;
-      }
-      return a.effectiveMonth - b.effectiveMonth;
-    });
-    
-    const fallback = sortedAll[0];
-    warnings.push(`Mốc thời gian hiện tại (${period.year}-${String(period.month).padStart(2, '0')}) trước thời điểm hiệu lực của nguồn thu nhập đầu tiên. Dùng tạm nguồn thu nhập khởi điểm.`);
+    warnings.push(`Mốc thời gian hiện tại (${period.year}-${String(period.month).padStart(2, '0')}) trước thời điểm hiệu lực của nguồn thu nhập đầu tiên. Đã áp dụng Thu nhập = 0.`);
     return {
-      incomeMonthly: safeNumber(fallback.incomeMonthly, 0),
-      activeScheduleId: fallback.id,
+      incomeMonthly: 0,
+      activeScheduleId: '',
       warnings,
     };
   }
@@ -66,7 +56,19 @@ export function calculateIncome(input: IncomeEngineInput): IncomeOutput {
   });
 
   const activeItem = pastOrActiveItems[pastOrActiveItems.length - 1];
-  const baseIncome = safeNumber(activeItem.incomeMonthly, 0);
+  let baseIncome = safeNumber(activeItem.incomeMonthly, 0);
+
+  // Lifecycle check
+  if (activeItem.status === 'cancelled') {
+    baseIncome = 0;
+    warnings.push(`Nguồn thu nhập đã bị hủy.`);
+  } else if (activeItem.endYear !== undefined && activeItem.endMonth !== undefined) {
+    const isEnded = period.year > activeItem.endYear || (period.year === activeItem.endYear && period.month > activeItem.endMonth);
+    if (isEnded) {
+      baseIncome = 0;
+      warnings.push(`Nguồn thu nhập đã kết thúc vào ${activeItem.endMonth}/${activeItem.endYear}.`);
+    }
+  }
 
   return {
     incomeMonthly: baseIncome,

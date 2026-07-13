@@ -14,7 +14,7 @@ import { ObservationControls } from '../components/ui/ObservationControls';
 import type { IncomeScheduleItem } from '../types/finance';
 
 export const IncomeSchedule: React.FC = () => {
-  const { state, addIncomeItem, updateIncomeItem, deleteIncomeItem, resetToDefault } = useAppContext();
+  const { state, addIncomeItem, updateIncomeItem, deleteIncomeItem, resetToDefault, selectedPeriodKey } = useAppContext();
   
   // Sort schedule items by date
   const sortedSchedule = [...state.incomeSchedule].sort((a, b) => {
@@ -38,6 +38,9 @@ export const IncomeSchedule: React.FC = () => {
   const [editYear, setEditYear] = useState<number>(2026);
   const [editIncome, setEditIncome] = useState<number>(80);
   const [editNote, setEditNote] = useState<string>('');
+  const [editEndMonth, setEditEndMonth] = useState<number | ''>('');
+  const [editEndYear, setEditEndYear] = useState<number | ''>('');
+  const [editStatus, setEditStatus] = useState<'active' | 'cancelled' | 'settled'>('active');
 
   const [formError, setFormError] = useState<string | null>(null);
 
@@ -47,6 +50,8 @@ export const IncomeSchedule: React.FC = () => {
   const [newYear, setNewYear] = useState<number>(2027);
   const [newIncome, setNewIncome] = useState<number>(100);
   const [newNote, setNewNote] = useState<string>('');
+  const [newEndMonth, setNewEndMonth] = useState<number | ''>('');
+  const [newEndYear, setNewEndYear] = useState<number | ''>('');
 
   // Sync workspace state when active version changes
   useEffect(() => {
@@ -55,6 +60,9 @@ export const IncomeSchedule: React.FC = () => {
       setEditYear(activeVersion.effectiveYear);
       setEditIncome(activeVersion.incomeMonthly);
       setEditNote(activeVersion.note || '');
+      setEditEndMonth(activeVersion.endMonth || '');
+      setEditEndYear(activeVersion.endYear || '');
+      setEditStatus((activeVersion.status as 'active' | 'cancelled' | 'settled') || 'active');
       setFormError(null);
     }
   }, [activeVersion?.id]);
@@ -103,11 +111,14 @@ export const IncomeSchedule: React.FC = () => {
     }
 
     updateIncomeItem({
-      id: activeVersion.id,
+      ...activeVersion,
       effectiveMonth: editMonth,
       effectiveYear: editYear,
       incomeMonthly: editIncome,
       note: editNote,
+      endMonth: editEndMonth === '' ? undefined : editEndMonth,
+      endYear: editEndYear === '' ? undefined : editEndYear,
+      status: editStatus,
     });
     setFormError(null);
   };
@@ -132,9 +143,14 @@ export const IncomeSchedule: React.FC = () => {
       effectiveYear: newYear,
       incomeMonthly: newIncome,
       note: newNote,
+      endMonth: newEndMonth === '' ? undefined : newEndMonth,
+      endYear: newEndYear === '' ? undefined : newEndYear,
+      status: 'active',
     });
     setIsCreatingNew(false);
     setNewNote('');
+    setNewEndMonth('');
+    setNewEndYear('');
     setFormError(null);
   };
 
@@ -142,8 +158,14 @@ export const IncomeSchedule: React.FC = () => {
     editMonth !== activeVersion.effectiveMonth ||
     editYear !== activeVersion.effectiveYear ||
     editIncome !== activeVersion.incomeMonthly ||
-    editNote !== (activeVersion.note || '')
+    editNote !== (activeVersion.note || '') ||
+    editEndMonth !== (activeVersion.endMonth || '') ||
+    editEndYear !== (activeVersion.endYear || '') ||
+    editStatus !== (activeVersion.status || 'active')
   ) : false;
+
+  const activeDbItem = selectedPeriodKey ? state.resolvedMonthlyDbMap?.[selectedPeriodKey] : undefined;
+  const flow = activeDbItem?.investmentFlow;
 
   return (
     <div className="space-y-6">
@@ -157,6 +179,27 @@ export const IncomeSchedule: React.FC = () => {
         </div>
         <ObservationControls />
       </div>
+
+      {/* Dynamic Cashflow History Summary Banner */}
+      {flow && (
+        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 p-4 bg-family-accent/5 border border-family-accent/15 rounded-2xl text-xs shadow-sm">
+          <div className="font-bold text-family-text flex items-center gap-1.5 shrink-0">
+            <span>💸</span>
+            Dòng tiền đầu tư tại mốc quan sát ({selectedPeriodKey}):
+          </div>
+          <div className="flex flex-wrap items-center gap-x-6 gap-y-2 text-family-textMuted font-semibold">
+            <div>Số dư đầu: <strong className="text-family-text">{formatTableMoneyVNDMillion(flow.beginningBalance)}</strong></div>
+            <div>+ Phân bổ đầu tư: <strong className="text-emerald-700">+{formatTableMoneyVNDMillion(flow.contribution)}</strong></div>
+            <div>+ Lãi phát sinh: <strong className={flow.pnl >= 0 ? "text-emerald-700" : "text-red-600"}>{flow.pnl >= 0 ? `+` : ``}{formatTableMoneyVNDMillion(flow.pnl)}</strong></div>
+            <div>= Số dư cuối: <strong className="text-family-accent">{formatTableMoneyVNDMillion(flow.endingBalance)}</strong></div>
+            <div className="text-[10px] pl-3 border-l border-family-accent/20 flex gap-3 text-family-text shrink-0">
+              <span className="text-emerald-800">Đã ĐT: {formatTableMoneyVNDMillion(flow.invested)}</span>
+              <span className="text-violet-800">Kế hoạch: {formatTableMoneyVNDMillion(flow.planned)}</span>
+              <span className="text-sky-800">Chưa KH: {formatTableMoneyVNDMillion(flow.idle)}</span>
+            </div>
+          </div>
+        </div>
+      )}
       
       {/* Workspace tab selectors */}
       <div className="flex justify-end pt-1">
@@ -195,7 +238,7 @@ export const IncomeSchedule: React.FC = () => {
           </CardHeader>
           <CardContent>
             <form onSubmit={handleCreateNew} className="space-y-4">
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4">
                 <Input
                   label="Tháng hiệu lực"
                   type="number"
@@ -221,6 +264,23 @@ export const IncomeSchedule: React.FC = () => {
                   value={newIncome}
                   onChange={(e) => setNewIncome(Number(e.target.value))}
                   required
+                />
+                <div className="hidden md:block"></div> {/* Spacer */}
+                <Input
+                  label="Tháng kết thúc (Tùy chọn)"
+                  type="number"
+                  min={1}
+                  max={12}
+                  value={newEndMonth}
+                  onChange={(e) => setNewEndMonth(e.target.value ? Number(e.target.value) : '')}
+                />
+                <Input
+                  label="Năm kết thúc (Tùy chọn)"
+                  type="number"
+                  min={2026}
+                  max={2060}
+                  value={newEndYear}
+                  onChange={(e) => setNewEndYear(e.target.value ? Number(e.target.value) : '')}
                 />
               </div>
               <Input
@@ -337,6 +397,7 @@ export const IncomeSchedule: React.FC = () => {
                   <tr className="border-b border-family-accent/10 text-family-textMuted font-bold bg-family-bgDark/30">
                     <th className="p-3">Thời điểm hiệu lực</th>
                     <th className="p-3">Khoản thu tháng khởi điểm</th>
+                    <th className="p-3">Trạng thái/Kết thúc</th>
                     <th className="p-3">Ghi chú hoàn cảnh</th>
                   </tr>
                 </thead>
@@ -348,6 +409,14 @@ export const IncomeSchedule: React.FC = () => {
                       </td>
                       <td className="p-3 font-bold text-family-accent">
                         {formatTableMoneyVNDMillion(item.incomeMonthly)}
+                      </td>
+                      <td className="p-3 text-family-textMuted max-w-sm">
+                        {item.status === 'cancelled' 
+                          ? <span className="text-red-400 text-xs px-2 py-0.5 rounded-full bg-red-400/10">Đã hủy</span>
+                          : item.endYear 
+                            ? <span className="text-yellow-400 text-xs px-2 py-0.5 rounded-full bg-yellow-400/10">Đến {item.endMonth}/{item.endYear}</span>
+                            : <span className="text-green-400 text-xs px-2 py-0.5 rounded-full bg-green-400/10">Đang HĐ</span>
+                        }
                       </td>
                       <td className="p-3 text-family-textMuted max-w-sm truncate">
                         {item.note || '---'}
@@ -410,8 +479,13 @@ export const IncomeSchedule: React.FC = () => {
                         }`}
                       >
                         <div className="flex justify-between items-center gap-1.5">
-                          <span className="text-xs font-bold text-family-text">
+                          <span className="text-xs font-bold text-family-text flex items-center flex-wrap gap-1">
                             Tháng {item.effectiveMonth}/{item.effectiveYear}
+                            {item.status === 'cancelled' ? (
+                              <span className="text-[10px] text-red-400 bg-red-400/10 px-1.5 py-0.5 rounded">Đã hủy</span>
+                            ) : item.endYear ? (
+                              <span className="text-[10px] text-yellow-400 bg-yellow-400/10 px-1.5 py-0.5 rounded">Tới {item.endMonth}/{item.endYear}</span>
+                            ) : null}
                           </span>
                           
                           <div className="flex items-center gap-1.5 shrink-0">
@@ -490,9 +564,9 @@ export const IncomeSchedule: React.FC = () => {
                 </CardHeader>
 
                 <CardContent className="pt-6">
-                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 bg-family-bgDark/35 p-4 rounded-2xl border border-family-accent/5">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4 bg-family-bgDark/35 p-4 rounded-2xl border border-family-accent/5">
                     <Input
-                      label="Tháng hiệu lực"
+                      label="Tháng bắt đầu"
                       type="number"
                       min={1}
                       max={12}
@@ -500,7 +574,7 @@ export const IncomeSchedule: React.FC = () => {
                       onChange={(e) => setEditMonth(safeNumber(Number(e.target.value)))}
                     />
                     <Input
-                      label="Năm hiệu lực"
+                      label="Năm bắt đầu"
                       type="number"
                       min={2026}
                       max={2060}
@@ -513,6 +587,36 @@ export const IncomeSchedule: React.FC = () => {
                       suffix="Tr VND"
                       value={editIncome}
                       onChange={(e) => setEditIncome(safeNumber(Number(e.target.value)))}
+                    />
+                    <div>
+                      <label className="block text-xs font-semibold text-family-textMuted uppercase mb-2">
+                        Trạng thái
+                      </label>
+                      <select 
+                        className="w-full bg-family-bgDeep border border-family-accent/20 rounded-xl px-4 py-2.5 text-family-text focus:outline-none focus:border-family-accent/60 transition-colors"
+                        value={editStatus}
+                        onChange={(e) => setEditStatus(e.target.value as 'active' | 'cancelled' | 'settled')}
+                      >
+                        <option value="active">Đang hoạt động</option>
+                        <option value="settled">Đã kết thúc</option>
+                        <option value="cancelled">Đã hủy</option>
+                      </select>
+                    </div>
+                    <Input
+                      label="Tháng kết thúc (Tùy chọn)"
+                      type="number"
+                      min={1}
+                      max={12}
+                      value={editEndMonth}
+                      onChange={(e) => setEditEndMonth(e.target.value ? Number(e.target.value) : '')}
+                    />
+                    <Input
+                      label="Năm kết thúc (Tùy chọn)"
+                      type="number"
+                      min={2026}
+                      max={2060}
+                      value={editEndYear}
+                      onChange={(e) => setEditEndYear(e.target.value ? Number(e.target.value) : '')}
                     />
                   </div>
                   

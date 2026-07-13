@@ -15,6 +15,7 @@ export const ObservationControls: React.FC = () => {
     assets: state.assets,
     assumptions: state.assumptions,
     investmentDeals: state.investmentDeals,
+    savingsDeposits: state.savingsDeposits,
   });
 
   const now = new Date();
@@ -41,7 +42,7 @@ export const ObservationControls: React.FC = () => {
     <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3">
       {/* Planning Start Date Selector (Mốc bắt đầu) */}
       <div className="flex items-center gap-2 text-xs font-semibold text-family-text bg-white px-3 py-1.5 rounded-xl border border-family-accent/15 shadow-sm">
-        <span className="text-family-textMuted font-medium">Mốc bắt đầu:</span>
+        <span className="text-family-textMuted font-medium whitespace-nowrap">Mốc bắt đầu:</span>
         <select
           value={activeStartKey}
           onChange={(e) => {
@@ -60,7 +61,7 @@ export const ObservationControls: React.FC = () => {
 
       {/* Observation Month Selector (Tháng quan sát) */}
       <div className="flex items-center gap-2 text-xs font-semibold text-family-text bg-white px-3 py-1.5 rounded-xl border border-family-accent/15 shadow-sm">
-        <span className="text-family-textMuted font-medium">Tháng quan sát:</span>
+        <span className="text-family-textMuted font-medium whitespace-nowrap">Tháng quan sát:</span>
         <select
           value={activeKey}
           onChange={(e) => setSelectedPeriodKey(e.target.value)}
