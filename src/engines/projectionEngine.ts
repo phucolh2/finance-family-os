@@ -1,4 +1,4 @@
-import type { FamilyProfile, IncomeScheduleItem, LifeEvent, Assumptions, InvestmentDeal, SavingsDeposit } from '../types/finance';
+import type { FamilyProfile, IncomeScheduleItem, LifeEvent, Assumptions, InvestmentDeal, SavingsDeposit, LifeStage } from '../types/finance';
 import type { BudgetRatioScheduleItem } from '../types/budget';
 import type { AssetConfig, AssetType } from '../types/portfolio';
 import type { ProjectionMonthlyRow, ProjectionYearlyRow, ProjectionOutput, ProjectionAdjustmentRecord } from '../types/projection';
@@ -20,6 +20,7 @@ export interface ProjectionEngineInput {
   investmentDeals?: InvestmentDeal[];
   savingsDeposits?: SavingsDeposit[];
   projectionAdjustments?: ProjectionAdjustmentRecord[];
+  lifeStages?: LifeStage[];
 }
 
 /**
@@ -38,6 +39,7 @@ export function runProjection(input: ProjectionEngineInput): ProjectionOutput {
   const investmentDeals = safeArray(input.investmentDeals);
   const savingsDeposits = safeArray(input.savingsDeposits);
   const projectionAdjustments = safeArray(input.projectionAdjustments);
+  const lifeStages = safeArray(input.lifeStages);
 
   // 1. Generate monthly timeline
   const timelineResult = generateTimeline({
@@ -77,13 +79,20 @@ export function runProjection(input: ProjectionEngineInput): ProjectionOutput {
     const incomeRes = calculateIncome({ period, incomeSchedule });
     warnings.push(...incomeRes.warnings.map(w => `[Thu nhập] ${w}`));
 
+    // Resolve active stage for childCost parameters
+    const activeStage = lifeStages.find(
+      s => period.year >= s.fromYear && period.year <= s.toYear
+    );
+    const childLifestyle = activeStage ? activeStage.childLifestyle : 'premium';
+    const childBudgetCap = activeStage ? activeStage.childBudgetCapMonthly : 35;
+
     // Calculate Child Cost
     const childCostRes = calculateChildCost({
       period,
       childBirthMonth: profile.childBirthMonth,
       childBirthYear: profile.childBirthYear,
-      lifestyle: 'premium',
-      budgetCapMonthly: 35,
+      lifestyle: childLifestyle,
+      budgetCapMonthly: childBudgetCap,
       educationInflationAnnual: assumptions.educationInflationRateAnnual,
       healthInflationAnnual: assumptions.medicalInflationRateAnnual,
       generalInflationAnnual: assumptions.generalInflationRateAnnual,

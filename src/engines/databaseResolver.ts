@@ -3,7 +3,7 @@ import { calculateIncome } from './incomeEngine';
 import { calculateBudget } from './budgetEngine';
 import { calculateChildCost } from './childEngine';
 import { safeNumber } from '../utils/math';
-import type { FamilyProfile, IncomeScheduleItem, ResolvedMonthlyDbItem, Assumptions } from '../types/finance';
+import type { FamilyProfile, IncomeScheduleItem, ResolvedMonthlyDbItem, Assumptions, LifeStage } from '../types/finance';
 import type { BudgetRatioScheduleItem } from '../types/budget';
 import type { AssetConfig } from '../types/portfolio';
 
@@ -17,7 +17,8 @@ export function generateResolvedMonthlyDb(
   incomeSchedule: IncomeScheduleItem[],
   budgetSchedule: BudgetRatioScheduleItem[],
   assets: AssetConfig[],
-  assumptions: Assumptions
+  assumptions: Assumptions,
+  lifeStages?: LifeStage[]
 ): ResolvedMonthlyDbResult {
   // Generate the timeline periods
   const timelineResult = generateTimeline({
@@ -39,13 +40,20 @@ export function generateResolvedMonthlyDb(
     // 1. Resolve Income
     const incomeRes = calculateIncome({ period: p, incomeSchedule });
     
+    // Resolve active stage for childCost parameters
+    const activeStage = Array.isArray(lifeStages) ? lifeStages.find(
+      s => p.year >= s.fromYear && p.year <= s.toYear
+    ) : null;
+    const childLifestyle = activeStage ? activeStage.childLifestyle : 'premium';
+    const childBudgetCap = activeStage ? activeStage.childBudgetCapMonthly : 35;
+
     // 2. Calculate Child Cost (injecting style and caps as defined in simulator)
     const childCostRes = calculateChildCost({
       period: p,
       childBirthMonth: profile.childBirthMonth,
       childBirthYear: profile.childBirthYear,
-      lifestyle: 'premium',
-      budgetCapMonthly: 35,
+      lifestyle: childLifestyle,
+      budgetCapMonthly: childBudgetCap,
       educationInflationAnnual: assumptions.educationInflationRateAnnual,
       healthInflationAnnual: assumptions.medicalInflationRateAnnual,
       generalInflationAnnual: assumptions.generalInflationRateAnnual,

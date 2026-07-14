@@ -25,7 +25,8 @@ const initialDb = generateResolvedMonthlyDb(
   DEFAULT_INCOME_SCHEDULE,
   DEFAULT_BUDGET_SCHEDULE,
   DEFAULT_ASSETS,
-  DEFAULT_ASSUMPTIONS
+  DEFAULT_ASSUMPTIONS,
+  DEFAULT_LIFE_STAGES
 );
 
 const INITIAL_APP_STATE: AppState = {
@@ -75,7 +76,8 @@ export function useAppState() {
             migrated.incomeSchedule,
             migrated.budgetSchedule,
             migrated.assets,
-            migrated.assumptions
+            migrated.assumptions,
+            migrated.lifeStages
           );
           migrated.resolvedMonthlyDb = dbResult.list;
           migrated.resolvedMonthlyDbMap = dbResult.map;
@@ -113,7 +115,8 @@ export function useAppState() {
       newState.incomeSchedule,
       newState.budgetSchedule,
       newState.assets,
-      newState.assumptions
+      newState.assumptions,
+      newState.lifeStages
     );
 
     const projection = runProjection({
@@ -126,6 +129,7 @@ export function useAppState() {
       investmentDeals: newState.investmentDeals || [],
       savingsDeposits: newState.savingsDeposits || [],
       projectionAdjustments: newState.projectionAdjustments,
+      lifeStages: newState.lifeStages,
     });
 
     const updatedList = resolvedDb.list.map(dbItem => {

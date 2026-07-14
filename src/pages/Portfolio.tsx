@@ -40,6 +40,7 @@ export const Portfolio: React.FC = () => {
     investmentDeals: state.investmentDeals,
     savingsDeposits: state.savingsDeposits,
     projectionAdjustments: state.projectionAdjustments,
+    lifeStages: state.lifeStages,
   });
 
   const hasData = projection.monthlyRows.length > 0;
