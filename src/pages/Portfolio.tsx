@@ -299,7 +299,14 @@ export const Portfolio: React.FC = () => {
                   </div>
                   <p className="text-xl font-bold text-emerald-800">{formatKpiMoneyVNDMillion(investedCapital)}</p>
                   <p className="text-[10px] text-emerald-600/70 mt-1.5">
-                    {state.investmentDeals?.filter(d => d.status === 'active' && !d.isEarmarked).length || 0} thương vụ đang hoạt động
+                    {(state.investmentDeals || []).filter(d => {
+                      const start = d.startYear * 12 + d.startMonth;
+                      const end = d.status === 'settled' && d.endYear && d.endMonth
+                        ? d.endYear * 12 + d.endMonth
+                        : Infinity;
+                      const current = activeRow ? activeRow.period.year * 12 + activeRow.period.month : 0;
+                      return current >= start && current <= end && d.status === 'active' && !d.isEarmarked;
+                    }).length} thương vụ đang hoạt động
                   </p>
                 </CardContent>
               </Card>
@@ -313,7 +320,14 @@ export const Portfolio: React.FC = () => {
                   </div>
                   <p className="text-xl font-bold text-violet-800">{formatKpiMoneyVNDMillion(plannedCapital)}</p>
                   <p className="text-[10px] text-violet-600/70 mt-1.5">
-                    {state.investmentDeals?.filter(d => d.isEarmarked && d.status === 'active').length || 0} khoản chờ phân bổ
+                    {(state.investmentDeals || []).filter(d => {
+                      const start = d.startYear * 12 + d.startMonth;
+                      const end = d.status === 'settled' && d.endYear && d.endMonth
+                        ? d.endYear * 12 + d.endMonth
+                        : Infinity;
+                      const current = activeRow ? activeRow.period.year * 12 + activeRow.period.month : 0;
+                      return current >= start && current <= end && d.isEarmarked && d.status === 'active';
+                    }).length} khoản chờ phân bổ
                   </p>
                 </CardContent>
               </Card>
