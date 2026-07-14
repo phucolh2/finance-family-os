@@ -250,7 +250,9 @@ export function runProjection(input: ProjectionEngineInput): ProjectionOutput {
         const monthsSavingsActive = savingEnd - start;
         if (monthsSavingsActive > 0) {
           const rate = safeNumber(deal.expectedSavingRate, 0);
-          const totalSavingsInterest = deal.capital * (rate / 100 / 12) * monthsSavingsActive;
+          const totalSavingsInterest = deal.realizedSavingInterest !== undefined
+            ? deal.realizedSavingInterest
+            : deal.capital * (rate / 100 / 12) * monthsSavingsActive;
           totalDealPnlThisMonth += totalSavingsInterest;
           
           let cause = "đáo hạn";

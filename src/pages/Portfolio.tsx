@@ -87,6 +87,7 @@ export const Portfolio: React.FC = () => {
   const [conversionForm, setConversionForm] = useState({
     month: 10,
     year: 2026,
+    realizedSavingInterest: 0,
   });
 
   const [formError, setFormError] = useState<string | null>(null);
@@ -1004,6 +1005,9 @@ export const Portfolio: React.FC = () => {
                       .filter((deal) => deal.status === 'active')
                       .map((deal) => {
                         const isSettling = settlingDealId === deal.id;
+                        const current = activeRow ? activeRow.period.year * 12 + activeRow.period.month : 0;
+                        const dealStart = deal.startYear * 12 + deal.startMonth;
+                        const hasStarted = current >= dealStart;
                         return (
                           <React.Fragment key={deal.id}>
                             <tr className="border-b border-family-accent/5 hover:bg-family-bgDark/5">
@@ -1025,45 +1029,50 @@ export const Portfolio: React.FC = () => {
                               <td className="p-3 font-semibold">{deal.startMonth < 10 ? `0${deal.startMonth}` : deal.startMonth}/{deal.startYear}</td>
                               <td className="p-3 text-family-textMuted max-w-[200px] truncate">{deal.notes || '---'}</td>
                               <td className="p-3 text-right space-x-2">
-                                <button
-                                  type="button"
-                                  onClick={() => {
-                                    if (isSettling) {
-                                      setSettlingDealId(null);
-                                    } else {
-                                      setSettlingDealId(deal.id);
-                                      setSettleForm({
-                                        endMonth: activeRow ? activeRow.period.month : 12,
-                                        endYear: activeRow ? activeRow.period.year : 2026,
-                                        realizedProfit: 0,
-                                        reinvestAsUnallocated: false,
-                                        reinvestAssetType: deal.assetType,
-                                      });
-                                    }
-                                  }}
-                                  className={`text-[10px] font-bold py-1 px-2.5 rounded-lg text-white transition-all shadow-sm ${isSettling ? 'bg-slate-500' : (deal.isEarmarked ? 'bg-slate-500 hover:bg-slate-600' : 'bg-green-700 hover:bg-green-800')}`}
-                                >
-                                  {isSettling ? 'Hủy' : (deal.isEarmarked ? 'Phân bổ / Chốt lãi' : 'Tất toán chốt sổ')}
-                                </button>
-                                {deal.isEarmarked && (
-                                  <button
-                                    type="button"
-                                    onClick={() => {
-                                      const isCurrentlyConverting = convertingDealId === deal.id;
-                                      if (isCurrentlyConverting) {
-                                        setConvertingDealId(null);
-                                      } else {
-                                        setConvertingDealId(deal.id);
-                                        setConversionForm({
-                                          month: activeRow ? activeRow.period.month : 10,
-                                          year: activeRow ? activeRow.period.year : 2026,
-                                        });
-                                      }
-                                    }}
-                                    className={`text-[10px] font-bold py-1 px-2.5 rounded-lg text-white transition-all shadow-sm ${convertingDealId === deal.id ? 'bg-slate-500' : 'bg-blue-600 hover:bg-blue-700'}`}
-                                  >
-                                    {convertingDealId === deal.id ? 'Hủy' : 'Chuyển thành Đầu tư'}
-                                  </button>
+                                {hasStarted && (
+                                  <>
+                                    <button
+                                      type="button"
+                                      onClick={() => {
+                                        if (isSettling) {
+                                          setSettlingDealId(null);
+                                        } else {
+                                          setSettlingDealId(deal.id);
+                                          setSettleForm({
+                                            endMonth: activeRow ? activeRow.period.month : 12,
+                                            endYear: activeRow ? activeRow.period.year : 2026,
+                                            realizedProfit: 0,
+                                            reinvestAsUnallocated: false,
+                                            reinvestAssetType: deal.assetType,
+                                          });
+                                        }
+                                      }}
+                                      className={`text-[10px] font-bold py-1 px-2.5 rounded-lg text-white transition-all shadow-sm ${isSettling ? 'bg-slate-500' : (deal.isEarmarked ? 'bg-slate-500 hover:bg-slate-600' : 'bg-green-700 hover:bg-green-800')}`}
+                                    >
+                                      {isSettling ? 'Hủy' : (deal.isEarmarked ? 'Phân bổ / Chốt lãi' : 'Tất toán chốt sổ')}
+                                    </button>
+                                    {deal.isEarmarked && (
+                                      <button
+                                        type="button"
+                                        onClick={() => {
+                                          const isCurrentlyConverting = convertingDealId === deal.id;
+                                          if (isCurrentlyConverting) {
+                                            setConvertingDealId(null);
+                                          } else {
+                                            setConvertingDealId(deal.id);
+                                            setConversionForm({
+                                              month: activeRow ? activeRow.period.month : 10,
+                                              year: activeRow ? activeRow.period.year : 2026,
+                                              realizedSavingInterest: 0,
+                                            });
+                                          }
+                                        }}
+                                        className={`text-[10px] font-bold py-1 px-2.5 rounded-lg text-white transition-all shadow-sm ${convertingDealId === deal.id ? 'bg-slate-500' : 'bg-blue-600 hover:bg-blue-700'}`}
+                                      >
+                                        {convertingDealId === deal.id ? 'Hủy' : 'Chuyển thành Đầu tư'}
+                                      </button>
+                                    )}
+                                  </>
                                 )}
                                 <button
                                   type="button"
@@ -1194,6 +1203,18 @@ export const Portfolio: React.FC = () => {
                                         required
                                       />
                                     </div>
+                                    <div className="flex items-center gap-2">
+                                      <label className="font-semibold text-family-text">Lãi tiết kiệm thực nhận:</label>
+                                      <input
+                                        type="number"
+                                        step="0.01"
+                                        value={conversionForm.realizedSavingInterest}
+                                        onChange={(e) => setConversionForm({ ...conversionForm, realizedSavingInterest: safeNumber(Number(e.target.value), 0) })}
+                                        className="w-20 text-center bg-white rounded-lg border border-family-accent/15 p-1 font-bold text-blue-700"
+                                        required
+                                      />
+                                      <span className="font-bold text-family-textMuted">Tr VND</span>
+                                    </div>
                                     <button
                                       type="button"
                                       onClick={() => {
@@ -1203,6 +1224,7 @@ export const Portfolio: React.FC = () => {
                                           isConverted: true,
                                           conversionMonth: conversionForm.month,
                                           conversionYear: conversionForm.year,
+                                          realizedSavingInterest: conversionForm.realizedSavingInterest,
                                         });
                                         setConvertingDealId(null);
                                       }}

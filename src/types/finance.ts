@@ -133,6 +133,7 @@ export interface InvestmentDeal {
   isConverted?: boolean;       // If true, converted to active investment
   conversionMonth?: number;
   conversionYear?: number;
+  realizedSavingInterest?: number; // realized saving interest when converted/settled early (VND Million)
   notes?: string;
 }
 
