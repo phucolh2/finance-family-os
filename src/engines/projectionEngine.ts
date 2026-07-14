@@ -7,7 +7,6 @@ import { calculateIncome } from './incomeEngine';
 import { calculateBudget } from './budgetEngine';
 import { calculateCashflow } from './cashflowEngine';
 import { calculateChildCost } from './childEngine';
-import { calculatePortfolio } from './portfolioEngine';
 import { calculateFire } from './fireEngine';
 import { safeNumber, safeArray } from '../utils/math';
 
@@ -399,7 +398,7 @@ export function runProjection(input: ProjectionEngineInput): ProjectionOutput {
     ];
     if (childCostRes.isActive && childCostRes.totalMonthly > 0) {
       if (childCostRes.childAge === 0 && period.month === profile.childBirthMonth) {
-        notes.push('Sinh con đầu lòng (2031)');
+        notes.push(`Sinh con đầu lòng (${profile.childBirthYear})`);
       } else if (childCostRes.childAge === 6 && period.month === profile.childBirthMonth) {
         notes.push('Con vào lớp 1');
       } else if (childCostRes.childAge === 18 && period.month === profile.childBirthMonth) {
@@ -431,14 +430,15 @@ export function runProjection(input: ProjectionEngineInput): ProjectionOutput {
       notes,
     });
     
-    // Attach additional runtime metrics to the row object dynamically for aggregation later
-    (monthlyRows[monthlyRows.length - 1] as any)._savingInterestRateAnnual = activeSavingRate;
-    (monthlyRows[monthlyRows.length - 1] as any)._customProfit = investmentPnl;
-    (monthlyRows[monthlyRows.length - 1] as any)._hasManualInvestmentAdj = hasManualInvestmentAdj;
-    (monthlyRows[monthlyRows.length - 1] as any)._savingPnl = savingPnl;
-    (monthlyRows[monthlyRows.length - 1] as any)._childCost1 = childCostRes.totalMonthly;
-    (monthlyRows[monthlyRows.length - 1] as any)._childCost2 = 0;
-    (monthlyRows[monthlyRows.length - 1] as any)._childCostOther = 0;
+    // Attach additional runtime metrics to the row for aggregation later
+    const lastRow = monthlyRows[monthlyRows.length - 1];
+    lastRow._savingInterestRateAnnual = activeSavingRate;
+    lastRow._customProfit = investmentPnl;
+    lastRow._hasManualInvestmentAdj = hasManualInvestmentAdj;
+    lastRow._savingPnl = savingPnl;
+    lastRow._childCost1 = childCostRes.totalMonthly;
+    lastRow._childCost2 = 0;
+    lastRow._childCostOther = 0;
   });
 
   // 4. Aggregate monthly rows into yearly rows
@@ -454,14 +454,13 @@ export function runProjection(input: ProjectionEngineInput): ProjectionOutput {
     const avgInvestment = yearRows.reduce((sum, r) => sum + r.investmentMonthly, 0) / yearRows.length;
     const avgSaving = yearRows.reduce((sum, r) => sum + r.savingMonthly, 0) / yearRows.length;
     
-    // Extract dynamic runtime metrics added earlier
-    const totalCustomProfit = yearRows.reduce((sum, r: any) => sum + (r._customProfit || 0), 0);
-    const avgSavingRate = yearRows.reduce((sum, r: any) => sum + (r._savingInterestRateAnnual || 0), 0) / yearRows.length;
+    const totalCustomProfit = yearRows.reduce((sum, r) => sum + (r._customProfit || 0), 0);
+    const avgSavingRate = yearRows.reduce((sum, r) => sum + (r._savingInterestRateAnnual || 0), 0) / yearRows.length;
     
     // Child Cost details
-    const totalChild1 = yearRows.reduce((sum, r: any) => sum + (r._childCost1 || 0), 0) / yearRows.length;
-    const totalChild2 = yearRows.reduce((sum, r: any) => sum + (r._childCost2 || 0), 0) / yearRows.length;
-    const totalChildOther = yearRows.reduce((sum, r: any) => sum + (r._childCostOther || 0), 0) / yearRows.length;
+    const totalChild1 = yearRows.reduce((sum, r) => sum + (r._childCost1 || 0), 0) / yearRows.length;
+    const totalChild2 = yearRows.reduce((sum, r) => sum + (r._childCost2 || 0), 0) / yearRows.length;
+    const totalChildOther = yearRows.reduce((sum, r) => sum + (r._childCostOther || 0), 0) / yearRows.length;
     const avgChildCost = yearRows.reduce((sum, r) => sum + r.childCostMonthly, 0) / yearRows.length;
     
     // PCF derived exactly from user request: PCF = lợi nhuận đầu tư hàng tháng + số dư tiết kiệm * 4%
@@ -471,7 +470,7 @@ export function runProjection(input: ProjectionEngineInput): ProjectionOutput {
     const passiveCashFlowMonthly = avgMonthlyInvestmentProfit + pcfFromSaving;
     
     // Check if the year used any manual adjustment
-    const usedManualAdj = yearRows.some((r: any) => r._hasManualInvestmentAdj);
+    const usedManualAdj = yearRows.some((r) => r._hasManualInvestmentAdj);
     const activeInvestmentRateRate = totalCustomProfit > 0 && lastRow.portfolio.totalEndingBalance > 0 
       ? (totalCustomProfit / lastRow.portfolio.totalEndingBalance) 
       : (assumptions.investmentYieldExpectationAnnual / 100);
@@ -516,9 +515,10 @@ export function runProjection(input: ProjectionEngineInput): ProjectionOutput {
     });
     
     // Store child breakdowns on the yearly row for the UI
-    (yearlyRows[yearlyRows.length - 1] as any)._childCost1 = totalChild1;
-    (yearlyRows[yearlyRows.length - 1] as any)._childCost2 = totalChild2;
-    (yearlyRows[yearlyRows.length - 1] as any)._childCostOther = totalChildOther;
+    const lastYearRow = yearlyRows[yearlyRows.length - 1];
+    lastYearRow._childCost1 = totalChild1;
+    lastYearRow._childCost2 = totalChild2;
+    lastYearRow._childCostOther = totalChildOther;
   });
 
   // 5. Run a final pass to evaluate crossing year across the fully populated yearly list

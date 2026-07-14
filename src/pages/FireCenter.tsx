@@ -28,7 +28,9 @@ export const FireCenter: React.FC = () => {
     lifeEvents: state.lifeEvents,
     assets: state.assets,
     assumptions: state.assumptions,
+    investmentDeals: state.investmentDeals,
     savingsDeposits: state.savingsDeposits,
+    projectionAdjustments: state.projectionAdjustments,
   });
 
   const hasData = projection.monthlyRows.length > 0;

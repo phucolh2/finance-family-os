@@ -64,12 +64,6 @@ export function useAppState() {
       if (stored) {
         const parsed = JSON.parse(stored);
         const migrated = migrateState(parsed, INITIAL_APP_STATE);
-        
-        // Auto rename for specific user update without resetting data
-        if (migrated.profile.husbandName === 'Gia Khánh' && migrated.profile.wifeName === 'Minh Anh') {
-          migrated.profile.husbandName = 'Hoài Phước';
-          migrated.profile.wifeName = 'Diệu Hồng';
-        }
 
         if (
           !migrated.resolvedMonthlyDb ||

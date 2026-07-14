@@ -57,6 +57,7 @@ export const Dashboard: React.FC = () => {
     assumptions: state.assumptions,
     investmentDeals: state.investmentDeals,
     savingsDeposits: state.savingsDeposits,
+    projectionAdjustments: state.projectionAdjustments,
   });
 
   const hasData = projection.monthlyRows.length > 0;

@@ -46,6 +46,15 @@ export interface ProjectionMonthlyRow {
   fireGap: number;
   
   notes: string[];
+
+  // Runtime metrics for yearly aggregation
+  _savingInterestRateAnnual?: number;
+  _customProfit?: number;
+  _hasManualInvestmentAdj?: boolean;
+  _savingPnl?: number;
+  _childCost1?: number;
+  _childCost2?: number;
+  _childCostOther?: number;
 }
 
 export interface ProjectionYearlyRow {
@@ -69,6 +78,11 @@ export interface ProjectionYearlyRow {
   fireTarget: number;
   fireProgress: number;
   notes: string[];
+
+  // Runtime child cost breakdown
+  _childCost1?: number;
+  _childCost2?: number;
+  _childCostOther?: number;
 }
 
 export interface ProjectionOutput {
