@@ -329,9 +329,7 @@ export function runProjection(input: ProjectionEngineInput): ProjectionOutput {
 
     const standardTypes: AssetType[] = ['fx_reserve_usd', 'gold', 'real_estate', 'stocks', 'crypto'];
     standardTypes.forEach((type) => {
-      const config = assets.find((a) => a.type === type);
-      const begBal = config ? safeNumber(config.beginningBalance, 0) : 0;
-      assetBalances[type] = Math.max(0, begBal + assetBalances[type] + assetAdjustments[type]);
+      assetBalances[type] = Math.max(0, assetBalances[type] + assetAdjustments[type]);
     });
 
     const totalActiveCapital = Object.values(assetBalances).reduce((sum, v) => sum + v, 0);
