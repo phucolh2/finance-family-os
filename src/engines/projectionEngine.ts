@@ -160,7 +160,18 @@ export function runProjection(input: ProjectionEngineInput): ProjectionOutput {
       }
     });
 
-    const unallocatedForCompounding = Math.max(0, totalInvestable - activeValueUpToLastMonth);
+    let activeSavingsPrincipalThisMonth = 0;
+    savingsDeposits.forEach((dep) => {
+      if (dep.status !== 'active') return;
+      const depStart = dep.startYear * 12 + dep.startMonth;
+      const depEnd = depStart + dep.termMonths;
+      const current = period.year * 12 + period.month;
+      if (current >= depStart && current < depEnd) {
+        activeSavingsPrincipalThisMonth += dep.principal;
+      }
+    });
+
+    const unallocatedForCompounding = Math.max(0, totalInvestable - activeValueUpToLastMonth - activeSavingsPrincipalThisMonth);
 
     // Evaluate adjustments for the current month
     let adjustedSavingRate: number | null = null;
@@ -340,15 +351,14 @@ export function runProjection(input: ProjectionEngineInput): ProjectionOutput {
       const depEnd = depStart + dep.termMonths;
       const current = period.year * 12 + period.month;
       if (current >= depStart && current < depEnd) {
-        const monthsActive = current - depStart + 1;
-        const monthlyRate = safeNumber(dep.interestRateAnnual, 0) / 100 / 12;
-        const interest = dep.principal * monthlyRate * monthsActive;
+        // Use full term expected interest for the UI representation
+        const expectedInterest = dep.principal * (safeNumber(dep.interestRateAnnual, 0) / 100 / 12) * dep.termMonths;
         totalSavingsPrincipal += dep.principal;
-        totalSavingsInterest += interest;
+        totalSavingsInterest += expectedInterest;
       }
     });
 
-    // Savings interest contributes to totalInvestable growth
+    // Savings interest contributes to totalInvestable growth only at maturity
     const savingsInterestThisMonth = (() => {
       let interest = 0;
       savingsDeposits.forEach((dep) => {
@@ -356,8 +366,9 @@ export function runProjection(input: ProjectionEngineInput): ProjectionOutput {
         const depStart = dep.startYear * 12 + dep.startMonth;
         const depEnd = depStart + dep.termMonths;
         const current = period.year * 12 + period.month;
-        if (current >= depStart && current < depEnd) {
-          interest += dep.principal * (safeNumber(dep.interestRateAnnual, 0) / 100 / 12);
+        if (current === depEnd) {
+          const totalInterest = dep.principal * (safeNumber(dep.interestRateAnnual, 0) / 100 / 12) * dep.termMonths;
+          interest += totalInterest;
         }
       });
       return interest;

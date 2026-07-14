@@ -133,6 +133,8 @@ export const Portfolio: React.FC = () => {
     };
   });
 
+  const savBal = activeRow?.portfolio.savingsBalance || 0;
+
   const totalEarmarkedCapital = state.assets.reduce((sum, asset) => {
     return sum + (activeRow ? (activeRow.portfolio.assets[asset.type].earmarkedEndingBalance || 0) : 0);
   }, 0);
@@ -148,7 +150,15 @@ export const Portfolio: React.FC = () => {
     }
   });
 
-  const genericUnallocatedBalance = Math.max(0, rawObservedBalance - totalActiveCapital - totalEarmarkedCapital);
+  if (savBal > 0) {
+    chartData.push({
+      name: 'Gửi tiết kiệm',
+      value: Math.round((savBal / totalObservedBalance) * 100 * 10) / 10,
+      balance: savBal,
+    });
+  }
+
+  const genericUnallocatedBalance = Math.max(0, rawObservedBalance - totalActiveCapital - totalEarmarkedCapital - savBal);
   const genericUnallocatedPercent = totalObservedBalance > 0
     ? (genericUnallocatedBalance / totalObservedBalance) * 100
     : 100;
@@ -217,7 +227,7 @@ export const Portfolio: React.FC = () => {
         const plannedCapital = totalEarmarkedCapital;
         const savBal = activeRow?.portfolio.savingsBalance || 0;
         const savInterest = activeRow?.portfolio.savingsInterestAccrued || 0;
-        const idleCash = Math.max(0, totalInvestable - investedCapital - plannedCapital);
+        const idleCash = Math.max(0, totalInvestable - investedCapital - plannedCapital - savBal);
 
         const cumContribution = activeRow?.portfolio.cumulativeContribution || 0;
         const cumPnl = activeRow?.portfolio.cumulativePnl || 0;
@@ -405,6 +415,17 @@ export const Portfolio: React.FC = () => {
                     </React.Fragment>
                   );
                 })}
+                {savBal > 0 && (
+                  <tr className="border-b border-sky-100/50 bg-sky-50/20 hover:bg-sky-50/40">
+                    <td className="p-3 font-semibold text-sky-800">Gửi tiết kiệm ngân hàng</td>
+                    <td className="p-3 font-medium text-sky-800">
+                      {formatTableMoneyVNDMillion(savBal)}
+                    </td>
+                    <td className="p-3 font-bold text-sky-600">{((savBal / totalObservedBalance) * 100).toFixed(1)}%</td>
+                    <td className="p-3 text-slate-400 font-bold">---</td>
+                    <td className="p-3 text-slate-400 font-medium">---</td>
+                  </tr>
+                )}
                 {genericUnallocatedPercent > 0.01 && (
                   <tr className="border-b border-family-accent/5 bg-slate-500/5 hover:bg-slate-500/10">
                     <td className="p-3 font-semibold text-slate-500">Tiền mặt nhàn rỗi (Chung)</td>
@@ -597,7 +618,7 @@ export const Portfolio: React.FC = () => {
                   <th className="p-3">Kì hạn</th>
                   <th className="p-3">Bắt đầu</th>
                   <th className="p-3">Đáo hạn</th>
-                  <th className="p-3">Lãi tích lũy</th>
+                  <th className="p-3">Lãi dự kiến</th>
                   <th className="p-3">Nguồn</th>
                   <th className="p-3">Trạng thái</th>
                   <th className="p-3"></th>
@@ -612,8 +633,8 @@ export const Portfolio: React.FC = () => {
                   const depStart = dep.startYear * 12 + dep.startMonth;
                   const depEnd = depStart + dep.termMonths;
                   const isActive = current >= depStart && current < depEnd && dep.status === 'active';
-                  const monthsActive = current >= depEnd ? dep.termMonths : (current >= depStart ? current - depStart + 1 : 0);
-                  const accruedInterest = dep.principal * (dep.interestRateAnnual / 100 / 12) * monthsActive;
+                  // Calculate expected interest for the entire savings term
+                  const expectedInterest = dep.principal * (dep.interestRateAnnual / 100 / 12) * dep.termMonths;
 
                   return (
                     <tr key={dep.id} className="border-b border-sky-100/50 hover:bg-sky-50/30">
@@ -623,7 +644,7 @@ export const Portfolio: React.FC = () => {
                       <td className="p-3">{dep.termMonths} tháng</td>
                       <td className="p-3">{dep.startMonth}/{dep.startYear}</td>
                       <td className="p-3 font-medium">{maturityMonth}/{maturityYear}</td>
-                      <td className="p-3 font-bold text-emerald-600">+{formatTableMoneyVNDMillion(accruedInterest)}</td>
+                      <td className="p-3 font-bold text-emerald-600">+{formatTableMoneyVNDMillion(expectedInterest)}</td>
                       <td className="p-3">
                         <span className={`text-[10px] px-1.5 py-0.5 rounded ${dep.pool === 'idle' ? 'bg-sky-100 text-sky-700' : 'bg-violet-100 text-violet-700'}`}>
                           {dep.pool === 'idle' ? 'Nhàn rỗi' : 'Kế hoạch'}
