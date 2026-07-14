@@ -27,6 +27,7 @@ export const Portfolio: React.FC = () => {
     settleInvestmentDeal,
     addSavingsDeposit,
     deleteSavingsDeposit,
+    settleSavingsDepositEarly,
   } = useAppContext();
   
   // Run projection dynamically to get actual accumulated assets at the observed time
@@ -91,6 +92,12 @@ export const Portfolio: React.FC = () => {
   const [formError, setFormError] = useState<string | null>(null);
 
   // Savings Deposit form states
+  const [settlingSavingsId, setSettlingSavingsId] = useState<string | null>(null);
+  const [settleSavingsForm, setSettleSavingsForm] = useState({
+    settledMonth: 10,
+    settledYear: 2026,
+    realizedInterest: 0,
+  });
   const [showAddSavingsForm, setShowAddSavingsForm] = useState(false);
   const [savingsForm, setSavingsForm] = useState({
     name: '',
@@ -632,43 +639,139 @@ export const Portfolio: React.FC = () => {
                   const current = activeRow ? activeRow.period.year * 12 + activeRow.period.month : 0;
                   const depStart = dep.startYear * 12 + dep.startMonth;
                   const depEnd = depStart + dep.termMonths;
+                  
                   const isActive = current >= depStart && current < depEnd && dep.status === 'active';
+                  const isSettledEarly = dep.status === 'settled_early';
+                  const isSettling = settlingSavingsId === dep.id;
+                  
                   // Calculate expected interest for the entire savings term
                   const expectedInterest = dep.principal * (dep.interestRateAnnual / 100 / 12) * dep.termMonths;
+                  const displayInterest = isSettledEarly ? (dep.realizedInterest || 0) : expectedInterest;
 
                   return (
-                    <tr key={dep.id} className="border-b border-sky-100/50 hover:bg-sky-50/30">
-                      <td className="p-3 font-semibold text-family-text">{dep.name}</td>
-                      <td className="p-3 font-medium">{formatTableMoneyVNDMillion(dep.principal)}</td>
-                      <td className="p-3 font-bold text-sky-600">{dep.interestRateAnnual}%/năm</td>
-                      <td className="p-3">{dep.termMonths} tháng</td>
-                      <td className="p-3">{dep.startMonth}/{dep.startYear}</td>
-                      <td className="p-3 font-medium">{maturityMonth}/{maturityYear}</td>
-                      <td className="p-3 font-bold text-emerald-600">+{formatTableMoneyVNDMillion(expectedInterest)}</td>
-                      <td className="p-3">
-                        <span className={`text-[10px] px-1.5 py-0.5 rounded ${dep.pool === 'idle' ? 'bg-sky-100 text-sky-700' : 'bg-violet-100 text-violet-700'}`}>
-                          {dep.pool === 'idle' ? 'Nhàn rỗi' : 'Kế hoạch'}
-                        </span>
-                      </td>
-                      <td className="p-3">
-                        {isActive ? (
-                          <span className="text-[10px] bg-emerald-100 text-emerald-700 px-1.5 py-0.5 rounded font-bold">Đang chạy</span>
-                        ) : current >= depEnd ? (
-                          <span className="text-[10px] bg-amber-100 text-amber-700 px-1.5 py-0.5 rounded font-bold">Đã đáo hạn</span>
-                        ) : (
-                          <span className="text-[10px] bg-gray-100 text-gray-500 px-1.5 py-0.5 rounded">Chưa bắt đầu</span>
-                        )}
-                      </td>
-                      <td className="p-3">
-                        <button
-                          onClick={() => deleteSavingsDeposit(dep.id)}
-                          className="p-1 rounded-md text-family-textMuted hover:text-red-500 hover:bg-red-500/10 transition-all"
-                          title="Xóa"
-                        >
-                          <Trash2 className="w-3.5 h-3.5" />
-                        </button>
-                      </td>
-                    </tr>
+                    <React.Fragment key={dep.id}>
+                      <tr className="border-b border-sky-100/50 hover:bg-sky-50/30">
+                        <td className="p-3 font-semibold text-family-text">{dep.name}</td>
+                        <td className="p-3 font-medium">{formatTableMoneyVNDMillion(dep.principal)}</td>
+                        <td className="p-3 font-bold text-sky-600">{dep.interestRateAnnual}%/năm</td>
+                        <td className="p-3">{dep.termMonths} tháng</td>
+                        <td className="p-3">{dep.startMonth}/{dep.startYear}</td>
+                        <td className="p-3 font-medium">
+                          {isSettledEarly ? `${dep.settledMonth}/${dep.settledYear} (Tất toán)` : `${maturityMonth}/${maturityYear}`}
+                        </td>
+                        <td className="p-3 font-bold text-emerald-600">
+                          +{formatTableMoneyVNDMillion(displayInterest)}
+                          {isSettledEarly && <span className="text-[10px] text-orange-600 font-semibold block">(thực nhận)</span>}
+                        </td>
+                        <td className="p-3">
+                          <span className={`text-[10px] px-1.5 py-0.5 rounded ${dep.pool === 'idle' ? 'bg-sky-100 text-sky-700' : 'bg-violet-100 text-violet-700'}`}>
+                            {dep.pool === 'idle' ? 'Nhàn rỗi' : 'Kế hoạch'}
+                          </span>
+                        </td>
+                        <td className="p-3">
+                          {isSettledEarly ? (
+                            <span className="text-[10px] bg-orange-100 text-orange-700 px-1.5 py-0.5 rounded font-bold">Tất toán trước hạn</span>
+                          ) : isActive ? (
+                            <span className="text-[10px] bg-emerald-100 text-emerald-700 px-1.5 py-0.5 rounded font-bold">Đang chạy</span>
+                          ) : current >= depEnd ? (
+                            <span className="text-[10px] bg-amber-100 text-amber-700 px-1.5 py-0.5 rounded font-bold">Đã đáo hạn</span>
+                          ) : (
+                            <span className="text-[10px] bg-gray-100 text-gray-500 px-1.5 py-0.5 rounded">Chưa bắt đầu</span>
+                          )}
+                        </td>
+                        <td className="p-3">
+                          <div className="flex items-center gap-1.5">
+                            {isActive && (
+                              <button
+                                onClick={() => {
+                                  setSettlingSavingsId(dep.id);
+                                  setSettleSavingsForm({
+                                    settledMonth: activeRow ? activeRow.period.month : dep.startMonth,
+                                    settledYear: activeRow ? activeRow.period.year : dep.startYear,
+                                    realizedInterest: 0,
+                                  });
+                                }}
+                                className="p-1 rounded-md text-sky-600 hover:text-sky-850 hover:bg-sky-50 transition-all"
+                                title="Tất toán trước hạn"
+                              >
+                                <CheckCircle className="w-3.5 h-3.5" />
+                              </button>
+                            )}
+                            <button
+                              onClick={() => deleteSavingsDeposit(dep.id)}
+                              className="p-1 rounded-md text-family-textMuted hover:text-red-500 hover:bg-red-500/10 transition-all"
+                              title="Xóa"
+                            >
+                              <Trash2 className="w-3.5 h-3.5" />
+                            </button>
+                          </div>
+                        </td>
+                      </tr>
+                      {isSettling && (
+                        <tr className="bg-sky-50/50 border-b border-sky-100/50">
+                          <td colSpan={10} className="p-3">
+                            <div className="flex flex-wrap items-center gap-4 text-xs bg-white/80 p-3 rounded-xl border border-sky-200">
+                              <div className="font-bold text-sky-800">Thông tin tất toán trước hạn:</div>
+                              <div className="flex items-center gap-2">
+                                <label className="font-semibold text-family-text">Tháng chốt:</label>
+                                <input
+                                  type="number"
+                                  min={1}
+                                  max={12}
+                                  value={settleSavingsForm.settledMonth}
+                                  onChange={(e) => setSettleSavingsForm({ ...settleSavingsForm, settledMonth: safeNumber(Number(e.target.value), 12) })}
+                                  className="w-14 text-center bg-white rounded-lg border border-sky-205 p-1"
+                                  required
+                                />
+                              </div>
+                              <div className="flex items-center gap-2">
+                                <label className="font-semibold text-family-text">Năm chốt:</label>
+                                <input
+                                  type="number"
+                                  min={2020}
+                                  max={2060}
+                                  value={settleSavingsForm.settledYear}
+                                  onChange={(e) => setSettleSavingsForm({ ...settleSavingsForm, settledYear: safeNumber(Number(e.target.value), 2026) })}
+                                  className="w-18 text-center bg-white rounded-lg border border-sky-205 p-1"
+                                  required
+                                />
+                              </div>
+                              <div className="flex items-center gap-2">
+                                <label className="font-semibold text-family-text">Lãi thực tế nhận được:</label>
+                                <input
+                                  type="number"
+                                  step="0.01"
+                                  value={settleSavingsForm.realizedInterest}
+                                  onChange={(e) => setSettleSavingsForm({ ...settleSavingsForm, realizedInterest: safeNumber(Number(e.target.value), 0) })}
+                                  className="w-20 text-center bg-white rounded-lg border border-sky-205 p-1 font-bold text-sky-700"
+                                  required
+                                />
+                                <span className="font-bold text-family-textMuted">Tr VND</span>
+                              </div>
+                              <div className="flex gap-2 ml-auto">
+                                <button
+                                  type="button"
+                                  onClick={() => {
+                                    settleSavingsDepositEarly(dep.id, settleSavingsForm.settledMonth, settleSavingsForm.settledYear, settleSavingsForm.realizedInterest);
+                                    setSettlingSavingsId(null);
+                                  }}
+                                  className="px-3 py-1.5 bg-sky-600 hover:bg-sky-700 text-white rounded-lg font-semibold transition-all"
+                                >
+                                  Xác nhận tất toán
+                                </button>
+                                <button
+                                  type="button"
+                                  onClick={() => setSettlingSavingsId(null)}
+                                  className="px-3 py-1.5 bg-slate-100 hover:bg-slate-200 text-family-text rounded-lg font-semibold transition-all"
+                                >
+                                  Hủy
+                                </button>
+                              </div>
+                            </div>
+                          </td>
+                        </tr>
+                      )}
+                    </React.Fragment>
                   );
                 })}
               </tbody>

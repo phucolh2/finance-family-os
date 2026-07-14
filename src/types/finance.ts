@@ -145,7 +145,10 @@ export interface SavingsDeposit {
   startMonth: number;
   startYear: number;
   pool: 'planned' | 'idle';             // Thuộc phần tiền nào
-  status: 'active' | 'matured';         // matured = đáo hạn
+  status: 'active' | 'matured' | 'settled_early'; // matured = đáo hạn, settled_early = tất toán trước kì hạn
+  settledMonth?: number;
+  settledYear?: number;
+  realizedInterest?: number;
   notes?: string;
 }
 

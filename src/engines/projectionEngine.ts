@@ -162,9 +162,11 @@ export function runProjection(input: ProjectionEngineInput): ProjectionOutput {
 
     let activeSavingsPrincipalThisMonth = 0;
     savingsDeposits.forEach((dep) => {
-      if (dep.status !== 'active') return;
+      if (dep.status === 'matured') return;
       const depStart = dep.startYear * 12 + dep.startMonth;
-      const depEnd = depStart + dep.termMonths;
+      const depEnd = dep.status === 'settled_early' && dep.settledYear && dep.settledMonth
+        ? dep.settledYear * 12 + dep.settledMonth
+        : depStart + dep.termMonths;
       const current = period.year * 12 + period.month;
       if (current >= depStart && current < depEnd) {
         activeSavingsPrincipalThisMonth += dep.principal;
@@ -341,29 +343,38 @@ export function runProjection(input: ProjectionEngineInput): ProjectionOutput {
     let totalSavingsPrincipal = 0;
     let totalSavingsInterest = 0;
     savingsDeposits.forEach((dep) => {
-      if (dep.status !== 'active') return;
       const depStart = dep.startYear * 12 + dep.startMonth;
-      const depEnd = depStart + dep.termMonths;
+      const depEnd = dep.status === 'settled_early' && dep.settledYear && dep.settledMonth
+        ? dep.settledYear * 12 + dep.settledMonth
+        : depStart + dep.termMonths;
       const current = period.year * 12 + period.month;
       if (current >= depStart && current < depEnd) {
-        // Use full term expected interest for the UI representation
-        const expectedInterest = dep.principal * (safeNumber(dep.interestRateAnnual, 0) / 100 / 12) * dep.termMonths;
+        // Use expected interest (or realized interest if settled early) for the UI representation
+        const expectedInterest = dep.status === 'settled_early'
+          ? safeNumber(dep.realizedInterest, 0)
+          : dep.principal * (safeNumber(dep.interestRateAnnual, 0) / 100 / 12) * dep.termMonths;
         totalSavingsPrincipal += dep.principal;
         totalSavingsInterest += expectedInterest;
       }
     });
 
-    // Savings interest contributes to totalInvestable growth only at maturity
+    // Savings interest contributes to totalInvestable growth only at maturity or early settlement month
     const savingsInterestThisMonth = (() => {
       let interest = 0;
       savingsDeposits.forEach((dep) => {
-        if (dep.status !== 'active') return;
         const depStart = dep.startYear * 12 + dep.startMonth;
         const depEnd = depStart + dep.termMonths;
         const current = period.year * 12 + period.month;
-        if (current === depEnd) {
-          const totalInterest = dep.principal * (safeNumber(dep.interestRateAnnual, 0) / 100 / 12) * dep.termMonths;
-          interest += totalInterest;
+        if (dep.status === 'settled_early' && dep.settledYear && dep.settledMonth) {
+          const settleTime = dep.settledYear * 12 + dep.settledMonth;
+          if (current === settleTime) {
+            interest += safeNumber(dep.realizedInterest, 0);
+          }
+        } else if (dep.status === 'active') {
+          if (current === depEnd) {
+            const totalInterest = dep.principal * (safeNumber(dep.interestRateAnnual, 0) / 100 / 12) * dep.termMonths;
+            interest += totalInterest;
+          }
         }
       });
       return interest;

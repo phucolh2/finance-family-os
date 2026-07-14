@@ -411,6 +411,24 @@ export function useAppState() {
     });
   };
 
+  const settleSavingsDepositEarly = (id: string, settledMonth: number, settledYear: number, realizedInterest: number) => {
+    saveState({
+      ...state,
+      savingsDeposits: (state.savingsDeposits || []).map((item) => {
+        if (item.id === id) {
+          return {
+            ...item,
+            status: 'settled_early',
+            settledMonth,
+            settledYear,
+            realizedInterest,
+          };
+        }
+        return item;
+      }),
+    });
+  };
+
   const resetToDefault = () => {
     saveState(INITIAL_APP_STATE);
   };
@@ -480,6 +498,7 @@ export function useAppState() {
     addSavingsDeposit,
     updateSavingsDeposit,
     deleteSavingsDeposit,
+    settleSavingsDepositEarly,
     addProjectionAdjustment,
     updateProjectionAdjustment,
     deleteProjectionAdjustment,
