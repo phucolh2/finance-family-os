@@ -322,7 +322,7 @@ export function runProjection(input: ProjectionEngineInput): ProjectionOutput {
           accumulatedPnl = safeNumber(deal.capital, 0) * (rate / 100 / 12) * monthsActive;
         }
 
-        const totalValue = safeNumber(deal.capital, 0) + (isCurrentlyEarmarked ? accumulatedPnl : 0);
+        const totalValue = safeNumber(deal.capital, 0);
         
         if (isCurrentlyEarmarked) {
           earmarkedBalances[deal.assetType] += totalValue;

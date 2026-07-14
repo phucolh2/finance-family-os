@@ -88,6 +88,8 @@ export const Portfolio: React.FC = () => {
     month: 10,
     year: 2026,
     realizedSavingInterest: 0,
+    reinvestAsUnallocated: false,
+    reinvestAssetType: 'stocks' as AssetType,
   });
 
   const [formError, setFormError] = useState<string | null>(null);
@@ -1144,6 +1146,8 @@ export const Portfolio: React.FC = () => {
                                               month: activeRow ? activeRow.period.month : 10,
                                               year: activeRow ? activeRow.period.year : 2026,
                                               realizedSavingInterest: 0,
+                                              reinvestAsUnallocated: false,
+                                              reinvestAssetType: deal.assetType,
                                             });
                                           }
                                         }}
@@ -1437,6 +1441,29 @@ export const Portfolio: React.FC = () => {
                                         </div>
                                       </div>
                                     )}
+                                    <div className="flex items-center gap-2 w-full pt-2 border-t border-blue-700/10">
+                                      <input 
+                                        type="checkbox" 
+                                        id="reinvest-conversion"
+                                        checked={conversionForm.reinvestAsUnallocated}
+                                        onChange={(e) => setConversionForm({ ...conversionForm, reinvestAsUnallocated: e.target.checked })}
+                                        className="w-4 h-4 text-blue-700 rounded border-family-accent/20"
+                                      />
+                                      <label htmlFor="reinvest-conversion" className="text-xs font-semibold text-family-text">Tự động tạo thương vụ "Chờ phân bổ" với tổng tiền vốn + lời?</label>
+                                      {conversionForm.reinvestAsUnallocated && (
+                                        <select
+                                          value={conversionForm.reinvestAssetType}
+                                          onChange={(e) => setConversionForm({ ...conversionForm, reinvestAssetType: e.target.value as AssetType })}
+                                          className="text-xs bg-white rounded-lg border border-family-accent/15 px-2 py-1 ml-2"
+                                        >
+                                          <option value="stocks">Chứng Khoán</option>
+                                          <option value="real_estate">Bất Động Sản</option>
+                                          <option value="gold">Vàng</option>
+                                          <option value="fx_reserve_usd">USD</option>
+                                          <option value="crypto">Crypto</option>
+                                        </select>
+                                      )}
+                                    </div>
                                     <button
                                       type="button"
                                       onClick={() => {
@@ -1448,6 +1475,17 @@ export const Portfolio: React.FC = () => {
                                           conversionYear: conversionForm.year,
                                           realizedSavingInterest: conversionForm.realizedSavingInterest,
                                         });
+                                        if (conversionForm.reinvestAsUnallocated) {
+                                          addInvestmentDeal({
+                                            name: 'Tiền chờ phân bổ',
+                                            assetType: conversionForm.reinvestAssetType,
+                                            capital: deal.capital + conversionForm.realizedSavingInterest,
+                                            startMonth: conversionForm.month,
+                                            startYear: conversionForm.year,
+                                            status: 'active',
+                                            notes: `Tái đầu tư từ chuyển đổi thương vụ ${deal.name}`,
+                                          });
+                                        }
                                         setConvertingDealId(null);
                                       }}
                                       className="ml-auto bg-blue-600 hover:bg-blue-700 text-white font-bold py-1 px-3 rounded-lg shadow-sm"
