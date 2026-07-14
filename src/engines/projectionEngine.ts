@@ -210,9 +210,6 @@ export function runProjection(input: ProjectionEngineInput): ProjectionOutput {
     let genericPnl = 0;
     if (hasManualInvestmentAdj) {
       genericPnl = (manualAnnualProfit / 12) + manualMonthlyProfit + manualOneTimeProfit;
-    } else {
-      const defaultInvRate = safeNumber(assumptions.investmentYieldExpectationAnnual, 0) / 100;
-      genericPnl = unallocatedForCompounding * (defaultInvRate / 12);
     }
     
     // Calculate specific deals PnL for THIS month
