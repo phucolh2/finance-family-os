@@ -140,7 +140,10 @@ export function runProjection(input: ProjectionEngineInput): ProjectionOutput {
     // We will calculate Active Deal Values up to LAST month, to find unallocated compounding base
     let activeValueUpToLastMonth = 0;
     investmentDeals.forEach(deal => {
-      const start = deal.startYear * 12 + deal.startMonth;
+      const isOriginallyEarmarked = deal.isEarmarked || deal.isConverted;
+      const start = isOriginallyEarmarked
+        ? (profile.planningStartYear * 12 + profile.planningStartMonth)
+        : (deal.startYear * 12 + deal.startMonth);
       const current = period.year * 12 + period.month;
       const end = deal.status === 'settled' && deal.endYear && deal.endMonth 
         ? deal.endYear * 12 + deal.endMonth 
@@ -219,13 +222,14 @@ export function runProjection(input: ProjectionEngineInput): ProjectionOutput {
     const dealSettleNotes: string[] = [];
     
     investmentDeals.forEach(deal => {
-      const start = deal.startYear * 12 + deal.startMonth;
+      const isOriginallyEarmarked = deal.isEarmarked || deal.isConverted;
+      const start = isOriginallyEarmarked
+        ? (profile.planningStartYear * 12 + profile.planningStartMonth)
+        : (deal.startYear * 12 + deal.startMonth);
       const current = period.year * 12 + period.month;
       const end = deal.status === 'settled' && deal.endYear && deal.endMonth 
         ? deal.endYear * 12 + deal.endMonth 
         : Infinity;
-      
-      const isOriginallyEarmarked = deal.isEarmarked || deal.isConverted;
       const term = safeNumber(deal.savingTermMonths, 12);
       const maturity = start + term;
       const conversion = (deal.isConverted && deal.conversionYear && deal.conversionMonth)
@@ -281,14 +285,16 @@ export function runProjection(input: ProjectionEngineInput): ProjectionOutput {
 
     // Distribute accumulated PnL into asset classes
     investmentDeals.forEach((deal) => {
-      const start = deal.startYear * 12 + deal.startMonth;
+      const isOriginallyEarmarked = deal.isEarmarked || deal.isConverted;
+      const start = isOriginallyEarmarked
+        ? (profile.planningStartYear * 12 + profile.planningStartMonth)
+        : (deal.startYear * 12 + deal.startMonth);
       const current = period.year * 12 + period.month;
       const end = deal.status === 'settled' && deal.endYear && deal.endMonth 
         ? deal.endYear * 12 + deal.endMonth 
         : Infinity;
       
       if (current >= start && current <= end) {
-        const isOriginallyEarmarked = deal.isEarmarked || deal.isConverted;
         const term = safeNumber(deal.savingTermMonths, 12);
         const maturity = start + term;
         const conversion = (deal.isConverted && deal.conversionYear && deal.conversionMonth)

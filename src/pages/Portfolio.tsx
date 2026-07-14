@@ -1006,7 +1006,10 @@ export const Portfolio: React.FC = () => {
                       .map((deal) => {
                         const isSettling = settlingDealId === deal.id;
                         const current = activeRow ? activeRow.period.year * 12 + activeRow.period.month : 0;
-                        const dealStart = deal.startYear * 12 + deal.startMonth;
+                        const isOriginallyEarmarked = deal.isEarmarked || deal.isConverted;
+                        const dealStart = isOriginallyEarmarked
+                          ? (state.profile.planningStartYear * 12 + state.profile.planningStartMonth)
+                          : (deal.startYear * 12 + deal.startMonth);
                         const hasStarted = current >= dealStart;
                         return (
                           <React.Fragment key={deal.id}>
