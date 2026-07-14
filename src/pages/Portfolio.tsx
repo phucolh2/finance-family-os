@@ -608,12 +608,11 @@ export const Portfolio: React.FC = () => {
                   const maturityMonth = ((dep.startMonth - 1 + dep.termMonths) % 12) + 1;
                   const maturityYear = dep.startYear + Math.floor((dep.startMonth - 1 + dep.termMonths) / 12);
                   
-                  // Calculate accrued interest up to observed month
                   const current = activeRow ? activeRow.period.year * 12 + activeRow.period.month : 0;
                   const depStart = dep.startYear * 12 + dep.startMonth;
                   const depEnd = depStart + dep.termMonths;
                   const isActive = current >= depStart && current < depEnd && dep.status === 'active';
-                  const monthsActive = isActive ? current - depStart + 1 : (dep.status === 'active' ? 0 : dep.termMonths);
+                  const monthsActive = current >= depEnd ? dep.termMonths : (current >= depStart ? current - depStart + 1 : 0);
                   const accruedInterest = dep.principal * (dep.interestRateAnnual / 100 / 12) * monthsActive;
 
                   return (
