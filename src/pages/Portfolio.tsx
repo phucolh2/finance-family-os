@@ -92,6 +92,20 @@ export const Portfolio: React.FC = () => {
 
   const [formError, setFormError] = useState<string | null>(null);
 
+  // Smart calculation input modes & rates
+  const [settleSavingsInputMode, setSettleSavingsInputMode] = useState<'amount' | 'rate'>('amount');
+  const [settleSavingsCustomRate, setSettleSavingsCustomRate] = useState<number>(0);
+
+  const [settleDealInputMode, setSettleDealInputMode] = useState<'amount' | 'rate'>('amount');
+  const [settleDealCustomRate, setSettleDealCustomRate] = useState<number>(0);
+
+  const [convertDealInputMode, setConvertDealInputMode] = useState<'amount' | 'rate'>('amount');
+  const [convertDealCustomRate, setConvertDealCustomRate] = useState<number>(0);
+
+  const getMonthsActive = (startMonth: number, startYear: number, endMonth: number, endYear: number) => {
+    return Math.max(0, (endYear * 12 + endMonth) - (startYear * 12 + startMonth));
+  };
+
   // Savings Deposit form states
   const [settlingSavingsId, setSettlingSavingsId] = useState<string | null>(null);
   const [settleSavingsForm, setSettleSavingsForm] = useState({
@@ -734,7 +748,15 @@ export const Portfolio: React.FC = () => {
                                   min={1}
                                   max={12}
                                   value={settleSavingsForm.settledMonth}
-                                  onChange={(e) => setSettleSavingsForm({ ...settleSavingsForm, settledMonth: safeNumber(Number(e.target.value), 12) })}
+                                  onChange={(e) => {
+                                    const m = safeNumber(Number(e.target.value), 12);
+                                    setSettleSavingsForm({ ...settleSavingsForm, settledMonth: m });
+                                    if (settleSavingsInputMode === 'rate') {
+                                      const months = getMonthsActive(dep.startMonth, dep.startYear, m, settleSavingsForm.settledYear);
+                                      const computed = dep.principal * (settleSavingsCustomRate / 100 / 12) * months;
+                                      setSettleSavingsForm(prev => ({ ...prev, settledMonth: m, realizedInterest: Math.round(computed * 100) / 100 }));
+                                    }
+                                  }}
                                   className="w-14 text-center bg-white rounded-lg border border-sky-205 p-1"
                                   required
                                 />
@@ -746,23 +768,78 @@ export const Portfolio: React.FC = () => {
                                   min={2020}
                                   max={2060}
                                   value={settleSavingsForm.settledYear}
-                                  onChange={(e) => setSettleSavingsForm({ ...settleSavingsForm, settledYear: safeNumber(Number(e.target.value), 2026) })}
+                                  onChange={(e) => {
+                                    const y = safeNumber(Number(e.target.value), 2026);
+                                    setSettleSavingsForm({ ...settleSavingsForm, settledYear: y });
+                                    if (settleSavingsInputMode === 'rate') {
+                                      const months = getMonthsActive(dep.startMonth, dep.startYear, settleSavingsForm.settledMonth, y);
+                                      const computed = dep.principal * (settleSavingsCustomRate / 100 / 12) * months;
+                                      setSettleSavingsForm(prev => ({ ...prev, settledYear: y, realizedInterest: Math.round(computed * 100) / 100 }));
+                                    }
+                                  }}
                                   className="w-18 text-center bg-white rounded-lg border border-sky-205 p-1"
                                   required
                                 />
                               </div>
-                              <div className="flex items-center gap-2">
-                                <label className="font-semibold text-family-text">Lãi thực tế nhận được:</label>
-                                <input
-                                  type="number"
-                                  step="0.01"
-                                  value={settleSavingsForm.realizedInterest}
-                                  onChange={(e) => setSettleSavingsForm({ ...settleSavingsForm, realizedInterest: safeNumber(Number(e.target.value), 0) })}
-                                  className="w-20 text-center bg-white rounded-lg border border-sky-205 p-1 font-bold text-sky-700"
-                                  required
-                                />
-                                <span className="font-bold text-family-textMuted">Tr VND</span>
+                              <div className="flex items-center gap-2 border-l pl-4 border-sky-100">
+                                <label className="font-semibold text-family-text">Cách nhập lãi:</label>
+                                <select
+                                  value={settleSavingsInputMode}
+                                  onChange={(e) => {
+                                    const mode = e.target.value as 'amount' | 'rate';
+                                    setSettleSavingsInputMode(mode);
+                                    if (mode === 'amount') {
+                                      setSettleSavingsForm(prev => ({ ...prev, realizedInterest: 0 }));
+                                    } else {
+                                      const months = getMonthsActive(dep.startMonth, dep.startYear, settleSavingsForm.settledMonth, settleSavingsForm.settledYear);
+                                      const computed = dep.principal * (settleSavingsCustomRate / 100 / 12) * months;
+                                      setSettleSavingsForm(prev => ({ ...prev, realizedInterest: Math.round(computed * 100) / 100 }));
+                                    }
+                                  }}
+                                  className="bg-white rounded-lg border border-sky-200 p-1"
+                                >
+                                  <option value="amount">Nhập số tiền</option>
+                                  <option value="rate">Nhập %/năm thực nhận</option>
+                                </select>
                               </div>
+                              {settleSavingsInputMode === 'amount' ? (
+                                <div className="flex items-center gap-2">
+                                  <label className="font-semibold text-family-text">Lãi thực tế nhận được:</label>
+                                  <input
+                                    type="number"
+                                    step="0.01"
+                                    value={settleSavingsForm.realizedInterest}
+                                    onChange={(e) => setSettleSavingsForm({ ...settleSavingsForm, realizedInterest: safeNumber(Number(e.target.value), 0) })}
+                                    className="w-20 text-center bg-white rounded-lg border border-sky-205 p-1 font-bold text-sky-700"
+                                    required
+                                  />
+                                  <span className="font-bold text-family-textMuted">Tr VND</span>
+                                </div>
+                              ) : (
+                                <div className="flex flex-wrap items-center gap-3">
+                                  <div className="flex items-center gap-2">
+                                    <label className="font-semibold text-family-text">Lãi suất thực nhận:</label>
+                                    <input
+                                      type="number"
+                                      step="0.1"
+                                      value={settleSavingsCustomRate}
+                                      onChange={(e) => {
+                                        const rate = safeNumber(Number(e.target.value), 0);
+                                        setSettleSavingsCustomRate(rate);
+                                        const months = getMonthsActive(dep.startMonth, dep.startYear, settleSavingsForm.settledMonth, settleSavingsForm.settledYear);
+                                        const computed = dep.principal * (rate / 100 / 12) * months;
+                                        setSettleSavingsForm(prev => ({ ...prev, realizedInterest: Math.round(computed * 100) / 100 }));
+                                      }}
+                                      className="w-16 text-center bg-white rounded-lg border border-sky-205 p-1 font-bold text-sky-700"
+                                      required
+                                    />
+                                    <span className="font-semibold text-family-textMuted">%/năm</span>
+                                  </div>
+                                  <div className="bg-sky-50 text-[10px] text-sky-800 font-semibold px-2 py-1 rounded-lg">
+                                    Lãi tính từ {dep.startMonth}/{dep.startYear} đến {settleSavingsForm.settledMonth}/{settleSavingsForm.settledYear} ({getMonthsActive(dep.startMonth, dep.startYear, settleSavingsForm.settledMonth, settleSavingsForm.settledYear)} tháng): <span className="text-xs font-bold text-sky-700">+{settleSavingsForm.realizedInterest} Tr VND</span>
+                                  </div>
+                                </div>
+                              )}
                               <div className="flex gap-2 ml-auto">
                                 <button
                                   type="button"
@@ -1100,7 +1177,17 @@ export const Portfolio: React.FC = () => {
                                         min={1}
                                         max={12}
                                         value={settleForm.endMonth}
-                                        onChange={(e) => setSettleForm({ ...settleForm, endMonth: safeNumber(Number(e.target.value), 12) })}
+                                        onChange={(e) => {
+                                          const m = safeNumber(Number(e.target.value), 12);
+                                          setSettleForm({ ...settleForm, endMonth: m });
+                                          if (settleDealInputMode === 'rate') {
+                                            const startM = deal.isEarmarked ? state.profile.planningStartMonth : deal.startMonth;
+                                            const startY = deal.isEarmarked ? state.profile.planningStartYear : deal.startYear;
+                                            const months = getMonthsActive(startM, startY, m, settleForm.endYear);
+                                            const computed = deal.capital * (settleDealCustomRate / 100 / 12) * months;
+                                            setSettleForm(prev => ({ ...prev, endMonth: m, realizedProfit: Math.round(computed * 100) / 100 }));
+                                          }
+                                        }}
                                         className="w-14 text-center bg-white rounded-lg border border-family-accent/15 p-1"
                                         required
                                       />
@@ -1112,22 +1199,83 @@ export const Portfolio: React.FC = () => {
                                         min={2020}
                                         max={2060}
                                         value={settleForm.endYear}
-                                        onChange={(e) => setSettleForm({ ...settleForm, endYear: safeNumber(Number(e.target.value), 2026) })}
+                                        onChange={(e) => {
+                                          const y = safeNumber(Number(e.target.value), 2026);
+                                          setSettleForm({ ...settleForm, endYear: y });
+                                          if (settleDealInputMode === 'rate') {
+                                            const startM = deal.isEarmarked ? state.profile.planningStartMonth : deal.startMonth;
+                                            const startY = deal.isEarmarked ? state.profile.planningStartYear : deal.startYear;
+                                            const months = getMonthsActive(startM, startY, settleForm.endMonth, y);
+                                            const computed = deal.capital * (settleDealCustomRate / 100 / 12) * months;
+                                            setSettleForm(prev => ({ ...prev, endYear: y, realizedProfit: Math.round(computed * 100) / 100 }));
+                                          }
+                                        }}
                                         className="w-18 text-center bg-white rounded-lg border border-family-accent/15 p-1"
                                         required
                                       />
                                     </div>
-                                    <div className="flex items-center gap-2">
-                                      <label className="font-semibold text-family-text">{deal.isEarmarked ? 'Tiền lãi thực nhận:' : 'Lợi nhuận/Lỗ thực tế:'}</label>
-                                      <input
-                                        type="number"
-                                        value={settleForm.realizedProfit}
-                                        onChange={(e) => setSettleForm({ ...settleForm, realizedProfit: safeNumber(Number(e.target.value), 0) })}
-                                        className={`w-20 text-center bg-white rounded-lg border border-family-accent/15 p-1 font-bold ${deal.isEarmarked ? 'text-slate-600' : 'text-green-700'}`}
-                                        required
-                                      />
-                                      <span className="font-bold text-family-textMuted">Tr VND</span>
+                                    <div className="flex items-center gap-2 border-l pl-4 border-green-700/10">
+                                      <label className="font-semibold text-family-text">Cách nhập lãi/lỗ:</label>
+                                      <select
+                                        value={settleDealInputMode}
+                                        onChange={(e) => {
+                                          const mode = e.target.value as 'amount' | 'rate';
+                                          setSettleDealInputMode(mode);
+                                          if (mode === 'amount') {
+                                            setSettleForm(prev => ({ ...prev, realizedProfit: 0 }));
+                                          } else {
+                                            const startM = deal.isEarmarked ? state.profile.planningStartMonth : deal.startMonth;
+                                            const startY = deal.isEarmarked ? state.profile.planningStartYear : deal.startYear;
+                                            const months = getMonthsActive(startM, startY, settleForm.endMonth, settleForm.endYear);
+                                            const computed = deal.capital * (settleDealCustomRate / 100 / 12) * months;
+                                            setSettleForm(prev => ({ ...prev, realizedProfit: Math.round(computed * 100) / 100 }));
+                                          }
+                                        }}
+                                        className="bg-white rounded-lg border border-family-accent/15 p-1"
+                                      >
+                                        <option value="amount">Nhập số tiền</option>
+                                        <option value="rate">Nhập %/năm thực nhận</option>
+                                      </select>
                                     </div>
+                                    {settleDealInputMode === 'amount' ? (
+                                      <div className="flex items-center gap-2">
+                                        <label className="font-semibold text-family-text">{deal.isEarmarked ? 'Tiền lãi thực nhận:' : 'Lợi nhuận/Lỗ thực tế:'}</label>
+                                        <input
+                                          type="number"
+                                          value={settleForm.realizedProfit}
+                                          onChange={(e) => setSettleForm({ ...settleForm, realizedProfit: safeNumber(Number(e.target.value), 0) })}
+                                          className={`w-20 text-center bg-white rounded-lg border border-family-accent/15 p-1 font-bold ${deal.isEarmarked ? 'text-slate-600' : 'text-green-700'}`}
+                                          required
+                                        />
+                                        <span className="font-bold text-family-textMuted">Tr VND</span>
+                                      </div>
+                                    ) : (
+                                      <div className="flex flex-wrap items-center gap-3">
+                                        <div className="flex items-center gap-2">
+                                          <label className="font-semibold text-family-text">Lợi suất thực nhận:</label>
+                                          <input
+                                            type="number"
+                                            step="0.1"
+                                            value={settleDealCustomRate}
+                                            onChange={(e) => {
+                                              const rate = safeNumber(Number(e.target.value), 0);
+                                              setSettleDealCustomRate(rate);
+                                              const startM = deal.isEarmarked ? state.profile.planningStartMonth : deal.startMonth;
+                                              const startY = deal.isEarmarked ? state.profile.planningStartYear : deal.startYear;
+                                              const months = getMonthsActive(startM, startY, settleForm.endMonth, settleForm.endYear);
+                                              const computed = deal.capital * (rate / 100 / 12) * months;
+                                              setSettleForm(prev => ({ ...prev, realizedProfit: Math.round(computed * 100) / 100 }));
+                                            }}
+                                            className="w-16 text-center bg-white rounded-lg border border-family-accent/15 p-1 font-bold text-green-700"
+                                            required
+                                          />
+                                          <span className="font-semibold text-family-textMuted">%/năm</span>
+                                        </div>
+                                        <div className="bg-green-50 text-[10px] text-green-800 font-semibold px-2 py-1 rounded-lg">
+                                          Lãi tính từ {deal.isEarmarked ? `${state.profile.planningStartMonth}/${state.profile.planningStartYear}` : `${deal.startMonth}/${deal.startYear}`} đến {settleForm.endMonth}/{settleForm.endYear} ({getMonthsActive(deal.isEarmarked ? state.profile.planningStartMonth : deal.startMonth, deal.isEarmarked ? state.profile.planningStartYear : deal.startYear, settleForm.endMonth, settleForm.endYear)} tháng): <span className="text-xs font-bold text-green-700">+{settleForm.realizedProfit} Tr VND</span>
+                                        </div>
+                                      </div>
+                                    )}
                                     <div className="flex items-center gap-2 w-full pt-2 border-t border-green-700/10">
                                       <input 
                                         type="checkbox" 
@@ -1189,7 +1337,17 @@ export const Portfolio: React.FC = () => {
                                         min={1}
                                         max={12}
                                         value={conversionForm.month}
-                                        onChange={(e) => setConversionForm({ ...conversionForm, month: safeNumber(Number(e.target.value), 12) })}
+                                        onChange={(e) => {
+                                          const m = safeNumber(Number(e.target.value), 12);
+                                          setConversionForm({ ...conversionForm, month: m });
+                                          if (convertDealInputMode === 'rate') {
+                                            const startM = deal.isEarmarked ? state.profile.planningStartMonth : deal.startMonth;
+                                            const startY = deal.isEarmarked ? state.profile.planningStartYear : deal.startYear;
+                                            const months = getMonthsActive(startM, startY, m, conversionForm.year);
+                                            const computed = deal.capital * (convertDealCustomRate / 100 / 12) * months;
+                                            setConversionForm(prev => ({ ...prev, month: m, realizedSavingInterest: Math.round(computed * 100) / 100 }));
+                                          }
+                                        }}
                                         className="w-14 text-center bg-white rounded-lg border border-family-accent/15 p-1"
                                         required
                                       />
@@ -1201,23 +1359,84 @@ export const Portfolio: React.FC = () => {
                                         min={2020}
                                         max={2060}
                                         value={conversionForm.year}
-                                        onChange={(e) => setConversionForm({ ...conversionForm, year: safeNumber(Number(e.target.value), 2026) })}
+                                        onChange={(e) => {
+                                          const y = safeNumber(Number(e.target.value), 2026);
+                                          setConversionForm({ ...conversionForm, year: y });
+                                          if (convertDealInputMode === 'rate') {
+                                            const startM = deal.isEarmarked ? state.profile.planningStartMonth : deal.startMonth;
+                                            const startY = deal.isEarmarked ? state.profile.planningStartYear : deal.startYear;
+                                            const months = getMonthsActive(startM, startY, conversionForm.month, y);
+                                            const computed = deal.capital * (convertDealCustomRate / 100 / 12) * months;
+                                            setConversionForm(prev => ({ ...prev, year: y, realizedSavingInterest: Math.round(computed * 100) / 100 }));
+                                          }
+                                        }}
                                         className="w-18 text-center bg-white rounded-lg border border-family-accent/15 p-1"
                                         required
                                       />
                                     </div>
-                                    <div className="flex items-center gap-2">
-                                      <label className="font-semibold text-family-text">Lãi tiết kiệm thực nhận:</label>
-                                      <input
-                                        type="number"
-                                        step="0.01"
-                                        value={conversionForm.realizedSavingInterest}
-                                        onChange={(e) => setConversionForm({ ...conversionForm, realizedSavingInterest: safeNumber(Number(e.target.value), 0) })}
-                                        className="w-20 text-center bg-white rounded-lg border border-family-accent/15 p-1 font-bold text-blue-700"
-                                        required
-                                      />
-                                      <span className="font-bold text-family-textMuted">Tr VND</span>
+                                    <div className="flex items-center gap-2 border-l pl-4 border-blue-700/10">
+                                      <label className="font-semibold text-family-text">Cách nhập lãi:</label>
+                                      <select
+                                        value={convertDealInputMode}
+                                        onChange={(e) => {
+                                          const mode = e.target.value as 'amount' | 'rate';
+                                          setConvertDealInputMode(mode);
+                                          if (mode === 'amount') {
+                                            setConversionForm(prev => ({ ...prev, realizedSavingInterest: 0 }));
+                                          } else {
+                                            const startM = deal.isEarmarked ? state.profile.planningStartMonth : deal.startMonth;
+                                            const startY = deal.isEarmarked ? state.profile.planningStartYear : deal.startYear;
+                                            const months = getMonthsActive(startM, startY, conversionForm.month, conversionForm.year);
+                                            const computed = deal.capital * (convertDealCustomRate / 100 / 12) * months;
+                                            setConversionForm(prev => ({ ...prev, realizedSavingInterest: Math.round(computed * 100) / 100 }));
+                                          }
+                                        }}
+                                        className="bg-white rounded-lg border border-family-accent/15 p-1"
+                                      >
+                                        <option value="amount">Nhập số tiền</option>
+                                        <option value="rate">Nhập %/năm thực nhận</option>
+                                      </select>
                                     </div>
+                                    {convertDealInputMode === 'amount' ? (
+                                      <div className="flex items-center gap-2">
+                                        <label className="font-semibold text-family-text">Lãi tiết kiệm thực nhận:</label>
+                                        <input
+                                          type="number"
+                                          step="0.01"
+                                          value={conversionForm.realizedSavingInterest}
+                                          onChange={(e) => setConversionForm({ ...conversionForm, realizedSavingInterest: safeNumber(Number(e.target.value), 0) })}
+                                          className="w-20 text-center bg-white rounded-lg border border-family-accent/15 p-1 font-bold text-blue-700"
+                                          required
+                                        />
+                                        <span className="font-bold text-family-textMuted">Tr VND</span>
+                                      </div>
+                                    ) : (
+                                      <div className="flex flex-wrap items-center gap-3">
+                                        <div className="flex items-center gap-2">
+                                          <label className="font-semibold text-family-text">Lãi suất thực nhận:</label>
+                                          <input
+                                            type="number"
+                                            step="0.1"
+                                            value={convertDealCustomRate}
+                                            onChange={(e) => {
+                                              const rate = safeNumber(Number(e.target.value), 0);
+                                              setConvertDealCustomRate(rate);
+                                              const startM = deal.isEarmarked ? state.profile.planningStartMonth : deal.startMonth;
+                                              const startY = deal.isEarmarked ? state.profile.planningStartYear : deal.startYear;
+                                              const months = getMonthsActive(startM, startY, conversionForm.month, conversionForm.year);
+                                              const computed = deal.capital * (rate / 100 / 12) * months;
+                                              setConversionForm(prev => ({ ...prev, realizedSavingInterest: Math.round(computed * 100) / 100 }));
+                                            }}
+                                            className="w-16 text-center bg-white rounded-lg border border-family-accent/15 p-1 font-bold text-blue-700"
+                                            required
+                                          />
+                                          <span className="font-semibold text-family-textMuted">%/năm</span>
+                                        </div>
+                                        <div className="bg-blue-50 text-[10px] text-blue-800 font-semibold px-2 py-1 rounded-lg">
+                                          Lãi tính từ {deal.isEarmarked ? `${state.profile.planningStartMonth}/${state.profile.planningStartYear}` : `${deal.startMonth}/${deal.startYear}`} đến {conversionForm.month}/{conversionForm.year} ({getMonthsActive(deal.isEarmarked ? state.profile.planningStartMonth : deal.startMonth, deal.isEarmarked ? state.profile.planningStartYear : deal.startYear, conversionForm.month, conversionForm.year)} tháng): <span className="text-xs font-bold text-blue-700">+{conversionForm.realizedSavingInterest} Tr VND</span>
+                                        </div>
+                                      </div>
+                                    )}
                                     <button
                                       type="button"
                                       onClick={() => {
