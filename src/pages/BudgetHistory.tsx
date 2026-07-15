@@ -11,6 +11,8 @@ import type { BudgetRatioScheduleItem, BudgetTreeNode } from '../types/budget';
 import { BudgetVersionCompareChart } from '../components/budget/BudgetVersionCompareChart';
 import { BudgetHistoryTrendChart } from '../components/budget/BudgetHistoryTrendChart';
 import { BudgetDetailedList } from '../components/budget/BudgetDetailedList';
+import { BudgetDonutChart } from '../components/budget/BudgetDonutChart';
+import { BudgetRadarChart } from '../components/budget/BudgetRadarChart';
 import { BudgetTreeNodeRow } from '../components/budget/BudgetTreeNodeRow';
 import { rebuildTreeFromFlatRatios, calculateBudget } from '../engines/budgetEngine';
 import { DEFAULT_BUDGET_TREE } from '../data/defaultInputs';
@@ -536,12 +538,63 @@ export const BudgetHistory: React.FC = () => {
               </div>
             </div>
 
+            {/* KPI CARDS ROW */}
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
+              <Card className="bg-family-bgDark/20 border border-family-accent/10">
+                <CardContent className="p-4 flex flex-col items-center justify-center text-center">
+                  <span className="text-[10px] uppercase text-family-textMuted font-bold mb-1">Thu Nhập</span>
+                  <span className="text-xl font-bold text-family-text">{milestoneIncome} Tr</span>
+                </CardContent>
+              </Card>
+              <Card className="bg-red-500/10 border border-red-500/20">
+                <CardContent className="p-4 flex flex-col items-center justify-center text-center">
+                  <span className="text-[10px] uppercase text-red-400/80 font-bold mb-1">Tổng Chi Phí</span>
+                  <span className="text-xl font-bold text-red-400">{expenseAmt.toFixed(1)} Tr</span>
+                </CardContent>
+              </Card>
+              <Card className="bg-blue-500/10 border border-blue-500/20">
+                <CardContent className="p-4 flex flex-col items-center justify-center text-center">
+                  <span className="text-[10px] uppercase text-blue-400/80 font-bold mb-1">Tổng Đầu Tư</span>
+                  <span className="text-xl font-bold text-blue-400">{investmentAmt.toFixed(1)} Tr</span>
+                </CardContent>
+              </Card>
+              <Card className="bg-emerald-500/10 border border-emerald-500/20">
+                <CardContent className="p-4 flex flex-col items-center justify-center text-center">
+                  <span className="text-[10px] uppercase text-emerald-500/80 font-bold mb-1">Tổng Tiết Kiệm</span>
+                  <span className="text-xl font-bold text-emerald-500">{savingsAmt.toFixed(1)} Tr</span>
+                </CardContent>
+              </Card>
+            </div>
+
+            {/* CHARTS ROW (Donut & Radar) */}
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
+              <Card className="border border-family-accent/10 bg-family-bgDark/5">
+                <CardHeader className="pb-2 border-b border-family-accent/5">
+                  <CardTitle className="text-sm uppercase tracking-wide">Cơ Cấu Phân Bổ</CardTitle>
+                  <CardDescription className="text-xs">Tỷ trọng Chi phí vs Đầu tư vs Tiết kiệm</CardDescription>
+                </CardHeader>
+                <CardContent className="h-64 pt-4">
+                  <BudgetDonutChart rootGroups={rootGroups} />
+                </CardContent>
+              </Card>
+              
+              <Card className="border border-family-accent/10 bg-family-bgDark/5">
+                <CardHeader className="pb-2 border-b border-family-accent/5">
+                  <CardTitle className="text-sm uppercase tracking-wide">Sức Khỏe Ngân Sách</CardTitle>
+                  <CardDescription className="text-xs">Thực tế so với Chuẩn 50/30/20</CardDescription>
+                </CardHeader>
+                <CardContent className="h-64 pt-4">
+                  <BudgetRadarChart rootGroups={rootGroups} />
+                </CardContent>
+              </Card>
+            </div>
+
             {/* Top Row: Detailed List (Full Width) */}
           <Card className="border border-family-accent/10 p-4 bg-family-bgDark/5 flex flex-col mb-6">
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-family-accent/5 pb-3 mb-4">
               <div>
                 <h4 className="font-bold text-sm text-family-text uppercase tracking-wide">
-                  Cơ cấu phân bổ ngân sách
+                  Chi tiết hạng mục phân bổ
                 </h4>
                 <p className="text-xs text-family-textMuted mt-0.5">Danh sách các khoản chi tiêu và tích lũy chi tiết</p>
               </div>

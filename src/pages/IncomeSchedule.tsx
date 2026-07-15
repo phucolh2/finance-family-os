@@ -10,6 +10,7 @@ import { formatTableMoneyVNDMillion, formatKpiMoneyVNDMillion } from '../utils/f
 import { safeNumber } from '../utils/math';
 import { Trash2, Plus, Save, RotateCcw, BarChart2, Check, Sliders, AlertTriangle } from 'lucide-react';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
+import { IncomePassiveActiveChart, IncomeCumulativeChart } from '../components/income/IncomeAreaCharts';
 import { ObservationControls } from '../components/ui/ObservationControls';
 import type { IncomeScheduleItem, IncomeType } from '../types/finance';
 
@@ -87,8 +88,27 @@ export const IncomeSchedule: React.FC = () => {
     : { incomeMonthly: 0, activeScheduleId: '', warnings: [] };
 
   // Generate continuous timeline data for chart rendering
-  const chartData = timelineResult.periods.map((p) => {
+  let cumIncome = 0;
+  const chartData = timelineResult.periods.map((p, index, arr) => {
     const inc = calculateIncome({ period: p, incomeSchedule: state.incomeSchedule });
+    const prevInc = index > 0 ? calculateIncome({ period: arr[index-1], incomeSchedule: state.incomeSchedule }) : null;
+    
+    // active = fulltime + parttime + self_employed + irregular
+    const active = (inc.breakdown?.fulltime_salary || 0) + (inc.breakdown?.parttime_salary || 0) + (inc.breakdown?.self_employed || 0) + (inc.breakdown?.irregular_income || 0);
+    // passive = passive_income + pension
+    const passive = (inc.breakdown?.passive_income || 0) + (inc.breakdown?.pension || 0);
+    
+    cumIncome += inc.incomeMonthly;
+    
+    // Cliff detection: if income drops by more than 20% compared to previous month
+    let cliffDrop = 0;
+    if (prevInc && prevInc.incomeMonthly > 0) {
+      const dropRatio = (prevInc.incomeMonthly - inc.incomeMonthly) / prevInc.incomeMonthly;
+      if (dropRatio >= 0.2) {
+        cliffDrop = prevInc.incomeMonthly - inc.incomeMonthly;
+      }
+    }
+
     return {
       year: p.year,
       month: p.month,
@@ -99,6 +119,10 @@ export const IncomeSchedule: React.FC = () => {
       'Thu nhập thụ động': Math.round((inc.breakdown?.passive_income || 0) * 10) / 10,
       'Thu nhập không cố định': Math.round((inc.breakdown?.irregular_income || 0) * 10) / 10,
       'Khoản thu tháng': Math.round(inc.incomeMonthly * 10) / 10,
+      activeIncome: Math.round(active * 10) / 10,
+      passiveIncome: Math.round(passive * 10) / 10,
+      cumulativeIncome: Math.round(cumIncome * 10) / 10,
+      cliffDrop: Math.round(cliffDrop * 10) / 10,
     };
   });
 
@@ -416,11 +440,61 @@ export const IncomeSchedule: React.FC = () => {
             </div>
           )}
 
+          {/* Cliff Risk Warnings */}
+          {(() => {
+            const currentPeriodTotal = startPeriod.year * 12 + startPeriod.month;
+            const cliffs = chartData.filter(d => d.cliffDrop > 0 && (d.year * 12 + d.month) > currentPeriodTotal);
+            if (cliffs.length > 0) {
+              return (
+                <div className="space-y-2">
+                  <h4 className="font-bold text-sm text-red-400 uppercase tracking-wider flex items-center gap-2">
+                    <AlertTriangle className="w-4 h-4" /> Cảnh báo Thu nhập rơi tự do (Income Cliff Risk)
+                  </h4>
+                  {cliffs.map((cliff, idx) => (
+                    <WarningBox 
+                      key={idx} 
+                      type="danger" 
+                      message={`Tháng ${cliff.month}/${cliff.year}: Tổng thu nhập sụt giảm mạnh ${formatKpiMoneyVNDMillion(cliff.cliffDrop)} so với tháng trước (Chỉ còn ${formatKpiMoneyVNDMillion(cliff['Khoản thu tháng'])}). Cần chuẩn bị nguồn thu thay thế!`} 
+                    />
+                  ))}
+                </div>
+              );
+            }
+            return null;
+          })()}
+
+          {/* BI Area Charts */}
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            <Card className="border border-family-accent/10 p-5 bg-family-bgDark/5">
+              <div className="border-b border-family-accent/5 pb-3 mb-4">
+                <h4 className="font-bold text-sm text-family-text uppercase tracking-wider">
+                  Thụ động vs Chủ động
+                </h4>
+                <p className="text-xs text-family-textMuted mt-0.5">Xu hướng tự do tài chính</p>
+              </div>
+              <div className="h-64 w-full bg-family-bgDark/20 rounded-xl p-2 shadow-inner">
+                <IncomePassiveActiveChart data={chartData} yearTicks={yearTicks} />
+              </div>
+            </Card>
+
+            <Card className="border border-family-accent/10 p-5 bg-family-bgDark/5">
+              <div className="border-b border-family-accent/5 pb-3 mb-4">
+                <h4 className="font-bold text-sm text-family-text uppercase tracking-wider">
+                  Lũy kế thu nhập cả đời
+                </h4>
+                <p className="text-xs text-family-textMuted mt-0.5">Tổng giá trị tài sản tạo ra</p>
+              </div>
+              <div className="h-64 w-full bg-family-bgDark/20 rounded-xl p-2 shadow-inner">
+                <IncomeCumulativeChart data={chartData} yearTicks={yearTicks} />
+              </div>
+            </Card>
+          </div>
+
           {/* Income Projection Chart Card */}
           <Card className="border border-family-accent/10 p-5 bg-family-bgDark/5">
             <div className="border-b border-family-accent/5 pb-3 mb-4">
               <h4 className="font-bold text-sm text-family-text uppercase tracking-wider">
-                Kế hoạch Thu nhập theo thời gian (2026 - 2060)
+                Chi tiết Kế hoạch Thu nhập (2026 - 2060)
               </h4>
               <p className="text-xs text-family-textMuted mt-0.5">
                 Dự báo các nguồn thu nhập tích lũy theo thời gian.

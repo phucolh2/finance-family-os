@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { AppProvider } from './context/AppContext';
 import { Layout } from './components/layout/Layout';
 import { Dashboard } from './pages/Dashboard';
+import { CashflowQuadrant } from './pages/CashflowQuadrant';
 import { EventLedger } from './pages/EventLedger';
 import { IncomeSchedule } from './pages/IncomeSchedule';
 import { BudgetHistory } from './pages/BudgetHistory';
@@ -23,6 +24,8 @@ function AppContent() {
     switch (activeTab) {
       case 'dashboard':
         return <Dashboard />;
+      case 'cashflow':
+        return <CashflowQuadrant />;
       case 'event_ledger':
         return <EventLedger />;
       case 'income':

@@ -47,6 +47,15 @@ export function useAppState() {
   // Global selected period key for observation
   const [selectedPeriodKey, setSelectedPeriodKey] = useState<string | undefined>(undefined);
 
+  // Auto-reset observation month when Vite Hot Reload occurs
+  useEffect(() => {
+    if (import.meta.hot) {
+      import.meta.hot.on('vite:beforeUpdate', () => {
+        setSelectedPeriodKey(undefined);
+      });
+    }
+  }, []);
+
   // Tracking the last saved date
   const [lastSaved, setLastSaved] = useState<string>(() => {
     try {

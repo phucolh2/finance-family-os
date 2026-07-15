@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { useAppContext } from '../../context/AppContext';
 import { runProjection } from '../../engines/projectionEngine';
 import { safeNumber } from '../../utils/math';
@@ -17,6 +17,16 @@ export const ObservationControls: React.FC = () => {
     investmentDeals: state.investmentDeals,
     savingsDeposits: state.savingsDeposits,
   });
+
+  // Validate if selectedPeriodKey is still in the projection
+  useEffect(() => {
+    if (selectedPeriodKey) {
+      const isValid = projection.monthlyRows.some(r => r.period.key === selectedPeriodKey);
+      if (!isValid) {
+        setSelectedPeriodKey(undefined);
+      }
+    }
+  }, [projection.monthlyRows, selectedPeriodKey, setSelectedPeriodKey]);
 
   const now = new Date();
   const nowMonth = now.getMonth() + 1;
@@ -73,6 +83,15 @@ export const ObservationControls: React.FC = () => {
             </option>
           ))}
         </select>
+        {activeKey !== currentPeriod?.period.key && (
+          <button
+            onClick={() => setSelectedPeriodKey(undefined)}
+            className="ml-1 px-2 py-0.5 text-[10px] font-bold text-white bg-family-accent/80 rounded hover:bg-family-primary transition-colors whitespace-nowrap"
+            title="Trở về hiện tại"
+          >
+            Về hiện tại
+          </button>
+        )}
       </div>
     </div>
   );

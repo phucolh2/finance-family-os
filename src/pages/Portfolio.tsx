@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useAppContext } from '../context/AppContext';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '../components/ui/Card';
 import { Button } from '../components/ui/Button';
@@ -9,6 +9,7 @@ import { runProjection } from '../engines/projectionEngine';
 import { formatTableMoneyVNDMillion, formatKpiMoneyVNDMillion } from '../utils/format';
 import { safeNumber } from '../utils/math';
 import { PieChart, Pie, Cell, ResponsiveContainer, Legend, Tooltip } from 'recharts';
+import { PortfolioRadarChart } from '../components/portfolio/PortfolioRadarChart';
 import { Briefcase, Save, RotateCcw, Edit3, Plus, Trash2, CheckCircle } from 'lucide-react';
 import type { AssetConfig, AssetType } from '../types/portfolio';
 import { ObservationControls } from '../components/ui/ObservationControls';
@@ -71,6 +72,7 @@ export const Portfolio: React.FC = () => {
     isEarmarked: false,
     expectedSavingRate: 5,
     savingTermMonths: 12,
+    bankName: '',
     notes: '',
   });
 
@@ -130,6 +132,16 @@ export const Portfolio: React.FC = () => {
     resetToDefault();
     setFormError(null);
   };
+
+  // Reset UI states when observation month changes
+  useEffect(() => {
+    setShowAddDealForm(false);
+    setSettlingDealId(null);
+    setConvertingDealId(null);
+    setSettlingSavingsId(null);
+    setShowAddSavingsForm(false);
+    setFormError(null);
+  }, [activeRow?.period.key]);
 
   // Recharts parameters
   const COLORS = ['#d97706', '#eab308', '#4d7c0f', '#8b5cf6', '#0f766e', '#64748b'];
@@ -258,30 +270,55 @@ export const Portfolio: React.FC = () => {
 
         return (
           <div className="space-y-4">
-            {/* Top overview card: Tổng tiền được phân bổ đầu tư */}
-            <Card className="bg-gradient-to-r from-family-accent/5 to-sky-500/5 border-family-accent/20">
-              <CardContent className="py-4 px-6 flex flex-col sm:flex-row justify-between sm:items-center gap-4">
-                <div>
-                  <div className="flex items-center gap-2 mb-1">
-                    <span className="text-xl">💼</span>
-                    <h3 className="font-bold text-base text-family-text uppercase tracking-wide font-serif">
-                      TỔNG TIỀN ĐÃ PHÂN BỔ ĐẦU TƯ
-                    </h3>
+            {/* Top overview cards: Tổng NAV & P&L */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <Card className="bg-gradient-to-r from-family-accent/5 to-sky-500/5 border-family-accent/20">
+                <CardContent className="py-4 px-6 flex justify-between items-center h-full">
+                  <div>
+                    <div className="flex items-center gap-2 mb-1">
+                      <span className="text-xl">💼</span>
+                      <h3 className="font-bold text-base text-family-text uppercase tracking-wide font-serif">
+                        TỔNG NAV DANH MỤC
+                      </h3>
+                    </div>
+                    <p className="text-xs text-family-textMuted max-w-[200px]">
+                      Quy mô tài sản đầu tư tích lũy của gia đình.
+                    </p>
                   </div>
-                  <p className="text-xs text-family-textMuted">
-                    Tổng quy mô tài sản đầu tư tích lũy của gia đình tính đến tháng quan sát (gốc + đóng góp hàng tháng + lãi lũy kế).
-                  </p>
-                </div>
-                <div className="text-right shrink-0">
-                  <span className="text-2xl font-extrabold text-family-accent">
-                    {formatKpiMoneyVNDMillion(totalInvestable)}
-                  </span>
-                  <p className="text-[10px] text-family-textMuted mt-0.5 font-semibold">
-                    Chia thành 3 cấu phần: Đã đầu tư, Lên kế hoạch, Chưa có kế hoạch
-                  </p>
-                </div>
-              </CardContent>
-            </Card>
+                  <div className="text-right">
+                    <span className="text-3xl font-extrabold text-family-accent block">
+                      {formatKpiMoneyVNDMillion(totalInvestable)}
+                    </span>
+                  </div>
+                </CardContent>
+              </Card>
+
+              <Card className={`border ${cumPnl >= 0 ? 'bg-emerald-500/10 border-emerald-500/20' : 'bg-red-500/10 border-red-500/20'}`}>
+                <CardContent className="py-4 px-6 flex justify-between items-center h-full">
+                  <div>
+                    <div className="flex items-center gap-2 mb-1">
+                      <span className="text-xl">{cumPnl >= 0 ? '📈' : '📉'}</span>
+                      <h3 className={`font-bold text-base uppercase tracking-wide font-serif ${cumPnl >= 0 ? 'text-emerald-500' : 'text-red-500'}`}>
+                        LÃI / LỖ TỔNG (P&L)
+                      </h3>
+                    </div>
+                    <p className={`text-xs ${cumPnl >= 0 ? 'text-emerald-500/70' : 'text-red-500/70'}`}>
+                      Hiệu suất đầu tư ròng lũy kế
+                    </p>
+                  </div>
+                  <div className="text-right">
+                    <span className={`text-3xl font-extrabold block ${cumPnl >= 0 ? 'text-emerald-500' : 'text-red-500'}`}>
+                      {cumPnl >= 0 ? '+' : ''}{formatKpiMoneyVNDMillion(cumPnl)}
+                    </span>
+                    {totalInvestable > 0 && (
+                      <p className={`text-[11px] font-bold mt-1 ${cumPnl >= 0 ? 'text-emerald-500' : 'text-red-500'}`}>
+                        ROI: {cumPnl >= 0 ? '+' : ''}{((cumPnl / (totalInvestable - cumPnl)) * 100).toFixed(1)}%
+                      </p>
+                    )}
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
 
             <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4">
               {/* KPI 1: Vốn gốc khởi điểm */}
@@ -381,9 +418,9 @@ export const Portfolio: React.FC = () => {
       })()}
 
       {/* Tổng quan nhanh + Biểu đồ */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+      <div className="space-y-6">
         {/* Assets summary table */}
-        <Card className="lg:col-span-2">
+        <Card>
           <CardHeader>
             <CardTitle>Danh sách phân bổ các lớp tài sản</CardTitle>
             <CardDescription>
@@ -480,14 +517,14 @@ export const Portfolio: React.FC = () => {
           </CardContent>
         </Card>
 
-        {/* Pie Chart display */}
-        <Card className="flex flex-col justify-between">
-          <div>
+        {/* Charts BI Grid */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          <Card className="flex flex-col justify-between">
             <CardHeader>
               <CardTitle>Biểu đồ tỷ trọng thực tế</CardTitle>
               <CardDescription>Cơ cấu phân bổ tài sản tại mốc quan sát.</CardDescription>
             </CardHeader>
-            <CardContent className="h-56 flex items-center justify-center">
+            <CardContent className="h-64 flex items-center justify-center">
               {totalObservedBalance > 0 ? (
                 <ResponsiveContainer width="100%" height="100%">
                   <PieChart>
@@ -496,7 +533,7 @@ export const Portfolio: React.FC = () => {
                       cx="50%"
                       cy="50%"
                       innerRadius={50}
-                      outerRadius={70}
+                      outerRadius={80}
                       paddingAngle={3}
                       dataKey="value"
                     >
@@ -505,15 +542,29 @@ export const Portfolio: React.FC = () => {
                       ))}
                     </Pie>
                     <Tooltip formatter={(value, name, props) => [`${value}% (${formatTableMoneyVNDMillion(props.payload.balance)})`, name]} />
-                    <Legend wrapperStyle={{ fontSize: 9 }} />
+                    <Legend wrapperStyle={{ fontSize: 11, paddingTop: '10px' }} />
                   </PieChart>
                 </ResponsiveContainer>
               ) : (
                 <EmptyState title="Không có biểu đồ" description="Vui lòng thiết lập vốn khởi điểm lớn hơn 0." />
               )}
             </CardContent>
-          </div>
-        </Card>
+          </Card>
+
+          <Card className="flex flex-col justify-between border-family-accent/20">
+            <CardHeader>
+              <CardTitle>Cân bằng rủi ro (Actual vs Target)</CardTitle>
+              <CardDescription>So sánh phân bổ thực tế so với Tỷ trọng kỳ vọng (Target).</CardDescription>
+            </CardHeader>
+            <CardContent className="h-64 flex items-center justify-center">
+              {totalObservedBalance > 0 ? (
+                <PortfolioRadarChart assets={state.assets} chartData={chartData} />
+              ) : (
+                <EmptyState title="Không có dữ liệu" description="Vui lòng cập nhật vốn khởi điểm" />
+              )}
+            </CardContent>
+          </Card>
+        </div>
       </div>
 
       {/* Savings Deposits Section */}
@@ -912,9 +963,10 @@ export const Portfolio: React.FC = () => {
                   isEarmarked: dealForm.isEarmarked,
                   expectedSavingRate: dealForm.isEarmarked ? dealForm.expectedSavingRate : undefined,
                   savingTermMonths: dealForm.isEarmarked ? dealForm.savingTermMonths : undefined,
+                  bankName: dealForm.isEarmarked ? dealForm.bankName : undefined,
                   notes: dealForm.notes,
                 });
-                setDealForm({ name: '', assetType: 'stocks', capital: 0, startMonth: 10, startYear: 2026, isEarmarked: false, expectedSavingRate: 5, savingTermMonths: 12, notes: '' });
+                setDealForm({ name: '', assetType: 'stocks', capital: 0, startMonth: 10, startYear: 2026, isEarmarked: false, expectedSavingRate: 5, savingTermMonths: 12, bankName: '', notes: '' });
                 setShowAddDealForm(false);
               }}
               className="bg-family-bgDark/35 p-4 rounded-xl border border-family-accent/10 space-y-4"
@@ -1025,6 +1077,16 @@ export const Portfolio: React.FC = () => {
                         <option value={36}>36 tháng</option>
                       </select>
                     </div>
+                    <div className="flex items-center gap-2">
+                      <label className="text-xs font-semibold text-family-text">Ngân hàng:</label>
+                      <input
+                        type="text"
+                        value={dealForm.bankName}
+                        onChange={(e) => setDealForm({ ...dealForm, bankName: e.target.value })}
+                        placeholder="VD: Vietcombank"
+                        className="w-32 text-xs bg-white rounded-lg border border-family-accent/15 px-2 py-1 focus:outline-none focus:ring-1 focus:ring-family-accent"
+                      />
+                    </div>
                   </div>
                 )}
               </div>
@@ -1086,9 +1148,7 @@ export const Portfolio: React.FC = () => {
                         const isSettling = settlingDealId === deal.id;
                         const current = activeRow ? activeRow.period.year * 12 + activeRow.period.month : 0;
                         const isOriginallyEarmarked = deal.isEarmarked || deal.isConverted;
-                        const dealStart = isOriginallyEarmarked
-                          ? (state.profile.planningStartYear * 12 + state.profile.planningStartMonth)
-                          : (deal.startYear * 12 + deal.startMonth);
+                        const dealStart = deal.startYear * 12 + deal.startMonth;
                         const hasStarted = current >= dealStart;
                         return (
                           <React.Fragment key={deal.id}>
@@ -1109,7 +1169,14 @@ export const Portfolio: React.FC = () => {
                               </td>
                               <td className="p-3 font-bold text-family-accent">{formatTableMoneyVNDMillion(deal.capital)}</td>
                               <td className="p-3 font-semibold">{deal.startMonth < 10 ? `0${deal.startMonth}` : deal.startMonth}/{deal.startYear}</td>
-                              <td className="p-3 text-family-textMuted max-w-[200px] truncate">{deal.notes || '---'}</td>
+                              <td className="p-3 text-family-textMuted max-w-[200px] truncate">
+                                {deal.isEarmarked ? (
+                                  <span className="block text-[10px] font-bold text-sky-600 mb-0.5">
+                                    {deal.bankName ? `[${deal.bankName}] ` : ''}Kỳ hạn {deal.savingTermMonths} tháng ({deal.expectedSavingRate}%/năm)
+                                  </span>
+                                ) : null}
+                                {deal.notes || '---'}
+                              </td>
                               <td className="p-3 text-right space-x-2">
                                 {hasStarted && (
                                   <>
@@ -1169,7 +1236,18 @@ export const Portfolio: React.FC = () => {
                               </td>
                             </tr>
                             {/* Settlement Inline Form */}
-                            {isSettling && (
+                            {isSettling && (() => {
+                              const startTotal = (deal.startYear * 12) + deal.startMonth;
+                              const term = deal.savingTermMonths || 0;
+                              const maturityTotal = startTotal + term;
+                              const selectedTotal = (settleForm.endYear * 12) + settleForm.endMonth;
+                              const isLateSettlement = deal.isEarmarked && selectedTotal > maturityTotal;
+                              const maturityY = Math.floor((maturityTotal - 1) / 12);
+                              const maturityM = ((maturityTotal - 1) % 12) + 1;
+                              const expectedRate = deal.expectedSavingRate || 0;
+                              const computedInterest = deal.capital * (expectedRate / 100 / 12) * term;
+
+                              return (
                               <tr className="bg-green-700/5 border-b border-family-accent/5">
                                 <td colSpan={6} className="p-3">
                                   <div className="flex flex-wrap items-center gap-4 text-xs bg-white/70 p-3 rounded-xl border border-green-700/20">
@@ -1185,8 +1263,8 @@ export const Portfolio: React.FC = () => {
                                           const m = safeNumber(Number(e.target.value), 12);
                                           setSettleForm({ ...settleForm, endMonth: m });
                                           if (settleDealInputMode === 'rate') {
-                                            const startM = deal.isEarmarked ? state.profile.planningStartMonth : deal.startMonth;
-                                            const startY = deal.isEarmarked ? state.profile.planningStartYear : deal.startYear;
+                                            const startM = deal.startMonth;
+                                            const startY = deal.startYear;
                                             const months = getMonthsActive(startM, startY, m, settleForm.endYear);
                                             const computed = deal.capital * (settleDealCustomRate / 100 / 12) * months;
                                             setSettleForm(prev => ({ ...prev, endMonth: m, realizedProfit: Math.round(computed * 100) / 100 }));
@@ -1207,8 +1285,8 @@ export const Portfolio: React.FC = () => {
                                           const y = safeNumber(Number(e.target.value), 2026);
                                           setSettleForm({ ...settleForm, endYear: y });
                                           if (settleDealInputMode === 'rate') {
-                                            const startM = deal.isEarmarked ? state.profile.planningStartMonth : deal.startMonth;
-                                            const startY = deal.isEarmarked ? state.profile.planningStartYear : deal.startYear;
+                                            const startM = deal.startMonth;
+                                            const startY = deal.startYear;
                                             const months = getMonthsActive(startM, startY, settleForm.endMonth, y);
                                             const computed = deal.capital * (settleDealCustomRate / 100 / 12) * months;
                                             setSettleForm(prev => ({ ...prev, endYear: y, realizedProfit: Math.round(computed * 100) / 100 }));
@@ -1218,8 +1296,10 @@ export const Portfolio: React.FC = () => {
                                         required
                                       />
                                     </div>
-                                    <div className="flex items-center gap-2 border-l pl-4 border-green-700/10">
-                                      <label className="font-semibold text-family-text">Cách nhập lãi/lỗ:</label>
+                                    {!isLateSettlement && (
+                                      <>
+                                        <div className="flex items-center gap-2 border-l pl-4 border-green-700/10">
+                                          <label className="font-semibold text-family-text">Cách nhập lãi/lỗ:</label>
                                       <select
                                         value={settleDealInputMode}
                                         onChange={(e) => {
@@ -1228,8 +1308,8 @@ export const Portfolio: React.FC = () => {
                                           if (mode === 'amount') {
                                             setSettleForm(prev => ({ ...prev, realizedProfit: 0 }));
                                           } else {
-                                            const startM = deal.isEarmarked ? state.profile.planningStartMonth : deal.startMonth;
-                                            const startY = deal.isEarmarked ? state.profile.planningStartYear : deal.startYear;
+                                            const startM = deal.startMonth;
+                                            const startY = deal.startYear;
                                             const months = getMonthsActive(startM, startY, settleForm.endMonth, settleForm.endYear);
                                             const computed = deal.capital * (settleDealCustomRate / 100 / 12) * months;
                                             setSettleForm(prev => ({ ...prev, realizedProfit: Math.round(computed * 100) / 100 }));
@@ -1264,8 +1344,8 @@ export const Portfolio: React.FC = () => {
                                             onChange={(e) => {
                                               const rate = safeNumber(Number(e.target.value), 0);
                                               setSettleDealCustomRate(rate);
-                                              const startM = deal.isEarmarked ? state.profile.planningStartMonth : deal.startMonth;
-                                              const startY = deal.isEarmarked ? state.profile.planningStartYear : deal.startYear;
+                                              const startM = deal.startMonth;
+                                              const startY = deal.startYear;
                                               const months = getMonthsActive(startM, startY, settleForm.endMonth, settleForm.endYear);
                                               const computed = deal.capital * (rate / 100 / 12) * months;
                                               setSettleForm(prev => ({ ...prev, realizedProfit: Math.round(computed * 100) / 100 }));
@@ -1276,8 +1356,18 @@ export const Portfolio: React.FC = () => {
                                           <span className="font-semibold text-family-textMuted">%/năm</span>
                                         </div>
                                         <div className="bg-green-50 text-[10px] text-green-800 font-semibold px-2 py-1 rounded-lg">
-                                          Lãi tính từ {deal.isEarmarked ? `${state.profile.planningStartMonth}/${state.profile.planningStartYear}` : `${deal.startMonth}/${deal.startYear}`} đến {settleForm.endMonth}/{settleForm.endYear} ({getMonthsActive(deal.isEarmarked ? state.profile.planningStartMonth : deal.startMonth, deal.isEarmarked ? state.profile.planningStartYear : deal.startYear, settleForm.endMonth, settleForm.endYear)} tháng): <span className="text-xs font-bold text-green-700">+{settleForm.realizedProfit} Tr VND</span>
+                                          Lãi tính từ {deal.startMonth}/{deal.startYear} đến {settleForm.endMonth}/{settleForm.endYear} ({getMonthsActive(deal.startMonth, deal.startYear, settleForm.endMonth, settleForm.endYear)} tháng): <span className="text-xs font-bold text-green-700">+{settleForm.realizedProfit} Tr VND</span>
                                         </div>
+                                      </div>
+                                    )}
+                                      </>
+                                    )}
+                                    {isLateSettlement && (
+                                      <div className="w-full mt-2 -mb-1">
+                                        <WarningBox 
+                                          type="warning" 
+                                          message={`Khoản tiết kiệm này đã ĐÁO HẠN vào tháng ${maturityM}/${maturityY}. Lãi suất hưởng trọn vẹn là ${Math.round(computedInterest * 100)/100} Tr VND (Đã tự động cộng vào Tổng tài sản tại tháng ${maturityM}/${maturityY}). Việc bạn chốt tất toán trễ ở tháng ${settleForm.endMonth}/${settleForm.endYear} sẽ không làm phát sinh thêm lãi!`} 
+                                        />
                                       </div>
                                     )}
                                     <div className="flex items-center gap-2 w-full pt-2 border-t border-green-700/10">
@@ -1306,7 +1396,7 @@ export const Portfolio: React.FC = () => {
                                     <button
                                       type="button"
                                       onClick={() => {
-                                        settleInvestmentDeal(deal.id, settleForm.endMonth, settleForm.endYear, settleForm.realizedProfit);
+                                        settleInvestmentDeal(deal.id, settleForm.endMonth, settleForm.endYear, isLateSettlement ? 0 : settleForm.realizedProfit);
                                         if (settleForm.reinvestAsUnallocated) {
                                           addInvestmentDeal({
                                             name: 'Tiền chờ phân bổ',
@@ -1327,9 +1417,21 @@ export const Portfolio: React.FC = () => {
                                   </div>
                                 </td>
                               </tr>
-                            )}
+                              );
+                            })()}
                             {/* Conversion Inline Form */}
-                            {convertingDealId === deal.id && (
+                            {convertingDealId === deal.id && (() => {
+                              const startTotal = (deal.startYear * 12) + deal.startMonth;
+                              const term = deal.savingTermMonths || 0;
+                              const maturityTotal = startTotal + term;
+                              const selectedTotal = (conversionForm.year * 12) + conversionForm.month;
+                              const isLateConversion = deal.isEarmarked && selectedTotal > maturityTotal;
+                              const maturityY = Math.floor((maturityTotal - 1) / 12);
+                              const maturityM = ((maturityTotal - 1) % 12) + 1;
+                              const expectedRate = deal.expectedSavingRate || 0;
+                              const computedInterest = deal.capital * (expectedRate / 100 / 12) * term;
+
+                              return (
                               <tr className="bg-blue-700/5 border-b border-family-accent/5">
                                 <td colSpan={6} className="p-3">
                                   <div className="flex flex-wrap items-center gap-4 text-xs bg-white/70 p-3 rounded-xl border border-blue-700/20">
@@ -1345,8 +1447,8 @@ export const Portfolio: React.FC = () => {
                                           const m = safeNumber(Number(e.target.value), 12);
                                           setConversionForm({ ...conversionForm, month: m });
                                           if (convertDealInputMode === 'rate') {
-                                            const startM = deal.isEarmarked ? state.profile.planningStartMonth : deal.startMonth;
-                                            const startY = deal.isEarmarked ? state.profile.planningStartYear : deal.startYear;
+                                            const startM = deal.startMonth;
+                                            const startY = deal.startYear;
                                             const months = getMonthsActive(startM, startY, m, conversionForm.year);
                                             const computed = deal.capital * (convertDealCustomRate / 100 / 12) * months;
                                             setConversionForm(prev => ({ ...prev, month: m, realizedSavingInterest: Math.round(computed * 100) / 100 }));
@@ -1367,8 +1469,8 @@ export const Portfolio: React.FC = () => {
                                           const y = safeNumber(Number(e.target.value), 2026);
                                           setConversionForm({ ...conversionForm, year: y });
                                           if (convertDealInputMode === 'rate') {
-                                            const startM = deal.isEarmarked ? state.profile.planningStartMonth : deal.startMonth;
-                                            const startY = deal.isEarmarked ? state.profile.planningStartYear : deal.startYear;
+                                            const startM = deal.startMonth;
+                                            const startY = deal.startYear;
                                             const months = getMonthsActive(startM, startY, conversionForm.month, y);
                                             const computed = deal.capital * (convertDealCustomRate / 100 / 12) * months;
                                             setConversionForm(prev => ({ ...prev, year: y, realizedSavingInterest: Math.round(computed * 100) / 100 }));
@@ -1378,8 +1480,10 @@ export const Portfolio: React.FC = () => {
                                         required
                                       />
                                     </div>
-                                    <div className="flex items-center gap-2 border-l pl-4 border-blue-700/10">
-                                      <label className="font-semibold text-family-text">Cách nhập lãi:</label>
+                                    {!isLateConversion && (
+                                      <>
+                                        <div className="flex items-center gap-2 border-l pl-4 border-blue-700/10">
+                                          <label className="font-semibold text-family-text">Cách nhập lãi:</label>
                                       <select
                                         value={convertDealInputMode}
                                         onChange={(e) => {
@@ -1388,8 +1492,8 @@ export const Portfolio: React.FC = () => {
                                           if (mode === 'amount') {
                                             setConversionForm(prev => ({ ...prev, realizedSavingInterest: 0 }));
                                           } else {
-                                            const startM = deal.isEarmarked ? state.profile.planningStartMonth : deal.startMonth;
-                                            const startY = deal.isEarmarked ? state.profile.planningStartYear : deal.startYear;
+                                            const startM = deal.startMonth;
+                                            const startY = deal.startYear;
                                             const months = getMonthsActive(startM, startY, conversionForm.month, conversionForm.year);
                                             const computed = deal.capital * (convertDealCustomRate / 100 / 12) * months;
                                             setConversionForm(prev => ({ ...prev, realizedSavingInterest: Math.round(computed * 100) / 100 }));
@@ -1425,8 +1529,8 @@ export const Portfolio: React.FC = () => {
                                             onChange={(e) => {
                                               const rate = safeNumber(Number(e.target.value), 0);
                                               setConvertDealCustomRate(rate);
-                                              const startM = deal.isEarmarked ? state.profile.planningStartMonth : deal.startMonth;
-                                              const startY = deal.isEarmarked ? state.profile.planningStartYear : deal.startYear;
+                                              const startM = deal.startMonth;
+                                              const startY = deal.startYear;
                                               const months = getMonthsActive(startM, startY, conversionForm.month, conversionForm.year);
                                               const computed = deal.capital * (rate / 100 / 12) * months;
                                               setConversionForm(prev => ({ ...prev, realizedSavingInterest: Math.round(computed * 100) / 100 }));
@@ -1437,8 +1541,18 @@ export const Portfolio: React.FC = () => {
                                           <span className="font-semibold text-family-textMuted">%/năm</span>
                                         </div>
                                         <div className="bg-blue-50 text-[10px] text-blue-800 font-semibold px-2 py-1 rounded-lg">
-                                          Lãi tính từ {deal.isEarmarked ? `${state.profile.planningStartMonth}/${state.profile.planningStartYear}` : `${deal.startMonth}/${deal.startYear}`} đến {conversionForm.month}/{conversionForm.year} ({getMonthsActive(deal.isEarmarked ? state.profile.planningStartMonth : deal.startMonth, deal.isEarmarked ? state.profile.planningStartYear : deal.startYear, conversionForm.month, conversionForm.year)} tháng): <span className="text-xs font-bold text-blue-700">+{conversionForm.realizedSavingInterest} Tr VND</span>
+                                          Lãi tính từ {deal.startMonth}/{deal.startYear} đến {conversionForm.month}/{conversionForm.year} ({getMonthsActive(deal.startMonth, deal.startYear, conversionForm.month, conversionForm.year)} tháng): <span className="text-xs font-bold text-blue-700">+{conversionForm.realizedSavingInterest} Tr VND</span>
                                         </div>
+                                      </div>
+                                    )}
+                                      </>
+                                    )}
+                                    {isLateConversion && (
+                                      <div className="w-full mt-2 -mb-1">
+                                        <WarningBox 
+                                          type="warning" 
+                                          message={`Khoản tiết kiệm này đã ĐÁO HẠN vào tháng ${maturityM}/${maturityY}. Lãi suất hưởng trọn vẹn là ${Math.round(computedInterest * 100)/100} Tr VND (Đã tự động cộng vào Tổng tài sản tại tháng ${maturityM}/${maturityY}). Việc bạn phân bổ trễ ở tháng ${conversionForm.month}/${conversionForm.year} sẽ không làm phát sinh thêm lãi!`} 
+                                        />
                                       </div>
                                     )}
                                     <div className="flex items-center gap-2 w-full pt-2 border-t border-blue-700/10">
@@ -1473,13 +1587,13 @@ export const Portfolio: React.FC = () => {
                                           isConverted: true,
                                           conversionMonth: conversionForm.month,
                                           conversionYear: conversionForm.year,
-                                          realizedSavingInterest: conversionForm.realizedSavingInterest,
+                                          realizedSavingInterest: isLateConversion ? 0 : conversionForm.realizedSavingInterest,
                                         });
                                         if (conversionForm.reinvestAsUnallocated) {
                                           addInvestmentDeal({
                                             name: 'Tiền chờ phân bổ',
                                             assetType: conversionForm.reinvestAssetType,
-                                            capital: deal.capital + conversionForm.realizedSavingInterest,
+                                            capital: deal.capital + (isLateConversion ? 0 : conversionForm.realizedSavingInterest),
                                             startMonth: conversionForm.month,
                                             startYear: conversionForm.year,
                                             status: 'active',
@@ -1495,7 +1609,8 @@ export const Portfolio: React.FC = () => {
                                   </div>
                                 </td>
                               </tr>
-                            )}
+                              );
+                            })()}
                           </React.Fragment>
                         );
                       })
@@ -1518,6 +1633,7 @@ export const Portfolio: React.FC = () => {
                     <th className="p-3">Lớp tài sản</th>
                     <th className="p-3">Thời điểm giữ</th>
                     <th className="p-3">Vốn đầu tư</th>
+                    <th className="p-3">Lãi chờ phân bổ</th>
                     <th className="p-3">Lợi nhuận thực tế</th>
                     <th className="p-3">Hiệu suất (ROI)</th>
                     <th className="p-3">Return/year</th>
@@ -1527,7 +1643,7 @@ export const Portfolio: React.FC = () => {
                 <tbody>
                   {(!state.investmentDeals || state.investmentDeals.filter(d => d.status === 'settled').length === 0) ? (
                     <tr>
-                      <td colSpan={7} className="p-6 text-center text-family-textMuted font-medium italic bg-family-bgDark/5">
+                      <td colSpan={9} className="p-6 text-center text-family-textMuted font-medium italic bg-family-bgDark/5">
                         Chưa có lịch sử thương vụ tất toán. Lợi nhuận chốt lời sẽ được tự động cộng vào tài sản lũy kế.
                       </td>
                     </tr>
@@ -1538,6 +1654,41 @@ export const Portfolio: React.FC = () => {
                         const roi = deal.capital > 0 ? (deal.realizedProfit ?? 0) / deal.capital * 100 : 0;
                         const holdingMonths = Math.max(1, (deal.endYear! - deal.startYear) * 12 + (deal.endMonth! - deal.startMonth) + 1);
                         const annualizedRoi = (roi / holdingMonths) * 12;
+
+                        // Calculate savings interest if it was earmarked
+                        const isOriginallyEarmarked = deal.isEarmarked || deal.isConverted;
+                        let savingsInterest = 0;
+                        let savingStatus = '';
+                        if (isOriginallyEarmarked) {
+                          const start = deal.startYear * 12 + deal.startMonth;
+                          const endTotal = deal.endYear! * 12 + deal.endMonth!;
+                          const term = safeNumber(deal.savingTermMonths, 12);
+                          const maturity = start + term;
+                          
+                          const conversion = (deal.isConverted && deal.conversionYear && deal.conversionMonth)
+                            ? (deal.conversionYear * 12 + deal.conversionMonth)
+                            : Infinity;
+
+                          const savingEnd = Math.min(maturity, conversion, endTotal);
+                          const monthsSavingsActive = savingEnd - start;
+
+                          if (monthsSavingsActive > 0) {
+                            const rate = safeNumber(deal.expectedSavingRate, 0);
+                            savingsInterest = deal.realizedSavingInterest !== undefined
+                              ? deal.realizedSavingInterest
+                              : deal.capital * (rate / 100 / 12) * monthsSavingsActive;
+                            
+                            if (savingEnd === conversion) {
+                              savingStatus = 'Chuyển sang đầu tư';
+                            } else if (endTotal === maturity) {
+                              savingStatus = 'Đúng hạn';
+                            } else if (endTotal > maturity) {
+                              savingStatus = 'Trễ hạn';
+                            } else {
+                              savingStatus = 'Trước hạn';
+                            }
+                          }
+                        }
                         
                         return (
                           <tr key={deal.id} className="border-b border-family-accent/5 hover:bg-family-bgDark/5">
@@ -1553,6 +1704,16 @@ export const Portfolio: React.FC = () => {
                               <span className="block text-[10px] text-family-textMuted">{holdingMonths} tháng</span>
                             </td>
                             <td className="p-3 font-bold">{formatTableMoneyVNDMillion(deal.capital)}</td>
+                            <td className="p-3 font-medium">
+                              {isOriginallyEarmarked ? (
+                                <div className="flex flex-col">
+                                  <span className="text-sky-600 font-bold">+{formatTableMoneyVNDMillion(savingsInterest)}</span>
+                                  <span className="text-[10px] text-family-textMuted">{savingStatus}</span>
+                                </div>
+                              ) : (
+                                <span className="text-slate-400">---</span>
+                              )}
+                            </td>
                             <td className={`p-3 font-bold ${deal.realizedProfit && deal.realizedProfit >= 0 ? 'text-green-700' : 'text-red-600'}`}>
                               {deal.realizedProfit && deal.realizedProfit >= 0 ? '+' : ''}{formatTableMoneyVNDMillion(deal.realizedProfit ?? 0)}
                             </td>

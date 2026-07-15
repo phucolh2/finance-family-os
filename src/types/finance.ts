@@ -137,6 +137,7 @@ export interface InvestmentDeal {
   conversionMonth?: number;
   conversionYear?: number;
   realizedSavingInterest?: number; // realized saving interest when converted/settled early (VND Million)
+  bankName?: string; // Tên ngân hàng nếu gửi tiết kiệm chờ phân bổ
   notes?: string;
 }
 
