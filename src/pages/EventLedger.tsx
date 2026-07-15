@@ -148,6 +148,12 @@ export const EventLedger: React.FC = () => {
                                   {evt.status === 'cancelled' && (
                                     <span className="text-xs font-semibold text-red-400 bg-red-400/10 border border-red-400/20 px-2.5 py-1 rounded-md">Đã hủy</span>
                                   )}
+                                  {evt.status === 'planned' && (
+                                    <span className="text-xs font-semibold text-amber-400 bg-amber-400/10 border border-amber-400/20 px-2.5 py-1 rounded-md">Dự kiến</span>
+                                  )}
+                                  {evt.status === 'settled' && evt.category === 'income' && (
+                                    <span className="text-xs font-semibold text-orange-400 bg-orange-400/10 border border-orange-400/20 px-2.5 py-1 rounded-md">Đã kết thúc</span>
+                                  )}
                                   {evt.status === 'settled' && evt.category === 'investment' && (
                                     <span className="text-xs font-semibold text-blue-400 bg-blue-400/10 border border-blue-400/20 px-2.5 py-1 rounded-md">Đã tất toán</span>
                                   )}

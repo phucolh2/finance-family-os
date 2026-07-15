@@ -1,5 +1,5 @@
 import React from 'react';
-import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
+import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
 import type { BudgetRatioScheduleItem } from '../../types/budget';
 import type { ResolvedMonthlyDbItem } from '../../types/finance';
 
@@ -43,12 +43,12 @@ export const BudgetHistoryTrendChart: React.FC<BudgetHistoryTrendChartProps> = (
     health_growth: '#2563eb'
   };
   const fallbackColors = ['#f43f5e', '#ec4899', '#d946ef', '#a855f7', '#6366f1', '#3b82f6', '#0ea5e9'];
-  
+
   const activeSeriesNames = new Set<string>();
 
   const data = sorted.map((version) => {
     const key = `Tháng ${version.effectiveMonth}/${version.effectiveYear}`;
-    
+
     // Find the real resolved income at this specific milestone month
     const dbItem = resolvedMonthlyDb?.find(
       (item) => item.year === version.effectiveYear && item.month === version.effectiveMonth
@@ -64,8 +64,8 @@ export const BudgetHistoryTrendChart: React.FC<BudgetHistoryTrendChartProps> = (
         const stableKey = group.groupId || group.id;
         const dispName = groupDisplayNames[stableKey] || group.name;
         activeSeriesNames.add(dispName);
-        
-        // Sum values if duplicate names occur
+
+        // item.ratioPercent is absolute % of income — compute absolute amount
         dataRow[dispName] = (dataRow[dispName] || 0) + Math.round((income * val / 100) * 10) / 10;
       });
     } else if (version.ratios && version.ratios.length > 0) {
@@ -89,30 +89,39 @@ export const BudgetHistoryTrendChart: React.FC<BudgetHistoryTrendChartProps> = (
     <div className="w-full h-full min-h-[250px]">
       {data.length > 0 ? (
         <ResponsiveContainer width="100%" height="100%">
-          <BarChart
+          <LineChart
             data={data}
             margin={{ top: 20, right: 30, left: 10, bottom: 5 }}
           >
-            <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="rgba(var(--color-accent-rgb), 0.05)" />
+            <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="rgba(226, 180, 76, 0.05)" />
             <XAxis dataKey="version" stroke="#6b7280" fontSize={11} />
             <YAxis stroke="#6b7280" fontSize={11} unit=" tr" />
             <Tooltip
               contentStyle={{ backgroundColor: '#1e293b', border: '1px solid rgba(226, 180, 76, 0.15)', borderRadius: '12px' }}
               itemStyle={{ color: '#f8fafc', fontSize: 11 }}
               labelStyle={{ color: '#94a3b8', fontWeight: 'bold', fontSize: 11 }}
+              formatter={(value: number) => [`${value} tr`, '']}
             />
             <Legend wrapperStyle={{ fontSize: 11 }} />
             {seriesArray.map((name, index) => {
               // Try to find the original group key by matching display name
               const originalKeyEntry = Object.entries(groupDisplayNames).find(([_, val]) => val === name);
               const originalKey = originalKeyEntry ? originalKeyEntry[0] : '';
-              const barColor = knownColors[originalKey] || fallbackColors[index % fallbackColors.length];
-              
+              const lineColor = knownColors[originalKey] || fallbackColors[index % fallbackColors.length];
+
               return (
-                <Bar key={name} dataKey={name} fill={barColor} radius={[4, 4, 0, 0]} />
+                <Line
+                  key={name}
+                  type="monotone"
+                  dataKey={name}
+                  stroke={lineColor}
+                  strokeWidth={2.5}
+                  dot={{ r: 5, fill: lineColor, strokeWidth: 2, stroke: '#1e293b' }}
+                  activeDot={{ r: 7 }}
+                />
               );
             })}
-          </BarChart>
+          </LineChart>
         </ResponsiveContainer>
       ) : (
         <div className="flex items-center justify-center h-full">

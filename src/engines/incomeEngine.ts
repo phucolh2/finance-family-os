@@ -1,5 +1,4 @@
-import type { TimelinePeriod, IncomeScheduleItem } from '../types/finance';
-import { monthsBetween, isBeforeOrEqual } from '../utils/date';
+import type { TimelinePeriod, IncomeScheduleItem, IncomeType } from '../types/finance';
 import { safeNumber, safeArray } from '../utils/math';
 
 export interface IncomeEngineInput {
@@ -10,69 +9,67 @@ export interface IncomeEngineInput {
 export interface IncomeOutput {
   incomeMonthly: number;
   activeScheduleId: string;
+  activeScheduleIds: string[];
+  breakdown: Record<IncomeType, number>;
   warnings: string[];
 }
 
 /**
- * Resolves the monthly income for a specific timeline period.
- * Selects the active schedule item and applies compounding annual growth.
+ * Resolves the monthly income for a specific timeline period by summing
+ * all active concurrent income streams.
  */
 export function calculateIncome(input: IncomeEngineInput): IncomeOutput {
   const warnings: string[] = [];
   const period = input.period;
   const schedule = safeArray(input.incomeSchedule);
 
-  if (schedule.length === 0) {
-    return {
-      incomeMonthly: 0,
-      activeScheduleId: '',
-      warnings: ['Không có lịch trình thu nhập nào được cấu hình.'],
-    };
-  }
+  const breakdown: Record<IncomeType, number> = {
+    fulltime_salary: 0,
+    parttime_salary: 0,
+    self_employed: 0,
+    passive_income: 0,
+    irregular_income: 0,
+  };
 
-  // 1. Filter schedule items whose effective date is <= current period
-  const pastOrActiveItems = schedule.filter((item) => {
-    return isBeforeOrEqual(
-      { year: item.effectiveYear, month: item.effectiveMonth },
-      { year: period.year, month: period.month }
-    );
-  });
+  let totalIncome = 0;
+  const activeScheduleIds: string[] = [];
 
-  if (pastOrActiveItems.length === 0) {
-    warnings.push(`Mốc thời gian hiện tại (${period.year}-${String(period.month).padStart(2, '0')}) trước thời điểm hiệu lực của nguồn thu nhập đầu tiên. Đã áp dụng Thu nhập = 0.`);
-    return {
-      incomeMonthly: 0,
-      activeScheduleId: '',
-      warnings,
-    };
-  }
-
-  // 2. Sort past/active items to find the latest active one
-  pastOrActiveItems.sort((a, b) => {
-    if (a.effectiveYear !== b.effectiveYear) {
-      return a.effectiveYear - b.effectiveYear;
+  schedule.forEach((item) => {
+    // 1. Ignore if cancelled or planned (planned = ghi chú dự kiến, chưa ghi nhận vào thu nhập thực)
+    if (item.status === 'cancelled' || item.status === 'planned') {
+      return;
     }
-    return a.effectiveMonth - b.effectiveMonth;
-  });
 
-  const activeItem = pastOrActiveItems[pastOrActiveItems.length - 1];
-  let baseIncome = safeNumber(activeItem.incomeMonthly, 0);
+    // 2. Check start date (must be start month or later)
+    const startKey = item.effectiveYear * 12 + item.effectiveMonth;
+    const currentKey = period.year * 12 + period.month;
 
-  // Lifecycle check
-  if (activeItem.status === 'cancelled') {
-    baseIncome = 0;
-    warnings.push(`Nguồn thu nhập đã bị hủy.`);
-  } else if (activeItem.endYear !== undefined && activeItem.endMonth !== undefined) {
-    const isEnded = period.year > activeItem.endYear || (period.year === activeItem.endYear && period.month > activeItem.endMonth);
-    if (isEnded) {
-      baseIncome = 0;
-      warnings.push(`Nguồn thu nhập đã kết thúc vào ${activeItem.endMonth}/${activeItem.endYear}.`);
+    if (currentKey < startKey) {
+      return;
     }
-  }
+
+    // 3. Check end date (if specified)
+    if (item.endYear !== undefined && item.endMonth !== undefined) {
+      const endKey = item.endYear * 12 + item.endMonth;
+      if (currentKey > endKey) {
+        return;
+      }
+    }
+
+    // Accumulate active stream
+    const type = item.incomeType || 'fulltime_salary';
+    const amount = safeNumber(item.incomeMonthly, 0);
+
+    breakdown[type] = (breakdown[type] || 0) + amount;
+    totalIncome += amount;
+    activeScheduleIds.push(item.id);
+  });
 
   return {
-    incomeMonthly: baseIncome,
-    activeScheduleId: activeItem.id,
+    incomeMonthly: totalIncome,
+    activeScheduleId: activeScheduleIds.join(','),
+    activeScheduleIds,
+    breakdown,
     warnings,
   };
 }

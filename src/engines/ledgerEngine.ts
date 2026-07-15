@@ -4,13 +4,24 @@ import type { LedgerEvent } from '../types/ledger';
 export const buildEventLedger = (state: AppState): LedgerEvent[] => {
   const events: LedgerEvent[] = [];
 
+  const getIncomeTypeLabel = (type?: string) => {
+    switch (type) {
+      case 'fulltime_salary': return 'Lương fulltime';
+      case 'parttime_salary': return 'Lương parttime';
+      case 'self_employed': return 'Tự kinh doanh';
+      case 'passive_income': return 'Thu nhập thụ động';
+      case 'irregular_income': return 'Thu nhập không cố định';
+      default: return 'Lương fulltime';
+    }
+  };
+
   // 1. Incomes
   if (state.incomeSchedule) {
     state.incomeSchedule.forEach(inc => {
       events.push({
         id: `inc_${inc.id}`,
         category: 'income',
-        name: `Thu nhập: ${inc.note || 'Lương'}`,
+        name: `Thu nhập (${getIncomeTypeLabel(inc.incomeType)}): ${inc.note || 'Không có ghi chú'}`,
         startMonth: inc.effectiveMonth,
         startYear: inc.effectiveYear,
         endMonth: inc.endMonth,

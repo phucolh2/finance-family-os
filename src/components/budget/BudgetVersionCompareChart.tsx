@@ -71,7 +71,7 @@ export const BudgetVersionCompareChart: React.FC<BudgetVersionCompareChartProps>
           >
             <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="rgba(var(--color-accent-rgb), 0.05)" />
             <XAxis dataKey="version" stroke="#6b7280" fontSize={11} />
-            <YAxis stroke="#6b7280" fontSize={11} unit="%" />
+            <YAxis stroke="#6b7280" fontSize={11} unit="%" domain={[0, 100]} />
             <Tooltip
               contentStyle={{ backgroundColor: '#1e293b', border: '1px solid rgba(226, 180, 76, 0.15)', borderRadius: '12px' }}
               itemStyle={{ color: '#f8fafc', fontSize: 11 }}

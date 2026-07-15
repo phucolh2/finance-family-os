@@ -26,12 +26,15 @@ export interface TimelinePeriod {
   wifeAge: number;
 }
 
+export type IncomeType = 'fulltime_salary' | 'parttime_salary' | 'self_employed' | 'passive_income' | 'irregular_income';
+
 export interface IncomeScheduleItem extends Partial<LifecycleProps> {
   id: string;
   effectiveMonth: number;
   effectiveYear: number;
   incomeMonthly: number;
   incomeGrowthRateAnnual?: number;
+  incomeType?: IncomeType;
   note?: string;
 }
 

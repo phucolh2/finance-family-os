@@ -1,4 +1,4 @@
-export type EventStatus = 'active' | 'settled' | 'cancelled';
+export type EventStatus = 'active' | 'settled' | 'cancelled' | 'planned';
 
 export interface LifecycleProps {
   endMonth?: number;

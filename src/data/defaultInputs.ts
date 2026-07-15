@@ -22,28 +22,42 @@ export const DEFAULT_INCOME_SCHEDULE: IncomeScheduleItem[] = [
     id: 'inc_start',
     effectiveMonth: 10,
     effectiveYear: 2026,
-    incomeMonthly: 80, // 80 triệu VND starting
+    incomeMonthly: 80,
+    incomeType: 'fulltime_salary',
+    status: 'settled',
+    endMonth: 12,
+    endYear: 2029,
     note: 'Lương khởi điểm hai vợ chồng',
   },
   {
     id: 'inc_promotion_2030',
     effectiveMonth: 1,
     effectiveYear: 2030,
-    incomeMonthly: 120, // tăng lên 120 triệu VND
+    incomeMonthly: 120,
+    incomeType: 'fulltime_salary',
+    status: 'settled',
+    endMonth: 12,
+    endYear: 2039,
     note: 'Thăng chức trưởng phòng, thu nhập tăng vọt',
   },
   {
     id: 'inc_business_2040',
     effectiveMonth: 1,
     effectiveYear: 2040,
-    incomeMonthly: 180, // kinh doanh thêm, thu nhập lên 180 triệu VND
+    incomeMonthly: 180,
+    incomeType: 'self_employed',
+    status: 'settled',
+    endMonth: 12,
+    endYear: 2049,
     note: 'Mở cửa hàng kinh doanh gia đình ổn định',
   },
   {
     id: 'inc_retirement_2050',
     effectiveMonth: 1,
     effectiveYear: 2050,
-    incomeMonthly: 25, // nghỉ hưu, thu nhập tư vấn phụ thêm
+    incomeMonthly: 25,
+    incomeType: 'parttime_salary',
+    status: 'active',
     note: 'Nghỉ hưu sớm, chuyển sang tư vấn bán thời gian',
   },
 ];

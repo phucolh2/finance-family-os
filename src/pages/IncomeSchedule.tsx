@@ -9,9 +9,9 @@ import { calculateIncome } from '../engines/incomeEngine';
 import { formatTableMoneyVNDMillion, formatKpiMoneyVNDMillion } from '../utils/format';
 import { safeNumber } from '../utils/math';
 import { Trash2, Plus, Save, RotateCcw, BarChart2, Check, Sliders, AlertTriangle } from 'lucide-react';
-import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
+import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
 import { ObservationControls } from '../components/ui/ObservationControls';
-import type { IncomeScheduleItem } from '../types/finance';
+import type { IncomeScheduleItem, IncomeType } from '../types/finance';
 
 export const IncomeSchedule: React.FC = () => {
   const { state, addIncomeItem, updateIncomeItem, deleteIncomeItem, resetToDefault, selectedPeriodKey } = useAppContext();
@@ -40,7 +40,8 @@ export const IncomeSchedule: React.FC = () => {
   const [editNote, setEditNote] = useState<string>('');
   const [editEndMonth, setEditEndMonth] = useState<number | ''>('');
   const [editEndYear, setEditEndYear] = useState<number | ''>('');
-  const [editStatus, setEditStatus] = useState<'active' | 'cancelled' | 'settled'>('active');
+  const [editStatus, setEditStatus] = useState<'active' | 'cancelled' | 'settled' | 'planned'>('active');
+  const [editType, setEditType] = useState<IncomeType>('fulltime_salary');
 
   const [formError, setFormError] = useState<string | null>(null);
 
@@ -52,6 +53,8 @@ export const IncomeSchedule: React.FC = () => {
   const [newNote, setNewNote] = useState<string>('');
   const [newEndMonth, setNewEndMonth] = useState<number | ''>('');
   const [newEndYear, setNewEndYear] = useState<number | ''>('');
+  const [newStatus, setNewStatus] = useState<'active' | 'cancelled' | 'settled' | 'planned'>('active');
+  const [newType, setNewType] = useState<IncomeType>('fulltime_salary');
 
   // Sync workspace state when active version changes
   useEffect(() => {
@@ -62,7 +65,8 @@ export const IncomeSchedule: React.FC = () => {
       setEditNote(activeVersion.note || '');
       setEditEndMonth(activeVersion.endMonth || '');
       setEditEndYear(activeVersion.endYear || '');
-      setEditStatus((activeVersion.status as 'active' | 'cancelled' | 'settled') || 'active');
+      setEditStatus((activeVersion.status as 'active' | 'cancelled' | 'settled' | 'planned') || 'active');
+      setEditType(activeVersion.incomeType || 'fulltime_salary');
       setFormError(null);
     }
   }, [activeVersion?.id]);
@@ -89,6 +93,11 @@ export const IncomeSchedule: React.FC = () => {
       year: p.year,
       month: p.month,
       dateStr: `Tháng ${p.month}/${p.year}`,
+      'Tiền lương fulltime': Math.round((inc.breakdown?.fulltime_salary || 0) * 10) / 10,
+      'Lương parttime': Math.round((inc.breakdown?.parttime_salary || 0) * 10) / 10,
+      'Tự kinh doanh': Math.round((inc.breakdown?.self_employed || 0) * 10) / 10,
+      'Thu nhập thụ động': Math.round((inc.breakdown?.passive_income || 0) * 10) / 10,
+      'Thu nhập không cố định': Math.round((inc.breakdown?.irregular_income || 0) * 10) / 10,
       'Khoản thu tháng': Math.round(inc.incomeMonthly * 10) / 10,
     };
   });
@@ -109,6 +118,18 @@ export const IncomeSchedule: React.FC = () => {
       setFormError('Mức thu nhập tháng phải lớn hơn 0.');
       return;
     }
+    if (editStatus === 'settled' && (editEndMonth === '' || editEndYear === '')) {
+      setFormError('Khi chọn "Đã kết thúc", bạn bắt buộc phải nhập cả Tháng kết thúc và Năm kết thúc.');
+      return;
+    }
+    if (editEndMonth !== '' && editEndYear !== '') {
+      const startKey = editYear * 12 + editMonth;
+      const endKey = Number(editEndYear) * 12 + Number(editEndMonth);
+      if (endKey < startKey) {
+        setFormError('Thời điểm kết thúc không được nhỏ hơn thời điểm hiệu lực bắt đầu.');
+        return;
+      }
+    }
 
     updateIncomeItem({
       ...activeVersion,
@@ -119,6 +140,7 @@ export const IncomeSchedule: React.FC = () => {
       endMonth: editEndMonth === '' ? undefined : editEndMonth,
       endYear: editEndYear === '' ? undefined : editEndYear,
       status: editStatus,
+      incomeType: editType,
     });
     setFormError(null);
   };
@@ -137,6 +159,18 @@ export const IncomeSchedule: React.FC = () => {
       setFormError('Mức thu nhập phải lớn hơn 0.');
       return;
     }
+    if (newStatus === 'settled' && (newEndMonth === '' || newEndYear === '')) {
+      setFormError('Khi chọn "Đã kết thúc", bạn bắt buộc phải nhập cả Tháng kết thúc và Năm kết thúc.');
+      return;
+    }
+    if (newEndMonth !== '' && newEndYear !== '') {
+      const startKey = newYear * 12 + newMonth;
+      const endKey = Number(newEndYear) * 12 + Number(newEndMonth);
+      if (endKey < startKey) {
+        setFormError('Thời điểm kết thúc không được nhỏ hơn thời điểm hiệu lực bắt đầu.');
+        return;
+      }
+    }
 
     addIncomeItem({
       effectiveMonth: newMonth,
@@ -145,12 +179,15 @@ export const IncomeSchedule: React.FC = () => {
       note: newNote,
       endMonth: newEndMonth === '' ? undefined : newEndMonth,
       endYear: newEndYear === '' ? undefined : newEndYear,
-      status: 'active',
+      status: newStatus,
+      incomeType: newType,
     });
     setIsCreatingNew(false);
     setNewNote('');
     setNewEndMonth('');
     setNewEndYear('');
+    setNewStatus('active');
+    setNewType('fulltime_salary');
     setFormError(null);
   };
 
@@ -161,18 +198,30 @@ export const IncomeSchedule: React.FC = () => {
     editNote !== (activeVersion.note || '') ||
     editEndMonth !== (activeVersion.endMonth || '') ||
     editEndYear !== (activeVersion.endYear || '') ||
-    editStatus !== (activeVersion.status || 'active')
+    editStatus !== (activeVersion.status || 'active') ||
+    editType !== (activeVersion.incomeType || 'fulltime_salary')
   ) : false;
 
   const activeDbItem = selectedPeriodKey ? state.resolvedMonthlyDbMap?.[selectedPeriodKey] : undefined;
   const flow = activeDbItem?.investmentFlow;
+
+  const getIncomeTypeLabel = (type?: string) => {
+    switch (type) {
+      case 'fulltime_salary': return 'Tiền lương fulltime';
+      case 'parttime_salary': return 'Lương parttime';
+      case 'self_employed': return 'Tự kinh doanh';
+      case 'passive_income': return 'Thu nhập thụ động';
+      case 'irregular_income': return 'Thu nhập không cố định';
+      default: return 'Tiền lương fulltime';
+    }
+  };
 
   return (
     <div className="space-y-6">
       {/* Top Page Header */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
-          <h1 className="text-3xl font-serif font-bold text-family-text">Kế hoạch Nguồn thu</h1>
+          <h1 className="text-3xl font-serif font-bold text-family-text">Kế hoạch Thu nhập</h1>
           <p className="text-sm text-family-textMuted mt-1">
             Quản lý và trực quan hóa lịch trình phát triển các nguồn thu nhập theo thời gian.
           </p>
@@ -265,9 +314,40 @@ export const IncomeSchedule: React.FC = () => {
                   onChange={(e) => setNewIncome(Number(e.target.value))}
                   required
                 />
-                <div className="hidden md:block"></div> {/* Spacer */}
+                <div>
+                  <label className="block text-xs font-semibold text-family-textMuted uppercase mb-2">
+                    Loại thu nhập
+                  </label>
+                  <select 
+                    className="w-full bg-family-bgDeep border border-family-accent/20 rounded-xl px-4 py-2.5 text-family-text focus:outline-none focus:border-family-accent/60 transition-colors text-xs h-[38px]"
+                    value={newType}
+                    onChange={(e) => setNewType(e.target.value as IncomeType)}
+                  >
+                    <option value="fulltime_salary">Tiền lương fulltime</option>
+                    <option value="parttime_salary">Lương parttime</option>
+                    <option value="self_employed">Tự kinh doanh</option>
+                    <option value="passive_income">Thu nhập thụ động</option>
+                    <option value="irregular_income">Thu nhập không cố định</option>
+                  </select>
+                </div>
+                <div>
+                  <label className="block text-xs font-semibold text-family-textMuted uppercase mb-2">
+                    Trạng thái
+                  </label>
+                  <select 
+                    className="w-full bg-family-bgDeep border border-family-accent/20 rounded-xl px-4 py-2.5 text-family-text focus:outline-none focus:border-family-accent/60 transition-colors text-xs h-[38px]"
+                    value={newStatus}
+                    onChange={(e) => setNewStatus(e.target.value as 'active' | 'cancelled' | 'settled' | 'planned')}
+                  >
+                    <option value="active">Đang hoạt động</option>
+                    <option value="planned">Dự kiến</option>
+                    <option value="settled">Đã kết thúc</option>
+                    <option value="cancelled">Đã hủy</option>
+                  </select>
+                </div>
                 <Input
-                  label="Tháng kết thúc (Tùy chọn)"
+                  label="Tháng kết thúc"
+                  placeholder="Bắt buộc nếu đã kết thúc"
                   type="number"
                   min={1}
                   max={12}
@@ -275,7 +355,8 @@ export const IncomeSchedule: React.FC = () => {
                   onChange={(e) => setNewEndMonth(e.target.value ? Number(e.target.value) : '')}
                 />
                 <Input
-                  label="Năm kết thúc (Tùy chọn)"
+                  label="Năm kết thúc"
+                  placeholder="Bắt buộc nếu đã kết thúc"
                   type="number"
                   min={2026}
                   max={2060}
@@ -335,29 +416,23 @@ export const IncomeSchedule: React.FC = () => {
             </div>
           )}
 
-          {/* Income Projection Area Chart Card */}
+          {/* Income Projection Chart Card */}
           <Card className="border border-family-accent/10 p-5 bg-family-bgDark/5">
             <div className="border-b border-family-accent/5 pb-3 mb-4">
               <h4 className="font-bold text-sm text-family-text uppercase tracking-wider">
-                Kế hoạch Nguồn thu theo thời gian (2026 - 2060)
+                Kế hoạch Thu nhập theo thời gian (2026 - 2060)
               </h4>
               <p className="text-xs text-family-textMuted mt-0.5">
-                Dự báo dòng thu nhập tháng theo các thời kỳ hiệu lực.
+                Dự báo các nguồn thu nhập tích lũy theo thời gian.
               </p>
             </div>
             
             <div className="h-80 w-full bg-family-bgDark/20 rounded-xl p-2 shadow-inner">
               <ResponsiveContainer width="100%" height="100%">
-                <AreaChart
+                <BarChart
                   data={chartData}
                   margin={{ top: 15, right: 30, left: 10, bottom: 5 }}
                 >
-                  <defs>
-                    <linearGradient id="colorIncome" x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="5%" stopColor="#e2b44c" stopOpacity={0.2}/>
-                      <stop offset="95%" stopColor="#e2b44c" stopOpacity={0}/>
-                    </linearGradient>
-                  </defs>
                   <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="rgba(var(--color-accent-rgb), 0.05)" />
                   <XAxis 
                     dataKey="year" 
@@ -370,18 +445,15 @@ export const IncomeSchedule: React.FC = () => {
                     contentStyle={{ backgroundColor: '#1e293b', border: '1px solid rgba(226, 180, 76, 0.15)', borderRadius: '12px' }}
                     itemStyle={{ color: '#f8fafc', fontSize: 11 }}
                     labelStyle={{ color: '#94a3b8', fontWeight: 'bold', fontSize: 11 }}
-                    formatter={(value) => [`${value} tr VND`, 'Khoản thu tháng']}
                     labelFormatter={(label, items) => items[0]?.payload ? items[0].payload.dateStr : label}
                   />
-                  <Area 
-                    type="monotone" 
-                    dataKey="Khoản thu tháng" 
-                    stroke="#e2b44c" 
-                    strokeWidth={2}
-                    fillOpacity={1} 
-                    fill="url(#colorIncome)" 
-                  />
-                </AreaChart>
+                  <Legend verticalAlign="top" height={36} wrapperStyle={{ fontSize: 11 }} />
+                  <Bar name="Tiền lương fulltime" dataKey="Tiền lương fulltime" stackId="a" fill="#3b82f6" />
+                  <Bar name="Lương parttime" dataKey="Lương parttime" stackId="a" fill="#10b981" />
+                  <Bar name="Tự kinh doanh" dataKey="Tự kinh doanh" stackId="a" fill="#f59e0b" />
+                  <Bar name="Thu nhập thụ động" dataKey="Thu nhập thụ động" stackId="a" fill="#8b5cf6" />
+                  <Bar name="Thu nhập không cố định" dataKey="Thu nhập không cố định" stackId="a" fill="#ec4899" />
+                </BarChart>
               </ResponsiveContainer>
             </div>
           </Card>
@@ -389,13 +461,14 @@ export const IncomeSchedule: React.FC = () => {
           {/* List of Income Milestones Summary under chart */}
           <Card className="border border-family-accent/10">
             <CardHeader className="pb-3">
-              <CardTitle className="text-sm uppercase tracking-wider text-family-textMuted">Tóm tắt các mốc thay đổi nguồn thu</CardTitle>
+              <CardTitle className="text-sm uppercase tracking-wider text-family-textMuted">Tóm tắt các mốc thay đổi thu nhập</CardTitle>
             </CardHeader>
             <CardContent className="overflow-x-auto">
               <table className="w-full text-left text-xs border-collapse">
                 <thead>
                   <tr className="border-b border-family-accent/10 text-family-textMuted font-bold bg-family-bgDark/30">
                     <th className="p-3">Thời điểm hiệu lực</th>
+                    <th className="p-3">Loại thu nhập</th>
                     <th className="p-3">Khoản thu tháng khởi điểm</th>
                     <th className="p-3">Trạng thái/Kết thúc</th>
                     <th className="p-3">Ghi chú hoàn cảnh</th>
@@ -407,16 +480,22 @@ export const IncomeSchedule: React.FC = () => {
                       <td className="p-3 font-semibold text-family-text">
                         Tháng {item.effectiveMonth}/{item.effectiveYear}
                       </td>
+                      <td className="p-3 font-medium text-family-text">
+                        {getIncomeTypeLabel(item.incomeType)}
+                      </td>
                       <td className="p-3 font-bold text-family-accent">
                         {formatTableMoneyVNDMillion(item.incomeMonthly)}
                       </td>
                       <td className="p-3 text-family-textMuted max-w-sm">
-                        {item.status === 'cancelled' 
-                          ? <span className="text-red-400 text-xs px-2 py-0.5 rounded-full bg-red-400/10">Đã hủy</span>
-                          : item.endYear 
-                            ? <span className="text-yellow-400 text-xs px-2 py-0.5 rounded-full bg-yellow-400/10">Đến {item.endMonth}/{item.endYear}</span>
-                            : <span className="text-green-400 text-xs px-2 py-0.5 rounded-full bg-green-400/10">Đang HĐ</span>
-                        }
+                        {item.status === 'cancelled' ? (
+                          <span className="text-red-400 text-xs px-2 py-0.5 rounded-full bg-red-400/10">Đã hủy</span>
+                        ) : item.status === 'planned' ? (
+                          <span className="text-amber-400 text-xs px-2 py-0.5 rounded-full bg-amber-400/10">Dự kiến</span>
+                        ) : item.status === 'settled' && item.endYear ? (
+                          <span className="text-yellow-400 text-xs px-2 py-0.5 rounded-full bg-yellow-400/10">Đến {item.endMonth}/{item.endYear}</span>
+                        ) : (
+                          <span className="text-green-400 text-xs px-2 py-0.5 rounded-full bg-green-400/10">Đang HĐ</span>
+                        )}
                       </td>
                       <td className="p-3 text-family-textMuted max-w-sm truncate">
                         {item.note || '---'}
@@ -590,20 +669,38 @@ export const IncomeSchedule: React.FC = () => {
                     />
                     <div>
                       <label className="block text-xs font-semibold text-family-textMuted uppercase mb-2">
+                        Loại thu nhập
+                      </label>
+                      <select 
+                        className="w-full bg-family-bgDeep border border-family-accent/20 rounded-xl px-4 py-2.5 text-family-text focus:outline-none focus:border-family-accent/60 transition-colors text-xs h-[38px]"
+                        value={editType}
+                        onChange={(e) => setEditType(e.target.value as IncomeType)}
+                      >
+                        <option value="fulltime_salary">Tiền lương fulltime</option>
+                        <option value="parttime_salary">Lương parttime</option>
+                        <option value="self_employed">Tự kinh doanh</option>
+                        <option value="passive_income">Thu nhập thụ động</option>
+                        <option value="irregular_income">Thu nhập không cố định</option>
+                      </select>
+                    </div>
+                    <div>
+                      <label className="block text-xs font-semibold text-family-textMuted uppercase mb-2">
                         Trạng thái
                       </label>
                       <select 
-                        className="w-full bg-family-bgDeep border border-family-accent/20 rounded-xl px-4 py-2.5 text-family-text focus:outline-none focus:border-family-accent/60 transition-colors"
+                        className="w-full bg-family-bgDeep border border-family-accent/20 rounded-xl px-4 py-2.5 text-family-text focus:outline-none focus:border-family-accent/60 transition-colors text-xs h-[38px]"
                         value={editStatus}
-                        onChange={(e) => setEditStatus(e.target.value as 'active' | 'cancelled' | 'settled')}
+                        onChange={(e) => setEditStatus(e.target.value as 'active' | 'cancelled' | 'settled' | 'planned')}
                       >
                         <option value="active">Đang hoạt động</option>
+                        <option value="planned">Dự kiến</option>
                         <option value="settled">Đã kết thúc</option>
                         <option value="cancelled">Đã hủy</option>
                       </select>
                     </div>
                     <Input
-                      label="Tháng kết thúc (Tùy chọn)"
+                      label="Tháng kết thúc"
+                      placeholder="Bắt buộc nếu đã kết thúc"
                       type="number"
                       min={1}
                       max={12}
@@ -611,7 +708,8 @@ export const IncomeSchedule: React.FC = () => {
                       onChange={(e) => setEditEndMonth(e.target.value ? Number(e.target.value) : '')}
                     />
                     <Input
-                      label="Năm kết thúc (Tùy chọn)"
+                      label="Năm kết thúc"
+                      placeholder="Bắt buộc nếu đã kết thúc"
                       type="number"
                       min={2026}
                       max={2060}

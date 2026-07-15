@@ -42,8 +42,10 @@ export const BudgetDetailedList: React.FC<BudgetDetailedListProps> = ({ rootGrou
               {/* Items List */}
               <div className="flex flex-col divide-y divide-family-accent/5">
                 {group.children?.map((item) => {
-                  const itemAmt = (item.ratioPercent / 100) * groupAmt;
-                  const absRatio = (item.ratioPercent / 100) * group.ratioPercent;
+                  // item.ratioPercent is ABSOLUTE % of total income (same unit as group.ratioPercent)
+                  // group.ratioPercent = sum of its children's ratioPercent
+                  const itemAmt = (item.ratioPercent / 100) * income;
+                  const absRatio = item.ratioPercent; // already absolute % of income
                   return (
                     <div key={item.id} className="px-4 py-2.5 flex justify-between items-center hover:bg-family-accent/5 transition-colors">
                       <span className="text-xs text-family-textMuted font-medium pl-4 relative">
