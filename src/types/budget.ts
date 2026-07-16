@@ -78,3 +78,18 @@ export interface BudgetRatioScheduleItem extends Partial<LifecycleProps> {
   rootGroups: BudgetTreeNode[];
   ratios?: BudgetRatio[]; // Keep this optional legacy field for backward compatibility/migration
 }
+
+export interface ExpenseScheduleItem {
+  id: string;
+  effectiveMonth: number;
+  effectiveYear: number;
+  endMonth?: number;
+  endYear?: number;
+  status?: 'active' | 'settled';
+  note?: string;
+  
+  // Record of category IDs (groupId/itemId) and their actual spending amounts
+  // For group totals, the key is just groupId. 
+  // However, users input per item, so the key is mostly `${groupId}/${itemId}`
+  categories: Record<string, number>; 
+}

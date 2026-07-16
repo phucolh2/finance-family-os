@@ -4,7 +4,7 @@ import { calculateBudget } from './budgetEngine';
 import { calculateChildCost } from './childEngine';
 import { safeNumber } from '../utils/math';
 import type { FamilyProfile, IncomeScheduleItem, ResolvedMonthlyDbItem, Assumptions, LifeStage } from '../types/finance';
-import type { BudgetRatioScheduleItem } from '../types/budget';
+import type { BudgetRatioScheduleItem, ExpenseScheduleItem } from '../types/budget';
 import type { AssetConfig } from '../types/portfolio';
 
 export interface ResolvedMonthlyDbResult {
@@ -16,6 +16,7 @@ export function generateResolvedMonthlyDb(
   profile: FamilyProfile,
   incomeSchedule: IncomeScheduleItem[],
   budgetSchedule: BudgetRatioScheduleItem[],
+  expenseSchedule: ExpenseScheduleItem[],
   assets: AssetConfig[],
   assumptions: Assumptions,
   lifeStages?: LifeStage[]
@@ -114,12 +115,60 @@ export function generateResolvedMonthlyDb(
       }
     });
 
+    // 4. Resolve Actual Expenses
+    let totalActualExpenseMonthly = 0;
+    let actualExpenseCategories: Record<string, number> = {};
+    
+    // Find the latest effective expense schedule for this month
+    const applicableExpenseSchedules = expenseSchedule.filter(
+      (s) => s.effectiveYear * 12 + s.effectiveMonth <= p.year * 12 + p.month
+    );
+    
+    if (applicableExpenseSchedules.length > 0) {
+      // Sort to get the most recent one
+      applicableExpenseSchedules.sort((a, b) => 
+        b.effectiveYear * 12 + b.effectiveMonth - (a.effectiveYear * 12 + a.effectiveMonth)
+      );
+      
+      const activeExpenseSchedule = applicableExpenseSchedules[0];
+      
+      // Check if it's still active (not ended)
+      const isEnded = activeExpenseSchedule.endYear && activeExpenseSchedule.endMonth
+        ? (p.year * 12 + p.month > activeExpenseSchedule.endYear * 12 + activeExpenseSchedule.endMonth)
+        : false;
+        
+      if (!isEnded) {
+        const tempCategories = { ...activeExpenseSchedule.categories };
+        let calculatedTotal = 0;
+        
+        Object.keys(tempCategories).forEach(catId => {
+          let val = safeNumber(tempCategories[catId], 0);
+          if (val === -1) {
+            // Dynamically map to the current month's budget allocation
+            const matchedBudget = budgetRes.categories.find(c => c.categoryId === catId);
+            if (matchedBudget) {
+              val = matchedBudget.amountMonthly;
+            } else {
+              val = 0;
+            }
+            tempCategories[catId] = val;
+          }
+          calculatedTotal += val;
+        });
+        
+        actualExpenseCategories = tempCategories;
+        totalActualExpenseMonthly = calculatedTotal;
+      }
+    }
+
     return {
       periodKey: p.key,
       month: p.month,
       year: p.year,
       income: Math.round(incomeRes.incomeMonthly * 100) / 100,
       expectedReturnAnnual: Math.round(weightedReturn * 100) / 100,
+      totalActualExpenseMonthly: Math.round(totalActualExpenseMonthly * 100) / 100,
+      actualExpenseCategories,
       budgetRatios: {
         housing_basic: Math.round(ratios.housing_basic * 100) / 100,
         future_investing: Math.round(ratios.future_investing * 100) / 100,

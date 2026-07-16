@@ -179,6 +179,7 @@ export function migrateState(stored: any, defaultState: AppState): AppState {
         ...defaultState.assumptions,
         ...data.assumptions,
       },
+      expenseSchedule: Array.isArray(data.expenseSchedule) ? data.expenseSchedule : defaultState.expenseSchedule,
       investmentDeals: Array.isArray(data.investmentDeals) ? data.investmentDeals : defaultState.investmentDeals,
       savingsDeposits: Array.isArray(data.savingsDeposits) ? data.savingsDeposits : [],
       resolvedMonthlyDb: Array.isArray(data.resolvedMonthlyDb) ? data.resolvedMonthlyDb : undefined,

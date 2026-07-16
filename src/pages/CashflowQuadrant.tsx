@@ -82,8 +82,7 @@ export const CashflowQuadrant: React.FC = () => {
   const budgetDetails = calculateBudget({
     period: activeRow.period,
     budgetSchedule: state.budgetSchedule,
-    incomeMonthly: activeRow.incomeMonthly,
-    profile: state.profile
+    incomeMonthly: activeRow.incomeMonthly
   });
 
   // --- 1. INCOME QUADRANT ---
@@ -95,7 +94,7 @@ export const CashflowQuadrant: React.FC = () => {
   
   // Passive income from Income Schedule + Investment P&L (if positive)
   const scheduledPassiveIncome = incomeDetails.breakdown['passive_income'] || 0;
-  const investmentPnl = activeRow.investmentFlow?.pnl || 0;
+  const investmentPnl = activeRow.portfolio?.totalPnl || 0;
   const realizedPassiveIncome = investmentPnl > 0 ? investmentPnl : 0;
   
   const totalPassiveIncome = scheduledPassiveIncome + realizedPassiveIncome;
@@ -108,17 +107,13 @@ export const CashflowQuadrant: React.FC = () => {
   let debtExpenses = 0;
   let livingExpenses = 0;
   
-  if (budgetDetails.resolvedTree && budgetDetails.resolvedTree.length > 0) {
-    budgetDetails.resolvedTree.forEach(group => {
-      if (group.classification === 'expense' || group.classification === 'savings') { // check savings too just in case debt is there
-        group.children?.forEach(item => {
-          const nameLower = item.name.toLowerCase();
-          if (nameLower.includes('nợ') || nameLower.includes('debt') || nameLower.includes('vay')) {
-            debtExpenses += (item.ratioPercent / 100) * activeRow.incomeMonthly;
-          } else if (group.classification === 'expense') {
-            livingExpenses += (item.ratioPercent / 100) * activeRow.incomeMonthly;
-          }
-        });
+  if (budgetDetails.categories && budgetDetails.categories.length > 0) {
+    budgetDetails.categories.forEach(item => {
+      const nameLower = item.categoryName.toLowerCase();
+      if (nameLower.includes('nợ') || nameLower.includes('debt') || nameLower.includes('vay')) {
+        debtExpenses += (item.ratioPercent / 100) * activeRow.incomeMonthly;
+      } else if (item.group !== 'safety_reserve' && item.group !== 'future_investing') {
+        livingExpenses += (item.ratioPercent / 100) * activeRow.incomeMonthly;
       }
     });
   } else {
@@ -127,8 +122,8 @@ export const CashflowQuadrant: React.FC = () => {
 
   // --- 3. ASSET QUADRANT ---
   // Assets = Things that put money in your pocket (Investments, Savings, Real Estate)
-  const totalAssets = activeRow.portfolio.total;
-  const savingAssets = activeRow.portfolio.savingTotal;
+  const totalAssets = activeRow.portfolio?.totalEndingBalance || 0;
+  const savingAssets = activeRow.portfolio?.savingsBalance || 0;
   const investmentAssets = totalAssets - savingAssets;
 
   // --- 4. LIABILITY QUADRANT ---
@@ -149,7 +144,7 @@ export const CashflowQuadrant: React.FC = () => {
     });
     
     const rowSchedPassive = rowIncDetails.breakdown['passive_income'] || 0;
-    const rowInvPnl = row.investmentFlow?.pnl || 0;
+    const rowInvPnl = row.portfolio?.totalPnl || 0;
     const rowPassive = rowSchedPassive + (rowInvPnl > 0 ? rowInvPnl : 0);
     
     return {
@@ -183,7 +178,7 @@ export const CashflowQuadrant: React.FC = () => {
                 <div>
                   <h3 className="text-lg font-bold text-family-text flex items-center gap-2">
                     Tỷ lệ thoát "Bẫy Chuột" (Rat Race)
-                    <HelpTooltip content="Tỷ lệ Thu nhập thụ động / Tổng chi phí sinh hoạt. Đạt 100% nghĩa là bạn đã Tự Do Tài Chính." />
+                    <HelpTooltip text="Tỷ lệ Thu nhập thụ động / Tổng chi phí sinh hoạt. Đạt 100% nghĩa là bạn đã Tự Do Tài Chính." />
                   </h3>
                   <p className="text-xs text-family-textMuted mt-0.5">
                     Mục tiêu: Thu nhập thụ động {`>=`} Tổng chi phí
@@ -396,7 +391,7 @@ export const CashflowQuadrant: React.FC = () => {
                   contentStyle={{ backgroundColor: '#1e293b', border: '1px solid rgba(226, 180, 76, 0.15)', borderRadius: '12px' }}
                   itemStyle={{ fontSize: 12, fontWeight: 'bold' }}
                   labelStyle={{ color: '#94a3b8', fontSize: 11, marginBottom: '4px' }}
-                  formatter={(value: number) => [`${value} Triệu`, '']}
+                  formatter={(value: any) => [`${Number(value).toFixed(1)} Triệu`, '']}
                 />
                 <Legend wrapperStyle={{ fontSize: 12, paddingTop: '10px' }} />
                 

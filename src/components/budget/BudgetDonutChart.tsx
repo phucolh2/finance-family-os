@@ -56,7 +56,7 @@ export const BudgetDonutChart: React.FC<BudgetDonutChartProps> = ({ rootGroups }
           ))}
         </Pie>
         <Tooltip
-          formatter={(value: number) => [`${value.toFixed(1)}%`, 'Tỷ trọng']}
+          formatter={(value: any) => [`${Number(value).toFixed(1)}%`, 'Tỷ trọng']}
           contentStyle={{ backgroundColor: '#1e293b', border: '1px solid rgba(226, 180, 76, 0.15)', borderRadius: '8px' }}
           itemStyle={{ color: '#e2b44c', fontWeight: 'bold' }}
         />

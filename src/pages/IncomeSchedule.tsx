@@ -95,8 +95,8 @@ export const IncomeSchedule: React.FC = () => {
     
     // active = fulltime + parttime + self_employed + irregular
     const active = (inc.breakdown?.fulltime_salary || 0) + (inc.breakdown?.parttime_salary || 0) + (inc.breakdown?.self_employed || 0) + (inc.breakdown?.irregular_income || 0);
-    // passive = passive_income + pension
-    const passive = (inc.breakdown?.passive_income || 0) + (inc.breakdown?.pension || 0);
+    // passive = passive_income
+    const passive = (inc.breakdown?.passive_income || 0);
     
     cumIncome += inc.incomeMonthly;
     

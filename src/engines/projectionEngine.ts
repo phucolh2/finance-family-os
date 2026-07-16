@@ -1,5 +1,5 @@
 import type { FamilyProfile, IncomeScheduleItem, LifeEvent, Assumptions, InvestmentDeal, SavingsDeposit, LifeStage } from '../types/finance';
-import type { BudgetRatioScheduleItem } from '../types/budget';
+import type { BudgetRatioScheduleItem, ExpenseScheduleItem } from '../types/budget';
 import type { AssetConfig, AssetType } from '../types/portfolio';
 import type { ProjectionMonthlyRow, ProjectionYearlyRow, ProjectionOutput, ProjectionAdjustmentRecord } from '../types/projection';
 import { generateTimeline } from './timelineEngine';
@@ -14,6 +14,7 @@ export interface ProjectionEngineInput {
   profile: FamilyProfile;
   incomeSchedule: IncomeScheduleItem[];
   budgetSchedule: BudgetRatioScheduleItem[];
+  expenseSchedule?: ExpenseScheduleItem[];
   lifeEvents: LifeEvent[];
   assets: AssetConfig[];
   assumptions: Assumptions;
@@ -33,6 +34,7 @@ export function runProjection(input: ProjectionEngineInput): ProjectionOutput {
   const profile = input.profile;
   const incomeSchedule = safeArray(input.incomeSchedule);
   const budgetSchedule = safeArray(input.budgetSchedule);
+  const expenseSchedule = safeArray(input.expenseSchedule);
   const lifeEvents = safeArray(input.lifeEvents);
   const assets = safeArray(input.assets);
   const assumptions = input.assumptions;
@@ -58,8 +60,9 @@ export function runProjection(input: ProjectionEngineInput): ProjectionOutput {
   }
 
   // 2. Initialize simulation balances
-  let currentSavingBalance = 0;
-  let totalInvestable = safeNumber(profile.startingCapital, 100);
+  const initialCapital = Math.max(0, safeNumber(profile.startingCapital, 0));
+  let totalInvestable = initialCapital;
+  let currentSavingBalance = 0; // Cumulative Saving balance
   let cumulativeContribution = 0;
   let cumulativePnl = 0;
 
@@ -107,11 +110,30 @@ export function runProjection(input: ProjectionEngineInput): ProjectionOutput {
     });
     warnings.push(...budgetRes.warnings.map(w => `[Ngân sách] ${w}`));
 
+    // Resolve Actual Expenses
+    let totalActualExpenseMonthly: number | undefined = undefined;
+    const applicableExpenseSchedules = expenseSchedule.filter(
+      (s) => s.effectiveYear * 12 + s.effectiveMonth <= period.year * 12 + period.month
+    );
+    if (applicableExpenseSchedules.length > 0) {
+      applicableExpenseSchedules.sort((a, b) => 
+        b.effectiveYear * 12 + b.effectiveMonth - (a.effectiveYear * 12 + a.effectiveMonth)
+      );
+      const activeExpenseSchedule = applicableExpenseSchedules[0];
+      const isEnded = activeExpenseSchedule.endYear && activeExpenseSchedule.endMonth
+        ? (period.year * 12 + period.month > activeExpenseSchedule.endYear * 12 + activeExpenseSchedule.endMonth)
+        : false;
+      if (!isEnded) {
+        totalActualExpenseMonthly = Object.values(activeExpenseSchedule.categories).reduce((sum, val) => sum + safeNumber(val), 0);
+      }
+    }
+
     // Resolve Cashflow
     const cashflowRes = calculateCashflow({
       period,
       budget: budgetRes,
       lifeEvents,
+      actualExpenseMonthly: totalActualExpenseMonthly,
     });
     warnings.push(...cashflowRes.warnings.map(w => `[Dòng tiền] ${w}`));
 
@@ -163,7 +185,8 @@ export function runProjection(input: ProjectionEngineInput): ProjectionOutput {
 
     let activeSavingsPrincipalThisMonth = 0;
     savingsDeposits.forEach((dep) => {
-      if (dep.status === 'matured') return;
+      // Do NOT exit early if status === 'matured' here, because the simulation iterates 
+      // over historical months and needs to include this deposit in the past.
       const depStart = dep.startYear * 12 + dep.startMonth;
       const depEnd = dep.status === 'settled_early' && dep.settledYear && dep.settledMonth
         ? dep.settledYear * 12 + dep.settledMonth
@@ -372,7 +395,7 @@ export function runProjection(input: ProjectionEngineInput): ProjectionOutput {
           if (current === settleTime) {
             interest += safeNumber(dep.realizedInterest, 0);
           }
-        } else if (dep.status === 'active') {
+        } else if (dep.status === 'active' || dep.status === 'matured') {
           if (current === depEnd) {
             const totalInterest = dep.principal * (safeNumber(dep.interestRateAnnual, 0) / 100 / 12) * dep.termMonths;
             interest += totalInterest;

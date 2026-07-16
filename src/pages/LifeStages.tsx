@@ -12,10 +12,27 @@ import {
   Milestone, CalendarRange, Plus, Trash2, Edit3, 
   Home, Car, Baby, HeartPulse, Gift, Briefcase, Plane, Wallet, TrendingUp, TrendingDown 
 } from 'lucide-react';
+import { ExpenseDashboard } from '../components/expense/ExpenseDashboard';
+import { ExpenseScheduleView } from '../components/expense/ExpenseScheduleView';
+import { ObservationControls } from '../components/ui/ObservationControls';
+import type { BudgetGroup } from '../types/budget';
 import type { LifeEvent } from '../types/finance';
 
 export const LifeStages: React.FC = () => {
   const { state, addLifeEvent, updateLifeEvent, deleteLifeEvent } = useAppContext();
+  
+  // Dashboard filter state
+  const [dashboardFilter, setDashboardFilter] = useState<BudgetGroup | 'all'>('all');
+  const [activeTab, setActiveTab] = useState<'timeline' | 'monthly_reconciliation'>('timeline');
+
+  // Generate spending category options from the latest budget schedule
+  const activeBudget = state.budgetSchedule.length > 0 ? state.budgetSchedule[state.budgetSchedule.length - 1] : null;
+  const spendingCategoryOptions = activeBudget?.rootGroups.flatMap(group => 
+    (group.children || []).map(child => ({
+      value: `${group.groupId}/${child.id}`,
+      label: `${group.name} - ${child.name}`
+    }))
+  ) || [];
 
   // Local state for event form editing
   const [editingId, setEditingId] = useState<string | null>(null);
@@ -32,6 +49,8 @@ export const LifeStages: React.FC = () => {
     recurringMonthlyImpact: 0,
     affectsNetWorth: true,
     note: '',
+    isMilestone: false,
+    spendingCategory: '',
   });
 
   const handleEditClick = (event: LifeEvent) => {
@@ -47,6 +66,8 @@ export const LifeStages: React.FC = () => {
       recurringMonthlyImpact: event.recurringMonthlyImpact || 0,
       affectsNetWorth: event.affectsNetWorth,
       note: event.note || '',
+      isMilestone: event.isMilestone || false,
+      spendingCategory: event.spendingCategory || '',
     });
     setFormError(null);
     window.scrollTo({ top: 0, behavior: 'smooth' });
@@ -65,6 +86,8 @@ export const LifeStages: React.FC = () => {
       recurringMonthlyImpact: 0,
       affectsNetWorth: true,
       note: '',
+      isMilestone: false,
+      spendingCategory: '',
     });
     setFormError(null);
     window.scrollTo({ top: 0, behavior: 'smooth' });
@@ -153,31 +176,43 @@ export const LifeStages: React.FC = () => {
     }
   };
 
+  // Filter events based on dashboard filter
+  const filteredEventsForLedger = state.lifeEvents.filter(event => {
+    if (dashboardFilter === 'all') return true;
+    const groupId = event.spendingCategory ? event.spendingCategory.split('/')[0] : event.source;
+    return groupId === dashboardFilter;
+  });
+
   // Dashboard calculations
-  const totalEvents = state.lifeEvents.length;
-  const netOneTime = state.lifeEvents.reduce((sum, e) => sum + safeNumber(e.amount), 0);
-  const netRecurring = state.lifeEvents.reduce((sum, e) => sum + safeNumber(e.recurringMonthlyImpact), 0);
+  const totalEvents = filteredEventsForLedger.length;
+  const netOneTime = filteredEventsForLedger.reduce((sum, e) => sum + safeNumber(e.amount), 0);
+  const netRecurring = filteredEventsForLedger.reduce((sum, e) => sum + safeNumber(e.recurringMonthlyImpact), 0);
   
-  const sortedEvents = [...state.lifeEvents].sort((a, b) => {
+  const sortedEvents = [...filteredEventsForLedger].sort((a, b) => {
     if (a.year !== b.year) return a.year - b.year;
     return a.month - b.month;
   });
 
   return (
     <div className="space-y-6">
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-        <div>
+      <div className="flex flex-col lg:flex-row lg:items-start justify-between gap-4">
+        <div className="flex-1">
           <h1 className="text-3xl font-serif font-bold text-family-text flex items-center gap-3">
-            <Milestone className="w-8 h-8 text-family-accent" /> Sự kiện cuộc đời
+            <Milestone className="w-8 h-8 text-family-accent shrink-0" /> Sự kiện cuộc đời & Quản lý Chi tiêu
           </h1>
           <p className="text-sm text-family-textMuted mt-1">
-            Hiểu rõ các giai đoạn linh hoạt của gia đình và tùy chỉnh các cột mốc sự kiện lớn trên dòng thời gian.
+            Ghi chép các sự kiện dòng tiền và đối chiếu với ngân sách hàng tháng để kiểm soát tài chính chính xác.
           </p>
         </div>
-        <Button onClick={handleAddClick} className="gap-2 self-start md:self-auto text-xs">
-          <Plus className="w-4 h-4" /> Thêm sự kiện mới
-        </Button>
+        <div className="flex flex-wrap items-center gap-3 shrink-0">
+          <ObservationControls />
+          <Button onClick={handleAddClick} className="gap-2 text-xs h-9 shrink-0">
+            <Plus className="w-4 h-4 shrink-0" /> Thêm sự kiện
+          </Button>
+        </div>
       </div>
+
+      <ExpenseDashboard filter={dashboardFilter} setFilter={setDashboardFilter} />
 
       {/* Dashboard Summary */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
@@ -232,93 +267,177 @@ export const LifeStages: React.FC = () => {
             </CardDescription>
           </CardHeader>
           <CardContent>
-            <form onSubmit={handleSave} className="space-y-4">
-              <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-                <Input
-                  label="Tên sự kiện"
-                  type="text"
-                  placeholder="Ví dụ: Mua chung cư Vinhomes..."
-                  value={formData.name}
-                  onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                  required
-                />
-                <Select
-                  label="Loại sự kiện"
-                  value={formData.type}
-                  onChange={(e) => setFormData({ ...formData, type: e.target.value as any })}
-                  options={eventTypes}
-                />
-                <Input
-                  label="Tháng diễn ra"
-                  type="number"
-                  min={1}
-                  max={12}
-                  value={formData.month}
-                  onChange={(e) => setFormData({ ...formData, month: safeNumber(Number(e.target.value)) })}
-                  required
-                />
-                <Input
-                  label="Năm diễn ra"
-                  type="number"
-                  min={2026}
-                  max={2060}
-                  value={formData.year}
-                  onChange={(e) => setFormData({ ...formData, year: safeNumber(Number(e.target.value)) })}
-                  required
-                />
+            <form onSubmit={handleSave} className="space-y-6">
+              {/* Block 1: Basic Info */}
+              <div className="bg-white border border-family-accent/10 rounded-xl p-4 shadow-sm space-y-4">
+                <div className="border-b border-family-accent/10 pb-2 mb-2">
+                  <h3 className="text-sm font-bold text-family-text">Thông tin cơ bản</h3>
+                </div>
+                <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+                  <Input
+                    label="Tên sự kiện"
+                    type="text"
+                    placeholder="Ví dụ: Mua chung cư Vinhomes..."
+                    value={formData.name}
+                    onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                    required
+                  />
+                  <Select
+                    label="Loại sự kiện"
+                    value={formData.type}
+                    onChange={(e) => setFormData({ ...formData, type: e.target.value as any })}
+                    options={eventTypes}
+                  />
+                  <Input
+                    label="Tháng diễn ra"
+                    type="number"
+                    min={1}
+                    max={12}
+                    value={formData.month}
+                    onChange={(e) => setFormData({ ...formData, month: safeNumber(Number(e.target.value)) })}
+                    required
+                  />
+                  <Input
+                    label="Năm diễn ra"
+                    type="number"
+                    min={2026}
+                    max={2060}
+                    value={formData.year}
+                    onChange={(e) => setFormData({ ...formData, year: safeNumber(Number(e.target.value)) })}
+                    required
+                  />
+                </div>
               </div>
 
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                <Input
-                  label="Số tiền tác động một lần (Tr VND)"
-                  type="number"
-                  placeholder="Nhập âm nếu chi tiền, dương nếu nhận tiền"
-                  value={formData.amount}
-                  onChange={(e) => setFormData({ ...formData, amount: safeNumber(Number(e.target.value)) })}
-                  required
-                />
-                <Input
-                  label="Tác động dòng tiền tháng (Tr/tháng)"
-                  type="number"
-                  placeholder="Ví dụ: -2 Tr/tháng vận hành xe"
-                  value={formData.recurringMonthlyImpact}
-                  onChange={(e) => setFormData({ ...formData, recurringMonthlyImpact: safeNumber(Number(e.target.value)) })}
-                />
-                <Select
-                  label="Nguồn trừ/Cộng tài sản"
-                  value={formData.source}
-                  onChange={(e) => setFormData({ ...formData, source: e.target.value as any })}
-                  options={sourceTypes}
-                />
+              {/* Block 2: Financial Impact (One-time) */}
+              <div className="bg-family-bgDark/5 border border-family-accent/10 rounded-xl p-4 shadow-sm space-y-4">
+                <div className="border-b border-family-accent/10 pb-2 mb-2">
+                  <h3 className="text-sm font-bold text-family-text flex items-center gap-2">Tác động Tài chính Một lần</h3>
+                  <p className="text-[11px] text-family-textMuted mt-1">Là số tiền chi trả ngay lập tức tại thời điểm xảy ra sự kiện. Hệ thống sẽ rút số tiền này trực tiếp từ Quỹ/Nguồn tài sản mà bạn chọn.</p>
+                </div>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="relative">
+                    <Input
+                      label="Số tiền tác động một lần (Tr VND)"
+                      type="number"
+                      placeholder="Ví dụ: -800 (nếu mua xe), hoặc 500 (nếu bán đất)"
+                      value={formData.amount}
+                      onChange={(e) => setFormData({ ...formData, amount: safeNumber(Number(e.target.value)) })}
+                      required
+                    />
+                    {safeNumber(formData.amount) > 0 && <span className="absolute top-0 right-1 text-[10px] text-green-600 font-bold bg-green-100 px-2 py-0.5 rounded">Thu nhập +</span>}
+                    {safeNumber(formData.amount) < 0 && <span className="absolute top-0 right-1 text-[10px] text-red-600 font-bold bg-red-100 px-2 py-0.5 rounded">Chi phí -</span>}
+                  </div>
+                  <Select
+                    label="Nguồn trừ/Cộng tài sản"
+                    value={formData.source}
+                    onChange={(e) => setFormData({ ...formData, source: e.target.value as any })}
+                    options={sourceTypes}
+                  />
+                </div>
               </div>
 
-              <Input
-                label="Ghi chú thêm"
-                type="text"
-                placeholder="Lưu lại chi tiết kịch bản..."
-                value={formData.note}
-                onChange={(e) => setFormData({ ...formData, note: e.target.value })}
-              />
+              {/* Block 3: Recurring Impact & Reporting */}
+              <div className="bg-family-bgDeep/10 border border-family-accent/10 rounded-xl p-4 shadow-sm space-y-4">
+                <div className="border-b border-family-accent/10 pb-2 mb-2">
+                  <h3 className="text-sm font-bold text-family-text flex items-center gap-2">Tác động Dòng tiền Lâu dài & Báo cáo</h3>
+                  <p className="text-[11px] text-family-textMuted mt-1">Chi phí (hoặc thu nhập) phát sinh <strong>đều đặn mỗi tháng</strong> sau sự kiện này. Khoản này sẽ trừ thẳng vào Dòng tiền ròng tổng của gia đình thay vì nằm trong hạn mức Thực tế chi tiêu hàng ngày.</p>
+                </div>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <Input
+                    label="Tác động dòng tiền tháng (Tr/tháng)"
+                    type="number"
+                    placeholder="Ví dụ: -4 Tr/tháng vận hành nuôi xe"
+                    value={formData.recurringMonthlyImpact}
+                    onChange={(e) => setFormData({ ...formData, recurringMonthlyImpact: safeNumber(Number(e.target.value)) })}
+                  />
+                  <div>
+                    <Select
+                      label="Lớp Tiêu sản (Ánh xạ Ngân sách)"
+                      value={formData.spendingCategory || ''}
+                      onChange={(e) => setFormData({ ...formData, spendingCategory: e.target.value })}
+                      options={[{value: '', label: '-- Không phân loại --'}, ...spendingCategoryOptions]}
+                    />
+                    <p className="text-[10px] text-family-accent mt-1.5 ml-1 italic font-medium leading-tight">* Ánh xạ này chỉ dùng để gom nhóm trên Báo cáo vòng đời, hoàn toàn không tự động ghi đè vào bảng "Thực tế chi tiêu".</p>
+                  </div>
+                </div>
+              </div>
 
-              <div className="flex justify-end gap-2 pt-2">
-                <Button variant="outline" type="button" onClick={() => { setIsAdding(false); setEditingId(null); }}>Hủy</Button>
-                <Button type="submit">Lưu sự kiện</Button>
+              {/* Block 4: Misc */}
+              <div className="bg-white border border-family-accent/10 rounded-xl p-4 shadow-sm space-y-4">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <Input
+                    label="Ghi chú thêm"
+                    type="text"
+                    placeholder="Lưu lại chi tiết kịch bản (VD: Mua ô tô che mưa che nắng...)"
+                    value={formData.note}
+                    onChange={(e) => setFormData({ ...formData, note: e.target.value })}
+                  />
+                  <div className="flex flex-col justify-center md:pl-6 md:mt-6">
+                    <div className="flex items-center">
+                      <input
+                        type="checkbox"
+                        id="isMilestone"
+                        checked={formData.isMilestone}
+                        onChange={(e) => setFormData({ ...formData, isMilestone: e.target.checked })}
+                        className="w-4 h-4 text-family-accent border-gray-300 rounded focus:ring-family-accent cursor-pointer"
+                      />
+                      <label htmlFor="isMilestone" className="ml-2 block text-sm font-bold text-family-text cursor-pointer">
+                        Đánh dấu là Cột mốc Sự kiện
+                      </label>
+                    </div>
+                    <p className="text-[10px] text-family-textMuted mt-1 ml-6 leading-tight">Sự kiện này sẽ được đánh dấu nổi bật (highlight) trên Dòng thời gian sự kiện (Timeline).</p>
+                  </div>
+                </div>
+              </div>
+
+              <div className="flex justify-end gap-3 pt-2">
+                <Button variant="outline" type="button" onClick={() => { setIsAdding(false); setEditingId(null); }} className="px-6">Hủy</Button>
+                <Button type="submit" className="px-6 font-bold">Lưu sự kiện</Button>
               </div>
             </form>
           </CardContent>
         </Card>
       )}
 
+      {/* Tabs */}
+      <div className="flex space-x-2 border-b border-gray-200">
+        <button
+          onClick={() => setActiveTab('timeline')}
+          className={`py-2 px-4 text-sm font-semibold transition-colors border-b-2 ${
+            activeTab === 'timeline' 
+              ? 'border-family-accent text-family-accent' 
+              : 'border-transparent text-gray-500 hover:text-gray-700'
+          }`}
+        >
+          Dòng thời gian Sự kiện
+        </button>
+        <button
+          onClick={() => setActiveTab('monthly_reconciliation')}
+          className={`py-2 px-4 text-sm font-semibold transition-colors border-b-2 ${
+            activeTab === 'monthly_reconciliation' 
+              ? 'border-family-accent text-family-accent' 
+              : 'border-transparent text-gray-500 hover:text-gray-700'
+          }`}
+        >
+          Thực tế chi tiêu
+        </button>
+      </div>
+
+      {activeTab === 'monthly_reconciliation' && <ExpenseScheduleView />}
+
       {/* Timeline View */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center justify-between">
-            <span>Dòng thời gian sự kiện (Timeline)</span>
-          </CardTitle>
-          <CardDescription>
-            Bức tranh toàn cảnh về các biến cố và cột mốc tài chính được sắp xếp theo thời gian.
-          </CardDescription>
-        </CardHeader>
+      {activeTab === 'timeline' && (
+        <div className="space-y-6">
+          <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center justify-between">
+              <span>Dòng thời gian sự kiện (Timeline)</span>
+            </CardTitle>
+            <CardDescription>
+              Bức tranh toàn cảnh về các biến cố và cột mốc tài chính được sắp xếp theo thời gian.
+            </CardDescription>
+          </CardHeader>
         <CardContent>
           {sortedEvents.length > 0 ? (
             <div className="relative border-l-2 border-family-accent/20 ml-4 md:ml-6 space-y-6 py-4">
@@ -422,6 +541,8 @@ export const LifeStages: React.FC = () => {
           </div>
         </CardContent>
       </Card>
+        </div>
+      )}
     </div>
   );
 };

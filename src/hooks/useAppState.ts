@@ -24,6 +24,7 @@ const initialDb = generateResolvedMonthlyDb(
   DEFAULT_FAMILY_PROFILE,
   DEFAULT_INCOME_SCHEDULE,
   DEFAULT_BUDGET_SCHEDULE,
+  [], // default empty expense schedule
   DEFAULT_ASSETS,
   DEFAULT_ASSUMPTIONS,
   DEFAULT_LIFE_STAGES
@@ -33,6 +34,7 @@ const INITIAL_APP_STATE: AppState = {
   profile: DEFAULT_FAMILY_PROFILE,
   incomeSchedule: DEFAULT_INCOME_SCHEDULE,
   budgetSchedule: DEFAULT_BUDGET_SCHEDULE,
+  expenseSchedule: [],
   lifeStages: DEFAULT_LIFE_STAGES,
   lifeEvents: DEFAULT_LIFE_EVENTS,
   assets: DEFAULT_ASSETS,
@@ -72,7 +74,18 @@ export function useAppState() {
     try {
       const stored = localStorage.getItem(LOCAL_STORAGE_KEY);
       if (stored) {
-        const parsed = JSON.parse(stored);
+        let parsed;
+        try {
+          parsed = JSON.parse(stored);
+        } catch (parseError) {
+          console.error('Failed to parse localStorage state. Saving backup and resetting:', parseError);
+          // Save a backup of the corrupted data
+          localStorage.setItem(`${LOCAL_STORAGE_KEY}_backup_${Date.now()}`, stored);
+          // Show alert to user (if possible, though this is during initial render, so alert might block)
+          // alert('Dữ liệu lưu trữ cục bộ bị hỏng. Đã tự động tạo bản sao lưu và khôi phục về mặc định.');
+          return INITIAL_APP_STATE;
+        }
+
         const migrated = migrateState(parsed, INITIAL_APP_STATE);
 
         if (
@@ -84,6 +97,7 @@ export function useAppState() {
             migrated.profile,
             migrated.incomeSchedule,
             migrated.budgetSchedule,
+            migrated.expenseSchedule || [],
             migrated.assets,
             migrated.assumptions,
             migrated.lifeStages
@@ -94,7 +108,7 @@ export function useAppState() {
         return migrated;
       }
     } catch (e) {
-      console.error('Failed to parse localStorage state:', e);
+      console.error('Failed to access localStorage:', e);
     }
     return INITIAL_APP_STATE;
   });
@@ -123,6 +137,7 @@ export function useAppState() {
       newState.profile,
       newState.incomeSchedule,
       newState.budgetSchedule,
+      newState.expenseSchedule || [],
       newState.assets,
       newState.assumptions,
       newState.lifeStages
@@ -132,6 +147,7 @@ export function useAppState() {
       profile: newState.profile,
       incomeSchedule: newState.incomeSchedule,
       budgetSchedule: newState.budgetSchedule,
+      expenseSchedule: newState.expenseSchedule || [],
       lifeEvents: newState.lifeEvents || [],
       assets: newState.assets,
       assumptions: newState.assumptions,
@@ -317,6 +333,72 @@ export function useAppState() {
     });
   };
 
+  // Expense Schedule Actions
+  const addExpenseScheduleItem = (item: Omit<import('../types/budget').ExpenseScheduleItem, 'id'>) => {
+    const newItem: import('../types/budget').ExpenseScheduleItem = {
+      ...item,
+      id: `expense_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+    };
+
+    let updatedSchedule = [...state.expenseSchedule];
+    const newMonthValue = newItem.effectiveYear * 12 + newItem.effectiveMonth;
+
+    // Find the immediately preceding item
+    const precedingItems = updatedSchedule.filter(
+      (it) => it.effectiveYear * 12 + it.effectiveMonth < newMonthValue
+    );
+
+    if (precedingItems.length > 0) {
+      precedingItems.sort(
+        (a, b) =>
+          b.effectiveYear * 12 + b.effectiveMonth - (a.effectiveYear * 12 + a.effectiveMonth)
+      );
+      const prevItem = precedingItems[0];
+
+      // Only auto-end it if it doesn't already have an end date
+      if (!prevItem.endYear) {
+        let endMonth = newItem.effectiveMonth - 1;
+        let endYear = newItem.effectiveYear;
+        if (endMonth === 0) {
+          endMonth = 12;
+          endYear -= 1;
+        }
+
+        const updatedPrevItem: import('../types/budget').ExpenseScheduleItem = {
+          ...prevItem,
+          endMonth,
+          endYear,
+          status: 'settled',
+        };
+
+        updatedSchedule = updatedSchedule.map((it) =>
+          it.id === prevItem.id ? updatedPrevItem : it
+        );
+      }
+    }
+
+    updatedSchedule.push(newItem);
+
+    saveState({
+      ...state,
+      expenseSchedule: updatedSchedule,
+    });
+  };
+
+  const updateExpenseScheduleItem = (updated: import('../types/budget').ExpenseScheduleItem) => {
+    saveState({
+      ...state,
+      expenseSchedule: state.expenseSchedule.map((item) => (item.id === updated.id ? updated : item)),
+    });
+  };
+
+  const deleteExpenseScheduleItem = (id: string) => {
+    saveState({
+      ...state,
+      expenseSchedule: state.expenseSchedule.filter((item) => item.id !== id),
+    });
+  };
+
   const updateAssets = (assets: AssetConfig[]) => {
     saveState({
       ...state,
@@ -497,6 +579,9 @@ export function useAppState() {
     addBudgetScheduleItem,
     updateBudgetScheduleItem,
     deleteBudgetScheduleItem,
+    addExpenseScheduleItem,
+    updateExpenseScheduleItem,
+    deleteExpenseScheduleItem,
     addLifeEvent,
     updateLifeEvent,
     deleteLifeEvent,

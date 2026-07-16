@@ -7,6 +7,7 @@ export interface CashflowEngineInput {
   period: TimelinePeriod;
   budget: MonthlyBudgetOutput;
   lifeEvents: LifeEvent[];
+  actualExpenseMonthly?: number;
 }
 
 export interface CashflowOutput {
@@ -32,7 +33,12 @@ export function calculateCashflow(input: CashflowEngineInput): CashflowOutput {
   const events = safeArray(input.lifeEvents);
 
   const income = safeNumber(budget.incomeMonthly, 0);
-  const expenses = safeNumber(budget.totalExpenseMonthly, 0);
+  
+  // Use actualExpenseMonthly if provided, otherwise fallback to budget
+  const expenses = input.actualExpenseMonthly !== undefined 
+    ? safeNumber(input.actualExpenseMonthly, 0)
+    : safeNumber(budget.totalExpenseMonthly, 0);
+    
   const investment = safeNumber(budget.investmentMonthly, 0);
   const saving = safeNumber(budget.savingMonthly, 0);
 

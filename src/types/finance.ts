@@ -74,6 +74,8 @@ export interface LifeEvent extends Partial<LifecycleProps> {
   recurringMonthlyImpact?: number;
   affectsNetWorth: boolean;
   note?: string;
+  isMilestone?: boolean; // Đánh dấu sự kiện là Cột mốc quan trọng
+  spendingCategory?: string; // Lớp Tiêu sản: "groupId/childId" e.g. "housing_basic/rent"
 }
 
 export interface Assumptions {
@@ -117,6 +119,8 @@ export interface ResolvedMonthlyDbItem {
     planned: number;
     idle: number;
   };
+  totalActualExpenseMonthly?: number;
+  actualExpenseCategories?: Record<string, number>;
 }
 
 export interface InvestmentDeal {
@@ -160,7 +164,8 @@ export interface SavingsDeposit {
 export interface AppState {
   profile: FamilyProfile;
   incomeSchedule: IncomeScheduleItem[];
-  budgetSchedule: BudgetRatioScheduleItem[];
+  budgetSchedule: import('./budget').BudgetRatioScheduleItem[];
+  expenseSchedule: import('./budget').ExpenseScheduleItem[];
   lifeStages: LifeStage[];
   lifeEvents: LifeEvent[];
   assets: AssetConfig[];
