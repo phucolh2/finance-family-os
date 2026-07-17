@@ -1,12 +1,9 @@
-import React, { useMemo, useState } from 'react';
+import React, { useMemo } from 'react';
 import { useAppContext } from '../../context/AppContext';
 import { Card, CardHeader, CardTitle, CardContent } from '../ui/Card';
-import { Button } from '../../components/ui/Button';
-import { Select } from '../../components/ui/Select';
-import { Input } from '../../components/ui/Input';
 import { formatTableMoneyVNDMillion } from '../../utils/format';
 import { safeNumber } from '../../utils/math';
-import { Calculator, ArrowRightLeft, X, Wallet, PiggyBank, CircleDollarSign } from 'lucide-react';
+import { Calculator, Wallet, PiggyBank, CircleDollarSign } from 'lucide-react';
 import { SavingsDepositModule } from '../portfolio/SavingsDepositModule';
 import type { BudgetGroup } from '../../types/budget';
 
@@ -103,7 +100,7 @@ export const MonthlyReconciliation: React.FC = () => {
           month: resolvedDbItem.month,
           year: resolvedDbItem.year,
           amount: newAmount,
-          source: row.groupId as any,
+          source: row.groupId,
           spendingCategory: categoryKey,
           recurringMonthlyImpact: 0,
           affectsNetWorth: true,
@@ -166,7 +163,7 @@ export const MonthlyReconciliation: React.FC = () => {
                         type="number" 
                         className="w-24 px-2 py-1 text-right border border-gray-300 rounded text-sm focus:outline-none focus:ring-1 focus:ring-family-accent focus:border-family-accent"
                         defaultValue={row.actualAmount.toFixed(1)}
-                        onBlur={(e) => handleActualChange(row, e.target.value)}
+                        onBlur={(e) => { handleActualChange(row, e.target.value); }}
                         step="0.1"
                         min="0"
                       />

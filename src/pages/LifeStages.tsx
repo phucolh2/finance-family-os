@@ -279,13 +279,13 @@ export const LifeStages: React.FC = () => {
                     type="text"
                     placeholder="Ví dụ: Mua chung cư Vinhomes..."
                     value={formData.name}
-                    onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                    onChange={(e) => { setFormData({ ...formData, name: e.target.value }); }}
                     required
                   />
                   <Select
                     label="Loại sự kiện"
                     value={formData.type}
-                    onChange={(e) => setFormData({ ...formData, type: e.target.value as any })}
+                    onChange={(e) => { setFormData({ ...formData, type: e.target.value as any }); }}
                     options={eventTypes}
                   />
                   <Input
@@ -294,7 +294,7 @@ export const LifeStages: React.FC = () => {
                     min={1}
                     max={12}
                     value={formData.month}
-                    onChange={(e) => setFormData({ ...formData, month: safeNumber(Number(e.target.value)) })}
+                    onChange={(e) => { setFormData({ ...formData, month: safeNumber(Number(e.target.value)) }); }}
                     required
                   />
                   <Input
@@ -303,7 +303,7 @@ export const LifeStages: React.FC = () => {
                     min={2026}
                     max={2060}
                     value={formData.year}
-                    onChange={(e) => setFormData({ ...formData, year: safeNumber(Number(e.target.value)) })}
+                    onChange={(e) => { setFormData({ ...formData, year: safeNumber(Number(e.target.value)) }); }}
                     required
                   />
                 </div>
@@ -322,7 +322,7 @@ export const LifeStages: React.FC = () => {
                       type="number"
                       placeholder="Ví dụ: -800 (nếu mua xe), hoặc 500 (nếu bán đất)"
                       value={formData.amount}
-                      onChange={(e) => setFormData({ ...formData, amount: safeNumber(Number(e.target.value)) })}
+                      onChange={(e) => { setFormData({ ...formData, amount: safeNumber(Number(e.target.value)) }); }}
                       required
                     />
                     {safeNumber(formData.amount) > 0 && <span className="absolute top-0 right-1 text-[10px] text-green-600 font-bold bg-green-100 px-2 py-0.5 rounded">Thu nhập +</span>}
@@ -331,7 +331,7 @@ export const LifeStages: React.FC = () => {
                   <Select
                     label="Nguồn trừ/Cộng tài sản"
                     value={formData.source}
-                    onChange={(e) => setFormData({ ...formData, source: e.target.value as any })}
+                    onChange={(e) => { setFormData({ ...formData, source: e.target.value as any }); }}
                     options={sourceTypes}
                   />
                 </div>
@@ -349,13 +349,13 @@ export const LifeStages: React.FC = () => {
                     type="number"
                     placeholder="Ví dụ: -4 Tr/tháng vận hành nuôi xe"
                     value={formData.recurringMonthlyImpact}
-                    onChange={(e) => setFormData({ ...formData, recurringMonthlyImpact: safeNumber(Number(e.target.value)) })}
+                    onChange={(e) => { setFormData({ ...formData, recurringMonthlyImpact: safeNumber(Number(e.target.value)) }); }}
                   />
                   <div>
                     <Select
                       label="Lớp Tiêu sản (Ánh xạ Ngân sách)"
                       value={formData.spendingCategory || ''}
-                      onChange={(e) => setFormData({ ...formData, spendingCategory: e.target.value })}
+                      onChange={(e) => { setFormData({ ...formData, spendingCategory: e.target.value }); }}
                       options={[{value: '', label: '-- Không phân loại --'}, ...spendingCategoryOptions]}
                     />
                     <p className="text-[10px] text-family-accent mt-1.5 ml-1 italic font-medium leading-tight">* Ánh xạ này chỉ dùng để gom nhóm trên Báo cáo vòng đời, hoàn toàn không tự động ghi đè vào bảng "Thực tế chi tiêu".</p>
@@ -371,7 +371,7 @@ export const LifeStages: React.FC = () => {
                     type="text"
                     placeholder="Lưu lại chi tiết kịch bản (VD: Mua ô tô che mưa che nắng...)"
                     value={formData.note}
-                    onChange={(e) => setFormData({ ...formData, note: e.target.value })}
+                    onChange={(e) => { setFormData({ ...formData, note: e.target.value }); }}
                   />
                   <div className="flex flex-col justify-center md:pl-6 md:mt-6">
                     <div className="flex items-center">
@@ -379,7 +379,7 @@ export const LifeStages: React.FC = () => {
                         type="checkbox"
                         id="isMilestone"
                         checked={formData.isMilestone}
-                        onChange={(e) => setFormData({ ...formData, isMilestone: e.target.checked })}
+                        onChange={(e) => { setFormData({ ...formData, isMilestone: e.target.checked }); }}
                         className="w-4 h-4 text-family-accent border-gray-300 rounded focus:ring-family-accent cursor-pointer"
                       />
                       <label htmlFor="isMilestone" className="ml-2 block text-sm font-bold text-family-text cursor-pointer">
@@ -403,7 +403,7 @@ export const LifeStages: React.FC = () => {
       {/* Tabs */}
       <div className="flex space-x-2 border-b border-gray-200">
         <button
-          onClick={() => setActiveTab('timeline')}
+          onClick={() => { setActiveTab('timeline'); }}
           className={`py-2 px-4 text-sm font-semibold transition-colors border-b-2 ${
             activeTab === 'timeline' 
               ? 'border-family-accent text-family-accent' 
@@ -413,7 +413,7 @@ export const LifeStages: React.FC = () => {
           Dòng thời gian Sự kiện
         </button>
         <button
-          onClick={() => setActiveTab('monthly_reconciliation')}
+          onClick={() => { setActiveTab('monthly_reconciliation'); }}
           className={`py-2 px-4 text-sm font-semibold transition-colors border-b-2 ${
             activeTab === 'monthly_reconciliation' 
               ? 'border-family-accent text-family-accent' 
@@ -488,7 +488,7 @@ export const LifeStages: React.FC = () => {
                       <div className="absolute top-4 right-4 opacity-0 group-hover:opacity-100 transition-opacity flex items-center gap-1 bg-white shadow-sm border border-gray-100 rounded-lg overflow-hidden">
                         <button
                           type="button"
-                          onClick={() => handleEditClick(event)}
+                          onClick={() => { handleEditClick(event); }}
                           className="p-2 text-family-textLight hover:text-family-accent hover:bg-gray-50 transition-colors"
                           title="Chỉnh sửa"
                         >
@@ -496,7 +496,7 @@ export const LifeStages: React.FC = () => {
                         </button>
                         <button
                           type="button"
-                          onClick={() => handleDelete(event.id)}
+                          onClick={() => { handleDelete(event.id); }}
                           className="p-2 text-family-textLight hover:text-red-500 hover:bg-gray-50 transition-colors"
                           title="Xóa sự kiện"
                         >

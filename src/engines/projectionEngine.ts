@@ -36,7 +36,7 @@ export function runProjection(input: ProjectionEngineInput): ProjectionOutput {
   const budgetSchedule = safeArray(input.budgetSchedule);
   const expenseSchedule = safeArray(input.expenseSchedule);
   const lifeEvents = safeArray(input.lifeEvents);
-  const assets = safeArray(input.assets);
+  const _assets = safeArray(input.assets);
   const assumptions = input.assumptions;
   const investmentDeals = safeArray(input.investmentDeals);
   const savingsDeposits = safeArray(input.savingsDeposits);
@@ -147,10 +147,10 @@ export function runProjection(input: ProjectionEngineInput): ProjectionOutput {
       if (event.source === 'investment' || event.source === 'future_investing') {
         if (event.type === 'buy_property') {
           // Chỉ chuyển đổi tài sản từ stocks sang real_estate (amount là số âm khi mua)
-          assetAdjustments['stocks'] += amt; // amt âm -> trừ stocks
-          assetAdjustments['real_estate'] -= amt; // trừ trừ thành cộng
+          assetAdjustments.stocks += amt; // amt âm -> trừ stocks
+          assetAdjustments.real_estate -= amt; // trừ trừ thành cộng
         } else {
-          assetAdjustments['stocks'] += amt;
+          assetAdjustments.stocks += amt;
           totalInvestable = Math.max(0, totalInvestable + amt);
         }
       } else {
@@ -162,7 +162,6 @@ export function runProjection(input: ProjectionEngineInput): ProjectionOutput {
     // We will calculate Active Deal Values up to LAST month, to find unallocated compounding base
     let activeValueUpToLastMonth = 0;
     investmentDeals.forEach(deal => {
-      const isOriginallyEarmarked = deal.isEarmarked || deal.isConverted;
       const start = deal.startYear * 12 + deal.startMonth;
       const current = period.year * 12 + period.month;
       const end = deal.status === 'settled' && deal.endYear && deal.endMonth 
@@ -170,7 +169,6 @@ export function runProjection(input: ProjectionEngineInput): ProjectionOutput {
         : Infinity;
       
       if (current >= start && current <= end) {
-        const monthsActiveUpToLastMonth = current - start;
         let acc = 0;
         if (deal.status === 'settled') {
           const investStart = deal.isConverted && deal.conversionYear && deal.conversionMonth
@@ -197,7 +195,7 @@ export function runProjection(input: ProjectionEngineInput): ProjectionOutput {
       }
     });
 
-    const unallocatedForCompounding = Math.max(0, totalInvestable - activeValueUpToLastMonth - activeSavingsPrincipalThisMonth);
+    const _unallocatedForCompounding = Math.max(0, totalInvestable - activeValueUpToLastMonth - activeSavingsPrincipalThisMonth);
 
     // Evaluate adjustments for the current month
     let adjustedSavingRate: number | null = null;
@@ -206,7 +204,7 @@ export function runProjection(input: ProjectionEngineInput): ProjectionOutput {
     let manualOneTimeProfit = 0;
     let hasManualInvestmentAdj = false;
 
-    projectionAdjustments.forEach(adj => {
+    for (const adj of projectionAdjustments) {
       const isWithinPeriod = (period.year > adj.startYear || (period.year === adj.startYear && period.month >= adj.startMonth)) &&
                              (period.year < adj.endYear || (period.year === adj.endYear && period.month <= adj.endMonth));
       if (isWithinPeriod) {
@@ -220,9 +218,9 @@ export function runProjection(input: ProjectionEngineInput): ProjectionOutput {
           }
         }
       }
-    });
+    }
 
-    const activeSavingRate = adjustedSavingRate != null ? adjustedSavingRate : safeNumber(assumptions.savingsInterestRateAnnual, 0);
+    const activeSavingRate = adjustedSavingRate ?? safeNumber(assumptions.savingsInterestRateAnnual, 0);
     const savingsRateRatio = activeSavingRate > 1 ? activeSavingRate / 100 : activeSavingRate;
     const savingsMonthlyYield = savingsRateRatio / 12;
 
@@ -243,7 +241,7 @@ export function runProjection(input: ProjectionEngineInput): ProjectionOutput {
     const dealSettleNotes: string[] = [];
     
     investmentDeals.forEach(deal => {
-      const isOriginallyEarmarked = deal.isEarmarked || deal.isConverted;
+      const isOriginallyEarmarked = deal.isEarmarked ?? deal.isConverted;
       const start = deal.startYear * 12 + deal.startMonth;
       const current = period.year * 12 + period.month;
       const end = deal.status === 'settled' && deal.endYear && deal.endMonth 
@@ -273,9 +271,7 @@ export function runProjection(input: ProjectionEngineInput): ProjectionOutput {
         const monthsSavingsActive = savingEnd - start;
         if (monthsSavingsActive > 0) {
           const rate = safeNumber(deal.expectedSavingRate, 0);
-          const totalSavingsInterest = deal.realizedSavingInterest !== undefined
-            ? deal.realizedSavingInterest
-            : deal.capital * (rate / 100 / 12) * monthsSavingsActive;
+          const totalSavingsInterest = deal.realizedSavingInterest ?? (deal.capital * (rate / 100 / 12) * monthsSavingsActive);
           totalDealPnlThisMonth += totalSavingsInterest;
           
           let cause = "đáo hạn";
@@ -287,7 +283,7 @@ export function runProjection(input: ProjectionEngineInput): ProjectionOutput {
 
       if (deal.status === 'settled' && deal.endMonth === period.month && deal.endYear === period.year) {
         const profit = safeNumber(deal.realizedProfit, 0);
-        dealSettleNotes.push(`Tất toán ${deal.name}: ${profit >= 0 ? `Lãi +` : `Lỗ `}${profit}M`);
+        dealSettleNotes.push(`Tất toán ${deal.name}: ${profit >= 0 ? `Lãi +` : `Lỗ `}${String(profit)}M`);
       }
     });
 
@@ -296,7 +292,7 @@ export function runProjection(input: ProjectionEngineInput): ProjectionOutput {
     totalInvestable += monthlyContribution + investmentPnl;
 
     // Derived actual monthly rate based on custom profit
-    const actualInvestmentRateMonthly = previousTotalInvestable > 0 ? investmentPnl / previousTotalInvestable : 0;
+    const _actualInvestmentRateMonthly = previousTotalInvestable > 0 ? investmentPnl / previousTotalInvestable : 0;
 
     const assetBalances: Record<AssetType, number> = { fx_reserve_usd: 0, gold: 0, real_estate: 0, stocks: 0, crypto: 0 };
     const earmarkedBalances: Record<AssetType, number> = { fx_reserve_usd: 0, gold: 0, real_estate: 0, stocks: 0, crypto: 0 };
@@ -304,7 +300,7 @@ export function runProjection(input: ProjectionEngineInput): ProjectionOutput {
 
     // Distribute accumulated PnL into asset classes
     investmentDeals.forEach((deal) => {
-      const isOriginallyEarmarked = deal.isEarmarked || deal.isConverted;
+      const isOriginallyEarmarked = deal.isEarmarked ?? deal.isConverted;
       const start = deal.startYear * 12 + deal.startMonth;
       const current = period.year * 12 + period.month;
       const end = deal.status === 'settled' && deal.endYear && deal.endMonth 
@@ -358,10 +354,10 @@ export function runProjection(input: ProjectionEngineInput): ProjectionOutput {
 
     const totalActiveCapital = Object.values(assetBalances).reduce((sum, v) => sum + v, 0);
     const unallocatedCash = Math.max(0, totalInvestable - totalActiveCapital - totalEarmarkedCapital);
-    const safeTotalEndingBalance = Math.max(totalInvestable, totalActiveCapital + totalEarmarkedCapital);
+    const _safeTotalEndingBalance = Math.max(totalInvestable, totalActiveCapital + totalEarmarkedCapital);
 
     if (totalActiveCapital + totalEarmarkedCapital > totalInvestable + 0.01) {
-      warnings.push(`[Đầu tư] Tháng ${period.month}/${period.year}: Tổng vốn thương vụ hoạt động và chờ phân bổ (${(totalActiveCapital + totalEarmarkedCapital).toFixed(1)}M) vượt quá tổng ngân sách đầu tư khả dụng (${totalInvestable.toFixed(1)}M).`);
+      warnings.push(`[Đầu tư] Tháng ${String(period.month)}/${String(period.year)}: Tổng vốn thương vụ hoạt động và chờ phân bổ (${(totalActiveCapital + totalEarmarkedCapital).toFixed(1)}M) vượt quá tổng ngân sách đầu tư khả dụng (${totalInvestable.toFixed(1)}M).`);
     }
 
     // Calculate savings deposits at this period
@@ -451,7 +447,7 @@ export function runProjection(input: ProjectionEngineInput): ProjectionOutput {
     ];
     if (childCostRes.isActive && childCostRes.totalMonthly > 0) {
       if (childCostRes.childAge === 0 && period.month === profile.childBirthMonth) {
-        notes.push(`Sinh con đầu lòng (${profile.childBirthYear})`);
+        notes.push(`Sinh con đầu lòng (${String(profile.childBirthYear)})`);
       } else if (childCostRes.childAge === 6 && period.month === profile.childBirthMonth) {
         notes.push('Con vào lớp 1');
       } else if (childCostRes.childAge === 18 && period.month === profile.childBirthMonth) {
@@ -474,7 +470,7 @@ export function runProjection(input: ProjectionEngineInput): ProjectionOutput {
       healthBalance: 0,
       savingBalance: currentSavingBalance,
       portfolio: portfolioOutput,
-      propertyValue: assetBalances['real_estate'],
+      propertyValue: assetBalances.real_estate,
       nominalNetWorth,
       realNetWorth,
       fireTarget: fireRes.fireTarget,
@@ -507,13 +503,13 @@ export function runProjection(input: ProjectionEngineInput): ProjectionOutput {
     const avgInvestment = yearRows.reduce((sum, r) => sum + r.investmentMonthly, 0) / yearRows.length;
     const avgSaving = yearRows.reduce((sum, r) => sum + r.savingMonthly, 0) / yearRows.length;
     
-    const totalCustomProfit = yearRows.reduce((sum, r) => sum + (r._customProfit || 0), 0);
-    const avgSavingRate = yearRows.reduce((sum, r) => sum + (r._savingInterestRateAnnual || 0), 0) / yearRows.length;
+    const totalCustomProfit = yearRows.reduce((sum, r) => sum + (r._customProfit ?? 0), 0);
+    const avgSavingRate = yearRows.reduce((sum, r) => sum + (r._savingInterestRateAnnual ?? 0), 0) / yearRows.length;
     
     // Child Cost details
-    const totalChild1 = yearRows.reduce((sum, r) => sum + (r._childCost1 || 0), 0) / yearRows.length;
-    const totalChild2 = yearRows.reduce((sum, r) => sum + (r._childCost2 || 0), 0) / yearRows.length;
-    const totalChildOther = yearRows.reduce((sum, r) => sum + (r._childCostOther || 0), 0) / yearRows.length;
+    const totalChild1 = yearRows.reduce((sum, r) => sum + (r._childCost1 ?? 0), 0) / yearRows.length;
+    const totalChild2 = yearRows.reduce((sum, r) => sum + (r._childCost2 ?? 0), 0) / yearRows.length;
+    const totalChildOther = yearRows.reduce((sum, r) => sum + (r._childCostOther ?? 0), 0) / yearRows.length;
     const avgChildCost = yearRows.reduce((sum, r) => sum + r.childCostMonthly, 0) / yearRows.length;
     
     // PCF derived exactly from user request: PCF = lợi nhuận đầu tư hàng tháng + số dư tiết kiệm * 4%
@@ -537,7 +533,7 @@ export function runProjection(input: ProjectionEngineInput): ProjectionOutput {
     );
 
     // Calculate FIRE details for the end-of-year row
-    const yearlyFireRes = calculateFire({
+    const _yearlyFireRes = calculateFire({
       expensesMonthly: lastRow.expensesMonthly,
       netWorth: lastRow.nominalNetWorth,
       withdrawalRate: 4,
@@ -583,7 +579,7 @@ export function runProjection(input: ProjectionEngineInput): ProjectionOutput {
       yearlyRows,
     });
     if (finalFireRes.expectedFireYear) {
-      row.notes = Array.from(new Set([...row.notes, `Đạt mốc FIRE dự kiến vào năm ${finalFireRes.expectedFireYear}`]));
+      row.notes = Array.from(new Set([...row.notes, `Đạt mốc FIRE dự kiến vào năm ${String(finalFireRes.expectedFireYear)}`]));
     }
   });
 

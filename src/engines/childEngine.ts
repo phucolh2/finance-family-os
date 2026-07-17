@@ -61,7 +61,7 @@ export function calculateChildCost(input: ChildEngineInput): ChildCostOutput {
   let healthcare = 0;
   let clothesSupplies = 0;
   let travelExperience = 0;
-  let universityFund = 0;
+  const universityFund = 0;
   let postGradSupport = 0;
   const notes: string[] = [`Con ${childAge} tuổi.`];
 

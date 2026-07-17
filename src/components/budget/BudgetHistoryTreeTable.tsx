@@ -51,7 +51,7 @@ export const BudgetHistoryTreeTable: React.FC<BudgetHistoryTreeTableProps> = ({ 
         <tbody>
           {rootGroups.map((group) => {
             const isExpanded = !!expandedGroups[group.id];
-            const isGroupActive = group.isActive !== false;
+            const isGroupActive = group.isActive;
             const groupMonthly = (income * group.ratioPercent) / 100;
             const groupYearly = groupMonthly * 12;
 
@@ -61,7 +61,7 @@ export const BudgetHistoryTreeTable: React.FC<BudgetHistoryTreeTableProps> = ({ 
                 <tr className={`border-b border-family-accent/10 hover:bg-family-bgDark/10 ${!isGroupActive ? 'opacity-45' : ''}`}>
                   <td className="p-4 font-bold text-family-text flex items-center gap-2">
                     <button 
-                      onClick={() => toggleExpand(group.id)}
+                      onClick={() => { toggleExpand(group.id); }}
                       className="p-1 hover:bg-family-bgDeep rounded-lg text-family-textMuted"
                     >
                       {isExpanded ? <ChevronDown className="w-3.5 h-3.5" /> : <ChevronRight className="w-3.5 h-3.5" />}
@@ -83,8 +83,8 @@ export const BudgetHistoryTreeTable: React.FC<BudgetHistoryTreeTableProps> = ({ 
                 </tr>
 
                 {/* Children Rows */}
-                {isExpanded && group.children && group.children.map((child) => {
-                  const isChildActive = child.isActive !== false && isGroupActive;
+                {isExpanded && group.children?.map((child) => {
+                  const isChildActive = child.isActive && isGroupActive;
                   const childMonthly = (income * child.ratioPercent) / 100;
                   const childYearly = childMonthly * 12;
 

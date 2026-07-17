@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { MessageSquare, X, Send, Key, Settings, Loader2, Bot } from 'lucide-react';
+import { X, Send, Key, Settings, Loader2, Bot } from 'lucide-react';
 import { useAppContext } from '../../context/AppContext';
 import { sendChatMessage } from '../../services/aiService';
 
@@ -78,7 +78,7 @@ export const CopilotChat: React.FC = () => {
   if (!isOpen) {
     return (
       <button
-        onClick={() => setIsOpen(true)}
+        onClick={() => { setIsOpen(true); }}
         className="fixed bottom-6 right-6 w-14 h-14 bg-gradient-to-tr from-family-accent to-blue-500 rounded-full shadow-xl flex items-center justify-center text-white hover:scale-105 transition-transform z-50 animate-bounce"
         title="Trợ lý AI Tài chính"
       >
@@ -97,14 +97,14 @@ export const CopilotChat: React.FC = () => {
         </div>
         <div className="flex items-center gap-2">
           <button 
-            onClick={() => setIsConfiguring(!isConfiguring)} 
+            onClick={() => { setIsConfiguring(!isConfiguring); }} 
             className="p-1.5 hover:bg-white/20 rounded-lg transition-colors"
             title="Cài đặt API Key"
           >
             <Settings className="w-5 h-5" />
           </button>
           <button 
-            onClick={() => setIsOpen(false)} 
+            onClick={() => { setIsOpen(false); }} 
             className="p-1.5 hover:bg-white/20 rounded-lg transition-colors"
           >
             <X className="w-5 h-5" />
@@ -128,7 +128,7 @@ export const CopilotChat: React.FC = () => {
             <input 
               type="password"
               value={apiKey}
-              onChange={(e) => setApiKey(e.target.value)}
+              onChange={(e) => { setApiKey(e.target.value); }}
               placeholder="AIzaSy..."
               className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-family-accent focus:outline-none font-mono text-sm"
             />
@@ -177,7 +177,7 @@ export const CopilotChat: React.FC = () => {
               <input
                 type="text"
                 value={input}
-                onChange={(e) => setInput(e.target.value)}
+                onChange={(e) => { setInput(e.target.value); }}
                 placeholder="Hỏi về kế hoạch tài chính của bạn..."
                 className="w-full pl-4 pr-12 py-3 bg-gray-100 border-transparent rounded-full focus:bg-white focus:ring-2 focus:ring-family-accent focus:outline-none text-sm"
                 disabled={isLoading}

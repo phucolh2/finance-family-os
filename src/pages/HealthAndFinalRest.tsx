@@ -1,13 +1,12 @@
 import React, { useState } from 'react';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '../components/ui/Card';
 import { Input } from '../components/ui/Input';
-import { Button } from '../components/ui/Button';
 import { WarningBox } from '../components/ui/WarningBox';
 import { calculateHealthDefense } from '../engines/healthEngine';
 import { formatKpiMoneyVNDMillion } from '../utils/format';
 import { safeNumber } from '../utils/math';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
-import { Shield, Sparkles, HeartPulse, ShieldAlert, Save } from 'lucide-react';
+import { Shield, HeartPulse, ShieldAlert } from 'lucide-react';
 import { HelpTooltip } from '../components/ui/HelpTooltip';
 
 export const HealthAndFinalRest: React.FC = () => {
@@ -128,42 +127,42 @@ export const HealthAndFinalRest: React.FC = () => {
                 type="number"
                 suffix="Tr VND"
                 value={criticalIllnessReserveTarget}
-                onChange={(e) => setCriticalIllnessReserveTarget(safeNumber(Number(e.target.value)))}
+                onChange={(e) => { setCriticalIllnessReserveTarget(safeNumber(Number(e.target.value))); }}
               />
               <Input
                 label="Hạn mức quỹ y tế (Cap)"
                 type="number"
                 suffix="Tr VND"
                 value={healthFundCap}
-                onChange={(e) => setHealthFundCap(safeNumber(Number(e.target.value)))}
+                onChange={(e) => { setHealthFundCap(safeNumber(Number(e.target.value))); }}
               />
               <Input
                 label="Hạn mức thanh khoản khẩn cấp (Cap)"
                 type="number"
                 suffix="Tr VND"
                 value={liquidityFundCap}
-                onChange={(e) => setLiquidityFundCap(safeNumber(Number(e.target.value)))}
+                onChange={(e) => { setLiquidityFundCap(safeNumber(Number(e.target.value))); }}
               />
               <Input
                 label="Số dư quỹ phòng vệ y tế hiện tại"
                 type="number"
                 suffix="Tr VND"
                 value={currentHealthFund}
-                onChange={(e) => setCurrentHealthFund(safeNumber(Number(e.target.value)))}
+                onChange={(e) => { setCurrentHealthFund(safeNumber(Number(e.target.value))); }}
               />
               <Input
                 label="Đóng góp tiết kiệm hàng tháng"
                 type="number"
                 suffix="Tr VND/tháng"
                 value={monthlyContribution}
-                onChange={(e) => setMonthlyContribution(safeNumber(Number(e.target.value)))}
+                onChange={(e) => { setMonthlyContribution(safeNumber(Number(e.target.value))); }}
               />
               <Input
                 label="Chi phí hậu sự (Mức hôm nay)"
                 type="number"
                 suffix="Tr VND"
                 value={finalRestCostToday}
-                onChange={(e) => setFinalRestCostToday(safeNumber(Number(e.target.value)))}
+                onChange={(e) => { setFinalRestCostToday(safeNumber(Number(e.target.value))); }}
               />
               <div className="grid grid-cols-2 gap-2">
                 <Input
@@ -171,14 +170,14 @@ export const HealthAndFinalRest: React.FC = () => {
                   type="number"
                   suffix="%"
                   value={medicalInflationRate}
-                  onChange={(e) => setMedicalInflationRate(safeNumber(Number(e.target.value)))}
+                  onChange={(e) => { setMedicalInflationRate(safeNumber(Number(e.target.value))); }}
                 />
                 <Input
                   label="Lạm phát dịch vụ hậu sự"
                   type="number"
                   suffix="%"
                   value={finalRestInflationRate}
-                  onChange={(e) => setFinalRestInflationRate(safeNumber(Number(e.target.value)))}
+                  onChange={(e) => { setFinalRestInflationRate(safeNumber(Number(e.target.value))); }}
                 />
               </div>
             </div>

@@ -103,7 +103,7 @@ export const SavingsDepositModule: React.FC<SavingsDepositModuleProps> = ({
             Tạo các khoản gửi tiết kiệm từ phần tiền <strong>nhàn rỗi</strong> hoặc <strong>đã lên kế hoạch</strong>.
           </p>
         </div>
-        <Button onClick={() => setShowAddSavingsForm(!showAddSavingsForm)} size="sm" className="gap-1 text-xs py-1 h-8 shrink-0">
+        <Button onClick={() => { setShowAddSavingsForm(!showAddSavingsForm); }} size="sm" className="gap-1 text-xs py-1 h-8 shrink-0">
           <Plus className="w-3.5 h-3.5" /> Tạo khoản tiết kiệm
         </Button>
       </div>
@@ -115,21 +115,21 @@ export const SavingsDepositModule: React.FC<SavingsDepositModuleProps> = ({
             <Input
               label="Tên khoản"
               value={savingsForm.name}
-              onChange={(e) => setSavingsForm({ ...savingsForm, name: e.target.value })}
+              onChange={(e) => { setSavingsForm({ ...savingsForm, name: e.target.value }); }}
               placeholder="VD: Tiết kiệm VCB 12 tháng"
             />
             <Input
               label="Số tiền gốc (Tr VND)"
               type="number"
               value={savingsForm.principal}
-              onChange={(e) => setSavingsForm({ ...savingsForm, principal: safeNumber(Number(e.target.value), 0) })}
+              onChange={(e) => { setSavingsForm({ ...savingsForm, principal: safeNumber(Number(e.target.value), 0) }); }}
             />
             <div>
               <label className="block text-xs font-semibold text-family-textMuted uppercase tracking-wider mb-1">Kì hạn</label>
               <select
                 className="block w-full rounded-xl border border-family-accent/20 bg-white/60 py-2.5 px-3 text-sm text-family-text focus:border-family-accent focus:bg-white focus:outline-none focus:ring-1 focus:ring-family-accent transition-colors"
                 value={savingsForm.termMonths}
-                onChange={(e) => setSavingsForm({ ...savingsForm, termMonths: Number(e.target.value) })}
+                onChange={(e) => { setSavingsForm({ ...savingsForm, termMonths: Number(e.target.value) }); }}
               >
                 <option value={1}>1 tháng</option>
                 <option value={3}>3 tháng</option>
@@ -145,7 +145,7 @@ export const SavingsDepositModule: React.FC<SavingsDepositModuleProps> = ({
               label="Lãi suất (%/năm)"
               type="number"
               value={savingsForm.interestRate}
-              onChange={(e) => setSavingsForm({ ...savingsForm, interestRate: safeNumber(Number(e.target.value), 0) })}
+              onChange={(e) => { setSavingsForm({ ...savingsForm, interestRate: safeNumber(Number(e.target.value), 0) }); }}
             />
             <Input
               label="Tháng bắt đầu"
@@ -153,7 +153,7 @@ export const SavingsDepositModule: React.FC<SavingsDepositModuleProps> = ({
               min={1}
               max={12}
               value={savingsForm.startMonth}
-              onChange={(e) => setSavingsForm({ ...savingsForm, startMonth: safeNumber(Number(e.target.value), 1) })}
+              onChange={(e) => { setSavingsForm({ ...savingsForm, startMonth: safeNumber(Number(e.target.value), 1) }); }}
             />
             <Input
               label="Năm bắt đầu"
@@ -161,14 +161,14 @@ export const SavingsDepositModule: React.FC<SavingsDepositModuleProps> = ({
               min={2024}
               max={2060}
               value={savingsForm.startYear}
-              onChange={(e) => setSavingsForm({ ...savingsForm, startYear: safeNumber(Number(e.target.value), 2026) })}
+              onChange={(e) => { setSavingsForm({ ...savingsForm, startYear: safeNumber(Number(e.target.value), 2026) }); }}
             />
             <div>
               <label className="block text-xs font-semibold text-family-textMuted uppercase tracking-wider mb-1">Nguồn vốn</label>
               <select
                 className="block w-full rounded-xl border border-family-accent/20 bg-white/60 py-2.5 px-3 text-sm text-family-text focus:border-family-accent focus:bg-white focus:outline-none focus:ring-1 focus:ring-family-accent transition-colors"
                 value={savingsForm.pool}
-                onChange={(e) => setSavingsForm({ ...savingsForm, pool: e.target.value as 'idle' | 'planned' })}
+                onChange={(e) => { setSavingsForm({ ...savingsForm, pool: e.target.value as 'idle' | 'planned' }); }}
               >
                 <option value="idle">Chưa có kế hoạch</option>
                 <option value="planned">Đã lên kế hoạch</option>
@@ -218,7 +218,7 @@ export const SavingsDepositModule: React.FC<SavingsDepositModuleProps> = ({
             >
               <Save className="w-3.5 h-3.5" /> Lưu
             </Button>
-            <Button variant="secondary" size="sm" onClick={() => setShowAddSavingsForm(false)}>Hủy</Button>
+            <Button variant="secondary" size="sm" onClick={() => { setShowAddSavingsForm(false); }}>Hủy</Button>
           </div>
         </div>
       )}
@@ -306,7 +306,7 @@ export const SavingsDepositModule: React.FC<SavingsDepositModuleProps> = ({
                             </button>
                           )}
                           <button
-                            onClick={() => deleteSavingsDeposit(dep.id)}
+                            onClick={() => { deleteSavingsDeposit(dep.id); }}
                             className="p-1 rounded-md text-family-textMuted hover:text-red-500 hover:bg-red-500/10 transition-all"
                             title="Xóa"
                           >
@@ -388,7 +388,7 @@ export const SavingsDepositModule: React.FC<SavingsDepositModuleProps> = ({
                                   type="number"
                                   step="0.01"
                                   value={settleSavingsForm.realizedInterest}
-                                  onChange={(e) => setSettleSavingsForm({ ...settleSavingsForm, realizedInterest: safeNumber(Number(e.target.value), 0) })}
+                                  onChange={(e) => { setSettleSavingsForm({ ...settleSavingsForm, realizedInterest: safeNumber(Number(e.target.value), 0) }); }}
                                   className="w-20 text-center bg-white rounded-lg border border-sky-205 p-1 font-bold text-sky-700"
                                   required
                                 />
@@ -432,7 +432,7 @@ export const SavingsDepositModule: React.FC<SavingsDepositModuleProps> = ({
                               </button>
                               <button
                                 type="button"
-                                onClick={() => setSettlingSavingsId(null)}
+                                onClick={() => { setSettlingSavingsId(null); }}
                                 className="px-3 py-1.5 bg-slate-100 hover:bg-slate-200 text-family-text rounded-lg font-semibold transition-all"
                               >
                                 Hủy

@@ -58,7 +58,7 @@ export function formatMoneyVNDMillion(
   const absNum = Math.abs(num);
   let mode = options?.mode ?? 'auto';
   let shortUnit = options?.shortUnit ?? false;
-  let decimals = options?.decimals ?? 2;
+  const decimals = options?.decimals ?? 2;
   const showUnit = options?.showUnit ?? true;
   const isTooltip = options?.isTooltip ?? false;
 
@@ -97,7 +97,7 @@ export function formatMoneyVNDMillion(
   let formattedNum = scaledValue.toFixed(decimals);
   
   // Remove unnecessary trailing zeroes e.g. 1.0 -> 1, 1.20 -> 1.2
-  if (formattedNum.indexOf('.') >= 0) {
+  if (formattedNum.includes('.')) {
     formattedNum = formattedNum.replace(/\.?0+$/, '');
   }
 
@@ -175,7 +175,7 @@ export function formatPercent(value: unknown, decimals = 1): string {
   if (isNaN(num)) return '—';
   
   let formatted = num.toFixed(decimals);
-  if (formatted.indexOf('.') >= 0) {
+  if (formatted.includes('.')) {
     formatted = formatted.replace(/\.?0+$/, '');
   }
   return `${formatted}%`;

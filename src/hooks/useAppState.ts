@@ -63,10 +63,14 @@ export function useAppState() {
     try {
       const stored = localStorage.getItem(LOCAL_STORAGE_KEY);
       if (stored) {
-        const parsed = JSON.parse(stored);
-        return parsed.updatedAt || new Date().toISOString();
+        const parsed = JSON.parse(stored) as Record<string, unknown>;
+        if (parsed.updatedAt) {
+          return parsed.updatedAt as string;
+        }
       }
-    } catch (_) {}
+    } catch {
+      // ignore
+    }
     return new Date().toISOString();
   });
 
@@ -74,7 +78,7 @@ export function useAppState() {
     try {
       const stored = localStorage.getItem(LOCAL_STORAGE_KEY);
       if (stored) {
-        let parsed;
+        let parsed: unknown;
         try {
           parsed = JSON.parse(stored);
         } catch (parseError) {
@@ -97,7 +101,7 @@ export function useAppState() {
             migrated.profile,
             migrated.incomeSchedule,
             migrated.budgetSchedule,
-            migrated.expenseSchedule || [],
+            migrated.expenseSchedule,
             migrated.assets,
             migrated.assumptions,
             migrated.lifeStages
@@ -129,7 +133,7 @@ export function useAppState() {
         console.error('Failed to write to localStorage:', err);
       }
     }, 500); // 500ms debounce
-    return () => clearTimeout(handler);
+    return () => { clearTimeout(handler); };
   }, [state]);
 
   const saveState = (newState: AppState) => {
@@ -137,7 +141,7 @@ export function useAppState() {
       newState.profile,
       newState.incomeSchedule,
       newState.budgetSchedule,
-      newState.expenseSchedule || [],
+      newState.expenseSchedule,
       newState.assets,
       newState.assumptions,
       newState.lifeStages
@@ -147,12 +151,12 @@ export function useAppState() {
       profile: newState.profile,
       incomeSchedule: newState.incomeSchedule,
       budgetSchedule: newState.budgetSchedule,
-      expenseSchedule: newState.expenseSchedule || [],
-      lifeEvents: newState.lifeEvents || [],
+      expenseSchedule: newState.expenseSchedule,
+      lifeEvents: newState.lifeEvents,
       assets: newState.assets,
       assumptions: newState.assumptions,
-      investmentDeals: newState.investmentDeals || [],
-      savingsDeposits: newState.savingsDeposits || [],
+      investmentDeals: newState.investmentDeals ?? [],
+      savingsDeposits: newState.savingsDeposits ?? [],
       projectionAdjustments: newState.projectionAdjustments,
       lifeStages: newState.lifeStages,
     });
@@ -162,7 +166,7 @@ export function useAppState() {
       if (projRow) {
         const port = projRow.portfolio;
         const invested = newState.assets.reduce((sum, asset) => sum + port.assets[asset.type].endingBalance, 0);
-        const planned = newState.assets.reduce((sum, asset) => sum + (port.assets[asset.type].earmarkedEndingBalance || 0), 0);
+        const planned = newState.assets.reduce((sum, asset) => sum + (port.assets[asset.type].earmarkedEndingBalance ?? 0), 0);
         const idle = Math.max(0, port.totalEndingBalance - invested - planned);
 
         return {
@@ -205,7 +209,7 @@ export function useAppState() {
   const addIncomeItem = (item: Omit<IncomeScheduleItem, 'id'>) => {
     const newItem: IncomeScheduleItem = {
       ...item,
-      id: `income_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+      id: `id_${Date.now().toString()}_${Math.random().toString(36).substring(2, 9)}`,
     };
 
     let updatedSchedule = [...state.incomeSchedule];
@@ -271,7 +275,7 @@ export function useAppState() {
   const addBudgetScheduleItem = (item: Omit<BudgetRatioScheduleItem, 'id'>) => {
     const newItem: BudgetRatioScheduleItem = {
       ...item,
-      id: `budget_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+      id: `budget_${Date.now()}_${Math.random().toString(36).substring(2, 9)}`,
     };
 
     let updatedSchedule = [...state.budgetSchedule];
@@ -337,7 +341,7 @@ export function useAppState() {
   const addExpenseScheduleItem = (item: Omit<import('../types/budget').ExpenseScheduleItem, 'id'>) => {
     const newItem: import('../types/budget').ExpenseScheduleItem = {
       ...item,
-      id: `expense_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+      id: `expense_${Date.now()}_${Math.random().toString(36).substring(2, 9)}`,
     };
 
     let updatedSchedule = [...state.expenseSchedule];
@@ -410,7 +414,7 @@ export function useAppState() {
   const addLifeEvent = (item: Omit<LifeEvent, 'id'>) => {
     const newItem: LifeEvent = {
       ...item,
-      id: `event_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+      id: `event_${Date.now()}_${Math.random().toString(36).substring(2, 9)}`,
     };
     saveState({
       ...state,
@@ -436,32 +440,32 @@ export function useAppState() {
   const addInvestmentDeal = (item: Omit<InvestmentDeal, 'id'>) => {
     const newItem: InvestmentDeal = {
       ...item,
-      id: `deal_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+      id: `deal_${Date.now()}_${Math.random().toString(36).substring(2, 9)}`,
     };
     saveState({
       ...state,
-      investmentDeals: [...(state.investmentDeals || []), newItem],
+      investmentDeals: [...(state.investmentDeals ?? []), newItem],
     });
   };
 
   const updateInvestmentDeal = (updated: InvestmentDeal) => {
     saveState({
       ...state,
-      investmentDeals: (state.investmentDeals || []).map((item) => (item.id === updated.id ? updated : item)),
+      investmentDeals: (state.investmentDeals ?? []).map((item) => (item.id === updated.id ? updated : item)),
     });
   };
 
   const deleteInvestmentDeal = (id: string) => {
     saveState({
       ...state,
-      investmentDeals: (state.investmentDeals || []).filter((item) => item.id !== id),
+      investmentDeals: (state.investmentDeals ?? []).filter((item) => item.id !== id),
     });
   };
 
   const settleInvestmentDeal = (id: string, endMonth: number, endYear: number, realizedProfit: number) => {
     saveState({
       ...state,
-      investmentDeals: (state.investmentDeals || []).map((item) => {
+      investmentDeals: (state.investmentDeals ?? []).map((item) => {
         if (item.id === id) {
           return {
             ...item,
@@ -480,32 +484,32 @@ export function useAppState() {
   const addSavingsDeposit = (item: Omit<SavingsDeposit, 'id'>) => {
     const newItem: SavingsDeposit = {
       ...item,
-      id: `saving_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+      id: `saving_${Date.now()}_${Math.random().toString(36).substring(2, 9)}`,
     };
     saveState({
       ...state,
-      savingsDeposits: [...(state.savingsDeposits || []), newItem],
+      savingsDeposits: [...(state.savingsDeposits ?? []), newItem],
     });
   };
 
   const updateSavingsDeposit = (updated: SavingsDeposit) => {
     saveState({
       ...state,
-      savingsDeposits: (state.savingsDeposits || []).map((item) => (item.id === updated.id ? updated : item)),
+      savingsDeposits: (state.savingsDeposits ?? []).map((item) => (item.id === updated.id ? updated : item)),
     });
   };
 
   const deleteSavingsDeposit = (id: string) => {
     saveState({
       ...state,
-      savingsDeposits: (state.savingsDeposits || []).filter((item) => item.id !== id),
+      savingsDeposits: (state.savingsDeposits ?? []).filter((item) => item.id !== id),
     });
   };
 
   const settleSavingsDepositEarly = (id: string, settledMonth: number, settledYear: number, realizedInterest: number) => {
     saveState({
       ...state,
-      savingsDeposits: (state.savingsDeposits || []).map((item) => {
+      savingsDeposits: (state.savingsDeposits ?? []).map((item) => {
         if (item.id === id) {
           return {
             ...item,
@@ -528,30 +532,30 @@ export function useAppState() {
   const addProjectionAdjustment = (item: Omit<ProjectionAdjustmentRecord, 'id'>) => {
     const newItem: ProjectionAdjustmentRecord = {
       ...item,
-      id: `adj_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+      id: `adj_${Date.now()}_${Math.random().toString(36).substring(2, 9)}`,
     };
     saveState({
       ...state,
-      projectionAdjustments: [...(state.projectionAdjustments || []), newItem],
+      projectionAdjustments: [...(state.projectionAdjustments ?? []), newItem],
     });
   };
 
   const updateProjectionAdjustment = (updated: ProjectionAdjustmentRecord) => {
     saveState({
       ...state,
-      projectionAdjustments: (state.projectionAdjustments || []).map((item) => (item.id === updated.id ? updated : item)),
+      projectionAdjustments: (state.projectionAdjustments ?? []).map((item) => (item.id === updated.id ? updated : item)),
     });
   };
 
   const deleteProjectionAdjustment = (id: string) => {
     saveState({
       ...state,
-      projectionAdjustments: (state.projectionAdjustments || []).filter((item) => item.id !== id),
+      projectionAdjustments: (state.projectionAdjustments ?? []).filter((item) => item.id !== id),
     });
   };
 
   // Safe import JSON helper with strict schema checks
-  const importState = (imported: any): { success: boolean; error?: string } => {
+  const importState = (imported: unknown): { success: boolean; error?: string } => {
     try {
       const migrated = migrateState(imported, INITIAL_APP_STATE);
       if (validateAppState(migrated)) {
@@ -559,8 +563,8 @@ export function useAppState() {
         return { success: true };
       }
       return { success: false, error: 'Định dạng dữ liệu JSON không đúng chuẩn AppState.' };
-    } catch (err: any) {
-      return { success: false, error: err.message || 'Lỗi đọc tệp dữ liệu nhập khẩu.' };
+    } catch (err: unknown) {
+      return { success: false, error: err instanceof Error ? err.message : 'Lỗi đọc tệp dữ liệu nhập khẩu.' };
     }
   };
 

@@ -1,5 +1,5 @@
 import type { ResolvedMonthlyDbItem, LifeEvent } from '../types/finance';
-import type { BudgetMainGroupId, BudgetGroup } from '../types/budget';
+import type { BudgetGroup } from '../types/budget';
 import { safeNumber } from '../utils/math';
 
 export interface ExpenseGroupSummary {
@@ -44,7 +44,7 @@ export function analyzeExpense(
   
   if (!targetPeriod && resolvedMonthlyDb.length > 0) {
     const now = new Date();
-    const nowKey = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
+    const nowKey = `${String(now.getFullYear())}-${String(now.getMonth() + 1).padStart(2, '0')}`;
     const foundNow = resolvedMonthlyDb.find(db => db.periodKey === nowKey);
     targetPeriod = foundNow ? nowKey : resolvedMonthlyDb[0].periodKey;
   }
@@ -93,13 +93,13 @@ export function analyzeExpense(
         // categoryId is in format "groupId/itemId" or just "groupId"
         const groupId = categoryId.split('/')[0];
         
-        if (monthlyActuals[groupId] !== undefined) {
+        if (groupId in monthlyActuals) {
           monthlyActuals[groupId] += expenseAmount;
         }
         
         // Only sum actual expenses for 'all', excluding legacy investment/savings entries
         if (expenseGroupsSet.has(groupId)) {
-          monthlyActuals['all'] += expenseAmount;
+          monthlyActuals.all += expenseAmount;
         }
       });
     }

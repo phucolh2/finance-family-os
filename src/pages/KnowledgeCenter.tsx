@@ -3,18 +3,12 @@ import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '../co
 import { Input } from '../components/ui/Input';
 import { Select } from '../components/ui/Select';
 import { KNOWLEDGE_ITEMS } from '../data/knowledgeItems';
-import { Button } from '../components/ui/Button';
 import { 
   BookOpen, 
-  Search, 
-  Filter, 
   Info, 
   Award, 
   Lightbulb, 
-  Heart, 
-  Flame, 
   HeartHandshake, 
-  AlertTriangle, 
   Sparkles,
   CheckCircle2,
   XCircle,
@@ -57,7 +51,7 @@ export const KnowledgeCenter: React.FC = () => {
       {/* Tab Switcher */}
       <div className="flex gap-2 border-b border-family-accent/15 pb-2">
         <button
-          onClick={() => setActiveSubTab('economics')}
+          onClick={() => { setActiveSubTab('economics'); }}
           className={`px-4 py-2 text-xs font-bold rounded-xl transition-all ${
             activeSubTab === 'economics'
               ? 'bg-family-accent text-white shadow-sm'
@@ -67,7 +61,7 @@ export const KnowledgeCenter: React.FC = () => {
           🔬 Lý thuyết Tài chính & Kinh tế
         </button>
         <button
-          onClick={() => setActiveSubTab('relationship')}
+          onClick={() => { setActiveSubTab('relationship'); }}
           className={`px-4 py-2 text-xs font-bold rounded-xl transition-all ${
             activeSubTab === 'relationship'
               ? 'bg-family-accent text-white shadow-sm'
@@ -90,14 +84,14 @@ export const KnowledgeCenter: React.FC = () => {
                   type="text"
                   placeholder="Nhập tên lý thuyết, tác giả hoặc từ khóa..."
                   value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
+                  onChange={(e) => { setSearchQuery(e.target.value); }}
                 />
               </div>
               <div className="w-full md:w-64">
                 <Select
                   label="Lọc theo Module ứng dụng"
                   value={filterModule}
-                  onChange={(e) => setFilterModule(e.target.value)}
+                  onChange={(e) => { setFilterModule(e.target.value); }}
                   options={[
                     { value: 'all', label: 'Tất cả module' },
                     ...uniqueModules.map((m) => ({ value: m, label: m })),

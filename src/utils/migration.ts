@@ -1,19 +1,23 @@
-import type { AppState, PersistedAppState } from '../types/finance';
+import type { AppState } from '../types/finance';
+import type { AssetConfig } from '../types/portfolio';
+import type { BudgetRatioScheduleItem, BudgetTreeNode } from '../types/budget';
 
 /**
  * Validates whether an object matches the AppState schema.
  */
-export function validateAppState(data: any): boolean {
+export function validateAppState(data: unknown): boolean {
   if (!data || typeof data !== 'object') return false;
 
+  const d = data as Record<string, unknown>;
+
   // Check critical fields
-  if (!data.profile || typeof data.profile !== 'object') return false;
-  if (!data.assumptions || typeof data.assumptions !== 'object') return false;
+  if (!d.profile || typeof d.profile !== 'object') return false;
+  if (!d.assumptions || typeof d.assumptions !== 'object') return false;
   
-  if (!Array.isArray(data.incomeSchedule)) return false;
-  if (!Array.isArray(data.budgetSchedule)) return false;
-  if (!Array.isArray(data.assets)) return false;
-  if (!Array.isArray(data.lifeEvents)) return false;
+  if (!Array.isArray(d.incomeSchedule)) return false;
+  if (!Array.isArray(d.budgetSchedule)) return false;
+  if (!Array.isArray(d.assets)) return false;
+  if (!Array.isArray(d.lifeEvents)) return false;
 
   return true;
 }
@@ -22,21 +26,23 @@ export function validateAppState(data: any): boolean {
  * Migrates old persisted states to the current version.
  * If migration fails or state is corrupted, returns defaultState safely.
  */
-export function migrateState(stored: any, defaultState: AppState): AppState {
+export function migrateState(stored: unknown, defaultState: AppState): AppState {
   try {
     if (!stored || typeof stored !== 'object') {
       return defaultState;
     }
 
+    const s = stored as Record<string, unknown>;
+
     // 1. If stored state has schema version structure
-    let data: any = null;
-    const version = Number(stored.schemaVersion);
+    let data: Record<string, unknown> | null = null;
+    const version = Number(s.schemaVersion);
 
     if (version === 1) {
-      data = stored.data;
+      data = s.data as Record<string, unknown>;
     } else if (validateAppState(stored)) {
       // Direct raw AppState imported without version wrapper
-      data = stored;
+      data = s;
     }
 
     if (!data || !validateAppState(data)) {
@@ -48,20 +54,21 @@ export function migrateState(stored: any, defaultState: AppState): AppState {
     return {
       profile: {
         ...defaultState.profile,
-        ...data.profile,
+        ...(data.profile as Record<string, unknown>),
       },
       incomeSchedule: Array.isArray(data.incomeSchedule) ? data.incomeSchedule : defaultState.incomeSchedule,
       budgetSchedule: (() => {
         const rawSchedule = Array.isArray(data.budgetSchedule) ? data.budgetSchedule : defaultState.budgetSchedule;
-        return rawSchedule.map((item: any) => {
-          if (!item || typeof item !== 'object') return item;
-          let rootGroups = item.rootGroups;
-          if (!rootGroups || rootGroups.length === 0) {
-            const flatRatios = Array.isArray(item.ratios) ? item.ratios : [];
-            const newTree = JSON.parse(JSON.stringify(defaultState.budgetSchedule[0].rootGroups));
-            newTree.forEach((group: any) => {
+        return rawSchedule.map((item: unknown) => {
+          if (!item || typeof item !== 'object') return item as BudgetRatioScheduleItem;
+          const objItem = item as Record<string, unknown>;
+          let rootGroups = objItem.rootGroups as BudgetTreeNode[];
+          if (!Array.isArray(rootGroups) || rootGroups.length === 0) {
+            const flatRatios = Array.isArray(objItem.ratios) ? objItem.ratios : [];
+            const newTree = JSON.parse(JSON.stringify(defaultState.budgetSchedule[0].rootGroups)) as BudgetTreeNode[];
+            newTree.forEach((group: BudgetTreeNode) => {
               const matchedFlat = flatRatios.find(
-                (r: any) => 
+                (r: Record<string, unknown>) => 
                   r.group === group.groupId || 
                   (group.groupId === 'housing_basic' && r.categoryId === 'housing-basic') ||
                   (group.groupId === 'future_investing' && r.categoryId === 'future-investing') ||
@@ -70,13 +77,13 @@ export function migrateState(stored: any, defaultState: AppState): AppState {
                   (group.groupId === 'health_growth' && r.categoryId === 'health-growth')
               );
               if (matchedFlat) {
-                group.ratioPercent = matchedFlat.ratioPercent;
+                group.ratioPercent = Number(matchedFlat.ratioPercent);
                 if (group.children && group.children.length > 0) {
-                  const defaultChildrenSum = group.children.reduce((sum: number, c: any) => sum + c.ratioPercent, 0);
+                  const defaultChildrenSum = group.children.reduce((sum: number, c: BudgetTreeNode) => sum + c.ratioPercent, 0);
                   if (defaultChildrenSum > 0) {
                     let remaining = group.ratioPercent;
-                    group.children.forEach((child: any, idx: number) => {
-                      if (idx === group.children.length - 1) {
+                    group.children.forEach((child: BudgetTreeNode, idx: number) => {
+                      if (group.children && idx === group.children.length - 1) {
                         child.ratioPercent = remaining;
                       } else {
                         const share = Math.round((child.ratioPercent / defaultChildrenSum) * group.ratioPercent * 10) / 10;
@@ -91,16 +98,16 @@ export function migrateState(stored: any, defaultState: AppState): AppState {
             rootGroups = newTree;
           }
           return {
-            ...item,
+            ...objItem,
             rootGroups,
-          };
+          } as unknown as BudgetRatioScheduleItem;
         });
       })(),
       lifeStages: Array.isArray(data.lifeStages) ? data.lifeStages : defaultState.lifeStages,
       lifeEvents: Array.isArray(data.lifeEvents) ? data.lifeEvents : defaultState.lifeEvents,
       assets: (() => {
         const rawAssets = Array.isArray(data.assets) ? data.assets : defaultState.assets;
-        const safeNum = (v: any) => {
+        const safeNum = (v: unknown) => {
           const n = Number(v);
           return isNaN(n) || !isFinite(n) ? 0 : n;
         };
@@ -117,22 +124,24 @@ export function migrateState(stored: any, defaultState: AppState): AppState {
           'Chứng khoán': 'stocks',
         };
 
-        const migratedList: any[] = [];
+        const migratedList: AssetConfig[] = [];
         
-        rawAssets.forEach((asset: any) => {
+        rawAssets.forEach((asset: unknown) => {
           if (!asset || typeof asset !== 'object') return;
-          const newType = oldAssetIdToNewAssetId[asset.type] || asset.type;
+          const a = asset as Record<string, unknown>;
+          const assetType = String(a.type);
+          const newType = oldAssetIdToNewAssetId[assetType] || assetType;
           
-          if (migratedList.some(a => a.type === newType)) return;
+          if (migratedList.some(migrated => migrated.type === newType)) return;
           
           migratedList.push({
-            ...asset,
-            type: newType,
+            ...(a as unknown as AssetConfig),
+            type: newType as AssetConfig['type'],
             name: newType === 'fx_reserve_usd' ? 'Dự trữ ngoại hối (USD)' :
                   newType === 'real_estate' ? 'Bất Động Sản' :
                   newType === 'stocks' ? 'Chứng Khoán' :
                   newType === 'gold' ? 'Vàng' :
-                  asset.name,
+                  (typeof a.name === 'string' ? a.name : ''),
           });
         });
 
@@ -148,8 +157,8 @@ export function migrateState(stored: any, defaultState: AppState): AppState {
           });
         }
 
-        const standardTypes = ['fx_reserve_usd', 'gold', 'real_estate', 'stocks', 'crypto'];
-        const finalAssets: any[] = [];
+        const standardTypes: AssetConfig['type'][] = ['fx_reserve_usd', 'gold', 'real_estate', 'stocks', 'crypto'];
+        const finalAssets: AssetConfig[] = [];
 
         standardTypes.forEach((type) => {
           const existing = migratedList.find(a => a.type === type);
@@ -177,13 +186,13 @@ export function migrateState(stored: any, defaultState: AppState): AppState {
       })(),
       assumptions: {
         ...defaultState.assumptions,
-        ...data.assumptions,
+        ...(data.assumptions as Record<string, unknown>),
       },
       expenseSchedule: Array.isArray(data.expenseSchedule) ? data.expenseSchedule : defaultState.expenseSchedule,
       investmentDeals: Array.isArray(data.investmentDeals) ? data.investmentDeals : defaultState.investmentDeals,
       savingsDeposits: Array.isArray(data.savingsDeposits) ? data.savingsDeposits : [],
       resolvedMonthlyDb: Array.isArray(data.resolvedMonthlyDb) ? data.resolvedMonthlyDb : undefined,
-      resolvedMonthlyDbMap: data.resolvedMonthlyDbMap && typeof data.resolvedMonthlyDbMap === 'object' ? data.resolvedMonthlyDbMap : undefined,
+      resolvedMonthlyDbMap: data.resolvedMonthlyDbMap && typeof data.resolvedMonthlyDbMap === 'object' ? data.resolvedMonthlyDbMap as AppState['resolvedMonthlyDbMap'] : undefined,
     };
   } catch (err) {
     console.error('Migration failed. Resetting to defaultState to prevent crash.', err);

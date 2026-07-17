@@ -85,9 +85,9 @@ export const BudgetHistoryTrendChart: React.FC<BudgetHistoryTrendChartProps> = (
     if (selectedGroupKey) {
       // Drill-down mode
       const parentGroup = activeVersion.rootGroups?.find(g => (g.groupId || g.id) === selectedGroupKey);
-      if (parentGroup && parentGroup.children) {
+      if (parentGroup?.children) {
         parentGroup.children.forEach(child => {
-          if (child.isActive === false) return;
+          if (!child.isActive) return;
           const val = child.ratioPercent;
           const dispName = child.name;
           activeSeriesNames.add(dispName);
@@ -98,7 +98,7 @@ export const BudgetHistoryTrendChart: React.FC<BudgetHistoryTrendChartProps> = (
       // Top-level mode
       if (activeVersion.rootGroups && activeVersion.rootGroups.length > 0) {
         activeVersion.rootGroups.forEach((group) => {
-          if (group.isActive === false) return;
+          if (!group.isActive) return;
           const stableKey = group.groupId || group.id;
           const dispName = groupDisplayNames[stableKey] || group.name;
           activeSeriesNames.add(dispName);
@@ -106,7 +106,7 @@ export const BudgetHistoryTrendChart: React.FC<BudgetHistoryTrendChartProps> = (
         });
       } else if (activeVersion.ratios && activeVersion.ratios.length > 0) {
         activeVersion.ratios.forEach((ratio) => {
-          if (ratio.isActive === false) return;
+          if (!ratio.isActive) return;
           const dispName = groupDisplayNames[ratio.group] || ratio.categoryName || ratio.group;
           activeSeriesNames.add(dispName);
           dataRow[dispName] = (dataRow[dispName] || 0) + Math.round((income * ratio.ratioPercent / 100) * 10) / 10;
@@ -133,7 +133,7 @@ export const BudgetHistoryTrendChart: React.FC<BudgetHistoryTrendChartProps> = (
       {selectedGroupKey && (
         <>
           <button
-            onClick={() => setSelectedGroupKey(null)}
+            onClick={() => { setSelectedGroupKey(null); }}
             className="absolute top-0 left-2 z-10 flex items-center gap-1 bg-family-bgDark/40 hover:bg-family-primary text-white text-[10px] font-bold px-3 py-1.5 rounded-lg shadow-sm transition-all"
           >
             <ChevronLeft className="w-3 h-3" />

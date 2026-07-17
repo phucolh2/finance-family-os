@@ -2,18 +2,15 @@ import React from 'react';
 import {
   Home,
   Wallet,
-  PieChart,
   Calendar,
   Milestone,
   GitBranch,
-  TrendingUp,
   Briefcase,
   Flame,
   HeartPulse,
   BookOpen,
   Settings,
   X,
-  MessageSquare,
   Map,
   History,
   Activity,
@@ -97,7 +94,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ activeTab, setActiveTab, onClo
               return (
                 <button
                   key={item.id}
-                  onClick={() => handleItemClick(item.id)}
+                  onClick={() => { handleItemClick(item.id); }}
                   className={`w-full flex items-center gap-3 px-3 py-2.5 text-xs font-semibold rounded-xl transition-all duration-150 ${
                     isActive
                       ? 'bg-family-accent text-white shadow-md shadow-family-accent/15'

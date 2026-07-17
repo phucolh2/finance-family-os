@@ -23,10 +23,10 @@ export const HelpTooltip: React.FC<HelpTooltipProps> = ({ text, position = 'bott
   return (
     <div
       className="relative inline-block ml-2 select-none"
-      onMouseEnter={() => setVisible(true)}
-      onMouseLeave={() => setVisible(false)}
-      onFocus={() => setVisible(true)}
-      onBlur={() => setVisible(false)}
+      onMouseEnter={() => { setVisible(true); }}
+      onMouseLeave={() => { setVisible(false); }}
+      onFocus={() => { setVisible(true); }}
+      onBlur={() => { setVisible(false); }}
     >
       <HelpCircle className="w-4 h-4 text-family-textLight hover:text-family-accent transition-colors cursor-help" />
       {visible && (

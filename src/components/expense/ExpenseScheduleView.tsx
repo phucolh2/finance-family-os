@@ -1,11 +1,10 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState } from 'react';
 import { useAppContext } from '../../context/AppContext';
 import { Card, CardHeader, CardTitle, CardContent, CardDescription } from '../ui/Card';
 import { Button } from '../../components/ui/Button';
 import { Input } from '../../components/ui/Input';
 import { WarningBox } from '../../components/ui/WarningBox';
 import { Plus, Save, Trash2, Calendar, ChevronDown, ChevronRight, CheckCircle2, Wallet, PiggyBank, CircleDollarSign } from 'lucide-react';
-import type { ExpenseScheduleItem } from '../../types/budget';
 import { safeNumber } from '../../utils/math';
 import { formatTableMoneyVNDMillion } from '../../utils/format';
 import { rebuildTreeFromFlatRatios } from '../../engines/budgetEngine';
@@ -63,7 +62,7 @@ export const ExpenseScheduleView: React.FC = () => {
   const toggleGroup = (groupId: string) => {
     setExpandedGroups(prev => ({
       ...prev,
-      [groupId]: prev[groupId] === false ? true : false
+      [groupId]: !prev[groupId] ? true : false
     }));
   };
 
@@ -214,7 +213,7 @@ export const ExpenseScheduleView: React.FC = () => {
           <div className="flex justify-between items-center">
             <CardTitle className="text-sm uppercase tracking-wider text-family-textMuted">Mốc thời gian</CardTitle>
             <div className="flex gap-1.5">
-              <Button size="sm" onClick={() => setIsCreatingNew(true)} className="h-7 px-2 text-[10px] gap-1" title="Thêm mốc kế toán">
+              <Button size="sm" onClick={() => { setIsCreatingNew(true); }} className="h-7 px-2 text-[10px] gap-1" title="Thêm mốc kế toán">
                 <Plus className="w-3 h-3" /> Thêm mốc
               </Button>
             </div>
@@ -226,12 +225,12 @@ export const ExpenseScheduleView: React.FC = () => {
             <div className="p-3 border rounded-xl bg-gray-50 flex flex-col gap-3 mb-4 text-sm shadow-inner">
               <h4 className="font-semibold text-family-text">Thêm Mốc Mới</h4>
               <div className="grid grid-cols-2 gap-2">
-                <Input type="number" placeholder="Tháng" value={newMonth} onChange={e => setNewMonth(Number(e.target.value))} />
-                <Input type="number" placeholder="Năm" value={newYear} onChange={e => setNewYear(Number(e.target.value))} />
+                <Input type="number" placeholder="Tháng" value={newMonth} onChange={e => { setNewMonth(Number(e.target.value)); }} />
+                <Input type="number" placeholder="Năm" value={newYear} onChange={e => { setNewYear(Number(e.target.value)); }} />
               </div>
-              <Input placeholder="Ghi chú (tùy chọn)" value={newNote} onChange={e => setNewNote(e.target.value)} />
+              <Input placeholder="Ghi chú (tùy chọn)" value={newNote} onChange={e => { setNewNote(e.target.value); }} />
               <div className="flex justify-end gap-2 mt-2">
-                <Button variant="outline" size="sm" onClick={() => setIsCreatingNew(false)}>Hủy</Button>
+                <Button variant="outline" size="sm" onClick={() => { setIsCreatingNew(false); }}>Hủy</Button>
                 <Button size="sm" onClick={handleCreateNew}>Lưu mốc</Button>
               </div>
             </div>
@@ -243,13 +242,13 @@ export const ExpenseScheduleView: React.FC = () => {
               return (
                 <div key={item.id} className="relative group">
                   <div 
-                    onClick={() => setSelectedVersionId(item.id)}
+                    onClick={() => { setSelectedVersionId(item.id); }}
                     className={`absolute -left-[25px] top-1.5 w-3.5 h-3.5 rounded-full border-2 border-family-bgDeep cursor-pointer transition-all duration-150 ${
                       isSelected ? 'bg-family-accent scale-125 ring-4 ring-family-accent/20' : 'bg-family-textMuted/40 group-hover:bg-family-accent/60'
                     }`}
                   />
                   <div 
-                    onClick={() => setSelectedVersionId(item.id)}
+                    onClick={() => { setSelectedVersionId(item.id); }}
                     className={`cursor-pointer rounded-2xl p-3 transition-all border ${
                       isSelected ? 'bg-family-accent/10 border-family-accent/30 shadow-sm' : 'bg-white border-transparent hover:bg-family-bgDark/5 hover:border-family-accent/15'
                     }`}
@@ -298,7 +297,7 @@ export const ExpenseScheduleView: React.FC = () => {
                     </span>
                     <button
                       type="button"
-                      onClick={() => setIsSettled(!isSettled)}
+                      onClick={() => { setIsSettled(!isSettled); }}
                       className={`w-10 h-5 flex items-center rounded-full p-0.5 transition-colors duration-200 focus:outline-none shrink-0 ${
                         isSettled ? 'bg-emerald-500' : 'bg-gray-300'
                       }`}
@@ -359,7 +358,7 @@ export const ExpenseScheduleView: React.FC = () => {
                   const leaves = flattenTree([group]).filter(n => n.nodeType === 'item' || n.nodeType === 'subitem' || (n.nodeType === 'group' && (!n.children || n.children.length === 0)));
                   if (leaves.length === 0) return null;
                   
-                  const isExpanded = expandedGroups[group.id] !== false;
+                  const isExpanded = expandedGroups[group.id];
                   
                   // Check if group is completely filled (-1 dynamically)
                   const isGroupFilled = leaves.length > 0 && leaves.every(cat => {
@@ -387,7 +386,7 @@ export const ExpenseScheduleView: React.FC = () => {
                     <div key={group.id} className="space-y-2 border border-family-accent/10 rounded-2xl p-4 bg-family-bgDark/5 transition-all">
                       <div 
                         className="font-bold text-family-text border-b border-family-accent/10 pb-2 mb-3 flex items-center gap-2 cursor-pointer hover:text-family-accent group"
-                        onClick={() => toggleGroup(group.id)}
+                        onClick={() => { toggleGroup(group.id); }}
                       >
                         {isExpanded ? <ChevronDown className="w-4 h-4 text-family-textMuted" /> : <ChevronRight className="w-4 h-4 text-family-textMuted" />}
                         <span>{group.name}</span>
@@ -456,7 +455,7 @@ export const ExpenseScheduleView: React.FC = () => {
                                           min="0"
                                           step="0.1"
                                           value={isCatFilled ? roundedBudget : (categories[cat.id] === undefined ? '' : categories[cat.id])}
-                                          onChange={(e) => handleCategoryChange(cat.id, e.target.value)}
+                                          onChange={(e) => { handleCategoryChange(cat.id, e.target.value); }}
                                           placeholder="0"
                                           className={`text-right font-bold w-full h-8 px-2 text-sm ${isOver ? 'border-red-500 text-red-600 focus-visible:ring-red-500' : (isCatFilled ? 'text-emerald-600 bg-emerald-50/50' : 'text-family-accent')}`}
                                         />

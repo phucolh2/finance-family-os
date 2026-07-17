@@ -28,7 +28,7 @@ export const BudgetVersionCompareChart: React.FC<BudgetVersionCompareChartProps>
 
     if (version.rootGroups && version.rootGroups.length > 0) {
       version.rootGroups.forEach((group) => {
-        const isGroupActive = group.isActive !== false;
+        const isGroupActive = group.isActive;
         const val = isGroupActive ? group.ratioPercent : 0;
         
         if (group.groupId === 'housing_basic') housing = val;
@@ -40,7 +40,7 @@ export const BudgetVersionCompareChart: React.FC<BudgetVersionCompareChartProps>
     } else if (version.ratios && version.ratios.length > 0) {
       // Fallback to legacy flat ratios
       version.ratios.forEach((ratio) => {
-        const isRatioActive = ratio.isActive !== false;
+        const isRatioActive = ratio.isActive;
         const val = isRatioActive ? ratio.ratioPercent : 0;
         
         if (ratio.group === 'housing_basic') housing = val;

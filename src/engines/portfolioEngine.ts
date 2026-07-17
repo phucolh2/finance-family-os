@@ -50,13 +50,13 @@ export function calculatePortfolio(input: PortfolioEngineInput): PortfolioMonthl
 
     // 1. Balance override check
     let beginningBalance = prevBal;
-    if (config?.balanceOverrideByPeriod && config.balanceOverrideByPeriod[periodKey] !== undefined) {
+    if (config?.balanceOverrideByPeriod?.[periodKey] !== undefined) {
       beginningBalance = safeNumber(config.balanceOverrideByPeriod[periodKey], 0);
     }
 
     // 2. Contribution check
     let contribution = 0;
-    if (config?.contributionByPeriod && config.contributionByPeriod[periodKey] !== undefined) {
+    if (config?.contributionByPeriod?.[periodKey] !== undefined) {
       contribution = safeNumber(config.contributionByPeriod[periodKey], 0);
     } else {
       // Allocate investment based on target allocation ratio
@@ -68,7 +68,7 @@ export function calculatePortfolio(input: PortfolioEngineInput): PortfolioMonthl
     let annualReturn = safeNumber(config?.expectedReturnRateAnnual, 0);
     let actualReturnApplied = false;
 
-    if (config?.actualReturnByPeriod && config.actualReturnByPeriod[periodKey] !== undefined) {
+    if (config?.actualReturnByPeriod?.[periodKey] !== undefined) {
       annualReturn = safeNumber(config.actualReturnByPeriod[periodKey], 0);
       actualReturnApplied = true;
     }

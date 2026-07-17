@@ -1,11 +1,11 @@
-import React, { useState } from 'react';
+import React from 'react';
 import { useAppContext } from '../context/AppContext';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '../components/ui/Card';
 import { WarningBox } from '../components/ui/WarningBox';
 import { calculateChildCost } from '../engines/childEngine';
 import { formatTableMoneyVNDMillion, formatKpiMoneyVNDMillion } from '../utils/format';
 import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
-import { Baby, Info, GraduationCap, Coins } from 'lucide-react';
+import { Baby, GraduationCap, Coins } from 'lucide-react';
 import type { TimelinePeriod } from '../types/finance';
 
 export const ScenarioChild2031: React.FC = () => {

@@ -1,21 +1,23 @@
 import { useState } from 'react';
 import { AppProvider } from './context/AppContext';
 import { Layout } from './components/layout/Layout';
-import { Dashboard } from './pages/Dashboard';
-import { CashflowQuadrant } from './pages/CashflowQuadrant';
-import { EventLedger } from './pages/EventLedger';
-import { IncomeSchedule } from './pages/IncomeSchedule';
-import { BudgetHistory } from './pages/BudgetHistory';
-import { LifeStages } from './pages/LifeStages';
-import { ScenarioBase } from './pages/ScenarioBase';
-import { ScenarioChild2031 } from './pages/ScenarioChild2031';
-import { ScenarioManagement } from './pages/ScenarioManagement';
-import { Portfolio } from './pages/Portfolio';
-import { FireCenter } from './pages/FireCenter';
-import { HealthAndFinalRest } from './pages/HealthAndFinalRest';
-import { KnowledgeCenter } from './pages/KnowledgeCenter';
-import { Settings } from './pages/Settings';
+import { Suspense, lazy } from 'react';
 import { CopilotChat } from './components/copilot/CopilotChat';
+
+const Dashboard = lazy(() => import('./pages/Dashboard').then(m => ({ default: m.Dashboard })));
+const CashflowQuadrant = lazy(() => import('./pages/CashflowQuadrant').then(m => ({ default: m.CashflowQuadrant })));
+const EventLedger = lazy(() => import('./pages/EventLedger').then(m => ({ default: m.EventLedger })));
+const IncomeSchedule = lazy(() => import('./pages/IncomeSchedule').then(m => ({ default: m.IncomeSchedule })));
+const BudgetHistory = lazy(() => import('./pages/BudgetHistory').then(m => ({ default: m.BudgetHistory })));
+const LifeStages = lazy(() => import('./pages/LifeStages').then(m => ({ default: m.LifeStages })));
+const ScenarioBase = lazy(() => import('./pages/ScenarioBase').then(m => ({ default: m.ScenarioBase })));
+const ScenarioChild2031 = lazy(() => import('./pages/ScenarioChild2031').then(m => ({ default: m.ScenarioChild2031 })));
+const ScenarioManagement = lazy(() => import('./pages/ScenarioManagement').then(m => ({ default: m.ScenarioManagement })));
+const Portfolio = lazy(() => import('./pages/Portfolio').then(m => ({ default: m.Portfolio })));
+const FireCenter = lazy(() => import('./pages/FireCenter').then(m => ({ default: m.FireCenter })));
+const HealthAndFinalRest = lazy(() => import('./pages/HealthAndFinalRest').then(m => ({ default: m.HealthAndFinalRest })));
+const KnowledgeCenter = lazy(() => import('./pages/KnowledgeCenter').then(m => ({ default: m.KnowledgeCenter })));
+const Settings = lazy(() => import('./pages/Settings').then(m => ({ default: m.Settings })));
 
 function AppContent() {
   const [activeTab, setActiveTab] = useState<string>('dashboard');
@@ -57,7 +59,9 @@ function AppContent() {
 
   return (
     <Layout activeTab={activeTab} setActiveTab={setActiveTab}>
-      {renderActivePage()}
+      <Suspense fallback={<div className="p-8 text-center text-gray-500 animate-pulse">Đang tải phân hệ...</div>}>
+        {renderActivePage()}
+      </Suspense>
       <CopilotChat />
     </Layout>
   );

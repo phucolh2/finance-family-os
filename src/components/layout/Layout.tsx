@@ -19,7 +19,7 @@ export const Layout: React.FC<LayoutProps> = ({ activeTab, setActiveTab, childre
           <span>👨‍👩‍👧‍👦</span> Family OS
         </h1>
         <button
-          onClick={() => setIsMobileOpen(true)}
+          onClick={() => { setIsMobileOpen(true); }}
           className="p-2 rounded-xl hover:bg-family-bgDeep text-family-textMuted focus:outline-none"
         >
           <Menu className="w-6 h-6" />
@@ -35,14 +35,14 @@ export const Layout: React.FC<LayoutProps> = ({ activeTab, setActiveTab, childre
         <Sidebar
           activeTab={activeTab}
           setActiveTab={setActiveTab}
-          onCloseMobile={() => setIsMobileOpen(false)}
+          onCloseMobile={() => { setIsMobileOpen(false); }}
         />
       </div>
 
       {/* Mobile Sidebar Overlay Backdrop */}
       {isMobileOpen && (
         <div
-          onClick={() => setIsMobileOpen(false)}
+          onClick={() => { setIsMobileOpen(false); }}
           className="fixed inset-0 z-40 bg-[#2f241d]/30 backdrop-blur-sm md:hidden transition-opacity"
         />
       )}

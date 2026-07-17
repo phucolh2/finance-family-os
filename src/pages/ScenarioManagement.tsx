@@ -1,7 +1,6 @@
 import React from 'react';
 import { useAppContext } from '../context/AppContext';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '../components/ui/Card';
-import { WarningBox } from '../components/ui/WarningBox';
 import { runScenario } from '../engines/scenarioEngine';
 import {
   formatTableMoneyVNDMillion,
@@ -11,7 +10,7 @@ import {
   formatMoneyVNDMillion,
 } from '../utils/format';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
-import { GitCompare, Flame, AlertCircle, ShieldAlert } from 'lucide-react';
+import { GitCompare, Flame, ShieldAlert } from 'lucide-react';
 
 export const ScenarioManagement: React.FC = () => {
   const { state } = useAppContext();

@@ -12,7 +12,7 @@ import { Trash2, Plus, Save, RotateCcw, BarChart2, Check, Sliders, AlertTriangle
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
 import { IncomePassiveActiveChart, IncomeCumulativeChart } from '../components/income/IncomeAreaCharts';
 import { ObservationControls } from '../components/ui/ObservationControls';
-import type { IncomeScheduleItem, IncomeType } from '../types/finance';
+import type { IncomeType } from '../types/finance';
 
 export const IncomeSchedule: React.FC = () => {
   const { state, addIncomeItem, updateIncomeItem, deleteIncomeItem, resetToDefault, selectedPeriodKey } = useAppContext();
@@ -66,7 +66,7 @@ export const IncomeSchedule: React.FC = () => {
       setEditNote(activeVersion.note || '');
       setEditEndMonth(activeVersion.endMonth || '');
       setEditEndYear(activeVersion.endYear || '');
-      setEditStatus((activeVersion.status as 'active' | 'cancelled' | 'settled' | 'planned') || 'active');
+      setEditStatus((activeVersion.status!) || 'active');
       setEditType(activeVersion.incomeType || 'fulltime_salary');
       setFormError(null);
     }
@@ -279,7 +279,7 @@ export const IncomeSchedule: React.FC = () => {
         <div className="flex bg-family-bgDark p-1 rounded-xl border border-family-accent/15 h-10 shrink-0">
           <button
             type="button"
-            onClick={() => setWorkspaceTab('charts')}
+            onClick={() => { setWorkspaceTab('charts'); }}
             className={`text-xs py-1.5 px-4 rounded-lg font-bold transition-all flex items-center gap-1.5 ${
               workspaceTab === 'charts' ? 'bg-family-accent text-white shadow-sm' : 'text-family-textMuted hover:text-family-text'
             }`}
@@ -288,7 +288,7 @@ export const IncomeSchedule: React.FC = () => {
           </button>
           <button
             type="button"
-            onClick={() => setWorkspaceTab('editor')}
+            onClick={() => { setWorkspaceTab('editor'); }}
             className={`text-xs py-1.5 px-4 rounded-lg font-bold transition-all flex items-center gap-1.5 ${
               workspaceTab === 'editor' ? 'bg-family-accent text-white shadow-sm' : 'text-family-textMuted hover:text-family-text'
             }`}
@@ -318,7 +318,7 @@ export const IncomeSchedule: React.FC = () => {
                   min={1}
                   max={12}
                   value={newMonth}
-                  onChange={(e) => setNewMonth(Number(e.target.value))}
+                  onChange={(e) => { setNewMonth(Number(e.target.value)); }}
                   required
                 />
                 <Input
@@ -327,7 +327,7 @@ export const IncomeSchedule: React.FC = () => {
                   min={2026}
                   max={2060}
                   value={newYear}
-                  onChange={(e) => setNewYear(Number(e.target.value))}
+                  onChange={(e) => { setNewYear(Number(e.target.value)); }}
                   required
                 />
                 <Input
@@ -335,7 +335,7 @@ export const IncomeSchedule: React.FC = () => {
                   type="number"
                   suffix="Tr VND"
                   value={newIncome}
-                  onChange={(e) => setNewIncome(Number(e.target.value))}
+                  onChange={(e) => { setNewIncome(Number(e.target.value)); }}
                   required
                 />
                 <div>
@@ -345,7 +345,7 @@ export const IncomeSchedule: React.FC = () => {
                   <select 
                     className="w-full bg-family-bgDeep border border-family-accent/20 rounded-xl px-4 py-2.5 text-family-text focus:outline-none focus:border-family-accent/60 transition-colors text-xs h-[38px]"
                     value={newType}
-                    onChange={(e) => setNewType(e.target.value as IncomeType)}
+                    onChange={(e) => { setNewType(e.target.value as IncomeType); }}
                   >
                     <option value="fulltime_salary">Tiền lương fulltime</option>
                     <option value="parttime_salary">Lương parttime</option>
@@ -361,7 +361,7 @@ export const IncomeSchedule: React.FC = () => {
                   <select 
                     className="w-full bg-family-bgDeep border border-family-accent/20 rounded-xl px-4 py-2.5 text-family-text focus:outline-none focus:border-family-accent/60 transition-colors text-xs h-[38px]"
                     value={newStatus}
-                    onChange={(e) => setNewStatus(e.target.value as 'active' | 'cancelled' | 'settled' | 'planned')}
+                    onChange={(e) => { setNewStatus(e.target.value as 'active' | 'cancelled' | 'settled' | 'planned'); }}
                   >
                     <option value="active">Đang hoạt động</option>
                     <option value="planned">Dự kiến</option>
@@ -376,7 +376,7 @@ export const IncomeSchedule: React.FC = () => {
                   min={1}
                   max={12}
                   value={newEndMonth}
-                  onChange={(e) => setNewEndMonth(e.target.value ? Number(e.target.value) : '')}
+                  onChange={(e) => { setNewEndMonth(e.target.value ? Number(e.target.value) : ''); }}
                 />
                 <Input
                   label="Năm kết thúc"
@@ -385,7 +385,7 @@ export const IncomeSchedule: React.FC = () => {
                   min={2026}
                   max={2060}
                   value={newEndYear}
-                  onChange={(e) => setNewEndYear(e.target.value ? Number(e.target.value) : '')}
+                  onChange={(e) => { setNewEndYear(e.target.value ? Number(e.target.value) : ''); }}
                 />
               </div>
               <Input
@@ -393,10 +393,10 @@ export const IncomeSchedule: React.FC = () => {
                 type="text"
                 placeholder="Ví dụ: Lên chức trưởng phòng, bắt đầu kinh doanh phụ..."
                 value={newNote}
-                onChange={(e) => setNewNote(e.target.value)}
+                onChange={(e) => { setNewNote(e.target.value); }}
               />
               <div className="flex justify-end gap-2">
-                <Button variant="outline" onClick={() => setIsCreatingNew(false)}>Hủy</Button>
+                <Button variant="outline" onClick={() => { setIsCreatingNew(false); }}>Hủy</Button>
                 <Button type="submit" className="gap-2">
                   <Check className="w-4 h-4" /> Khởi tạo mốc thu nhập
                 </Button>
@@ -598,7 +598,7 @@ export const IncomeSchedule: React.FC = () => {
                   <Button variant="secondary" size="sm" onClick={resetToDefault} className="h-7 px-2 text-[10px]">
                     <RotateCcw className="w-3.5 h-3.5" />
                   </Button>
-                  <Button size="sm" onClick={() => setIsCreatingNew(true)} className="h-7 px-2 text-[10px] gap-1">
+                  <Button size="sm" onClick={() => { setIsCreatingNew(true); }} className="h-7 px-2 text-[10px] gap-1">
                     <Plus className="w-3 h-3" />
                   </Button>
                 </div>
@@ -614,7 +614,7 @@ export const IncomeSchedule: React.FC = () => {
                     <div key={item.id} className="relative group">
                       {/* Node Dot */}
                       <div 
-                        onClick={() => setSelectedItemId(item.id)}
+                        onClick={() => { setSelectedItemId(item.id); }}
                         className={`absolute -left-[25px] top-1.5 w-3.5 h-3.5 rounded-full border-2 border-family-bgDeep cursor-pointer transition-all duration-150 ${
                           isSelected 
                             ? 'bg-family-accent scale-125 ring-4 ring-family-accent/20' 
@@ -624,7 +624,7 @@ export const IncomeSchedule: React.FC = () => {
                       
                       {/* Navigation Item card */}
                       <div 
-                        onClick={() => setSelectedItemId(item.id)}
+                        onClick={() => { setSelectedItemId(item.id); }}
                         className={`p-3 rounded-xl border cursor-pointer transition-all ${
                           isSelected 
                             ? 'bg-family-accent/15 border-family-accent/40 shadow-sm' 
@@ -724,7 +724,7 @@ export const IncomeSchedule: React.FC = () => {
                       min={1}
                       max={12}
                       value={editMonth}
-                      onChange={(e) => setEditMonth(safeNumber(Number(e.target.value)))}
+                      onChange={(e) => { setEditMonth(safeNumber(Number(e.target.value))); }}
                     />
                     <Input
                       label="Năm bắt đầu"
@@ -732,14 +732,14 @@ export const IncomeSchedule: React.FC = () => {
                       min={2026}
                       max={2060}
                       value={editYear}
-                      onChange={(e) => setEditYear(safeNumber(Number(e.target.value)))}
+                      onChange={(e) => { setEditYear(safeNumber(Number(e.target.value))); }}
                     />
                     <Input
                       label="Khoản thu tháng"
                       type="number"
                       suffix="Tr VND"
                       value={editIncome}
-                      onChange={(e) => setEditIncome(safeNumber(Number(e.target.value)))}
+                      onChange={(e) => { setEditIncome(safeNumber(Number(e.target.value))); }}
                     />
                     <div>
                       <label className="block text-xs font-semibold text-family-textMuted uppercase mb-2">
@@ -748,7 +748,7 @@ export const IncomeSchedule: React.FC = () => {
                       <select 
                         className="w-full bg-family-bgDeep border border-family-accent/20 rounded-xl px-4 py-2.5 text-family-text focus:outline-none focus:border-family-accent/60 transition-colors text-xs h-[38px]"
                         value={editType}
-                        onChange={(e) => setEditType(e.target.value as IncomeType)}
+                        onChange={(e) => { setEditType(e.target.value as IncomeType); }}
                       >
                         <option value="fulltime_salary">Tiền lương fulltime</option>
                         <option value="parttime_salary">Lương parttime</option>
@@ -764,7 +764,7 @@ export const IncomeSchedule: React.FC = () => {
                       <select 
                         className="w-full bg-family-bgDeep border border-family-accent/20 rounded-xl px-4 py-2.5 text-family-text focus:outline-none focus:border-family-accent/60 transition-colors text-xs h-[38px]"
                         value={editStatus}
-                        onChange={(e) => setEditStatus(e.target.value as 'active' | 'cancelled' | 'settled' | 'planned')}
+                        onChange={(e) => { setEditStatus(e.target.value as 'active' | 'cancelled' | 'settled' | 'planned'); }}
                       >
                         <option value="active">Đang hoạt động</option>
                         <option value="planned">Dự kiến</option>
@@ -779,7 +779,7 @@ export const IncomeSchedule: React.FC = () => {
                       min={1}
                       max={12}
                       value={editEndMonth}
-                      onChange={(e) => setEditEndMonth(e.target.value ? Number(e.target.value) : '')}
+                      onChange={(e) => { setEditEndMonth(e.target.value ? Number(e.target.value) : ''); }}
                     />
                     <Input
                       label="Năm kết thúc"
@@ -788,7 +788,7 @@ export const IncomeSchedule: React.FC = () => {
                       min={2026}
                       max={2060}
                       value={editEndYear}
-                      onChange={(e) => setEditEndYear(e.target.value ? Number(e.target.value) : '')}
+                      onChange={(e) => { setEditEndYear(e.target.value ? Number(e.target.value) : ''); }}
                     />
                   </div>
                   
@@ -797,7 +797,7 @@ export const IncomeSchedule: React.FC = () => {
                       label="Ghi chú hoàn cảnh mốc"
                       type="text"
                       value={editNote}
-                      onChange={(e) => setEditNote(e.target.value)}
+                      onChange={(e) => { setEditNote(e.target.value); }}
                     />
                   </div>
                 </CardContent>

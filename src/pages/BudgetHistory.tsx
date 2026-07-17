@@ -4,17 +4,16 @@ import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '../co
 import { Button } from '../components/ui/Button';
 import { Input } from '../components/ui/Input';
 import { WarningBox } from '../components/ui/WarningBox';
-import { Trash2, Plus, Save, RotateCcw, Calendar, BarChart2, Check, Sliders, AlertTriangle } from 'lucide-react';
-import { safeNumber } from '../utils/math';
-import { formatTableMoneyVNDMillion, formatKpiMoneyVNDMillion } from '../utils/format';
-import type { BudgetRatioScheduleItem, BudgetTreeNode } from '../types/budget';
+import { Trash2, Plus, Save, RotateCcw, BarChart2, Check, Sliders, AlertTriangle } from 'lucide-react';
+import { formatTableMoneyVNDMillion } from '../utils/format';
+import type { BudgetTreeNode } from '../types/budget';
 import { BudgetVersionCompareChart } from '../components/budget/BudgetVersionCompareChart';
 import { BudgetHistoryTrendChart } from '../components/budget/BudgetHistoryTrendChart';
 import { BudgetDetailedList } from '../components/budget/BudgetDetailedList';
 import { BudgetDonutChart } from '../components/budget/BudgetDonutChart';
 import { BudgetRadarChart } from '../components/budget/BudgetRadarChart';
 import { BudgetTreeNodeRow } from '../components/budget/BudgetTreeNodeRow';
-import { rebuildTreeFromFlatRatios, calculateBudget } from '../engines/budgetEngine';
+import { rebuildTreeFromFlatRatios } from '../engines/budgetEngine';
 import { DEFAULT_BUDGET_TREE } from '../data/defaultInputs';
 import { ObservationControls } from '../components/ui/ObservationControls';
 import { DndContext, closestCenter, KeyboardSensor, PointerSensor, useSensor, useSensors } from '@dnd-kit/core';
@@ -138,13 +137,13 @@ export const BudgetHistory: React.FC = () => {
           const parentRatio = fields.ratioPercent;
           
           if (node.nodeType === 'group' && parentRatio !== undefined && node.children && node.children.length > 0) {
-            const activeChildren = node.children.filter(c => c.isActive !== false);
+            const activeChildren = node.children.filter(c => c.isActive);
             const originalChildrenSum = activeChildren.reduce((sum, c) => sum + c.ratioPercent, 0);
             
             if (originalChildrenSum > 0) {
               let remaining = parentRatio;
               updatedNode.children = node.children.map((child) => {
-                if (child.isActive === false) return child;
+                if (!child.isActive) return child;
                 
                 const scaled = Math.round((child.ratioPercent / originalChildrenSum) * parentRatio * 10) / 10;
                 remaining = Math.round((remaining - scaled) * 10) / 10;
@@ -156,7 +155,7 @@ export const BudgetHistory: React.FC = () => {
               });
               
               if (updatedNode.children.length > 0) {
-                const activeChildrenUpdated = updatedNode.children.filter(c => c.isActive !== false);
+                const activeChildrenUpdated = updatedNode.children.filter(c => c.isActive);
                 if (activeChildrenUpdated.length > 0) {
                   const newChildrenSumWithoutLast = activeChildrenUpdated
                     .slice(0, -1)
@@ -166,7 +165,7 @@ export const BudgetHistory: React.FC = () => {
                   
                   let activeCount = 0;
                   updatedNode.children = updatedNode.children.map(c => {
-                    if (c.isActive === false) return c;
+                    if (!c.isActive) return c;
                     activeCount++;
                     if (activeCount === activeChildrenUpdated.length) {
                       return { ...c, ratioPercent: targetLastRatio };
@@ -182,8 +181,8 @@ export const BudgetHistory: React.FC = () => {
                 let remaining = parentRatio;
                 
                 updatedNode.children = node.children.map((child, idx) => {
-                  if (child.isActive === false) return child;
-                  const isLastActive = idx === node.children!.map(c => c.isActive !== false).lastIndexOf(true);
+                  if (!child.isActive) return child;
+                  const isLastActive = idx === node.children!.map(c => c.isActive).lastIndexOf(true);
                   const share = isLastActive ? remaining : equalShare;
                   remaining = Math.round((remaining - share) * 10) / 10;
                   return {
@@ -201,7 +200,7 @@ export const BudgetHistory: React.FC = () => {
           const updatedChildren = updateRecursive(node.children);
           const hasRatioChange = node.children.some((c, idx) => c.ratioPercent !== updatedChildren[idx].ratioPercent || c.isActive !== updatedChildren[idx].isActive);
           if (hasRatioChange && node.nodeType === 'group') {
-            const activeChildren = updatedChildren.filter(c => c.isActive !== false);
+            const activeChildren = updatedChildren.filter(c => c.isActive);
             const childrenSum = activeChildren.reduce((sum, c) => sum + c.ratioPercent, 0);
             return {
               ...node,
@@ -279,7 +278,7 @@ export const BudgetHistory: React.FC = () => {
 
     const finalGroups = nextGroups.map((group) => {
       if (group.children && group.children.length > 0) {
-        const activeChildren = group.children.filter((c) => c.isActive !== false);
+        const activeChildren = group.children.filter((c) => c.isActive);
         const childrenSum = activeChildren.reduce((sum, c) => sum + c.ratioPercent, 0);
         return {
           ...group,
@@ -436,7 +435,7 @@ export const BudgetHistory: React.FC = () => {
         <div className="flex bg-family-bgDark p-1 rounded-xl border border-family-accent/15 h-10 shrink-0">
           <button
             type="button"
-            onClick={() => setWorkspaceTab('charts')}
+            onClick={() => { setWorkspaceTab('charts'); }}
             className={`text-xs py-1.5 px-4 rounded-lg font-bold transition-all flex items-center gap-1.5 ${
               workspaceTab === 'charts' ? 'bg-family-accent text-white shadow-sm' : 'text-family-textMuted hover:text-family-text'
             }`}
@@ -445,7 +444,7 @@ export const BudgetHistory: React.FC = () => {
           </button>
           <button
             type="button"
-            onClick={() => setWorkspaceTab('editor')}
+            onClick={() => { setWorkspaceTab('editor'); }}
             className={`text-xs py-1.5 px-4 rounded-lg font-bold transition-all flex items-center gap-1.5 ${
               workspaceTab === 'editor' ? 'bg-family-accent text-white shadow-sm' : 'text-family-textMuted hover:text-family-text'
             }`}
@@ -475,7 +474,7 @@ export const BudgetHistory: React.FC = () => {
                   min={1}
                   max={12}
                   value={newMonth}
-                  onChange={(e) => setNewMonth(Number(e.target.value))}
+                  onChange={(e) => { setNewMonth(Number(e.target.value)); }}
                   required
                 />
                 <Input
@@ -484,7 +483,7 @@ export const BudgetHistory: React.FC = () => {
                   min={2026}
                   max={2060}
                   value={newYear}
-                  onChange={(e) => setNewYear(Number(e.target.value))}
+                  onChange={(e) => { setNewYear(Number(e.target.value)); }}
                   required
                 />
                 <Input
@@ -492,11 +491,11 @@ export const BudgetHistory: React.FC = () => {
                   type="text"
                   placeholder="Ví dụ: Khi sinh bé thứ 2..."
                   value={newNote}
-                  onChange={(e) => setNewNote(e.target.value)}
+                  onChange={(e) => { setNewNote(e.target.value); }}
                 />
               </div>
               <div className="flex justify-end gap-2">
-                <Button variant="outline" onClick={() => setIsCreatingNew(false)}>Hủy</Button>
+                <Button variant="outline" onClick={() => { setIsCreatingNew(false); }}>Hủy</Button>
                 <Button type="submit" className="gap-2">
                   <Check className="w-4 h-4" /> Khởi tạo phiên bản
                 </Button>
@@ -654,7 +653,7 @@ export const BudgetHistory: React.FC = () => {
                   <Button variant="secondary" size="sm" onClick={handleResetToDefault} className="h-7 px-2 text-[10px]" title="Khôi phục toàn bộ về mặc định">
                     <RotateCcw className="w-3.5 h-3.5" />
                   </Button>
-                  <Button size="sm" onClick={() => setIsCreatingNew(true)} className="h-7 px-2 text-[10px] gap-1" title="Tạo mốc mới">
+                  <Button size="sm" onClick={() => { setIsCreatingNew(true); }} className="h-7 px-2 text-[10px] gap-1" title="Tạo mốc mới">
                     <Plus className="w-3 h-3" />
                   </Button>
                 </div>
@@ -674,7 +673,7 @@ export const BudgetHistory: React.FC = () => {
                     <div key={item.id} className="relative group">
                       {/* Node Dot */}
                       <div 
-                        onClick={() => setSelectedVersionId(item.id)}
+                        onClick={() => { setSelectedVersionId(item.id); }}
                         className={`absolute -left-[25px] top-1.5 w-3.5 h-3.5 rounded-full border-2 border-family-bgDeep cursor-pointer transition-all duration-150 ${
                           isSelected 
                             ? 'bg-family-accent scale-125 ring-4 ring-family-accent/20' 
@@ -684,7 +683,7 @@ export const BudgetHistory: React.FC = () => {
                       
                       {/* Navigation Item card */}
                       <div 
-                        onClick={() => setSelectedVersionId(item.id)}
+                        onClick={() => { setSelectedVersionId(item.id); }}
                         className={`p-3 rounded-xl border cursor-pointer transition-all ${
                           isSelected 
                             ? 'bg-family-accent/15 border-family-accent/40 shadow-sm' 
@@ -785,7 +784,7 @@ export const BudgetHistory: React.FC = () => {
                       min={1}
                       max={12}
                       value={editMonth}
-                      onChange={(e) => setEditMonth(Number(e.target.value))}
+                      onChange={(e) => { setEditMonth(Number(e.target.value)); }}
                     />
                     <Input
                       label="Năm hiệu lực"
@@ -793,13 +792,13 @@ export const BudgetHistory: React.FC = () => {
                       min={2026}
                       max={2060}
                       value={editYear}
-                      onChange={(e) => setEditYear(Number(e.target.value))}
+                      onChange={(e) => { setEditYear(Number(e.target.value)); }}
                     />
                     <Input
                       label="Ghi chú hoàn cảnh mốc"
                       type="text"
                       value={editNote}
-                      onChange={(e) => setEditNote(e.target.value)}
+                      onChange={(e) => { setEditNote(e.target.value); }}
                     />
                   </div>
                 </CardHeader>
@@ -825,7 +824,7 @@ export const BudgetHistory: React.FC = () => {
                                 onDelete={handleDeleteNode}
                                 onAddChild={handleAddChild}
                                 isExpanded={isExpanded}
-                                onToggleExpand={() => handleToggleExpand(group.id)}
+                                onToggleExpand={() => { handleToggleExpand(group.id); }}
                               />
                               {isExpanded && group.children && group.children.length > 0 && (
                                 <SortableContext items={childIds} strategy={verticalListSortingStrategy}>

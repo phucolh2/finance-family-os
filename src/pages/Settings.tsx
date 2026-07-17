@@ -3,7 +3,7 @@ import { useAppContext } from '../context/AppContext';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '../components/ui/Card';
 import { Button } from '../components/ui/Button';
 import { WarningBox } from '../components/ui/WarningBox';
-import { Download, Upload, RotateCcw, ShieldAlert, CheckCircle2 } from 'lucide-react';
+import { Download, Upload, ShieldAlert, CheckCircle2 } from 'lucide-react';
 
 export const Settings: React.FC = () => {
   const { state, lastSaved, schemaVersion, importState, resetToDefault } = useAppContext();

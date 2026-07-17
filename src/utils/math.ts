@@ -2,7 +2,7 @@
  * Safe numeric conversion to prevent NaN or undefined crashes.
  * If value is not a valid finite number, returns fallback (default 0).
  */
-export function safeNumber(val: any, fallback = 0): number {
+export function safeNumber(val: unknown, fallback = 0): number {
   if (val === null || val === undefined) return fallback;
   const num = Number(val);
   return Number.isFinite(num) ? num : fallback;
@@ -11,7 +11,7 @@ export function safeNumber(val: any, fallback = 0): number {
 /**
  * Checks if a value is NaN or infinite.
  */
-export function isInvalidNumber(val: any): boolean {
+export function isInvalidNumber(val: unknown): boolean {
   if (val === null || val === undefined) return true;
   const num = Number(val);
   return !Number.isFinite(num);

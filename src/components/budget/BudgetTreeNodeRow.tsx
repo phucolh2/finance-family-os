@@ -1,10 +1,8 @@
 import React, { useState } from 'react';
-import { Plus, Trash2, Edit3, Save, X, ChevronRight, ChevronDown, Check, AlertCircle, GripVertical } from 'lucide-react';
+import { Plus, Trash2, Edit3, X, ChevronRight, ChevronDown, Check, GripVertical } from 'lucide-react';
 import { useSortable } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
 import type { BudgetTreeNode } from '../../types/budget';
-import { Input } from '../ui/Input';
-import { Button } from '../ui/Button';
 
 interface BudgetTreeNodeRowProps {
   node: BudgetTreeNode;
@@ -85,21 +83,21 @@ export const BudgetTreeNodeRow: React.FC<BudgetTreeNodeRowProps> = ({
               <input
                 type="text"
                 value={editName}
-                onChange={(e) => setEditName(e.target.value)}
+                onChange={(e) => { setEditName(e.target.value); }}
                 className="text-base md:text-xs font-bold bg-family-bgDeep border border-family-accent/20 rounded-xl px-2.5 py-1 text-family-text focus:ring-1 focus:ring-family-accent/40 w-full sm:w-48"
                 placeholder="Tên hạng mục..."
               />
               <input
                 type="text"
                 value={editNote}
-                onChange={(e) => setEditNote(e.target.value)}
+                onChange={(e) => { setEditNote(e.target.value); }}
                 className="text-base md:text-xs bg-family-bgDeep border border-family-accent/10 rounded-xl px-2.5 py-1 text-family-textMuted focus:ring-1 focus:ring-family-accent/20 w-full sm:flex-grow"
                 placeholder="Ghi chú..."
               />
               {isGroup && (
                 <select
                   value={editClassification || ''}
-                  onChange={(e) => setEditClassification(e.target.value ? e.target.value as any : undefined)}
+                  onChange={(e) => { setEditClassification(e.target.value ? e.target.value as any : undefined); }}
                   className="text-xs bg-family-bgDeep border border-family-accent/20 rounded-xl px-2 py-1 text-family-text focus:ring-1 focus:ring-family-accent/40"
                 >
                   <option value="">Không phân loại</option>
@@ -118,7 +116,7 @@ export const BudgetTreeNodeRow: React.FC<BudgetTreeNodeRowProps> = ({
                 {isGroup ? (
                   <select
                     value={node.classification || ''}
-                    onChange={(e) => onUpdate(node.id, { classification: e.target.value ? e.target.value as any : undefined })}
+                    onChange={(e) => { onUpdate(node.id, { classification: e.target.value ? e.target.value as any : undefined }); }}
                     className="text-[10px] uppercase font-bold bg-family-bgDeep border border-family-accent/20 rounded-xl px-2.5 py-1 text-family-text focus:outline-none focus:ring-1 focus:ring-family-accent transition-all cursor-pointer"
                   >
                     <option value="">Không phân loại</option>
@@ -197,7 +195,7 @@ export const BudgetTreeNodeRow: React.FC<BudgetTreeNodeRowProps> = ({
               <>
                 <button
                   type="button"
-                  onClick={() => setIsEditing(true)}
+                  onClick={() => { setIsEditing(true); }}
                   title="Sửa tên hạng mục"
                   className="h-7 w-7 flex items-center justify-center rounded-lg bg-family-bgDeep border border-family-accent/10 text-family-textMuted hover:text-family-accent hover:border-family-accent/30 transition-all shadow-sm"
                 >
@@ -207,7 +205,7 @@ export const BudgetTreeNodeRow: React.FC<BudgetTreeNodeRowProps> = ({
                 {isGroup && (
                   <button
                     type="button"
-                    onClick={() => onAddChild(node.id)}
+                    onClick={() => { onAddChild(node.id); }}
                     title="Thêm hạng mục con"
                     className="h-7 w-7 flex items-center justify-center rounded-lg bg-family-accent/10 border border-family-accent/20 text-family-accent hover:bg-family-accent hover:text-white transition-all shadow-sm"
                   >
@@ -218,7 +216,7 @@ export const BudgetTreeNodeRow: React.FC<BudgetTreeNodeRowProps> = ({
                 {/* Active switch */}
                 <button
                   type="button"
-                  onClick={() => onUpdate(node.id, { isActive: !node.isActive })}
+                  onClick={() => { onUpdate(node.id, { isActive: !node.isActive }); }}
                   title={node.isActive ? 'Tạm tắt hạng mục' : 'Bật kích hoạt hạng mục'}
                   className={`w-8 h-4 flex items-center rounded-full p-0.5 transition-colors duration-200 focus:outline-none shrink-0 ${
                     node.isActive ? 'bg-family-accent' : 'bg-gray-400'
@@ -232,7 +230,7 @@ export const BudgetTreeNodeRow: React.FC<BudgetTreeNodeRowProps> = ({
                 {/* Root groups and level 1 & 2 items can be deleted */}
                 <button
                   type="button"
-                  onClick={() => onDelete(node.id)}
+                  onClick={() => { onDelete(node.id); }}
                   title="Xóa hạng mục"
                   className="h-7 w-7 flex items-center justify-center rounded-lg bg-red-500/10 border border-red-500/30 text-red-500 hover:bg-red-600 hover:text-white transition-all shadow-sm"
                 >

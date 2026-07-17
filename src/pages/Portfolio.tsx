@@ -2,7 +2,6 @@ import React, { useState, useEffect } from 'react';
 import { useAppContext } from '../context/AppContext';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '../components/ui/Card';
 import { Button } from '../components/ui/Button';
-import { Input } from '../components/ui/Input';
 import { WarningBox } from '../components/ui/WarningBox';
 import { EmptyState } from '../components/ui/EmptyState';
 import { runProjection } from '../engines/projectionEngine';
@@ -10,8 +9,8 @@ import { formatTableMoneyVNDMillion, formatKpiMoneyVNDMillion } from '../utils/f
 import { safeNumber } from '../utils/math';
 import { PieChart, Pie, Cell, ResponsiveContainer, Legend, Tooltip } from 'recharts';
 import { PortfolioRadarChart } from '../components/portfolio/PortfolioRadarChart';
-import { Briefcase, Save, RotateCcw, Edit3, Plus, Trash2, CheckCircle } from 'lucide-react';
-import type { AssetConfig, AssetType } from '../types/portfolio';
+import { Briefcase, RotateCcw, Plus, Trash2 } from 'lucide-react';
+import type { AssetType } from '../types/portfolio';
 import { ObservationControls } from '../components/ui/ObservationControls';
 import { SavingsDepositModule } from '../components/portfolio/SavingsDepositModule';
 
@@ -542,7 +541,7 @@ export const Portfolio: React.FC = () => {
               Theo dõi chi tiết hoạt động đầu tư thực tế của vợ chồng. Lợi nhuận/Lỗ chỉ khi **Tất toán** mới được tái đầu tư vào các lớp tài sản.
             </CardDescription>
           </div>
-          <Button onClick={() => setShowAddDealForm(!showAddDealForm)} size="sm" className="gap-1 text-xs py-1 h-8 shrink-0">
+          <Button onClick={() => { setShowAddDealForm(!showAddDealForm); }} size="sm" className="gap-1 text-xs py-1 h-8 shrink-0">
             <Plus className="w-3.5 h-3.5" /> Thêm thương vụ
           </Button>
         </CardHeader>
@@ -578,7 +577,7 @@ export const Portfolio: React.FC = () => {
                   <input
                     type="text"
                     value={dealForm.name}
-                    onChange={(e) => setDealForm({ ...dealForm, name: e.target.value })}
+                    onChange={(e) => { setDealForm({ ...dealForm, name: e.target.value }); }}
                     placeholder="Ví dụ: Cổ phiếu VIX"
                     required
                     className="w-full text-xs bg-white rounded-xl border border-family-accent/15 px-3 py-1.5 focus:outline-none focus:ring-1 focus:ring-family-accent"
@@ -588,7 +587,7 @@ export const Portfolio: React.FC = () => {
                   <label className="block text-xs font-semibold text-family-text mb-1">Lớp tài sản</label>
                   <select
                     value={dealForm.assetType}
-                    onChange={(e) => setDealForm({ ...dealForm, assetType: e.target.value as AssetType })}
+                    onChange={(e) => { setDealForm({ ...dealForm, assetType: e.target.value as AssetType }); }}
                     className="w-full text-xs bg-white rounded-xl border border-family-accent/15 px-3 py-1.5 focus:outline-none focus:ring-1 focus:ring-family-accent"
                   >
                     <option value="stocks">Chứng Khoán</option>
@@ -603,7 +602,7 @@ export const Portfolio: React.FC = () => {
                   <input
                     type="number"
                     value={dealForm.capital}
-                    onChange={(e) => setDealForm({ ...dealForm, capital: Math.max(0, safeNumber(Number(e.target.value), 0)) })}
+                    onChange={(e) => { setDealForm({ ...dealForm, capital: Math.max(0, safeNumber(Number(e.target.value), 0)) }); }}
                     required
                     className="w-full text-xs bg-white rounded-xl border border-family-accent/15 px-3 py-1.5 focus:outline-none focus:ring-1 focus:ring-family-accent"
                   />
@@ -615,7 +614,7 @@ export const Portfolio: React.FC = () => {
                     min={1}
                     max={12}
                     value={dealForm.startMonth}
-                    onChange={(e) => setDealForm({ ...dealForm, startMonth: safeNumber(Number(e.target.value), 10) })}
+                    onChange={(e) => { setDealForm({ ...dealForm, startMonth: safeNumber(Number(e.target.value), 10) }); }}
                     required
                     className="w-full text-xs bg-white rounded-xl border border-family-accent/15 px-3 py-1.5 focus:outline-none focus:ring-1 focus:ring-family-accent"
                   />
@@ -627,7 +626,7 @@ export const Portfolio: React.FC = () => {
                     min={2020}
                     max={2060}
                     value={dealForm.startYear}
-                    onChange={(e) => setDealForm({ ...dealForm, startYear: safeNumber(Number(e.target.value), 2026) })}
+                    onChange={(e) => { setDealForm({ ...dealForm, startYear: safeNumber(Number(e.target.value), 2026) }); }}
                     required
                     className="w-full text-xs bg-white rounded-xl border border-family-accent/15 px-3 py-1.5 focus:outline-none focus:ring-1 focus:ring-family-accent"
                   />
@@ -640,7 +639,7 @@ export const Portfolio: React.FC = () => {
                     type="checkbox"
                     id="isEarmarked"
                     checked={dealForm.isEarmarked}
-                    onChange={(e) => setDealForm({ ...dealForm, isEarmarked: e.target.checked })}
+                    onChange={(e) => { setDealForm({ ...dealForm, isEarmarked: e.target.checked }); }}
                     className="w-4 h-4 text-family-accent rounded border-family-accent/20 cursor-pointer"
                   />
                   <label htmlFor="isEarmarked" className="text-xs font-semibold text-family-text cursor-pointer">
@@ -656,7 +655,7 @@ export const Portfolio: React.FC = () => {
                         step="0.1"
                         min={0}
                         value={dealForm.expectedSavingRate}
-                        onChange={(e) => setDealForm({ ...dealForm, expectedSavingRate: safeNumber(Number(e.target.value), 0) })}
+                        onChange={(e) => { setDealForm({ ...dealForm, expectedSavingRate: safeNumber(Number(e.target.value), 0) }); }}
                         className="w-20 text-center text-xs bg-white rounded-lg border border-family-accent/15 px-2 py-1 focus:outline-none focus:ring-1 focus:ring-family-accent"
                       />
                       <span className="text-xs font-bold text-family-textMuted">%/năm</span>
@@ -665,7 +664,7 @@ export const Portfolio: React.FC = () => {
                       <label className="text-xs font-semibold text-family-text">Kì hạn gửi tiết kiệm:</label>
                       <select
                         value={dealForm.savingTermMonths}
-                        onChange={(e) => setDealForm({ ...dealForm, savingTermMonths: Number(e.target.value) })}
+                        onChange={(e) => { setDealForm({ ...dealForm, savingTermMonths: Number(e.target.value) }); }}
                         className="text-xs bg-white rounded-lg border border-family-accent/15 px-2 py-1 focus:outline-none focus:ring-1 focus:ring-family-accent"
                       >
                         <option value={1}>1 tháng</option>
@@ -683,7 +682,7 @@ export const Portfolio: React.FC = () => {
                       <input
                         type="text"
                         value={dealForm.bankName}
-                        onChange={(e) => setDealForm({ ...dealForm, bankName: e.target.value })}
+                        onChange={(e) => { setDealForm({ ...dealForm, bankName: e.target.value }); }}
                         placeholder="VD: Vietcombank"
                         className="w-32 text-xs bg-white rounded-lg border border-family-accent/15 px-2 py-1 focus:outline-none focus:ring-1 focus:ring-family-accent"
                       />
@@ -704,13 +703,13 @@ export const Portfolio: React.FC = () => {
                 <input
                   type="text"
                   value={dealForm.notes}
-                  onChange={(e) => setDealForm({ ...dealForm, notes: e.target.value })}
+                  onChange={(e) => { setDealForm({ ...dealForm, notes: e.target.value }); }}
                   placeholder="Ghi chú về tài khoản mua, mục tiêu thương vụ..."
                   className="w-full text-xs bg-white rounded-xl border border-family-accent/15 px-3 py-1.5 focus:outline-none focus:ring-1 focus:ring-family-accent"
                 />
               </div>
               <div className="flex justify-end gap-2 text-xs">
-                <Button variant="outline" size="sm" onClick={() => setShowAddDealForm(false)}>Hủy</Button>
+                <Button variant="outline" size="sm" onClick={() => { setShowAddDealForm(false); }}>Hủy</Button>
                 <Button type="submit" size="sm" disabled={isDealCapitalOverLimit || dealForm.capital <= 0 || !dealForm.name.trim()}>
                   Tạo thương vụ mới
                 </Button>
@@ -828,7 +827,7 @@ export const Portfolio: React.FC = () => {
                                 )}
                                 <button
                                   type="button"
-                                  onClick={() => deleteInvestmentDeal(deal.id)}
+                                  onClick={() => { deleteInvestmentDeal(deal.id); }}
                                   className="text-red-500 hover:text-red-700 p-1"
                                   title="Xóa thương vụ"
                                 >
@@ -928,7 +927,7 @@ export const Portfolio: React.FC = () => {
                                         <input
                                           type="number"
                                           value={settleForm.realizedProfit}
-                                          onChange={(e) => setSettleForm({ ...settleForm, realizedProfit: safeNumber(Number(e.target.value), 0) })}
+                                          onChange={(e) => { setSettleForm({ ...settleForm, realizedProfit: safeNumber(Number(e.target.value), 0) }); }}
                                           className={`w-20 text-center bg-white rounded-lg border border-family-accent/15 p-1 font-bold ${deal.isEarmarked ? 'text-slate-600' : 'text-green-700'}`}
                                           required
                                         />
@@ -976,14 +975,14 @@ export const Portfolio: React.FC = () => {
                                         type="checkbox" 
                                         id="reinvest"
                                         checked={settleForm.reinvestAsUnallocated}
-                                        onChange={(e) => setSettleForm({ ...settleForm, reinvestAsUnallocated: e.target.checked })}
+                                        onChange={(e) => { setSettleForm({ ...settleForm, reinvestAsUnallocated: e.target.checked }); }}
                                         className="w-4 h-4 text-green-700 rounded border-family-accent/20"
                                       />
                                       <label htmlFor="reinvest" className="text-xs font-semibold text-family-text">Tự động tạo thương vụ "Chờ phân bổ" với tổng tiền vốn + lời?</label>
                                       {settleForm.reinvestAsUnallocated && (
                                         <select
                                           value={settleForm.reinvestAssetType}
-                                          onChange={(e) => setSettleForm({ ...settleForm, reinvestAssetType: e.target.value as AssetType })}
+                                          onChange={(e) => { setSettleForm({ ...settleForm, reinvestAssetType: e.target.value as AssetType }); }}
                                           className="text-xs bg-white rounded-lg border border-family-accent/15 px-2 py-1 ml-2"
                                         >
                                           <option value="stocks">Chứng Khoán</option>
@@ -1113,7 +1112,7 @@ export const Portfolio: React.FC = () => {
                                           type="number"
                                           step="0.01"
                                           value={conversionForm.realizedSavingInterest}
-                                          onChange={(e) => setConversionForm({ ...conversionForm, realizedSavingInterest: safeNumber(Number(e.target.value), 0) })}
+                                          onChange={(e) => { setConversionForm({ ...conversionForm, realizedSavingInterest: safeNumber(Number(e.target.value), 0) }); }}
                                           className="w-20 text-center bg-white rounded-lg border border-family-accent/15 p-1 font-bold text-blue-700"
                                           required
                                         />
@@ -1161,14 +1160,14 @@ export const Portfolio: React.FC = () => {
                                         type="checkbox" 
                                         id="reinvest-conversion"
                                         checked={conversionForm.reinvestAsUnallocated}
-                                        onChange={(e) => setConversionForm({ ...conversionForm, reinvestAsUnallocated: e.target.checked })}
+                                        onChange={(e) => { setConversionForm({ ...conversionForm, reinvestAsUnallocated: e.target.checked }); }}
                                         className="w-4 h-4 text-blue-700 rounded border-family-accent/20"
                                       />
                                       <label htmlFor="reinvest-conversion" className="text-xs font-semibold text-family-text">Tự động tạo thương vụ "Chờ phân bổ" với tổng tiền vốn + lời?</label>
                                       {conversionForm.reinvestAsUnallocated && (
                                         <select
                                           value={conversionForm.reinvestAssetType}
-                                          onChange={(e) => setConversionForm({ ...conversionForm, reinvestAssetType: e.target.value as AssetType })}
+                                          onChange={(e) => { setConversionForm({ ...conversionForm, reinvestAssetType: e.target.value as AssetType }); }}
                                           className="text-xs bg-white rounded-lg border border-family-accent/15 px-2 py-1 ml-2"
                                         >
                                           <option value="stocks">Chứng Khoán</option>
@@ -1327,7 +1326,7 @@ export const Portfolio: React.FC = () => {
                             <td className="p-3 text-right">
                               <button
                                 type="button"
-                                onClick={() => deleteInvestmentDeal(deal.id)}
+                                onClick={() => { deleteInvestmentDeal(deal.id); }}
                                 className="text-red-500 hover:text-red-700 p-1"
                                 title="Xóa lịch sử"
                               >

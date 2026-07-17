@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React from 'react';
 import { useAppContext } from '../context/AppContext';
 import { Card, CardHeader, CardTitle, CardContent } from '../components/ui/Card';
 import { ObservationControls } from '../components/ui/ObservationControls';
@@ -6,17 +6,13 @@ import { runProjection } from '../engines/projectionEngine';
 import { calculateIncome } from '../engines/incomeEngine';
 import { calculateBudget } from '../engines/budgetEngine';
 import { formatTableMoneyVNDMillion } from '../utils/format';
-import { safeNumber } from '../utils/math';
 import { 
-  ArrowDownRight, 
   ArrowUpRight, 
   ArrowRightLeft,
   Briefcase,
   Home,
   TrendingUp,
-  Wallet,
-  AlertTriangle,
-  Info
+  Wallet
 } from 'lucide-react';
 import {
   LineChart,
@@ -26,8 +22,7 @@ import {
   CartesianGrid,
   Tooltip,
   Legend,
-  ResponsiveContainer,
-  ReferenceLine
+  ResponsiveContainer
 } from 'recharts';
 import { HelpTooltip } from '../components/ui/HelpTooltip';
 
@@ -87,13 +82,13 @@ export const CashflowQuadrant: React.FC = () => {
 
   // --- 1. INCOME QUADRANT ---
   const activeIncome = 
-    (incomeDetails.breakdown['fulltime_salary'] || 0) + 
-    (incomeDetails.breakdown['parttime_salary'] || 0) + 
-    (incomeDetails.breakdown['self_employed'] || 0) + 
-    (incomeDetails.breakdown['irregular_income'] || 0);
+    (incomeDetails.breakdown.fulltime_salary || 0) + 
+    (incomeDetails.breakdown.parttime_salary || 0) + 
+    (incomeDetails.breakdown.self_employed || 0) + 
+    (incomeDetails.breakdown.irregular_income || 0);
   
   // Passive income from Income Schedule + Investment P&L (if positive)
-  const scheduledPassiveIncome = incomeDetails.breakdown['passive_income'] || 0;
+  const scheduledPassiveIncome = incomeDetails.breakdown.passive_income || 0;
   const investmentPnl = activeRow.portfolio?.totalPnl || 0;
   const realizedPassiveIncome = investmentPnl > 0 ? investmentPnl : 0;
   
@@ -143,7 +138,7 @@ export const CashflowQuadrant: React.FC = () => {
       incomeSchedule: state.incomeSchedule
     });
     
-    const rowSchedPassive = rowIncDetails.breakdown['passive_income'] || 0;
+    const rowSchedPassive = rowIncDetails.breakdown.passive_income || 0;
     const rowInvPnl = row.portfolio?.totalPnl || 0;
     const rowPassive = rowSchedPassive + (rowInvPnl > 0 ? rowInvPnl : 0);
     

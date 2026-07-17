@@ -1,10 +1,9 @@
-import React, { useMemo, useState } from 'react';
+import React, { useMemo } from 'react';
 import { useAppContext } from '../../context/AppContext';
 import { analyzeExpense } from '../../engines/expenseEngine';
-import { rebuildTreeFromFlatRatios } from '../../engines/budgetEngine';
 import { Card, CardHeader, CardTitle, CardContent } from '../ui/Card';
 import { formatTableMoneyVNDMillion } from '../../utils/format';
-import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip as RechartsTooltip, Legend, BarChart, Bar, LineChart, Line, XAxis, YAxis, CartesianGrid, ComposedChart } from 'recharts';
+import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip as RechartsTooltip, Legend, Bar, Line, XAxis, YAxis, CartesianGrid, ComposedChart } from 'recharts';
 import { PieChart as PieChartIcon } from 'lucide-react';
 import type { BudgetGroup } from '../../types/budget';
 
@@ -27,7 +26,7 @@ export const ExpenseDashboard: React.FC<ExpenseDashboardProps> = ({ filter, setF
     
     expenseTree.forEach(g => {
       groups.push({
-        value: g.groupId as BudgetGroup,
+        value: g.groupId,
         label: `TỔNG ${g.name}`
       });
     });
@@ -67,7 +66,7 @@ export const ExpenseDashboard: React.FC<ExpenseDashboardProps> = ({ filter, setF
         {FILTER_GROUPS.map(f => (
           <button
             key={f.value}
-            onClick={() => setFilter(f.value)}
+            onClick={() => { setFilter(f.value); }}
             className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-all ${
               filter === f.value 
                 ? 'bg-family-accent text-family-bgDeep shadow-sm' 

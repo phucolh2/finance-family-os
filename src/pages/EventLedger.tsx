@@ -83,7 +83,7 @@ export const EventLedger: React.FC = () => {
               {(['all', 'income', 'budget_allocation', 'investment', 'life_event'] as const).map(f => (
                 <button
                   key={f}
-                  onClick={() => setFilter(f)}
+                  onClick={() => { setFilter(f); }}
                   className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-all ${
                     filter === f 
                       ? 'bg-family-accent text-family-bgDeep shadow-sm' 

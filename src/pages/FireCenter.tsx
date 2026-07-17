@@ -13,7 +13,7 @@ import {
   formatAxisMoneyVNDMillion,
 } from '../utils/format';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
-import { Flame, ShieldAlert, Sparkles, BookOpen, Play, CheckCircle2, AlertTriangle } from 'lucide-react';
+import { Flame, BookOpen, Play, CheckCircle2, AlertTriangle } from 'lucide-react';
 import type { MonteCarloOutput } from '../engines/monteCarloEngine';
 import { HelpTooltip } from '../components/ui/HelpTooltip';
 

@@ -1,8 +1,6 @@
 import type { TimelinePeriod } from '../types/finance';
 import type {
   BudgetRatio,
-  BudgetMainGroupId,
-  BudgetGroup,
   BudgetCategoryOutput,
   BudgetTreeNode,
   MonthlyBudgetOutput,
@@ -11,7 +9,7 @@ import type {
 import type { ChildCostOutput } from '../types/child';
 import { isBeforeOrEqual } from '../utils/date';
 import { safeNumber, safeArray } from '../utils/math';
-import { DEFAULT_BUDGET_RATIOS, DEFAULT_BUDGET_TREE } from '../data/defaultInputs';
+import { DEFAULT_BUDGET_TREE } from '../data/defaultInputs';
 
 export interface BudgetEngineInput {
   period: TimelinePeriod;
@@ -43,11 +41,12 @@ export function rebuildTreeFromFlatRatios(flatRatios: BudgetRatio[]): BudgetTree
       
       // Scale children proportionally
       if (group.children && group.children.length > 0) {
-        const defaultChildrenSum = group.children.reduce((sum, c) => sum + c.ratioPercent, 0);
+        const children = group.children;
+        const defaultChildrenSum = children.reduce((sum, c) => sum + c.ratioPercent, 0);
         if (defaultChildrenSum > 0) {
           let remaining = group.ratioPercent;
-          group.children.forEach((child, idx) => {
-            if (idx === group.children!.length - 1) {
+          children.forEach((child, idx) => {
+            if (idx === children.length - 1) {
               child.ratioPercent = remaining;
             } else {
               const share = Math.round((child.ratioPercent / defaultChildrenSum) * group.ratioPercent * 10) / 10;
@@ -67,7 +66,7 @@ export function rebuildTreeFromFlatRatios(flatRatios: BudgetRatio[]): BudgetTree
  * Recursively collects leaf nodes of the budget tree.
  */
 export function collectLeafNodes(node: BudgetTreeNode): BudgetTreeNode[] {
-  const isActive = node.isActive !== false;
+  const isActive = node.isActive;
   if (!isActive) return [];
 
   if (!node.children || node.children.length === 0) {
@@ -75,7 +74,7 @@ export function collectLeafNodes(node: BudgetTreeNode): BudgetTreeNode[] {
   }
   
   // If parent is active, process active children
-  const activeChildren = node.children.filter(c => c.isActive !== false);
+  const activeChildren = node.children.filter(c => c.isActive);
   if (activeChildren.length === 0) {
     // If no active children, parent acts as leaf
     return [node];
@@ -117,15 +116,15 @@ export function calculateBudget(input: BudgetEngineInput): MonthlyBudgetOutput {
       });
       activeItem = pastOrActiveItems[pastOrActiveItems.length - 1];
     } else {
-      warnings.push(`Mốc thời gian hiện tại (${period.year}-${String(period.month).padStart(2, '0')}) trước thời điểm hiệu lực của phân bổ đầu tiên. Mặc định chưa phân bổ.`);
+      warnings.push(`Mốc thời gian hiện tại (${String(period.year)}-${String(period.month).padStart(2, '0')}) trước thời điểm hiệu lực của phân bổ đầu tiên. Mặc định chưa phân bổ.`);
     }
 
     if (activeItem) {
-      if (activeItem.rootGroups && activeItem.rootGroups.length > 0) {
+      if (activeItem.rootGroups.length > 0) {
         activeTree = activeItem.rootGroups;
       } else if (activeItem.ratios && activeItem.ratios.length > 0) {
         // Migrate flat ratios to tree on the fly
-        activeTree = rebuildTreeFromFlatRatios(activeItem.ratios);
+        activeTree = rebuildTreeFromFlatRatios(activeItem.ratios!);
       }
     }
   }
@@ -134,18 +133,18 @@ export function calculateBudget(input: BudgetEngineInput): MonthlyBudgetOutput {
   let totalMainRatio = 0;
   
   activeTree.forEach((group) => {
-    const isGroupActive = group.isActive !== false;
+    const isGroupActive = group.isActive;
     if (isGroupActive) {
       totalMainRatio += group.ratioPercent;
       
       // Check children ratios match parent
       if (group.children && group.children.length > 0) {
-        const activeChildren = group.children.filter(c => c.isActive !== false);
+        const activeChildren = group.children.filter(c => c.isActive);
         if (activeChildren.length > 0) {
           const childrenSum = activeChildren.reduce((sum, c) => sum + c.ratioPercent, 0);
           if (Math.abs(childrenSum - group.ratioPercent) > 0.05) {
             warnings.push(
-              `Tổng tỷ lệ danh mục con của nhóm "${group.name}" là ${childrenSum}%, lệch so với tỷ lệ nhóm cha ${group.ratioPercent}%.`
+              `Tổng tỷ lệ danh mục con của nhóm "${group.name}" là ${String(childrenSum)}%, lệch so với tỷ lệ nhóm cha ${String(group.ratioPercent)}%.`
             );
           }
         }
@@ -154,7 +153,7 @@ export function calculateBudget(input: BudgetEngineInput): MonthlyBudgetOutput {
   });
 
   if (Math.abs(totalMainRatio - 100) > 0.05) {
-    warnings.push(`Tổng tỷ lệ phân bổ của các nhóm chính là ${totalMainRatio}%, khác biệt so với mức chuẩn 100%.`);
+    warnings.push(`Tổng tỷ lệ phân bổ của các nhóm chính là ${String(totalMainRatio)}%, khác biệt so với mức chuẩn 100%.`);
   }
 
   // 3. Extract leaf nodes as flat categories output
@@ -175,7 +174,7 @@ export function calculateBudget(input: BudgetEngineInput): MonthlyBudgetOutput {
   });
 
   // 4. Inject Child Cost Category if active (fixed cost)
-  if (childCost && childCost.isActive) {
+  if (childCost?.isActive) {
     const childCostAmount = safeNumber(childCost.totalMonthly, 0);
     const childRatioPercent = income > 0 ? (childCostAmount / income) * 100 : 0;
 

@@ -1,7 +1,6 @@
 import React, { useEffect } from 'react';
 import { useAppContext } from '../../context/AppContext';
 import { runProjection } from '../../engines/projectionEngine';
-import { safeNumber } from '../../utils/math';
 
 export const ObservationControls: React.FC = () => {
   const { state, updateProfile, selectedPeriodKey, setSelectedPeriodKey } = useAppContext();
@@ -74,7 +73,7 @@ export const ObservationControls: React.FC = () => {
         <span className="text-family-textMuted font-medium whitespace-nowrap">Tháng quan sát:</span>
         <select
           value={activeKey}
-          onChange={(e) => setSelectedPeriodKey(e.target.value)}
+          onChange={(e) => { setSelectedPeriodKey(e.target.value); }}
           className="bg-transparent border-none text-family-accent focus:ring-0 cursor-pointer font-bold p-0 text-xs"
         >
           {projection.monthlyRows.map((row) => (
@@ -85,7 +84,7 @@ export const ObservationControls: React.FC = () => {
         </select>
         {activeKey !== currentPeriod?.period.key && (
           <button
-            onClick={() => setSelectedPeriodKey(undefined)}
+            onClick={() => { setSelectedPeriodKey(undefined); }}
             className="ml-1 px-2 py-0.5 text-[10px] font-bold text-white bg-family-accent/80 rounded hover:bg-family-primary transition-colors whitespace-nowrap"
             title="Trở về hiện tại"
           >

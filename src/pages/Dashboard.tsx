@@ -1,7 +1,6 @@
 import React, { useState } from 'react';
 import { useAppContext } from '../context/AppContext';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '../components/ui/Card';
-import { WarningBox } from '../components/ui/WarningBox';
 import { EmptyState } from '../components/ui/EmptyState';
 import { runProjection } from '../engines/projectionEngine';
 import {
@@ -27,7 +26,6 @@ import {
   Sparkles, 
   TrendingUp, 
   Wallet, 
-  Flame, 
   ShieldAlert, 
   BadgeDollarSign, 
   Info, 
@@ -229,7 +227,7 @@ export const Dashboard: React.FC = () => {
                 <Wallet className="w-3.5 h-3.5 shrink-0 text-family-accent" />
                 <span className="truncate">Khoản thu</span>
               </span>
-              <button onClick={() => setExplanationId('permanent_income_hypothesis')} className="shrink-0 ml-1 text-family-accent hover:text-family-accent/80 transition-colors mt-0.5" title="Giải thích ý nghĩa">
+              <button onClick={() => { setExplanationId('permanent_income_hypothesis'); }} className="shrink-0 ml-1 text-family-accent hover:text-family-accent/80 transition-colors mt-0.5" title="Giải thích ý nghĩa">
                 <Info className="w-3.5 h-3.5" />
               </button>
             </div>
@@ -248,7 +246,7 @@ export const Dashboard: React.FC = () => {
                 <TrendingUp className="w-3.5 h-3.5 shrink-0 text-green-700" />
                 <span className="truncate">Khoản đầu tư</span>
               </span>
-              <button onClick={() => setExplanationId('modern_portfolio_theory')} className="shrink-0 ml-1 text-family-accent hover:text-family-accent/80 transition-colors mt-0.5" title="Giải thích ý nghĩa">
+              <button onClick={() => { setExplanationId('modern_portfolio_theory'); }} className="shrink-0 ml-1 text-family-accent hover:text-family-accent/80 transition-colors mt-0.5" title="Giải thích ý nghĩa">
                 <Info className="w-3.5 h-3.5" />
               </button>
             </div>
@@ -267,7 +265,7 @@ export const Dashboard: React.FC = () => {
                 <BadgeDollarSign className="w-3.5 h-3.5 shrink-0 text-teal-700" />
                 <span className="truncate">Khoản chi</span>
               </span>
-              <button onClick={() => setExplanationId('harvard_study')} className="shrink-0 ml-1 text-family-accent hover:text-family-accent/80 transition-colors mt-0.5" title="Giải thích ý nghĩa">
+              <button onClick={() => { setExplanationId('harvard_study'); }} className="shrink-0 ml-1 text-family-accent hover:text-family-accent/80 transition-colors mt-0.5" title="Giải thích ý nghĩa">
                 <Info className="w-3.5 h-3.5" />
               </button>
             </div>
@@ -286,7 +284,7 @@ export const Dashboard: React.FC = () => {
                 <ArrowRightLeft className="w-3.5 h-3.5 shrink-0 text-purple-700" />
                 <span className="truncate">Tỷ lệ tích lũy</span>
               </span>
-              <button onClick={() => setExplanationId('trinity_study')} className="shrink-0 ml-1 text-family-accent hover:text-family-accent/80 transition-colors mt-0.5" title="Giải thích ý nghĩa">
+              <button onClick={() => { setExplanationId('trinity_study'); }} className="shrink-0 ml-1 text-family-accent hover:text-family-accent/80 transition-colors mt-0.5" title="Giải thích ý nghĩa">
                 <Info className="w-3.5 h-3.5" />
               </button>
             </div>
@@ -305,7 +303,7 @@ export const Dashboard: React.FC = () => {
                 <Sparkles className="w-3.5 h-3.5 shrink-0 text-blue-600" />
                 <span className="truncate">Dòng tiền thụ động</span>
               </span>
-              <button onClick={() => setExplanationId('trinity_study')} className="shrink-0 ml-1 text-family-accent hover:text-family-accent/80 transition-colors mt-0.5" title="Giải thích ý nghĩa">
+              <button onClick={() => { setExplanationId('trinity_study'); }} className="shrink-0 ml-1 text-family-accent hover:text-family-accent/80 transition-colors mt-0.5" title="Giải thích ý nghĩa">
                 <Info className="w-3.5 h-3.5" />
               </button>
             </div>
@@ -348,7 +346,7 @@ export const Dashboard: React.FC = () => {
       {explanationItem && (
         <Card className="bg-family-accent/5 border-family-accent/30 relative">
           <button
-            onClick={() => setExplanationId(null)}
+            onClick={() => { setExplanationId(null); }}
             className="absolute top-3 right-3 text-family-textLight hover:text-family-text p-1"
           >
             <X className="w-4 h-4" />
