@@ -3,6 +3,7 @@ import { useAppContext } from '../context/AppContext';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '../components/ui/Card';
 import { EmptyState } from '../components/ui/EmptyState';
 import { runProjection } from '../engines/projectionEngine';
+import { generateAdvisorAlerts } from '../engines/advisorEngine';
 import {
   formatKpiMoneyVNDMillion,
   formatTooltipMoneyVNDMillion,
@@ -33,7 +34,12 @@ import {
   Lightbulb, 
   HeartPulse, 
   ArrowRightLeft,
-  ChevronRight
+  ChevronRight,
+  Droplets,
+  AlertTriangle,
+  Scale,
+  TrendingDown,
+  ShieldCheck
 } from 'lucide-react';
 import { HelpTooltip } from '../components/ui/HelpTooltip';
 import { safeNumber } from '../utils/math';
@@ -169,6 +175,8 @@ export const Dashboard: React.FC = () => {
     : [];
 
   // Generate dynamic AI observations based purely on the observed month
+  const advisorAlerts = activeRow ? generateAdvisorAlerts(state, projection, activeRow.period.key) : [];
+  
   const aiComments: string[] = [];
   if (savingsRate < 20) {
     aiComments.push(`⚠️ Tỷ lệ tích lũy tháng này đang ở mức thấp (${savingsRate.toFixed(1)}%). Hãy cân nhắc cắt giảm chi tiêu không thiết yếu.`);
@@ -393,37 +401,57 @@ export const Dashboard: React.FC = () => {
               </div>
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              {/* Warnings from Engine */}
-              <div className="space-y-2">
-                <h5 className="text-[10px] font-bold text-red-700 uppercase tracking-wider">Cảnh báo hệ thống (Engine Warnings)</h5>
-                {projection.warnings.length > 0 ? (
-                  <div className="space-y-1.5 max-h-36 overflow-y-auto pr-1">
-                    {projection.warnings.slice(0, 3).map((w, idx) => (
-                      <div key={idx} className="text-[11px] text-red-700 bg-red-50/50 p-2.5 rounded-xl border border-red-200/50 flex items-start gap-1.5">
-                        <ShieldAlert className="w-4 h-4 shrink-0 mt-0.5" />
-                        <span>{w}</span>
-                      </div>
-                    ))}
-                  </div>
-                ) : (
-                  <p className="text-xs text-green-700 font-semibold bg-green-50/50 p-2.5 rounded-xl border border-green-200/30">
-                    Không phát hiện bất kỳ cảnh báo thâm hụt nào từ động cơ dự phòng.
-                  </p>
-                )}
-              </div>
+            <div className="flex flex-col gap-3">
+              {advisorAlerts.map(alert => {
+                let colorClass = "text-family-text bg-white border border-gray-200";
+                let iconClass = "text-gray-500";
+                
+                if (alert.type === 'danger') {
+                  colorClass = "text-red-900 bg-red-50 border border-red-200";
+                  iconClass = "text-red-600";
+                } else if (alert.type === 'warning') {
+                  colorClass = "text-amber-900 bg-amber-50 border border-amber-200";
+                  iconClass = "text-amber-600";
+                } else if (alert.type === 'success') {
+                  colorClass = "text-emerald-900 bg-emerald-50 border border-emerald-200";
+                  iconClass = "text-emerald-600";
+                } else if (alert.type === 'info') {
+                  colorClass = "text-blue-900 bg-blue-50 border border-blue-200";
+                  iconClass = "text-blue-600";
+                }
 
-              {/* Suggestions */}
-              <div className="space-y-2">
-                <h5 className="text-[10px] font-bold text-green-800 uppercase tracking-wider flex items-center gap-1">
-                  <Lightbulb className="w-3.5 h-3.5 text-green-700" /> Gợi ý hành động bổ trợ
-                </h5>
-                <ul className="text-xs text-family-textMuted space-y-1.5 list-disc list-inside">
-                  <li>Xem xét cơ cấu các dòng thu nhập thụ động khi tích lũy vượt mức 500 triệu.</li>
-                  <li>Khi lãi suất tiết kiệm ở mức thấp, hãy dịch chuyển dòng tiền sang quỹ chứng khoán hoặc Crypto.</li>
-                  <li>Cân đối ngân sách chi tiêu hàng tháng của trẻ em trong giai đoạn đi học.</li>
-                </ul>
-              </div>
+                // Map icon string to component
+                const getIcon = () => {
+                  switch(alert.icon) {
+                    case 'alert-triangle': return <AlertTriangle className={`w-5 h-5 ${iconClass}`} />;
+                    case 'droplets': return <Droplets className={`w-5 h-5 ${iconClass}`} />;
+                    case 'scale': return <Scale className={`w-5 h-5 ${iconClass}`} />;
+                    case 'trending-down': return <TrendingDown className={`w-5 h-5 ${iconClass}`} />;
+                    case 'shield-check': return <ShieldCheck className={`w-5 h-5 ${iconClass}`} />;
+                    default: return <Info className={`w-5 h-5 ${iconClass}`} />;
+                  }
+                };
+
+                return (
+                  <div key={alert.id} className={`p-4 rounded-xl flex items-start gap-3 ${colorClass} shadow-sm transition-all hover:shadow-md`}>
+                    <div className="mt-0.5 p-1.5 bg-white/50 rounded-lg shadow-sm">
+                      {getIcon()}
+                    </div>
+                    <div className="space-y-1.5 flex-1">
+                      <h5 className="text-[11px] font-bold uppercase tracking-wider">{alert.title}</h5>
+                      <p className="text-[13px] font-medium leading-relaxed opacity-90">{alert.message}</p>
+                      {alert.suggestion && (
+                        <div className="mt-2 pt-2 border-t border-black/5">
+                          <p className="text-xs italic opacity-80 flex items-start gap-1">
+                            <Lightbulb className="w-4 h-4 shrink-0 inline-block -mt-0.5" /> 
+                            <span>{alert.suggestion}</span>
+                          </p>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                );
+              })}
             </div>
           </CardContent>
         </Card>
