@@ -8,11 +8,13 @@ import { AlertCircle, Plus, Trash2, CheckCircle2, DollarSign, Calendar } from 'l
 import { useAppContext } from '../../context/AppContext';
 import { formatMoneyVNDMillion } from '../../utils/format';
 import { calculatePMT } from '../../utils/math';
+import { DebtSettlementForm } from './DebtSettlementForm';
 
 export const DebtLiabilityModule: React.FC = () => {
   const { state, addDebt, updateDebt, deleteDebt, settleDebt, selectedPeriodKey } = useAppContext();
   const { debts = [] } = state;
   const [isAdding, setIsAdding] = useState(false);
+  const [settlingDebtId, setSettlingDebtId] = useState<string | null>(null);
 
   React.useEffect(() => {
     setIsAdding(false);
@@ -186,67 +188,82 @@ export const DebtLiabilityModule: React.FC = () => {
                 debts.map(debt => {
                   const pmt = calculatePMT(debt.principal, debt.interestRateAnnual, debt.termMonths);
                   return (
-                    <tr key={debt.id} className="hover:bg-family-bgDark/20 transition-colors">
-                      <td className="px-4 py-3">
-                        <div className="font-medium text-red-200">{debt.name}</div>
-                        <div className="text-xs text-family-textMuted mt-0.5">{
-                          debt.type === 'mortgage' ? 'BĐS' : 
-                          debt.type === 'auto' ? 'Ô tô' : 
-                          debt.type === 'consumer' ? 'Tiêu dùng' : 'Kinh doanh'
-                        }</div>
-                      </td>
-                      <td className="px-4 py-3 font-bold text-red-400">
-                        {formatMoneyVNDMillion(debt.principal)}
-                      </td>
-                      <td className="px-4 py-3">
-                        <span className="text-red-300 font-medium">{debt.interestRateAnnual}%/năm</span>
-                      </td>
-                      <td className="px-4 py-3">
-                        <div className="flex items-center gap-1.5">
-                          <Calendar className="w-3.5 h-3.5 text-family-textMuted" />
-                          <span>{debt.termMonths} tháng</span>
-                        </div>
-                        <div className="text-[10px] text-family-textMuted">
-                          Bắt đầu: {debt.startMonth}/{debt.startYear}
-                        </div>
-                      </td>
-                      <td className="px-4 py-3">
-                        <div className="flex items-center gap-1.5 text-red-400 font-bold bg-red-500/10 w-fit px-2 py-1 rounded">
-                          <DollarSign className="w-3.5 h-3.5" />
-                          {formatMoneyVNDMillion(pmt)}/tháng
-                        </div>
-                      </td>
-                      <td className="px-4 py-3">
-                        {debt.status === 'active' ? (
-                          <span className="px-2 py-1 bg-red-500/10 text-red-400 text-[10px] font-bold rounded-md uppercase tracking-wider">
-                            Đang Trả Nợ
-                          </span>
-                        ) : (
-                          <span className="px-2 py-1 bg-emerald-500/10 text-emerald-400 text-[10px] font-bold rounded-md uppercase tracking-wider">
-                            Đã Tất Toán
-                          </span>
-                        )}
-                      </td>
-                      <td className="px-4 py-3 text-right">
-                        {debt.status === 'active' && (
-                          <Button
-                            onClick={() => { settleDebt(debt.id); }}
-                            variant="outline"
-                            className="text-xs px-2 py-1 h-auto text-emerald-400 border-emerald-500/30 hover:bg-emerald-500/10 mr-2"
-                            title="Đánh dấu đã thanh toán hết nợ"
+                    <React.Fragment key={debt.id}>
+                      <tr className="hover:bg-family-bgDark/20 transition-colors">
+                        <td className="px-4 py-3">
+                          <div className="font-medium text-red-200">{debt.name}</div>
+                          <div className="text-xs text-family-textMuted mt-0.5">{
+                            debt.type === 'mortgage' ? 'BĐS' : 
+                            debt.type === 'auto' ? 'Ô tô' : 
+                            debt.type === 'consumer' ? 'Tiêu dùng' : 'Kinh doanh'
+                          }</div>
+                        </td>
+                        <td className="px-4 py-3 font-bold text-red-400">
+                          {formatMoneyVNDMillion(debt.principal)}
+                        </td>
+                        <td className="px-4 py-3">
+                          <span className="text-red-300 font-medium">{debt.interestRateAnnual}%/năm</span>
+                        </td>
+                        <td className="px-4 py-3">
+                          <div className="flex items-center gap-1.5">
+                            <Calendar className="w-3.5 h-3.5 text-family-textMuted" />
+                            <span>{debt.termMonths} tháng</span>
+                          </div>
+                          <div className="text-[10px] text-family-textMuted">
+                            Bắt đầu: {debt.startMonth}/{debt.startYear}
+                          </div>
+                        </td>
+                        <td className="px-4 py-3">
+                          <div className="flex items-center gap-1.5 text-red-400 font-bold bg-red-500/10 w-fit px-2 py-1 rounded">
+                            <DollarSign className="w-3.5 h-3.5" />
+                            {formatMoneyVNDMillion(pmt)}/tháng
+                          </div>
+                        </td>
+                        <td className="px-4 py-3">
+                          {debt.status === 'active' ? (
+                            <span className="px-2 py-1 bg-red-500/10 text-red-400 text-[10px] font-bold rounded-md uppercase tracking-wider">
+                              Đang Trả Nợ
+                            </span>
+                          ) : (
+                            <span className="px-2 py-1 bg-emerald-500/10 text-emerald-400 text-[10px] font-bold rounded-md uppercase tracking-wider">
+                              Đã Tất Toán
+                            </span>
+                          )}
+                        </td>
+                        <td className="px-4 py-3 text-right">
+                          {debt.status === 'active' && (
+                            <Button
+                              onClick={() => { 
+                                setSettlingDebtId(debt.id);
+                              }}
+                              variant="outline"
+                              className="text-xs px-2 py-1 h-auto text-emerald-400 border-emerald-500/30 hover:bg-emerald-500/10 mr-2"
+                              title="Đánh dấu đã thanh toán hết nợ"
+                            >
+                              <CheckCircle2 className="w-3 h-3 mr-1" /> Tất toán
+                            </Button>
+                          )}
+                          <button
+                            onClick={() => { deleteDebt(debt.id); }}
+                            className="text-family-textMuted hover:text-red-400 transition-colors"
+                            title="Xóa khoản nợ này"
                           >
-                            <CheckCircle2 className="w-3 h-3 mr-1" /> Tất toán
-                          </Button>
-                        )}
-                        <button
-                          onClick={() => { deleteDebt(debt.id); }}
-                          className="text-family-textMuted hover:text-red-400 transition-colors"
-                          title="Xóa khoản nợ này"
-                        >
-                          <Trash2 className="w-4 h-4" />
-                        </button>
-                      </td>
-                    </tr>
+                            <Trash2 className="w-4 h-4" />
+                          </button>
+                        </td>
+                      </tr>
+                      {settlingDebtId === debt.id && (
+                        <tr>
+                           <td colSpan={7} className="p-4 bg-family-bgDark/30 border-b border-family-accent/10">
+                              <DebtSettlementForm 
+                                debt={debt} 
+                                onCancel={() => setSettlingDebtId(null)} 
+                                onSuccess={() => setSettlingDebtId(null)} 
+                              />
+                           </td>
+                        </tr>
+                      )}
+                    </React.Fragment>
                   );
                 })
               )}

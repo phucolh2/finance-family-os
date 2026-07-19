@@ -683,6 +683,110 @@ export function useAppState() {
       });
     },
 
+    addFundTransfer: (transfer: Omit<import('../types/finance').FundTransfer, 'id' | 'createdAt'>) => {
+      const newTransfer = {
+        ...transfer,
+        id: `tf_${Date.now()}_${Math.random().toString(36).substring(2, 9)}`,
+        createdAt: Date.now(),
+      };
+      
+      const nextState = { ...state };
+      nextState.fundTransfers = [...(state.fundTransfers ?? []), newTransfer];
+      
+      // Auto-handle destination logic if applicable
+      if (transfer.destinationType === 'savings') {
+        const newSavings: import('../types/finance').SavingsDeposit = {
+          id: `sav_${Date.now()}_${Math.random().toString(36).substring(2, 9)}`,
+          name: `Nhận điều chuyển từ ${transfer.sourceType === 'cashflow' ? 'Dòng tiền' : transfer.sourceType === 'investment' ? 'Đầu tư' : 'Khác'}`,
+          principal: transfer.amount,
+          interestRateAnnual: state.assumptions.savingsInterestRateAnnual || 5.0,
+          termMonths: 6,
+          startMonth: transfer.month,
+          startYear: transfer.year,
+          pool: transfer.sourceType === 'cashflow' ? 'idle' : 'saving',
+          status: 'active',
+          notes: transfer.note
+        };
+        nextState.savingsDeposits = [...(nextState.savingsDeposits ?? []), newSavings];
+      } else if (transfer.destinationType === 'investment' && transfer.destinationId) {
+        nextState.investmentDeals = (nextState.investmentDeals ?? []).map(deal => {
+          if (deal.id === transfer.destinationId) {
+            return { ...deal, capital: deal.capital + transfer.amount };
+          }
+          return deal;
+        });
+      } else if (transfer.destinationType === 'sinking_fund' && transfer.destinationId) {
+         nextState.sinkingFunds = (nextState.sinkingFunds ?? []).map(fund => {
+            if (fund.id === transfer.destinationId) {
+               return { ...fund, initialDeposit: fund.initialDeposit + transfer.amount };
+            }
+            return fund;
+         });
+      } else if (transfer.destinationType === 'debt' && transfer.destinationId) {
+         nextState.debts = (nextState.debts ?? []).map(debt => {
+             if (debt.id === transfer.destinationId) {
+                 return { ...debt, principal: Math.max(0, debt.principal - transfer.amount) };
+             }
+             return debt;
+         });
+      }
+
+      // Auto-handle source logic
+      if (transfer.sourceType === 'savings' && transfer.sourceId) {
+         nextState.savingsDeposits = (nextState.savingsDeposits ?? []).map(sav => {
+             if (sav.id === transfer.sourceId) {
+                 const newWithdrawal: import('../types/finance').WithdrawalEvent = {
+                     id: `wd_${Date.now()}`,
+                     month: transfer.month,
+                     year: transfer.year,
+                     amount: transfer.amount,
+                     note: 'Điều chuyển nội bộ'
+                 };
+                 return { ...sav, withdrawals: [...(sav.withdrawals ?? []), newWithdrawal] };
+             }
+             return sav;
+         });
+      } else if (transfer.sourceType === 'investment' && transfer.sourceId) {
+         nextState.investmentDeals = (nextState.investmentDeals ?? []).map(deal => {
+             if (deal.id === transfer.sourceId) {
+                 const newWithdrawal: import('../types/finance').WithdrawalEvent = {
+                     id: `wd_${Date.now()}`,
+                     month: transfer.month,
+                     year: transfer.year,
+                     amount: transfer.amount,
+                     realizedProfit: 0,
+                     note: 'Điều chuyển nội bộ'
+                 };
+                 return { ...deal, withdrawals: [...(deal.withdrawals ?? []), newWithdrawal] };
+             }
+             return deal;
+         });
+      } else if (transfer.sourceType === 'sinking_fund' && transfer.sourceId) {
+         nextState.sinkingFunds = (nextState.sinkingFunds ?? []).map(fund => {
+             if (fund.id === transfer.sourceId) {
+                 const newWithdrawal: import('../types/finance').WithdrawalEvent = {
+                     id: `wd_${Date.now()}`,
+                     month: transfer.month,
+                     year: transfer.year,
+                     amount: transfer.amount,
+                     note: 'Điều chuyển nội bộ'
+                 };
+                 return { ...fund, withdrawals: [...(fund.withdrawals ?? []), newWithdrawal] };
+             }
+             return fund;
+         });
+      }
+
+      saveState(nextState);
+    },
+    deleteFundTransfer: (id: string) => {
+      // Simplification: In a full production app, this would rollback the associated withdrawals and deposits.
+      saveState({
+        ...state,
+        fundTransfers: (state.fundTransfers ?? []).filter(item => item.id !== id),
+      });
+    },
+
     addProjectionAdjustment,
     updateProjectionAdjustment,
     deleteProjectionAdjustment,

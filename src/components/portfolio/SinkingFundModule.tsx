@@ -259,6 +259,7 @@ export const SinkingFundModule: React.FC<SinkingFundModuleProps> = ({
                 value={form.termMonths}
                 onChange={e => { setForm({...form, termMonths: Number(e.target.value)}); }}
               >
+                <option value={0}>Không kỳ hạn</option>
                 <option value={1}>1 tháng</option>
                 <option value={3}>3 tháng</option>
                 <option value={6}>6 tháng</option>
@@ -322,7 +323,9 @@ export const SinkingFundModule: React.FC<SinkingFundModuleProps> = ({
                 <div className="flex justify-between items-start mb-2 mt-1">
                   <div>
                     <h4 className="font-bold text-family-text text-base">{fund.name}</h4>
-                    <p className="text-xs text-family-textMuted uppercase tracking-wider mt-0.5">Mục tiêu: {fund.targetAssetType}</p>
+                    {filterFundType !== 'debt_prep' && (
+                      <p className="text-xs text-family-textMuted uppercase tracking-wider mt-0.5">Mục tiêu: {fund.targetAssetType}</p>
+                    )}
                   </div>
                   <div className="flex gap-2">
                     <button 
@@ -365,7 +368,7 @@ export const SinkingFundModule: React.FC<SinkingFundModuleProps> = ({
                   </div>
                   <div className="flex flex-col">
                     <span className="text-[10px] text-family-textMuted uppercase tracking-wide">Kỳ hạn gửi</span>
-                    <span className="text-xs font-medium text-family-text">{fund.termMonths || 1} tháng</span>
+                    <span className="text-xs font-medium text-family-text">{fund.termMonths === 0 ? 'Không kỳ hạn' : `${fund.termMonths} tháng`}</span>
                   </div>
                   <div className="flex flex-col">
                     <span className="text-[10px] text-family-textMuted uppercase tracking-wide">Lãi suất</span>

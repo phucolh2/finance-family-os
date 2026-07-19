@@ -224,7 +224,21 @@ export interface DebtLiability {
   startMonth: number;
   startYear: number;
   status: 'active' | 'settled';
+  paymentSource?: 'debt_reserve' | 'cashflow' | string; // Nguồn tiền thanh toán hàng tháng
   notes?: string;
+}
+
+export interface FundTransfer {
+  id: string;
+  month: number;
+  year: number;
+  amount: number; // Số tiền (Tr VND)
+  sourceType: 'cashflow' | 'savings' | 'sinking_fund' | 'investment' | 'life_event';
+  sourceId?: string; // ID của nguồn nếu có (ví dụ ID sổ tiết kiệm)
+  destinationType: 'cashflow' | 'savings' | 'sinking_fund' | 'investment' | 'debt';
+  destinationId?: string; // ID của đích nếu có (ví dụ ID thương vụ đầu tư)
+  note?: string;
+  createdAt: number; // timestamp
 }
 
 export interface AppState {
@@ -241,6 +255,7 @@ export interface AppState {
   savingsDeposits?: SavingsDeposit[];
   sinkingFunds?: SinkingFund[];
   debts?: DebtLiability[];
+  fundTransfers?: FundTransfer[];
   projectionAdjustments?: import('./projection').ProjectionAdjustmentRecord[];
   resolvedMonthlyDb?: ResolvedMonthlyDbItem[];
   resolvedMonthlyDbMap?: Record<string, ResolvedMonthlyDbItem>;

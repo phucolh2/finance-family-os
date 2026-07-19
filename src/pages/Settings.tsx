@@ -123,15 +123,14 @@ const IncomeCategoriesSettings: React.FC = () => {
                         <option value="passive">Thụ động</option>
                       </select>
                     ) : (
-                      <button onClick={() => { if (!cat.isDefault) handleToggleType(cat); }} disabled={cat.isDefault} className={`text-xs px-2 py-1 rounded font-bold ${cat.type === 'passive' ? 'bg-green-100 text-green-700' : 'bg-blue-100 text-blue-700'} ${!cat.isDefault && 'cursor-pointer hover:opacity-80'}`}>
+                      <button onClick={() => { handleToggleType(cat); }} className={`text-xs px-2 py-1 rounded font-bold cursor-pointer hover:opacity-80 ${cat.type === 'passive' ? 'bg-green-100 text-green-700' : 'bg-blue-100 text-blue-700'}`}>
                         {cat.type === 'passive' ? 'Thụ động' : 'Chủ động'}
                       </button>
                     )}
                   </td>
                   <td className="py-3 text-right">
-                    {!cat.isDefault && (
-                      <div className="flex justify-end gap-1">
-                        {editingId === cat.id ? (
+                    <div className="flex justify-end gap-1">
+                      {editingId === cat.id ? (
                           <>
                             <Button variant="outline" size="sm" onClick={handleSaveEdit} className="text-green-600 hover:text-green-800 hover:bg-green-50 px-2 h-8">
                               <Save className="w-4 h-4" />
@@ -150,8 +149,7 @@ const IncomeCategoriesSettings: React.FC = () => {
                             </Button>
                           </>
                         )}
-                      </div>
-                    )}
+                    </div>
                   </td>
                 </tr>
               ))}
@@ -174,6 +172,9 @@ const AssumptionsSettings: React.FC = () => {
     startYear: 2024,
     rateAnnual: 0.1,
   });
+  
+  const [editingIndex, setEditingIndex] = useState<number | null>(null);
+  const [editingPeriod, setEditingPeriod] = useState<NonTermInterestRatePeriod | null>(null);
 
   const handleAdd = () => {
     updateAssumptions({
@@ -192,6 +193,21 @@ const AssumptionsSettings: React.FC = () => {
       ...state.assumptions,
       nonTermInterestRateSchedule: updated,
     });
+  };
+
+  const handleSaveEdit = () => {
+    if (editingIndex !== null && editingPeriod) {
+      const updated = [...schedule];
+      updated[editingIndex] = editingPeriod;
+      updateAssumptions({
+        ...state.assumptions,
+        nonTermInterestRateSchedule: updated.sort((a, b) => 
+          (a.startYear * 12 + a.startMonth) - (b.startYear * 12 + b.startMonth)
+        ),
+      });
+      setEditingIndex(null);
+      setEditingPeriod(null);
+    }
   };
 
   return (
@@ -229,12 +245,46 @@ const AssumptionsSettings: React.FC = () => {
             <tbody>
               {schedule.map((p, idx) => (
                 <tr key={idx} className="border-b border-family-accent/5 hover:bg-family-bgDark/10">
-                  <td className="py-3">Từ Tháng {p.startMonth}/{p.startYear}</td>
-                  <td className="py-3 text-emerald-500 font-semibold">{p.rateAnnual}%</td>
+                  <td className="py-3">
+                    {editingIndex === idx && editingPeriod ? (
+                       <div className="flex gap-2">
+                         <input type="number" min={1} max={12} value={editingPeriod.startMonth} onChange={e => setEditingPeriod({...editingPeriod, startMonth: Number(e.target.value)})} className="w-16 bg-family-bg border border-family-accent/30 rounded px-2 py-1 text-xs outline-none" />
+                         <span>/</span>
+                         <input type="number" min={2000} max={2060} value={editingPeriod.startYear} onChange={e => setEditingPeriod({...editingPeriod, startYear: Number(e.target.value)})} className="w-20 bg-family-bg border border-family-accent/30 rounded px-2 py-1 text-xs outline-none" />
+                       </div>
+                    ) : (
+                      `Từ Tháng ${p.startMonth}/${p.startYear}`
+                    )}
+                  </td>
+                  <td className="py-3 text-emerald-500 font-semibold">
+                    {editingIndex === idx && editingPeriod ? (
+                       <input type="number" step="0.1" value={editingPeriod.rateAnnual} onChange={e => setEditingPeriod({...editingPeriod, rateAnnual: Number(e.target.value)})} className="w-20 bg-family-bg border border-family-accent/30 rounded px-2 py-1 text-xs outline-none text-emerald-500" />
+                    ) : (
+                      `${p.rateAnnual}%`
+                    )}
+                  </td>
                   <td className="py-3 text-right">
-                    <Button variant="outline" size="sm" onClick={() => { handleRemove(idx); }} className="text-red-500 hover:text-red-700 hover:bg-red-50 px-2 h-8">
-                      <Trash2 className="w-4 h-4" />
-                    </Button>
+                    <div className="flex justify-end gap-1">
+                      {editingIndex === idx ? (
+                        <>
+                          <Button variant="outline" size="sm" onClick={handleSaveEdit} className="text-green-600 hover:text-green-800 hover:bg-green-50 px-2 h-8">
+                            <Save className="w-4 h-4" />
+                          </Button>
+                          <Button variant="outline" size="sm" onClick={() => setEditingIndex(null)} className="text-gray-500 hover:text-gray-700 hover:bg-gray-50 px-2 h-8">
+                            <X className="w-4 h-4" />
+                          </Button>
+                        </>
+                      ) : (
+                        <>
+                          <Button variant="outline" size="sm" onClick={() => { setEditingIndex(idx); setEditingPeriod(p); }} className="text-blue-500 hover:text-blue-700 hover:bg-blue-50 px-2 h-8">
+                            <Edit2 className="w-4 h-4" />
+                          </Button>
+                          <Button variant="outline" size="sm" onClick={() => { handleRemove(idx); }} className="text-red-500 hover:text-red-700 hover:bg-red-50 px-2 h-8">
+                            <Trash2 className="w-4 h-4" />
+                          </Button>
+                        </>
+                      )}
+                    </div>
                   </td>
                 </tr>
               ))}

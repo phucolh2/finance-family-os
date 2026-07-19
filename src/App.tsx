@@ -6,6 +6,7 @@ import { CopilotChat } from './components/copilot/CopilotChat';
 
 const Dashboard = lazy(() => import('./pages/Dashboard').then(m => ({ default: m.Dashboard })));
 const CashflowQuadrant = lazy(() => import('./pages/CashflowQuadrant').then(m => ({ default: m.CashflowQuadrant })));
+const FundTransfers = lazy(() => import('./pages/FundTransfers').then(m => ({ default: m.FundTransfers })));
 const EventLedger = lazy(() => import('./pages/EventLedger').then(m => ({ default: m.EventLedger })));
 const IncomeSchedule = lazy(() => import('./pages/IncomeSchedule').then(m => ({ default: m.IncomeSchedule })));
 const BudgetHistory = lazy(() => import('./pages/BudgetHistory').then(m => ({ default: m.BudgetHistory })));
@@ -29,6 +30,8 @@ function AppContent() {
         return <Dashboard />;
       case 'cashflow':
         return <CashflowQuadrant />;
+      case 'fund_transfers':
+        return <FundTransfers />;
       case 'event_ledger':
         return <EventLedger />;
       case 'income':
