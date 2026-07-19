@@ -121,7 +121,7 @@ export function useAppState() {
 
   // Debounced auto-save effect to prevent disk drag on frequent inputs
   useEffect(() => {
-    const handler = setTimeout(() => {
+    const saveToLocalStorage = () => {
       try {
         const timestamp = new Date().toISOString();
         const persisted: PersistedAppState = {
@@ -134,8 +134,17 @@ export function useAppState() {
       } catch (err) {
         console.error('Failed to write to localStorage:', err);
       }
-    }, 500); // 500ms debounce
-    return () => { clearTimeout(handler); };
+    };
+
+    const handler = setTimeout(saveToLocalStorage, 500); // 500ms debounce
+    
+    // Force save on page unload/refresh to prevent data loss in race condition
+    window.addEventListener('beforeunload', saveToLocalStorage);
+    
+    return () => { 
+      clearTimeout(handler); 
+      window.removeEventListener('beforeunload', saveToLocalStorage);
+    };
   }, [state]);
 
   const saveState = (newState: AppState) => {

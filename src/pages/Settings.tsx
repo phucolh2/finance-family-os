@@ -5,6 +5,7 @@ import { Button } from '../components/ui/Button';
 import { Input } from '../components/ui/Input';
 import { WarningBox } from '../components/ui/WarningBox';
 import { Download, Upload, ShieldAlert, CheckCircle2, Plus, Trash2, Edit2, X, Save } from 'lucide-react';
+import { validateAppState } from '../utils/migration';
 import type { NonTermInterestRatePeriod, IncomeCategory } from '../types/finance';
 
 const IncomeCategoriesSettings: React.FC = () => {
@@ -293,7 +294,15 @@ export const Settings: React.FC = () => {
       try {
         const parsed = JSON.parse(event.target?.result as string);
         
-        // Execute safe import with schema validation
+        // 1. Zod schema validation first
+        const validation = validateAppState(parsed.data || parsed);
+        if (!validation.success) {
+          setErrorMsg(validation.error || 'Dữ liệu JSON không đúng cấu trúc (Zod validation failed).');
+          setSuccessMsg(null);
+          return;
+        }
+
+        // 2. Execute safe import with schema validation
         const result = importState(parsed);
         if (result.success) {
           setSuccessMsg('Nhập khẩu dữ liệu thành công! Bản sao lưu đã được khôi phục.');

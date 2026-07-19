@@ -1,25 +1,20 @@
 import type { AppState } from '../types/finance';
 import type { AssetConfig } from '../types/portfolio';
 import type { BudgetRatioScheduleItem, BudgetTreeNode } from '../types/budget';
+import { AppStateSchema } from '../schema/appStateSchema';
 
 /**
  * Validates whether an object matches the AppState schema.
  */
-export function validateAppState(data: unknown): boolean {
-  if (!data || typeof data !== 'object') return false;
-
-  const d = data as Record<string, unknown>;
-
-  // Check critical fields
-  if (!d.profile || typeof d.profile !== 'object') return false;
-  if (!d.assumptions || typeof d.assumptions !== 'object') return false;
-  
-  if (!Array.isArray(d.incomeSchedule)) return false;
-  if (!Array.isArray(d.budgetSchedule)) return false;
-  if (!Array.isArray(d.assets)) return false;
-  if (!Array.isArray(d.lifeEvents)) return false;
-
-  return true;
+export function validateAppState(data: unknown): { success: boolean, error?: string } {
+  if (!data || typeof data !== 'object') return { success: false, error: 'Dữ liệu phải là object' };
+  const result = AppStateSchema.safeParse(data);
+  if (!result.success) {
+    console.error("State validation failed:", result.error);
+    const errorMsg = (result.error as any).errors.map((e: any) => `${e.path.join('.')}: ${e.message}`).join(', ');
+    return { success: false, error: `Cấu trúc dữ liệu không hợp lệ: ${errorMsg}` };
+  }
+  return { success: true };
 }
 
 /**
@@ -40,12 +35,11 @@ export function migrateState(stored: unknown, defaultState: AppState): AppState 
 
     if (version === 1) {
       data = s.data as Record<string, unknown>;
-    } else if (validateAppState(stored)) {
-      // Direct raw AppState imported without version wrapper
+    } else if (validateAppState(stored).success) {
       data = s;
     }
 
-    if (!data || !validateAppState(data)) {
+    if (!data || !validateAppState(data).success) {
       console.warn('Migration: Invalid or corrupted state layout. Resetting to default.');
       return defaultState;
     }
