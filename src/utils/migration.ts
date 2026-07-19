@@ -56,6 +56,7 @@ export function migrateState(stored: unknown, defaultState: AppState): AppState 
         ...defaultState.profile,
         ...(data.profile as Record<string, unknown>),
       },
+      incomeCategories: Array.isArray(data.incomeCategories) ? data.incomeCategories : defaultState.incomeCategories,
       incomeSchedule: Array.isArray(data.incomeSchedule) ? data.incomeSchedule : defaultState.incomeSchedule,
       budgetSchedule: (() => {
         const rawSchedule = Array.isArray(data.budgetSchedule) ? data.budgetSchedule : defaultState.budgetSchedule;
