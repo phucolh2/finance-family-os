@@ -4,7 +4,7 @@ import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '../co
 import { Button } from '../components/ui/Button';
 import { Input } from '../components/ui/Input';
 import { WarningBox } from '../components/ui/WarningBox';
-import { Download, Upload, ShieldAlert, CheckCircle2, Plus, Trash2 } from 'lucide-react';
+import { Download, Upload, ShieldAlert, CheckCircle2, Plus, Trash2, Edit2, X, Save } from 'lucide-react';
 import type { NonTermInterestRatePeriod, IncomeCategory } from '../types/finance';
 
 const IncomeCategoriesSettings: React.FC = () => {
@@ -27,6 +27,33 @@ const IncomeCategoriesSettings: React.FC = () => {
       ...cat,
       type: cat.type === 'active' ? 'passive' : 'active',
     });
+  };
+
+  const [editingId, setEditingId] = useState<string | null>(null);
+  const [editingCat, setEditingCat] = useState<IncomeCategory | null>(null);
+
+  const handleEditClick = (cat: IncomeCategory) => {
+    setEditingId(cat.id);
+    setEditingCat(cat);
+  };
+
+  const handleCancelEdit = () => {
+    setEditingId(null);
+    setEditingCat(null);
+  };
+
+  const handleSaveEdit = () => {
+    if (editingCat && editingCat.name) {
+      updateIncomeCategory(editingCat);
+      setEditingId(null);
+      setEditingCat(null);
+    }
+  };
+
+  const handleDelete = (id: string) => {
+    if (window.confirm('Bạn có chắc chắn muốn xóa danh mục này? Các mốc thu nhập đang sử dụng danh mục này sẽ tự động chuyển thành "Thu nhập không cố định".')) {
+      deleteIncomeCategory(id);
+    }
   };
 
   return (
@@ -70,19 +97,59 @@ const IncomeCategoriesSettings: React.FC = () => {
               {categories.map((cat, idx) => (
                 <tr key={idx} className="border-b border-family-accent/5 hover:bg-family-bgDark/10">
                   <td className="py-3 font-medium">
-                    {cat.name}
-                    {cat.isDefault && <span className="ml-2 text-[10px] bg-gray-200 text-gray-600 px-1.5 py-0.5 rounded">Mặc định</span>}
+                    {editingId === cat.id && editingCat ? (
+                      <input 
+                        type="text" 
+                        value={editingCat.name} 
+                        onChange={(e) => setEditingCat({...editingCat, name: e.target.value})}
+                        className="w-full bg-family-bg border border-family-accent/30 rounded px-2 py-1 text-xs outline-none"
+                      />
+                    ) : (
+                      <>
+                        {cat.name}
+                        {cat.isDefault && <span className="ml-2 text-[10px] bg-gray-200 text-gray-600 px-1.5 py-0.5 rounded">Mặc định</span>}
+                      </>
+                    )}
                   </td>
                   <td className="py-3">
-                    <button onClick={() => { handleToggleType(cat); }} className={`text-xs px-2 py-1 rounded font-bold ${cat.type === 'passive' ? 'bg-green-100 text-green-700' : 'bg-blue-100 text-blue-700'}`}>
-                      {cat.type === 'passive' ? 'Thụ động' : 'Chủ động'}
-                    </button>
+                    {editingId === cat.id && editingCat ? (
+                      <select 
+                        value={editingCat.type}
+                        onChange={(e) => setEditingCat({...editingCat, type: e.target.value as 'active' | 'passive'})}
+                        className="bg-family-bg border border-family-accent/30 rounded px-2 py-1 text-xs outline-none"
+                      >
+                        <option value="active">Chủ động</option>
+                        <option value="passive">Thụ động</option>
+                      </select>
+                    ) : (
+                      <button onClick={() => { if (!cat.isDefault) handleToggleType(cat); }} disabled={cat.isDefault} className={`text-xs px-2 py-1 rounded font-bold ${cat.type === 'passive' ? 'bg-green-100 text-green-700' : 'bg-blue-100 text-blue-700'} ${!cat.isDefault && 'cursor-pointer hover:opacity-80'}`}>
+                        {cat.type === 'passive' ? 'Thụ động' : 'Chủ động'}
+                      </button>
+                    )}
                   </td>
                   <td className="py-3 text-right">
                     {!cat.isDefault && (
-                      <Button variant="outline" size="sm" onClick={() => { deleteIncomeCategory(cat.id); }} className="text-red-500 hover:text-red-700 hover:bg-red-50 px-2 h-8">
-                        <Trash2 className="w-4 h-4" />
-                      </Button>
+                      <div className="flex justify-end gap-1">
+                        {editingId === cat.id ? (
+                          <>
+                            <Button variant="outline" size="sm" onClick={handleSaveEdit} className="text-green-600 hover:text-green-800 hover:bg-green-50 px-2 h-8">
+                              <Save className="w-4 h-4" />
+                            </Button>
+                            <Button variant="outline" size="sm" onClick={handleCancelEdit} className="text-gray-500 hover:text-gray-700 hover:bg-gray-50 px-2 h-8">
+                              <X className="w-4 h-4" />
+                            </Button>
+                          </>
+                        ) : (
+                          <>
+                            <Button variant="outline" size="sm" onClick={() => handleEditClick(cat)} className="text-blue-500 hover:text-blue-700 hover:bg-blue-50 px-2 h-8">
+                              <Edit2 className="w-4 h-4" />
+                            </Button>
+                            <Button variant="outline" size="sm" onClick={() => handleDelete(cat.id)} className="text-red-500 hover:text-red-700 hover:bg-red-50 px-2 h-8">
+                              <Trash2 className="w-4 h-4" />
+                            </Button>
+                          </>
+                        )}
+                      </div>
                     )}
                   </td>
                 </tr>

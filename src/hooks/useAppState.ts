@@ -668,6 +668,9 @@ export function useAppState() {
       saveState({
         ...state,
         incomeCategories: (state.incomeCategories ?? []).filter(item => item.id !== id),
+        incomeSchedule: state.incomeSchedule.map(item => 
+          item.incomeType === id ? { ...item, incomeType: 'irregular_income' } : item
+        ),
       });
     },
 
