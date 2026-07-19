@@ -4,7 +4,7 @@ import { HelpTooltip } from '../ui/HelpTooltip';
 import { Input } from '../ui/Input';
 import { Select } from '../ui/Select';
 import { Button } from '../ui/Button';
-import { AlertCircle, Plus, Trash2, CheckCircle2, DollarSign, Calendar, Info } from 'lucide-react';
+import { AlertCircle, Plus, Trash2, CheckCircle2, DollarSign, Calendar } from 'lucide-react';
 import { useAppContext } from '../../context/AppContext';
 import { formatMoneyVNDMillion } from '../../utils/format';
 import { calculatePMT } from '../../utils/math';
@@ -69,7 +69,7 @@ export const DebtLiabilityModule: React.FC = () => {
             </CardDescription>
           </div>
           <Button 
-            onClick={() => setIsAdding(!isAdding)}
+            onClick={() => { setIsAdding(!isAdding); }}
             variant="outline"
             className="border-red-500/30 text-red-400 hover:bg-red-500/10"
           >
@@ -85,7 +85,7 @@ export const DebtLiabilityModule: React.FC = () => {
               <label className="text-xs text-family-textMuted uppercase">Tên khoản nợ</label>
               <Input
                 value={newDebt.name}
-                onChange={e => setNewDebt({...newDebt, name: e.target.value})}
+                onChange={e => { setNewDebt({...newDebt, name: e.target.value}); }}
                 placeholder="Vd: Vay mua chung cư"
                 className="bg-family-bgDark"
               />
@@ -94,7 +94,7 @@ export const DebtLiabilityModule: React.FC = () => {
               <label className="text-xs text-family-textMuted uppercase">Phân loại</label>
               <Select
                 value={newDebt.type}
-                onChange={e => setNewDebt({...newDebt, type: e.target.value as any})}
+                onChange={e => { setNewDebt({...newDebt, type: e.target.value as any}); }}
                 options={[
                   { value: 'mortgage', label: 'Vay Bất Động Sản' },
                   { value: 'auto', label: 'Vay Mua Ô tô' },
@@ -109,7 +109,7 @@ export const DebtLiabilityModule: React.FC = () => {
               <Input
                 type="number"
                 value={newDebt.principal}
-                onChange={e => setNewDebt({...newDebt, principal: e.target.value})}
+                onChange={e => { setNewDebt({...newDebt, principal: e.target.value}); }}
                 placeholder="Vd: 2000"
                 className="bg-family-bgDark border-red-500/30"
               />
@@ -119,7 +119,7 @@ export const DebtLiabilityModule: React.FC = () => {
               <Input
                 type="number"
                 value={newDebt.interestRateAnnual}
-                onChange={e => setNewDebt({...newDebt, interestRateAnnual: e.target.value})}
+                onChange={e => { setNewDebt({...newDebt, interestRateAnnual: e.target.value}); }}
                 placeholder="Vd: 9.5"
                 className="bg-family-bgDark border-red-500/30"
               />
@@ -129,7 +129,7 @@ export const DebtLiabilityModule: React.FC = () => {
               <Input
                 type="number"
                 value={newDebt.termMonths}
-                onChange={e => setNewDebt({...newDebt, termMonths: e.target.value})}
+                onChange={e => { setNewDebt({...newDebt, termMonths: e.target.value}); }}
                 placeholder="Vd: 240 (20 năm)"
                 className="bg-family-bgDark"
               />
@@ -141,14 +141,14 @@ export const DebtLiabilityModule: React.FC = () => {
                   type="number"
                   value={newDebt.startMonth}
                   placeholder="VD: 1"
-                  onChange={e => setNewDebt({...newDebt, startMonth: Number(e.target.value)})}
+                  onChange={e => { setNewDebt({...newDebt, startMonth: Number(e.target.value)}); }}
                   className="w-24 bg-family-bgDark"
                 />
                 <Input
                   type="number"
                   value={newDebt.startYear}
                   placeholder="VD: 2026"
-                  onChange={e => setNewDebt({...newDebt, startYear: Number(e.target.value)})}
+                  onChange={e => { setNewDebt({...newDebt, startYear: Number(e.target.value)}); }}
                   className="w-28 bg-family-bgDark"
                 />
               </div>
@@ -230,7 +230,7 @@ export const DebtLiabilityModule: React.FC = () => {
                       <td className="px-4 py-3 text-right">
                         {debt.status === 'active' && (
                           <Button
-                            onClick={() => settleDebt(debt.id)}
+                            onClick={() => { settleDebt(debt.id); }}
                             variant="outline"
                             className="text-xs px-2 py-1 h-auto text-emerald-400 border-emerald-500/30 hover:bg-emerald-500/10 mr-2"
                             title="Đánh dấu đã thanh toán hết nợ"
@@ -239,7 +239,7 @@ export const DebtLiabilityModule: React.FC = () => {
                           </Button>
                         )}
                         <button
-                          onClick={() => deleteDebt(debt.id)}
+                          onClick={() => { deleteDebt(debt.id); }}
                           className="text-family-textMuted hover:text-red-400 transition-colors"
                           title="Xóa khoản nợ này"
                         >

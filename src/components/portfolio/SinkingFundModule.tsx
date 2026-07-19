@@ -2,10 +2,9 @@ import React, { useState } from 'react';
 import { useAppContext } from '../../context/AppContext';
 import { Button } from '../ui/Button';
 import { Input } from '../ui/Input';
-import { WarningBox } from '../ui/WarningBox';
 import { EmptyState } from '../ui/EmptyState';
 import { HelpTooltip } from '../ui/HelpTooltip';
-import { Target, Plus, Trash2, CheckCircle, ArrowRightCircle, Edit } from 'lucide-react';
+import { Target, Plus, Trash2, ArrowRightCircle, Edit } from 'lucide-react';
 import { formatTableMoneyVNDMillion } from '../../utils/format';
 import { safeNumber, calculateNonTermInterest } from '../../utils/math';
 import { runProjection } from '../../engines/projectionEngine';
@@ -181,7 +180,7 @@ export const SinkingFundModule: React.FC<SinkingFundModuleProps> = ({
             {description}
           </p>
         </div>
-        <Button onClick={() => setShowAddForm(!showAddForm)} size="sm" className="gap-1 text-xs py-1 h-8 shrink-0">
+        <Button onClick={() => { setShowAddForm(!showAddForm); }} size="sm" className="gap-1 text-xs py-1 h-8 shrink-0">
           <Plus className="w-3.5 h-3.5" /> Tạo quỹ mới
         </Button>
       </div>
@@ -202,7 +201,7 @@ export const SinkingFundModule: React.FC<SinkingFundModuleProps> = ({
                 disabled={activeSources.length === 1}
                 className={`block w-full rounded-xl border border-family-accent/20 py-2.5 px-3 text-sm text-family-text focus:border-family-accent focus:outline-none focus:ring-1 focus:ring-family-accent transition-colors ${activeSources.length === 1 ? 'bg-gray-50 cursor-not-allowed opacity-80' : 'bg-white/60 focus:bg-white'}`}
                 value={form.sourceOfFund}
-                onChange={e => setForm({...form, sourceOfFund: e.target.value as any})}
+                onChange={e => { setForm({...form, sourceOfFund: e.target.value as any}); }}
               >
                 {activeSources.includes('unallocated') && <option value="unallocated">Tiền chưa có kế hoạch</option>}
                 {activeSources.includes('saving') && <option value="saving">Số dư Quỹ Tiết Kiệm</option>}
@@ -215,7 +214,7 @@ export const SinkingFundModule: React.FC<SinkingFundModuleProps> = ({
                 <select 
                   className="block w-full rounded-xl border border-family-accent/20 bg-white/60 py-2.5 px-3 text-sm text-family-text focus:border-family-accent focus:bg-white focus:outline-none focus:ring-1 focus:ring-family-accent transition-colors"
                   value={form.targetAssetType}
-                  onChange={e => setForm({...form, targetAssetType: e.target.value as AssetType})}
+                  onChange={e => { setForm({...form, targetAssetType: e.target.value as AssetType}); }}
                 >
                   <option value="real_estate">Bất động sản</option>
                   <option value="gold">Vàng</option>
@@ -258,7 +257,7 @@ export const SinkingFundModule: React.FC<SinkingFundModuleProps> = ({
               <select 
                 className="block w-full rounded-xl border border-family-accent/20 bg-white/60 py-2.5 px-3 text-sm text-family-text focus:border-family-accent focus:bg-white focus:outline-none focus:ring-1 focus:ring-family-accent transition-colors"
                 value={form.termMonths}
-                onChange={e => setForm({...form, termMonths: Number(e.target.value)})}
+                onChange={e => { setForm({...form, termMonths: Number(e.target.value)}); }}
               >
                 <option value={1}>1 tháng</option>
                 <option value={3}>3 tháng</option>
@@ -431,7 +430,7 @@ export const SinkingFundModule: React.FC<SinkingFundModuleProps> = ({
                         <Input
                           label="Tên thương vụ đầu tư"
                           value={disburseForm.dealName}
-                          onChange={(e) => setDisburseForm({ ...disburseForm, dealName: e.target.value })}
+                          onChange={(e) => { setDisburseForm({ ...disburseForm, dealName: e.target.value }); }}
                           placeholder={`VD: Mua ${fund.name}`}
                         />
                       )}
@@ -442,7 +441,7 @@ export const SinkingFundModule: React.FC<SinkingFundModuleProps> = ({
                           <input
                             type="number" min={1} max={12}
                             value={disburseForm.disbursedMonth}
-                            onChange={(e) => setDisburseForm({ ...disburseForm, disbursedMonth: safeNumber(Number(e.target.value), 12) })}
+                            onChange={(e) => { setDisburseForm({ ...disburseForm, disbursedMonth: safeNumber(Number(e.target.value), 12) }); }}
                             className="w-14 text-center text-xs bg-white rounded-md border border-green-200 p-1"
                           />
                         </div>
@@ -451,7 +450,7 @@ export const SinkingFundModule: React.FC<SinkingFundModuleProps> = ({
                           <input
                             type="number" min={2020} max={2060}
                             value={disburseForm.disbursedYear}
-                            onChange={(e) => setDisburseForm({ ...disburseForm, disbursedYear: safeNumber(Number(e.target.value), 2026) })}
+                            onChange={(e) => { setDisburseForm({ ...disburseForm, disbursedYear: safeNumber(Number(e.target.value), 2026) }); }}
                             className="w-16 text-center text-xs bg-white rounded-md border border-green-200 p-1"
                           />
                         </div>
@@ -461,7 +460,7 @@ export const SinkingFundModule: React.FC<SinkingFundModuleProps> = ({
                             <label className="text-xs font-semibold text-family-text">Mức rút:</label>
                             <select
                               value={partialWithdrawType}
-                              onChange={(e) => setPartialWithdrawType(e.target.value as 'amount'|'percentage')}
+                              onChange={(e) => { setPartialWithdrawType(e.target.value as 'amount'|'percentage'); }}
                               className="bg-white rounded-md text-xs border border-green-200 p-1"
                             >
                               <option value="amount">Số tiền (Tr)</option>
@@ -470,7 +469,7 @@ export const SinkingFundModule: React.FC<SinkingFundModuleProps> = ({
                             <input
                               type="number" step="0.1" min="0" max={partialWithdrawType === 'percentage' ? 100 : balance}
                               value={partialWithdrawValue}
-                              onChange={(e) => setPartialWithdrawValue(safeNumber(Number(e.target.value), 0))}
+                              onChange={(e) => { setPartialWithdrawValue(safeNumber(Number(e.target.value), 0)); }}
                               className="w-16 text-center text-xs bg-white rounded-md border border-green-200 p-1 font-bold text-green-700"
                             />
                           </div>
@@ -478,7 +477,7 @@ export const SinkingFundModule: React.FC<SinkingFundModuleProps> = ({
                       </div>
 
                       <div className="flex justify-end gap-2 pt-2">
-                        <Button variant="outline" size="sm" onClick={() => setDisbursingId(null)}>Hủy</Button>
+                        <Button variant="outline" size="sm" onClick={() => { setDisbursingId(null); }}>Hủy</Button>
                         <Button 
                           size="sm" 
                           disabled={filterFundType !== 'debt_prep' && !disburseForm.dealName}

@@ -357,7 +357,7 @@ export const IncomeSchedule: React.FC = () => {
                   <select 
                     className="w-full bg-family-bgDeep border border-family-accent/20 rounded-xl px-4 py-2.5 text-family-text focus:outline-none focus:border-family-accent/60 transition-colors text-xs h-[38px]"
                     value={newType}
-                    onChange={(e) => { setNewType(e.target.value as IncomeType); }}
+                    onChange={(e) => { setNewType(e.target.value); }}
                   >
                     {(state.incomeCategories || []).map(cat => (
                       <option key={cat.id} value={cat.id}>{cat.name} {cat.type === 'active' ? '(Chủ động)' : '(Thụ động)'}</option>
@@ -778,7 +778,7 @@ export const IncomeSchedule: React.FC = () => {
                       <select 
                         className="w-full bg-family-bgDeep border border-family-accent/20 rounded-xl px-4 py-2.5 text-family-text focus:outline-none focus:border-family-accent/60 transition-colors text-xs h-[38px]"
                         value={editType}
-                        onChange={(e) => { setEditType(e.target.value as IncomeType); }}
+                        onChange={(e) => { setEditType(e.target.value); }}
                       >
                         {(state.incomeCategories || []).map(cat => (
                           <option key={cat.id} value={cat.id}>{cat.name} {cat.type === 'active' ? '(Chủ động)' : '(Thụ động)'}</option>

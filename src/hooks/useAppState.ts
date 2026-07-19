@@ -214,7 +214,7 @@ export function useAppState() {
       id: `id_${Date.now().toString()}_${Math.random().toString(36).substring(2, 9)}`,
     };
 
-    let updatedSchedule = [...state.incomeSchedule];
+    const updatedSchedule = [...state.incomeSchedule];
     const newMonthValue = newItem.effectiveYear * 12 + newItem.effectiveMonth;
 
     // Allow concurrent streams (e.g., passive income from Real Estate and Fulltime Salary).

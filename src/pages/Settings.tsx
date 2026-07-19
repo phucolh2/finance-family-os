@@ -40,14 +40,14 @@ const IncomeCategoriesSettings: React.FC = () => {
           <h4 className="font-semibold text-sm mb-3">Thêm loại thu nhập mới</h4>
           <div className="flex flex-wrap items-end gap-3">
             <div className="w-64">
-              <Input label="Tên danh mục" type="text" value={newCat.name} placeholder="VD: Thuê nhà, Cổ tức..." onChange={e => setNewCat({...newCat, name: e.target.value})} />
+              <Input label="Tên danh mục" type="text" value={newCat.name} placeholder="VD: Thuê nhà, Cổ tức..." onChange={e => { setNewCat({...newCat, name: e.target.value}); }} />
             </div>
             <div className="w-48">
               <label className="block text-xs font-semibold text-family-textMuted uppercase mb-1.5">Loại (Chủ động/Thụ động)</label>
               <select 
                 className="w-full bg-family-bgDeep border border-family-accent/20 rounded-xl px-4 py-2.5 text-family-text focus:outline-none focus:border-family-accent/60 transition-colors text-xs h-[42px]"
                 value={newCat.type}
-                onChange={(e) => setNewCat({...newCat, type: e.target.value as 'active' | 'passive'})}
+                onChange={(e) => { setNewCat({...newCat, type: e.target.value as 'active' | 'passive'}); }}
               >
                 <option value="active">Chủ động (Active)</option>
                 <option value="passive">Thụ động (Passive)</option>
@@ -74,13 +74,13 @@ const IncomeCategoriesSettings: React.FC = () => {
                     {cat.isDefault && <span className="ml-2 text-[10px] bg-gray-200 text-gray-600 px-1.5 py-0.5 rounded">Mặc định</span>}
                   </td>
                   <td className="py-3">
-                    <button onClick={() => handleToggleType(cat)} className={`text-xs px-2 py-1 rounded font-bold ${cat.type === 'passive' ? 'bg-green-100 text-green-700' : 'bg-blue-100 text-blue-700'}`}>
+                    <button onClick={() => { handleToggleType(cat); }} className={`text-xs px-2 py-1 rounded font-bold ${cat.type === 'passive' ? 'bg-green-100 text-green-700' : 'bg-blue-100 text-blue-700'}`}>
                       {cat.type === 'passive' ? 'Thụ động' : 'Chủ động'}
                     </button>
                   </td>
                   <td className="py-3 text-right">
                     {!cat.isDefault && (
-                      <Button variant="outline" size="sm" onClick={() => deleteIncomeCategory(cat.id)} className="text-red-500 hover:text-red-700 hover:bg-red-50 px-2 h-8">
+                      <Button variant="outline" size="sm" onClick={() => { deleteIncomeCategory(cat.id); }} className="text-red-500 hover:text-red-700 hover:bg-red-50 px-2 h-8">
                         <Trash2 className="w-4 h-4" />
                       </Button>
                     )}
@@ -137,13 +137,13 @@ const AssumptionsSettings: React.FC = () => {
           <h4 className="font-semibold text-sm mb-3">Thêm mốc Lãi suất không kỳ hạn</h4>
           <div className="flex flex-wrap items-end gap-3">
             <div className="w-24">
-              <Input label="Tháng" type="number" min={1} max={12} value={newPeriod.startMonth} onChange={e => setNewPeriod({...newPeriod, startMonth: Number(e.target.value)})} />
+              <Input label="Tháng" type="number" min={1} max={12} value={newPeriod.startMonth} onChange={e => { setNewPeriod({...newPeriod, startMonth: Number(e.target.value)}); }} />
             </div>
             <div className="w-28">
-              <Input label="Năm" type="number" min={2000} max={2060} value={newPeriod.startYear} onChange={e => setNewPeriod({...newPeriod, startYear: Number(e.target.value)})} />
+              <Input label="Năm" type="number" min={2000} max={2060} value={newPeriod.startYear} onChange={e => { setNewPeriod({...newPeriod, startYear: Number(e.target.value)}); }} />
             </div>
             <div className="w-32">
-              <Input label="Lãi suất (%/năm)" type="number" step="0.1" value={newPeriod.rateAnnual || ''} placeholder="VD: 0.1" onChange={e => setNewPeriod({...newPeriod, rateAnnual: Number(e.target.value)})} />
+              <Input label="Lãi suất (%/năm)" type="number" step="0.1" value={newPeriod.rateAnnual || ''} placeholder="VD: 0.1" onChange={e => { setNewPeriod({...newPeriod, rateAnnual: Number(e.target.value)}); }} />
             </div>
             <Button onClick={handleAdd} size="sm" className="h-10 mb-[2px] gap-1"><Plus className="w-4 h-4"/> Thêm</Button>
           </div>
@@ -164,7 +164,7 @@ const AssumptionsSettings: React.FC = () => {
                   <td className="py-3">Từ Tháng {p.startMonth}/{p.startYear}</td>
                   <td className="py-3 text-emerald-500 font-semibold">{p.rateAnnual}%</td>
                   <td className="py-3 text-right">
-                    <Button variant="outline" size="sm" onClick={() => handleRemove(idx)} className="text-red-500 hover:text-red-700 hover:bg-red-50 px-2 h-8">
+                    <Button variant="outline" size="sm" onClick={() => { handleRemove(idx); }} className="text-red-500 hover:text-red-700 hover:bg-red-50 px-2 h-8">
                       <Trash2 className="w-4 h-4" />
                     </Button>
                   </td>

@@ -127,7 +127,7 @@ export function calculateBudget(input: BudgetEngineInput): MonthlyBudgetOutput {
         activeTree = activeItem.rootGroups;
       } else if (activeItem.ratios && activeItem.ratios.length > 0) {
         // Migrate flat ratios to tree on the fly
-        activeTree = rebuildTreeFromFlatRatios(activeItem.ratios!);
+        activeTree = rebuildTreeFromFlatRatios(activeItem.ratios);
       }
     }
   }

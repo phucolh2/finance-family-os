@@ -3,12 +3,12 @@ import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '../ui
 import { EmptyState } from '../ui/EmptyState';
 import { HelpTooltip } from '../ui/HelpTooltip';
 import { formatKpiMoneyVNDMillion } from '../../utils/format';
-import type { AssetConfig, AssetType } from '../../types/portfolio';
+import type { AssetConfig } from '../../types/portfolio';
 import type { ProjectionMonthlyRow } from '../../types/projection';
 import type { InvestmentDeal, SinkingFund } from '../../types/finance';
 import {
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip as RechartsTooltip, Legend, ResponsiveContainer,
-  ComposedChart, Line, Cell, ReferenceLine
+  ComposedChart, Cell, ReferenceLine
 } from 'recharts';
 
 interface ExpertPortfolioChartsProps {
@@ -127,7 +127,7 @@ export const ExpertPortfolioCharts: React.FC<ExpertPortfolioChartsProps> = ({
   }, [assets, activeRow, observedDeals, hasData]);
 
   const CustomTooltipLiquidity = ({ active, payload }: any) => {
-    if (active && payload && payload.length) {
+    if (active && payload?.length) {
       const data = payload[0].payload;
       return (
         <div className="bg-slate-800 border border-slate-700 text-white p-3 rounded-lg shadow-xl text-xs">
@@ -141,7 +141,7 @@ export const ExpertPortfolioCharts: React.FC<ExpertPortfolioChartsProps> = ({
   };
 
   const CustomTooltipAllocation = ({ active, payload }: any) => {
-    if (active && payload && payload.length) {
+    if (active && payload?.length) {
       const data = payload[0].payload;
       const isOver = data.diff > 0;
       return (
@@ -160,7 +160,7 @@ export const ExpertPortfolioCharts: React.FC<ExpertPortfolioChartsProps> = ({
   };
   
   const CustomTooltipYield = ({ active, payload }: any) => {
-    if (active && payload && payload.length) {
+    if (active && payload?.length) {
       const data = payload[0].payload;
       const isProfit = data.pnl >= 0;
       return (

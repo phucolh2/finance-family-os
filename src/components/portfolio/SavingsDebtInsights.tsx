@@ -1,6 +1,6 @@
 import React, { useMemo } from 'react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '../ui/Card';
-import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, BarChart, Bar, ReferenceLine, ComposedChart, Line, Legend } from 'recharts';
+import { Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, BarChart, Bar, ReferenceLine, ComposedChart, Line, Legend } from 'recharts';
 import { ShieldCheck, Zap, Goal } from 'lucide-react';
 import { formatMoneyVNDMillion } from '../../utils/format';
 import type { ProjectionMonthlyRow } from '../../types/projection';
@@ -45,7 +45,7 @@ export const SavingsDebtInsights: React.FC<SavingsDebtInsightsProps> = ({ projec
   }, [chartData]);
 
   const CustomTooltip = ({ active, payload, label }: any) => {
-    if (active && payload && payload.length) {
+    if (active && payload?.length) {
       return (
         <div className="bg-family-bgDeep border border-family-accent/20 p-3 rounded-lg shadow-lg">
           <p className="font-semibold text-family-text mb-2 text-sm">{label}</p>

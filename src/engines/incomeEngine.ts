@@ -1,4 +1,4 @@
-import type { TimelinePeriod, IncomeScheduleItem, IncomeType } from '../types/finance';
+import type { TimelinePeriod, IncomeScheduleItem } from '../types/finance';
 import { safeNumber, safeArray } from '../utils/math';
 
 export interface IncomeEngineInput {

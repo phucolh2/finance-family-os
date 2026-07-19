@@ -5,7 +5,7 @@ import { Input } from '../ui/Input';
 import { WarningBox } from '../ui/WarningBox';
 import { EmptyState } from '../ui/EmptyState';
 import { HelpTooltip } from '../ui/HelpTooltip';
-import { Target, Plus, Trash2, CheckCircle, Save, Edit } from 'lucide-react';
+import { Plus, Trash2, CheckCircle, Save, Edit } from 'lucide-react';
 import { formatTableMoneyVNDMillion } from '../../utils/format';
 import { safeNumber, calculateNonTermInterest } from '../../utils/math';
 import { runProjection } from '../../engines/projectionEngine';
@@ -14,7 +14,7 @@ interface SavingsDepositModuleProps {
   defaultStartMonth?: number;
   defaultStartYear?: number;
   filterCurrentMonthOnly?: boolean;
-  filterPools?: Array<'idle' | 'planned' | 'saving'>;
+  filterPools?: ('idle' | 'planned' | 'saving')[];
   title?: string;
   description?: React.ReactNode;
   emptyStateTitle?: string;
@@ -393,7 +393,7 @@ export const SavingsDepositModule: React.FC<SavingsDepositModuleProps> = ({
                                 termMonths: dep.termMonths,
                                 startMonth: dep.startMonth,
                                 startYear: dep.startYear,
-                                pool: dep.pool as any,
+                                pool: dep.pool,
                               });
                               setShowAddSavingsForm(true);
                               window.scrollTo({ top: 0, behavior: 'smooth' });
@@ -506,7 +506,7 @@ export const SavingsDepositModule: React.FC<SavingsDepositModuleProps> = ({
                                   <label className="font-semibold text-family-text">Mức rút:</label>
                                   <select
                                     value={partialWithdrawType}
-                                    onChange={(e) => setPartialWithdrawType(e.target.value as 'amount'|'percentage')}
+                                    onChange={(e) => { setPartialWithdrawType(e.target.value as 'amount'|'percentage'); }}
                                     className="bg-white rounded-lg border border-sky-200 p-1"
                                   >
                                     <option value="amount">Số tiền (Tr)</option>
@@ -532,7 +532,7 @@ export const SavingsDepositModule: React.FC<SavingsDepositModuleProps> = ({
                                 <input
                                   type="number" step="0.01"
                                   value={settleSavingsForm.realizedInterest}
-                                  onChange={(e) => setSettleSavingsForm({ ...settleSavingsForm, realizedInterest: safeNumber(Number(e.target.value), 0) })}
+                                  onChange={(e) => { setSettleSavingsForm({ ...settleSavingsForm, realizedInterest: safeNumber(Number(e.target.value), 0) }); }}
                                   className="w-20 text-center bg-white rounded-lg border border-sky-200 p-1 font-bold text-sky-700"
                                 />
                                 <span className="font-semibold text-family-textMuted">Tr VND</span>

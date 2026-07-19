@@ -10,7 +10,7 @@ import { safeNumber } from '../utils/math';
 import { ExpertPortfolioCharts } from '../components/portfolio/ExpertPortfolioCharts';
 import { PieChart, Pie, Cell, ResponsiveContainer, Legend, Tooltip } from 'recharts';
 import { PortfolioRadarChart } from '../components/portfolio/PortfolioRadarChart';
-import { Briefcase, RotateCcw, Plus, PlusCircle, Trash2 } from 'lucide-react';
+import { Briefcase, RotateCcw, PlusCircle, Trash2 } from 'lucide-react';
 import type { AssetType } from '../types/portfolio';
 import { ObservationControls } from '../components/ui/ObservationControls';
 import { HelpTooltip } from '../components/ui/HelpTooltip';
@@ -773,7 +773,7 @@ export const Portfolio: React.FC = () => {
                           type="checkbox"
                           id="createPassiveIncome"
                           checked={dealForm.createPassiveIncome}
-                          onChange={(e) => setDealForm({ ...dealForm, createPassiveIncome: e.target.checked })}
+                          onChange={(e) => { setDealForm({ ...dealForm, createPassiveIncome: e.target.checked }); }}
                           className="w-4 h-4 text-green-700 rounded border-family-accent/20 cursor-pointer"
                         />
                         <label htmlFor="createPassiveIncome" className="text-xs font-semibold text-green-700 cursor-pointer">
@@ -990,7 +990,7 @@ export const Portfolio: React.FC = () => {
                                             <input 
                                               type="radio" name={`deal-settle-mode-${deal.id}`} value="full"
                                               checked={settleForm.settleMode === 'full'}
-                                              onChange={() => setSettleForm({ ...settleForm, settleMode: 'full' })}
+                                              onChange={() => { setSettleForm({ ...settleForm, settleMode: 'full' }); }}
                                             />
                                             <span className="font-semibold text-family-text">Tất toán toàn bộ</span>
                                           </label>
@@ -998,7 +998,7 @@ export const Portfolio: React.FC = () => {
                                             <input 
                                               type="radio" name={`deal-settle-mode-${deal.id}`} value="partial"
                                               checked={settleForm.settleMode === 'partial'}
-                                              onChange={() => setSettleForm({ ...settleForm, settleMode: 'partial' })}
+                                              onChange={() => { setSettleForm({ ...settleForm, settleMode: 'partial' }); }}
                                             />
                                             <span className="font-semibold text-family-text">Rút gốc 1 phần</span>
                                           </label>
@@ -1009,7 +1009,7 @@ export const Portfolio: React.FC = () => {
                                         <div className="flex items-center gap-3">
                                           <select
                                             value={settleForm.partialWithdrawType}
-                                            onChange={(e) => setSettleForm({ ...settleForm, partialWithdrawType: e.target.value as 'amount' | 'percentage' })}
+                                            onChange={(e) => { setSettleForm({ ...settleForm, partialWithdrawType: e.target.value as 'amount' | 'percentage' }); }}
                                             className="bg-white rounded-lg border border-family-accent/15 p-1 font-semibold"
                                           >
                                             <option value="amount">Số tiền rút (Tr VND)</option>
@@ -1018,7 +1018,7 @@ export const Portfolio: React.FC = () => {
                                           <input
                                             type="number" step="any" min="0"
                                             value={settleForm.partialWithdrawValue || ''}
-                                            onChange={(e) => setSettleForm({ ...settleForm, partialWithdrawValue: Math.max(0, safeNumber(Number(e.target.value), 0)) })}
+                                            onChange={(e) => { setSettleForm({ ...settleForm, partialWithdrawValue: Math.max(0, safeNumber(Number(e.target.value), 0)) }); }}
                                             className="w-20 text-center bg-white rounded-lg border border-family-accent/15 p-1 font-bold text-green-700"
                                             placeholder="VD: 50"
                                           />

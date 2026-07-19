@@ -1,6 +1,6 @@
 import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '../components/ui/Card';
-import { ShieldCheck, Target, AlertTriangle, ArrowRightLeft, Wallet } from 'lucide-react';
+import { ShieldCheck, AlertTriangle, ArrowRightLeft, Wallet } from 'lucide-react';
 import { useAppContext } from '../context/AppContext';
 import { formatKpiMoneyVNDMillion } from '../utils/format';
 import { SavingsDepositModule } from '../components/portfolio/SavingsDepositModule';
@@ -10,7 +10,6 @@ import { calculatePMT } from '../utils/math';
 import { HelpTooltip } from '../components/ui/HelpTooltip';
 import { ObservationControls } from '../components/ui/ObservationControls';
 import { runProjection } from '../engines/projectionEngine';
-import { safeNumber } from '../utils/math';
 import { SavingsDebtInsights } from '../components/portfolio/SavingsDebtInsights';
 
 export const SavingsAndDebt: React.FC = () => {
