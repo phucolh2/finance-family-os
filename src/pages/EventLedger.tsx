@@ -4,6 +4,7 @@ import { buildEventLedger } from '../engines/ledgerEngine';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '../components/ui/Card';
 import { formatTableMoneyVNDMillion } from '../utils/format';
 import { DollarSign, Briefcase, PieChart, Activity, CalendarDays, History, AlertCircle } from 'lucide-react';
+import { HelpTooltip } from '../components/ui/HelpTooltip';
 import type { LedgerEvent } from '../types/ledger';
 
 export const EventLedger: React.FC = () => {
@@ -63,6 +64,7 @@ export const EventLedger: React.FC = () => {
           <h1 className="text-3xl font-bold text-family-text flex items-center gap-2">
             <History className="w-8 h-8 text-family-accent" />
             Nhật ký Sự kiện
+            <HelpTooltip text="Ghi chép (Audit Trail) chi tiết từng thay đổi về tài sản, thu nhập, ngân sách theo thời gian để truy vết." />
           </h1>
           <p className="text-family-textMuted mt-1">
             Dòng chảy thời gian của toàn bộ các sự kiện tài chính.

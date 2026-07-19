@@ -44,6 +44,11 @@ export const ExpenseScheduleView: React.FC = () => {
     : [];
 
   const [isCreatingNew, setIsCreatingNew] = useState(false);
+  
+  React.useEffect(() => {
+    setIsCreatingNew(false);
+  }, [selectedPeriodKey]);
+
   const [newMonth, setNewMonth] = useState<number>(() => {
     if (selectedPeriodKey) return parseInt(selectedPeriodKey.split('-')[1], 10);
     return new Date().getMonth() + 1;

@@ -8,13 +8,24 @@ interface BudgetDetailedListProps {
 }
 
 export const BudgetDetailedList: React.FC<BudgetDetailedListProps> = ({ rootGroups, income }) => {
+  // Sort groups: Expense first, then Investment, then Saving.
+  // Within the same classification, sort by ratioPercent descending.
+  const sortedGroups = [...rootGroups].sort((a, b) => {
+    const classOrder: Record<string, number> = { expense: 1, investment: 2, saving: 3 };
+    const orderA = a.classification ? classOrder[a.classification] || 99 : 99;
+    const orderB = b.classification ? classOrder[b.classification] || 99 : 99;
+    
+    if (orderA !== orderB) return orderA - orderB;
+    return b.ratioPercent - a.ratioPercent;
+  });
+
   return (
     <div className="w-full h-auto">
-      <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4 items-start">
-        {rootGroups.map((group, groupIdx) => {
+      <div className="columns-1 md:columns-2 xl:columns-3 gap-4 space-y-4">
+        {sortedGroups.map((group, groupIdx) => {
           const groupAmt = (group.ratioPercent / 100) * income;
           return (
-            <div key={group.id} className="border border-family-accent/10 rounded-xl overflow-hidden bg-family-bgDeep flex flex-col">
+            <div key={group.id} className="break-inside-avoid border border-family-accent/10 rounded-xl overflow-hidden bg-family-bgDeep flex flex-col">
               {/* Group Header */}
               <div className="bg-family-bgDark/40 px-4 py-3 flex justify-between items-center border-b border-family-accent/10">
                 <div className="flex flex-col gap-1">

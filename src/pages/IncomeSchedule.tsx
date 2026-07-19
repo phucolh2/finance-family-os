@@ -12,6 +12,7 @@ import { Trash2, Plus, Save, RotateCcw, BarChart2, Check, Sliders, AlertTriangle
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
 import { IncomePassiveActiveChart, IncomeCumulativeChart } from '../components/income/IncomeAreaCharts';
 import { ObservationControls } from '../components/ui/ObservationControls';
+import { HelpTooltip } from '../components/ui/HelpTooltip';
 import type { IncomeType } from '../types/finance';
 
 export const IncomeSchedule: React.FC = () => {
@@ -48,6 +49,10 @@ export const IncomeSchedule: React.FC = () => {
 
   // New version creator state
   const [isCreatingNew, setIsCreatingNew] = useState(false);
+  
+  React.useEffect(() => {
+    setIsCreatingNew(false);
+  }, [selectedPeriodKey]);
   const [newMonth, setNewMonth] = useState<number>(1);
   const [newYear, setNewYear] = useState<number>(2027);
   const [newIncome, setNewIncome] = useState<number>(100);
@@ -92,12 +97,20 @@ export const IncomeSchedule: React.FC = () => {
   const chartData = timelineResult.periods.map((p, index, arr) => {
     const inc = calculateIncome({ period: p, incomeSchedule: state.incomeSchedule });
     const prevInc = index > 0 ? calculateIncome({ period: arr[index-1], incomeSchedule: state.incomeSchedule }) : null;
-    
-    // active = fulltime + parttime + self_employed + irregular
-    const active = (inc.breakdown?.fulltime_salary || 0) + (inc.breakdown?.parttime_salary || 0) + (inc.breakdown?.self_employed || 0) + (inc.breakdown?.irregular_income || 0);
-    // passive = passive_income
-    const passive = (inc.breakdown?.passive_income || 0);
-    
+    const incomeCategories = state.incomeCategories || [];
+    let active = 0;
+    let passive = 0;
+
+    const dynamicCategories: Record<string, number> = {};
+    Object.entries(inc.breakdown || {}).forEach(([catId, amount]) => {
+      const cat = incomeCategories.find(c => c.id === catId);
+      if (cat) {
+        if (cat.type === 'passive') passive += amount;
+        else active += amount;
+        dynamicCategories[cat.name] = Math.round(amount * 10) / 10;
+      }
+    });
+
     cumIncome += inc.incomeMonthly;
     
     // Cliff detection: if income drops by more than 20% compared to previous month
@@ -113,11 +126,7 @@ export const IncomeSchedule: React.FC = () => {
       year: p.year,
       month: p.month,
       dateStr: `Tháng ${p.month}/${p.year}`,
-      'Tiền lương fulltime': Math.round((inc.breakdown?.fulltime_salary || 0) * 10) / 10,
-      'Lương parttime': Math.round((inc.breakdown?.parttime_salary || 0) * 10) / 10,
-      'Tự kinh doanh': Math.round((inc.breakdown?.self_employed || 0) * 10) / 10,
-      'Thu nhập thụ động': Math.round((inc.breakdown?.passive_income || 0) * 10) / 10,
-      'Thu nhập không cố định': Math.round((inc.breakdown?.irregular_income || 0) * 10) / 10,
+      ...dynamicCategories,
       'Khoản thu tháng': Math.round(inc.incomeMonthly * 10) / 10,
       activeIncome: Math.round(active * 10) / 10,
       passiveIncome: Math.round(passive * 10) / 10,
@@ -230,14 +239,10 @@ export const IncomeSchedule: React.FC = () => {
   const flow = activeDbItem?.investmentFlow;
 
   const getIncomeTypeLabel = (type?: string) => {
-    switch (type) {
-      case 'fulltime_salary': return 'Tiền lương fulltime';
-      case 'parttime_salary': return 'Lương parttime';
-      case 'self_employed': return 'Tự kinh doanh';
-      case 'passive_income': return 'Thu nhập thụ động';
-      case 'irregular_income': return 'Thu nhập không cố định';
-      default: return 'Tiền lương fulltime';
-    }
+    const cat = state.incomeCategories?.find(c => c.id === type);
+    if (!cat) return type || '';
+    const typeLabel = cat.type === 'active' ? '(Chủ động)' : '(Thụ động)';
+    return `${cat.name} ${typeLabel}`;
   };
 
   return (
@@ -245,7 +250,10 @@ export const IncomeSchedule: React.FC = () => {
       {/* Top Page Header */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
-          <h1 className="text-3xl font-serif font-bold text-family-text">Kế hoạch Thu nhập</h1>
+          <h1 className="text-3xl font-serif font-bold text-family-text flex items-center gap-2">
+            Kế hoạch Thu nhập
+            <HelpTooltip text="Thiết lập các mốc thời gian tăng giảm lương, thưởng, hoặc thêm nguồn thu mới. Hệ thống sẽ mô phỏng dựa trên các mốc này." />
+          </h1>
           <p className="text-sm text-family-textMuted mt-1">
             Quản lý và trực quan hóa lịch trình phát triển các nguồn thu nhập theo thời gian.
           </p>
@@ -314,6 +322,7 @@ export const IncomeSchedule: React.FC = () => {
               <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4">
                 <Input
                   label="Tháng hiệu lực"
+                  placeholder="VD: 1"
                   type="number"
                   min={1}
                   max={12}
@@ -323,6 +332,7 @@ export const IncomeSchedule: React.FC = () => {
                 />
                 <Input
                   label="Năm hiệu lực"
+                  placeholder="VD: 2026"
                   type="number"
                   min={2026}
                   max={2060}
@@ -332,6 +342,7 @@ export const IncomeSchedule: React.FC = () => {
                 />
                 <Input
                   label="Khoản thu tháng"
+                  placeholder="VD: 25.5"
                   type="number"
                   suffix="Tr VND"
                   value={newIncome}
@@ -339,19 +350,18 @@ export const IncomeSchedule: React.FC = () => {
                   required
                 />
                 <div>
-                  <label className="block text-xs font-semibold text-family-textMuted uppercase mb-2">
+                  <label className="flex items-center gap-1 text-xs font-semibold text-family-textMuted uppercase mb-2">
                     Loại thu nhập
+                    <HelpTooltip text="Thu nhập chủ động là khoản tiền bạn nhận được từ sức lao động (tiền lương, thưởng, kinh doanh). Thu nhập thụ động sinh ra từ tài sản mà không cần bạn làm việc trực tiếp." />
                   </label>
                   <select 
                     className="w-full bg-family-bgDeep border border-family-accent/20 rounded-xl px-4 py-2.5 text-family-text focus:outline-none focus:border-family-accent/60 transition-colors text-xs h-[38px]"
                     value={newType}
                     onChange={(e) => { setNewType(e.target.value as IncomeType); }}
                   >
-                    <option value="fulltime_salary">Tiền lương fulltime</option>
-                    <option value="parttime_salary">Lương parttime</option>
-                    <option value="self_employed">Tự kinh doanh</option>
-                    <option value="passive_income">Thu nhập thụ động</option>
-                    <option value="irregular_income">Thu nhập không cố định</option>
+                    {(state.incomeCategories || []).map(cat => (
+                      <option key={cat.id} value={cat.id}>{cat.name} {cat.type === 'active' ? '(Chủ động)' : '(Thụ động)'}</option>
+                    ))}
                   </select>
                 </div>
                 <div>
@@ -467,8 +477,9 @@ export const IncomeSchedule: React.FC = () => {
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
             <Card className="border border-family-accent/10 p-5 bg-family-bgDark/5">
               <div className="border-b border-family-accent/5 pb-3 mb-4">
-                <h4 className="font-bold text-sm text-family-text uppercase tracking-wider">
+                <h4 className="font-bold text-sm text-family-text uppercase tracking-wider flex items-center gap-2">
                   Thụ động vs Chủ động
+                  <HelpTooltip text="Theo dõi mức độ tự do tài chính thông qua tỷ lệ thu nhập thụ động so với thu nhập chủ động." />
                 </h4>
                 <p className="text-xs text-family-textMuted mt-0.5">Xu hướng tự do tài chính</p>
               </div>
@@ -479,8 +490,9 @@ export const IncomeSchedule: React.FC = () => {
 
             <Card className="border border-family-accent/10 p-5 bg-family-bgDark/5">
               <div className="border-b border-family-accent/5 pb-3 mb-4">
-                <h4 className="font-bold text-sm text-family-text uppercase tracking-wider">
+                <h4 className="font-bold text-sm text-family-text uppercase tracking-wider flex items-center gap-2">
                   Lũy kế thu nhập cả đời
+                  <HelpTooltip text="Biểu đồ tích lũy tổng tài sản tạo ra theo thời gian." />
                 </h4>
                 <p className="text-xs text-family-textMuted mt-0.5">Tổng giá trị tài sản tạo ra</p>
               </div>
@@ -493,8 +505,9 @@ export const IncomeSchedule: React.FC = () => {
           {/* Income Projection Chart Card */}
           <Card className="border border-family-accent/10 p-5 bg-family-bgDark/5">
             <div className="border-b border-family-accent/5 pb-3 mb-4">
-              <h4 className="font-bold text-sm text-family-text uppercase tracking-wider">
+              <h4 className="font-bold text-sm text-family-text uppercase tracking-wider flex items-center gap-2">
                 Chi tiết Kế hoạch Thu nhập (2026 - 2060)
+                <HelpTooltip text="Cơ cấu chi tiết và sự dịch chuyển của các nguồn thu nhập qua các năm." />
               </h4>
               <p className="text-xs text-family-textMuted mt-0.5">
                 Dự báo các nguồn thu nhập tích lũy theo thời gian.
@@ -522,11 +535,12 @@ export const IncomeSchedule: React.FC = () => {
                     labelFormatter={(label, items) => items[0]?.payload ? items[0].payload.dateStr : label}
                   />
                   <Legend verticalAlign="top" height={36} wrapperStyle={{ fontSize: 11 }} />
-                  <Bar name="Tiền lương fulltime" dataKey="Tiền lương fulltime" stackId="a" fill="#3b82f6" />
-                  <Bar name="Lương parttime" dataKey="Lương parttime" stackId="a" fill="#10b981" />
-                  <Bar name="Tự kinh doanh" dataKey="Tự kinh doanh" stackId="a" fill="#f59e0b" />
-                  <Bar name="Thu nhập thụ động" dataKey="Thu nhập thụ động" stackId="a" fill="#8b5cf6" />
-                  <Bar name="Thu nhập không cố định" dataKey="Thu nhập không cố định" stackId="a" fill="#ec4899" />
+                  {(state.incomeCategories || []).map((cat, idx) => {
+                    const colors = ['#3b82f6', '#10b981', '#f59e0b', '#8b5cf6', '#ec4899', '#14b8a6', '#6366f1', '#f43f5e'];
+                    return (
+                      <Bar key={cat.id} name={cat.name} dataKey={cat.name} stackId="a" fill={colors[idx % colors.length]} />
+                    );
+                  })}
                 </BarChart>
               </ResponsiveContainer>
             </div>
@@ -535,7 +549,10 @@ export const IncomeSchedule: React.FC = () => {
           {/* List of Income Milestones Summary under chart */}
           <Card className="border border-family-accent/10">
             <CardHeader className="pb-3">
-              <CardTitle className="text-sm uppercase tracking-wider text-family-textMuted">Tóm tắt các mốc thay đổi thu nhập</CardTitle>
+              <CardTitle className="text-sm uppercase tracking-wider text-family-textMuted flex items-center gap-2">
+                Tóm tắt các mốc thay đổi thu nhập
+                <HelpTooltip text="Bảng liệt kê chi tiết các mốc thay đổi cấu trúc thu nhập trong suốt thời gian khảo sát." />
+              </CardTitle>
             </CardHeader>
             <CardContent className="overflow-x-auto">
               <table className="w-full text-left text-xs border-collapse">
@@ -719,12 +736,18 @@ export const IncomeSchedule: React.FC = () => {
                 <CardContent className="pt-6">
                   <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4 bg-family-bgDark/35 p-4 rounded-2xl border border-family-accent/5">
                     <Input
-                      label="Tháng bắt đầu"
+                      label={
+                        <span className="flex items-center gap-1">
+                          Tháng hiệu lực <HelpTooltip text="Tháng bắt đầu thay đổi thu nhập này" />
+                        </span>
+                      }
+                      placeholder="VD: 1"
                       type="number"
                       min={1}
                       max={12}
                       value={editMonth}
-                      onChange={(e) => { setEditMonth(safeNumber(Number(e.target.value))); }}
+                      onChange={(e) => { setEditMonth(Number(e.target.value)); }}
+                      required
                     />
                     <Input
                       label="Năm bắt đầu"
@@ -735,26 +758,31 @@ export const IncomeSchedule: React.FC = () => {
                       onChange={(e) => { setEditYear(safeNumber(Number(e.target.value))); }}
                     />
                     <Input
-                      label="Khoản thu tháng"
+                      label={
+                        <span className="flex items-center gap-1">
+                          Khoản thu tháng <HelpTooltip text="Số tiền thu nhập mỗi tháng (đơn vị triệu đồng)" />
+                        </span>
+                      }
+                      placeholder="VD: 25.5"
                       type="number"
                       suffix="Tr VND"
                       value={editIncome}
-                      onChange={(e) => { setEditIncome(safeNumber(Number(e.target.value))); }}
+                      onChange={(e) => { setEditIncome(Number(e.target.value)); }}
+                      required
                     />
                     <div>
-                      <label className="block text-xs font-semibold text-family-textMuted uppercase mb-2">
+                      <label className="flex items-center gap-1 text-xs font-semibold text-family-textMuted uppercase mb-2">
                         Loại thu nhập
+                        <HelpTooltip text="Thu nhập chủ động là khoản tiền bạn nhận được từ sức lao động (tiền lương, thưởng, kinh doanh). Thu nhập thụ động sinh ra từ tài sản mà không cần bạn làm việc trực tiếp." />
                       </label>
                       <select 
                         className="w-full bg-family-bgDeep border border-family-accent/20 rounded-xl px-4 py-2.5 text-family-text focus:outline-none focus:border-family-accent/60 transition-colors text-xs h-[38px]"
                         value={editType}
                         onChange={(e) => { setEditType(e.target.value as IncomeType); }}
                       >
-                        <option value="fulltime_salary">Tiền lương fulltime</option>
-                        <option value="parttime_salary">Lương parttime</option>
-                        <option value="self_employed">Tự kinh doanh</option>
-                        <option value="passive_income">Thu nhập thụ động</option>
-                        <option value="irregular_income">Thu nhập không cố định</option>
+                        {(state.incomeCategories || []).map(cat => (
+                          <option key={cat.id} value={cat.id}>{cat.name} {cat.type === 'active' ? '(Chủ động)' : '(Thụ động)'}</option>
+                        ))}
                       </select>
                     </div>
                     <div>

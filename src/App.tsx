@@ -14,6 +14,7 @@ const ScenarioBase = lazy(() => import('./pages/ScenarioBase').then(m => ({ defa
 const ScenarioChild2031 = lazy(() => import('./pages/ScenarioChild2031').then(m => ({ default: m.ScenarioChild2031 })));
 const ScenarioManagement = lazy(() => import('./pages/ScenarioManagement').then(m => ({ default: m.ScenarioManagement })));
 const Portfolio = lazy(() => import('./pages/Portfolio').then(m => ({ default: m.Portfolio })));
+const SavingsAndDebt = lazy(() => import('./pages/SavingsAndDebt').then(m => ({ default: m.SavingsAndDebt })));
 const FireCenter = lazy(() => import('./pages/FireCenter').then(m => ({ default: m.FireCenter })));
 const HealthAndFinalRest = lazy(() => import('./pages/HealthAndFinalRest').then(m => ({ default: m.HealthAndFinalRest })));
 const KnowledgeCenter = lazy(() => import('./pages/KnowledgeCenter').then(m => ({ default: m.KnowledgeCenter })));
@@ -44,6 +45,8 @@ function AppContent() {
         return <ScenarioManagement />;
       case 'portfolio':
         return <Portfolio />;
+      case 'savings_debt':
+        return <SavingsAndDebt />;
       case 'fire_center':
         return <FireCenter />;
       case 'health_rest':

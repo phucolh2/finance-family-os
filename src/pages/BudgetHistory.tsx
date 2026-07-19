@@ -16,6 +16,7 @@ import { BudgetTreeNodeRow } from '../components/budget/BudgetTreeNodeRow';
 import { rebuildTreeFromFlatRatios } from '../engines/budgetEngine';
 import { DEFAULT_BUDGET_TREE } from '../data/defaultInputs';
 import { ObservationControls } from '../components/ui/ObservationControls';
+import { HelpTooltip } from '../components/ui/HelpTooltip';
 import { DndContext, closestCenter, KeyboardSensor, PointerSensor, useSensor, useSensors } from '@dnd-kit/core';
 import type { DragEndEvent } from '@dnd-kit/core';
 import { arrayMove, SortableContext, sortableKeyboardCoordinates, verticalListSortingStrategy } from '@dnd-kit/sortable';
@@ -68,6 +69,10 @@ export const BudgetHistory: React.FC = () => {
 
   // New version creator state
   const [isCreatingNew, setIsCreatingNew] = useState(false);
+  
+  React.useEffect(() => {
+    setIsCreatingNew(false);
+  }, [selectedPeriodKey]);
   const [newMonth, setNewMonth] = useState<number>(10);
   const [newYear, setNewYear] = useState<number>(2027);
   const [newNote, setNewNote] = useState<string>('');
@@ -401,7 +406,10 @@ export const BudgetHistory: React.FC = () => {
       {/* Top Page Header */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
-          <h1 className="text-3xl font-serif font-bold text-family-text">Phân Bổ Ngân Sách</h1>
+          <h1 className="text-3xl font-serif font-bold text-family-text flex items-center gap-3">
+            Phân Bổ Ngân Sách
+            <HelpTooltip text="Quản lý và thay đổi tỷ lệ phần trăm phân bổ dòng tiền tại các mốc thời gian khác nhau." />
+          </h1>
           <p className="text-sm text-family-textMuted mt-1">
             Quản lý và trực quan hóa cơ cấu ngân sách gia đình qua các mốc thời gian cuộc đời.
           </p>
@@ -779,7 +787,12 @@ export const BudgetHistory: React.FC = () => {
                   {/* Settings form fields (effective date inputs moved here!) */}
                   <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mt-4 bg-family-bgDark/35 p-4 rounded-2xl border border-family-accent/5">
                     <Input
-                      label="Tháng hiệu lực"
+                      label={
+                        <span className="flex items-center gap-1">
+                          Tháng hiệu lực <HelpTooltip text="Tháng bắt đầu áp dụng cấu trúc ngân sách này" />
+                        </span>
+                      }
+                      placeholder="VD: 1"
                       type="number"
                       min={1}
                       max={12}
@@ -788,6 +801,7 @@ export const BudgetHistory: React.FC = () => {
                     />
                     <Input
                       label="Năm hiệu lực"
+                      placeholder="VD: 2026"
                       type="number"
                       min={2026}
                       max={2060}
@@ -796,6 +810,7 @@ export const BudgetHistory: React.FC = () => {
                     />
                     <Input
                       label="Ghi chú hoàn cảnh mốc"
+                      placeholder="VD: Lên chức, kết hôn, đổi việc..."
                       type="text"
                       value={editNote}
                       onChange={(e) => { setEditNote(e.target.value); }}

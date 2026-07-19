@@ -53,8 +53,10 @@ export interface PortfolioMonthlyOutput {
   totalPnl: number;
   totalEndingBalance: number;
   unallocatedEndingBalance?: number;
-  savingsBalance?: number;              // Tổng vốn gốc đang gửi tiết kiệm
-  savingsInterestAccrued?: number;      // Tổng lãi tích lũy
+  savingsBalance?: number;              // Tổng vốn gốc đang gửi tiết kiệm (nhàn rỗi/mục tiêu)
+  savingsInterestAccrued?: number;      // Tổng lãi tích lũy (nhàn rỗi/mục tiêu)
+  defenseSavingsBalance?: number;       // Tổng vốn gốc đang gửi tiết kiệm phòng thủ
+  defenseSavingsInterestAccrued?: number; // Tổng lãi tích lũy (tiết kiệm phòng thủ)
   cumulativeContribution?: number;      // Lũy kế đóng góp từ thu nhập hàng tháng
   cumulativePnl?: number;               // Lũy kế lãi/lỗ đầu tư phát sinh
 }

@@ -189,7 +189,38 @@ export function migrateState(stored: unknown, defaultState: AppState): AppState 
         ...(data.assumptions as Record<string, unknown>),
       },
       expenseSchedule: Array.isArray(data.expenseSchedule) ? data.expenseSchedule : defaultState.expenseSchedule,
-      investmentDeals: Array.isArray(data.investmentDeals) ? data.investmentDeals : defaultState.investmentDeals,
+      investmentDeals: (() => {
+        const rawDeals = Array.isArray(data.investmentDeals) ? data.investmentDeals : defaultState.investmentDeals;
+        return rawDeals?.filter((d: any) => !d.isEarmarked) || [];
+      })(),
+      sinkingFunds: (() => {
+        const funds: import('../types/finance').SinkingFund[] = [];
+        // 1. Keep existing sinking funds if they already exist in schema
+        if (Array.isArray(data.sinkingFunds)) {
+          funds.push(...data.sinkingFunds);
+        }
+        // 2. Automigrate earmarked deals from old format
+        const rawDeals = Array.isArray(data.investmentDeals) ? data.investmentDeals : defaultState.investmentDeals;
+        const earmarkedDeals = rawDeals?.filter((d: any) => d.isEarmarked) || [];
+        earmarkedDeals.forEach((d: any) => {
+          funds.push({
+            id: `sf_${d.id}`,
+            name: d.name || 'Quỹ tích lũy',
+            targetAssetType: d.assetType || 'real_estate',
+            targetAmount: d.capital || 0,
+            initialDeposit: d.capital || 0, // Legacy behavior: put all capital initially
+            monthlyContribution: 0, 
+            interestRateAnnual: d.expectedSavingRate || 0,
+            startMonth: d.startMonth || 1,
+            startYear: d.startYear || 2024,
+            status: d.isConverted || d.status === 'settled' ? 'disbursed' : 'active',
+            disbursedMonth: d.conversionMonth || d.endMonth,
+            disbursedYear: d.conversionYear || d.endYear,
+            notes: d.notes,
+          });
+        });
+        return funds;
+      })(),
       savingsDeposits: Array.isArray(data.savingsDeposits) ? data.savingsDeposits : [],
       resolvedMonthlyDb: Array.isArray(data.resolvedMonthlyDb) ? data.resolvedMonthlyDb : undefined,
       resolvedMonthlyDbMap: data.resolvedMonthlyDbMap && typeof data.resolvedMonthlyDbMap === 'object' ? data.resolvedMonthlyDbMap as AppState['resolvedMonthlyDbMap'] : undefined,

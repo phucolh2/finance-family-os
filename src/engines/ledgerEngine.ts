@@ -58,7 +58,7 @@ export const buildEventLedger = (state: AppState): LedgerEvent[] => {
       events.push({
         id: `inv_${inv.id}`,
         category: 'investment',
-        name: `${inv.isEarmarked ? 'Thương vụ Chờ phân bổ' : 'Đầu tư'}: ${inv.name}`,
+        name: `Đầu tư: ${inv.name}`,
         startMonth: inv.startMonth,
         startYear: inv.startYear,
         endMonth: inv.endMonth,
@@ -87,7 +87,26 @@ export const buildEventLedger = (state: AppState): LedgerEvent[] => {
         status: dep.status === 'matured' ? 'settled' : 'active',
         refId: dep.id,
         amountVnd: dep.principal,
-        note: `Nguồn vốn: ${dep.pool === 'idle' ? 'Chưa có kế hoạch' : 'Đã lên kế hoạch'}`
+        note: `Nguồn vốn: ${dep.pool === 'idle' ? 'Chưa có kế hoạch' : 'Quỹ tích lũy mục tiêu'}`
+      });
+    });
+  }
+
+  // 3.8. Sinking Funds
+  if (state.sinkingFunds) {
+    state.sinkingFunds.forEach(sf => {
+      events.push({
+        id: `sf_${sf.id}`,
+        category: 'investment',
+        name: `Quỹ tích lũy: ${sf.name}`,
+        startMonth: sf.startMonth,
+        startYear: sf.startYear,
+        endMonth: sf.disbursedMonth,
+        endYear: sf.disbursedYear,
+        status: sf.status === 'disbursed' ? 'settled' : 'active',
+        refId: sf.id,
+        amountVnd: sf.targetAmount,
+        note: `Mục tiêu: ${sf.targetAssetType}, Đóng góp: ${sf.monthlyContribution}M/tháng`
       });
     });
   }

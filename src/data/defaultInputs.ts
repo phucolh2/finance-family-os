@@ -1,4 +1,4 @@
-import type { FamilyProfile, IncomeScheduleItem, LifeStage, Assumptions, LifeEvent, InvestmentDeal } from '../types/finance';
+import type { FamilyProfile, IncomeScheduleItem, LifeStage, Assumptions, LifeEvent, InvestmentDeal, IncomeCategory } from '../types/finance';
 import type { BudgetRatio, BudgetRatioScheduleItem, BudgetTreeNode } from '../types/budget';
 import type { AssetConfig } from '../types/portfolio';
 
@@ -16,6 +16,14 @@ export const DEFAULT_FAMILY_PROFILE: FamilyProfile = {
   currency: 'VND_MILLION',
   startingCapital: 100,
 };
+
+export const DEFAULT_INCOME_CATEGORIES: IncomeCategory[] = [
+  { id: 'fulltime_salary', name: 'Tiền lương fulltime', type: 'active', isDefault: true },
+  { id: 'parttime_salary', name: 'Lương parttime', type: 'active', isDefault: true },
+  { id: 'self_employed', name: 'Tự kinh doanh', type: 'active', isDefault: true },
+  { id: 'passive_income', name: 'Thu nhập thụ động', type: 'passive', isDefault: true },
+  { id: 'irregular_income', name: 'Thu nhập không cố định', type: 'active', isDefault: true },
+];
 
 export const DEFAULT_INCOME_SCHEDULE: IncomeScheduleItem[] = [
   {
@@ -157,8 +165,8 @@ export const DEFAULT_BUDGET_TREE: BudgetTreeNode[] = [
     classification: 'savings',
     children: [
       { id: 'item_parents_support', parentId: 'group_safety_reserve', level: 1, nodeType: 'item', groupId: 'safety_reserve', name: 'Cha mẹ hàng tháng', ratioPercent: 5, isActive: true, sortOrder: 1 },
-      { id: 'item_emergency', parentId: 'group_safety_reserve', level: 1, nodeType: 'item', groupId: 'safety_reserve', name: 'Khẩn cấp', ratioPercent: 5, isActive: true, sortOrder: 2 },
-      { id: 'item_special_reserve', parentId: 'group_safety_reserve', level: 1, nodeType: 'item', groupId: 'safety_reserve', name: 'Dự đặc biệt', ratioPercent: 0, isActive: true, sortOrder: 3 },
+      { id: 'item_emergency', parentId: 'group_safety_reserve', level: 1, nodeType: 'item', groupId: 'safety_reserve', name: 'Tiết kiệm / Khẩn cấp', ratioPercent: 5, isActive: true, sortOrder: 2 },
+      { id: 'item_debt_reserve', parentId: 'group_safety_reserve', level: 1, nodeType: 'item', groupId: 'safety_reserve', name: 'Quỹ chuẩn bị trả nợ', ratioPercent: 0, isActive: true, sortOrder: 3, classification: 'debt_reserve' },
     ]
   },
   {

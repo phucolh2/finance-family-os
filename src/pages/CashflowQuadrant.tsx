@@ -81,14 +81,19 @@ export const CashflowQuadrant: React.FC = () => {
   });
 
   // --- 1. INCOME QUADRANT ---
-  const activeIncome = 
-    (incomeDetails.breakdown.fulltime_salary || 0) + 
-    (incomeDetails.breakdown.parttime_salary || 0) + 
-    (incomeDetails.breakdown.self_employed || 0) + 
-    (incomeDetails.breakdown.irregular_income || 0);
-  
-  // Passive income from Income Schedule + Investment P&L (if positive)
-  const scheduledPassiveIncome = incomeDetails.breakdown.passive_income || 0;
+  const incomeCategories = state.incomeCategories || [];
+  let activeIncome = 0;
+  let scheduledPassiveIncome = 0;
+
+  Object.entries(incomeDetails.breakdown).forEach(([catId, amount]) => {
+    const category = incomeCategories.find(c => c.id === catId);
+    if (category?.type === 'passive') {
+      scheduledPassiveIncome += amount;
+    } else {
+      // Default to active if not found or explicitly active
+      activeIncome += amount;
+    }
+  });
   const investmentPnl = activeRow.portfolio?.totalPnl || 0;
   const realizedPassiveIncome = investmentPnl > 0 ? investmentPnl : 0;
   

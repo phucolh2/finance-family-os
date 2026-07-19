@@ -5,6 +5,7 @@ import { Button } from '../components/ui/Button';
 import { Input } from '../components/ui/Input';
 import { Select } from '../components/ui/Select';
 import { WarningBox } from '../components/ui/WarningBox';
+import { HelpTooltip } from '../components/ui/HelpTooltip';
 import { formatTableMoneyVNDMillion } from '../utils/format';
 import { safeNumber } from '../utils/math';
 import { EmptyState } from '../components/ui/EmptyState';
@@ -15,6 +16,7 @@ import {
 import { ExpenseDashboard } from '../components/expense/ExpenseDashboard';
 import { ExpenseScheduleView } from '../components/expense/ExpenseScheduleView';
 import { ObservationControls } from '../components/ui/ObservationControls';
+
 import type { BudgetGroup } from '../types/budget';
 import type { LifeEvent } from '../types/finance';
 
@@ -199,6 +201,7 @@ export const LifeStages: React.FC = () => {
         <div className="flex-1">
           <h1 className="text-3xl font-serif font-bold text-family-text flex items-center gap-3">
             <Milestone className="w-8 h-8 text-family-accent shrink-0" /> Sự kiện cuộc đời & Quản lý Chi tiêu
+            <HelpTooltip text="Ghi chép các sự kiện dòng tiền không thường xuyên (mua xe, đám cưới, sinh con) để đánh giá tác động lên dòng tiền và đối chiếu với ngân sách." />
           </h1>
           <p className="text-sm text-family-textMuted mt-1">
             Ghi chép các sự kiện dòng tiền và đối chiếu với ngân sách hàng tháng để kiểm soát tài chính chính xác.
@@ -219,7 +222,10 @@ export const LifeStages: React.FC = () => {
         <Card className="bg-white/80 border-family-accent/10">
           <CardContent className="p-4 flex items-center justify-between">
             <div>
-              <p className="text-xs font-semibold text-family-textMuted uppercase tracking-wider mb-1">Tổng sự kiện</p>
+              <p className="text-xs font-semibold text-family-textMuted uppercase tracking-wider mb-1 flex items-center gap-1.5">
+                Tổng sự kiện
+                <HelpTooltip text="Tổng số sự kiện tài chính (cột mốc, biến cố) đã được ghi nhận." />
+              </p>
               <h3 className="text-2xl font-bold text-family-text">{totalEvents}</h3>
             </div>
             <div className="w-12 h-12 rounded-full bg-blue-100 flex items-center justify-center text-blue-600">
@@ -230,7 +236,10 @@ export const LifeStages: React.FC = () => {
         <Card className="bg-white/80 border-family-accent/10">
           <CardContent className="p-4 flex items-center justify-between">
             <div>
-              <p className="text-xs font-semibold text-family-textMuted uppercase tracking-wider mb-1">Tác động 1 lần (Net)</p>
+              <p className="text-xs font-semibold text-family-textMuted uppercase tracking-wider mb-1 flex items-center gap-1.5">
+                Tác động 1 lần (Net)
+                <HelpTooltip text="Tổng giá trị tác động tài chính ngay lập tức (thu nhập trừ đi chi phí) của tất cả các sự kiện." />
+              </p>
               <h3 className={`text-2xl font-bold ${netOneTime >= 0 ? 'text-green-600' : 'text-red-600'}`}>
                 {netOneTime > 0 ? '+' : ''}{formatTableMoneyVNDMillion(netOneTime)}
               </h3>
@@ -243,7 +252,10 @@ export const LifeStages: React.FC = () => {
         <Card className="bg-white/80 border-family-accent/10">
           <CardContent className="p-4 flex items-center justify-between">
             <div>
-              <p className="text-xs font-semibold text-family-textMuted uppercase tracking-wider mb-1">Tác động dòng tiền (Net)</p>
+              <p className="text-xs font-semibold text-family-textMuted uppercase tracking-wider mb-1 flex items-center gap-1.5">
+                Tác động dòng tiền (Net)
+                <HelpTooltip text="Tổng sự thay đổi ròng trên dòng tiền hàng tháng do các sự kiện mang lại." />
+              </p>
               <h3 className={`text-2xl font-bold ${netRecurring >= 0 ? 'text-green-600' : 'text-red-600'}`}>
                 {netRecurring > 0 ? '+' : ''}{formatTableMoneyVNDMillion(netRecurring)}<span className="text-sm font-medium">/tháng</span>
               </h3>
@@ -432,7 +444,10 @@ export const LifeStages: React.FC = () => {
           <Card>
           <CardHeader>
             <CardTitle className="flex items-center justify-between">
-              <span>Dòng thời gian sự kiện (Timeline)</span>
+              <span className="flex items-center gap-2">
+                Dòng thời gian sự kiện (Timeline)
+                <HelpTooltip text="Theo dõi và quản lý toàn bộ các biến cố, sự kiện tài chính được sắp xếp theo thời gian." />
+              </span>
             </CardTitle>
             <CardDescription>
               Bức tranh toàn cảnh về các biến cố và cột mốc tài chính được sắp xếp theo thời gian.

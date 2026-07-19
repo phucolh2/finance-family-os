@@ -14,6 +14,7 @@ import {
   Map,
   History,
   Activity,
+  ShieldCheck,
 } from 'lucide-react';
 
 interface SidebarProps {
@@ -39,6 +40,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ activeTab, setActiveTab, onClo
         { id: 'budget_history', name: 'Phân Bổ Ngân Sách', icon: Calendar },
         { id: 'life_stages', name: 'Sự kiện cuộc đời', icon: Milestone },
         { id: 'portfolio', name: 'Danh mục đầu tư', icon: Briefcase },
+        { id: 'savings_debt', name: 'Tiết kiệm & Nợ', icon: ShieldCheck },
       ],
     },
     {

@@ -534,7 +534,10 @@ export const Dashboard: React.FC = () => {
         {/* Net Worth Chart */}
         <Card className="border-family-accent/10 shadow-sm bg-white/70 backdrop-blur-md">
           <CardHeader>
-            <CardTitle className="text-base font-serif font-bold text-family-text">Dự phóng Tài sản ròng dài hạn</CardTitle>
+            <CardTitle className="text-base font-serif font-bold text-family-text flex items-center gap-2">
+              Dự phóng Tài sản ròng dài hạn
+              <HelpTooltip text="Bức tranh toàn cảnh về sự tăng trưởng tài sản (Net Worth) của gia đình từ nay đến 2060." />
+            </CardTitle>
             <CardDescription className="text-xs text-family-textMuted">Tích lũy danh nghĩa vs Sức mua thực tế (đã chiết khấu lạm phát {state.assumptions.generalInflationRateAnnual}%).</CardDescription>
           </CardHeader>
           <CardContent className="h-72">
@@ -569,7 +572,10 @@ export const Dashboard: React.FC = () => {
         {/* Yearly Cashflow Chart */}
         <Card className="border-family-accent/10 shadow-sm bg-white/70 backdrop-blur-md">
           <CardHeader>
-            <CardTitle className="text-base font-serif font-bold text-family-text">Khoản thu vs Khoản chi hàng năm</CardTitle>
+            <CardTitle className="text-base font-serif font-bold text-family-text flex items-center gap-2">
+              Khoản thu vs Khoản chi hàng năm
+              <HelpTooltip text="So sánh tổng thu và chi theo từng năm, giúp đánh giá thặng dư dòng tiền dài hạn." />
+            </CardTitle>
             <CardDescription className="text-xs text-family-textMuted">Mô phỏng tích lũy dòng tiền hàng năm qua các giai đoạn.</CardDescription>
           </CardHeader>
           <CardContent className="h-72">

@@ -15,6 +15,7 @@ import {
   DEFAULT_ASSUMPTIONS,
   DEFAULT_LIFE_EVENTS,
   DEFAULT_INVESTMENT_DEALS,
+  DEFAULT_INCOME_CATEGORIES,
 } from '../data/defaultInputs';
 
 const LOCAL_STORAGE_KEY = 'family_finance_os_state';
@@ -32,6 +33,7 @@ const initialDb = generateResolvedMonthlyDb(
 
 const INITIAL_APP_STATE: AppState = {
   profile: DEFAULT_FAMILY_PROFILE,
+  incomeCategories: DEFAULT_INCOME_CATEGORIES,
   incomeSchedule: DEFAULT_INCOME_SCHEDULE,
   budgetSchedule: DEFAULT_BUDGET_SCHEDULE,
   expenseSchedule: [],
@@ -215,39 +217,9 @@ export function useAppState() {
     let updatedSchedule = [...state.incomeSchedule];
     const newMonthValue = newItem.effectiveYear * 12 + newItem.effectiveMonth;
 
-    // Find the immediately preceding item
-    const precedingItems = updatedSchedule.filter(
-      (it) => it.effectiveYear * 12 + it.effectiveMonth < newMonthValue
-    );
+    // Allow concurrent streams (e.g., passive income from Real Estate and Fulltime Salary).
+    // Removed logic that auto-ends previous items to support multiple income streams.
 
-    if (precedingItems.length > 0) {
-      precedingItems.sort(
-        (a, b) =>
-          b.effectiveYear * 12 + b.effectiveMonth - (a.effectiveYear * 12 + a.effectiveMonth)
-      );
-      const prevItem = precedingItems[0];
-
-      // Only auto-end it if it doesn't already have an end date
-      if (!prevItem.endYear) {
-        let endMonth = newItem.effectiveMonth - 1;
-        let endYear = newItem.effectiveYear;
-        if (endMonth === 0) {
-          endMonth = 12;
-          endYear -= 1;
-        }
-
-        const updatedPrevItem: IncomeScheduleItem = {
-          ...prevItem,
-          endMonth,
-          endYear,
-          status: 'settled',
-        };
-
-        updatedSchedule = updatedSchedule.map((it) =>
-          it.id === prevItem.id ? updatedPrevItem : it
-        );
-      }
-    }
 
     updatedSchedule.push(newItem);
 
@@ -480,6 +452,28 @@ export function useAppState() {
     });
   };
 
+  const withdrawInvestmentDeal = (id: string, amount: number, realizedProfit: number, month: number, year: number) => {
+    saveState({
+      ...state,
+      investmentDeals: (state.investmentDeals ?? []).map((item) => {
+        if (item.id === id) {
+          const newWithdrawal = {
+            id: `wd_${Date.now()}_${Math.random().toString(36).substring(2, 9)}`,
+            amount,
+            realizedProfit,
+            month,
+            year,
+          };
+          return {
+            ...item,
+            withdrawals: [...(item.withdrawals || []), newWithdrawal]
+          };
+        }
+        return item;
+      }),
+    });
+  };
+
   // Savings Deposit Actions
   const addSavingsDeposit = (item: Omit<SavingsDeposit, 'id'>) => {
     const newItem: SavingsDeposit = {
@@ -593,10 +587,90 @@ export function useAppState() {
     updateInvestmentDeal,
     deleteInvestmentDeal,
     settleInvestmentDeal,
+    withdrawInvestmentDeal,
     addSavingsDeposit,
     updateSavingsDeposit,
     deleteSavingsDeposit,
     settleSavingsDepositEarly,
+    
+    addSinkingFund: (item: Omit<import('../types/finance').SinkingFund, 'id'>) => {
+      saveState({
+        ...state,
+        sinkingFunds: [...(state.sinkingFunds ?? []), { ...item, id: `sf_${Date.now()}_${Math.random().toString(36).substring(2, 9)}` }],
+      });
+    },
+    updateSinkingFund: (updated: import('../types/finance').SinkingFund) => {
+      saveState({
+        ...state,
+        sinkingFunds: (state.sinkingFunds ?? []).map(item => item.id === updated.id ? updated : item),
+      });
+    },
+    deleteSinkingFund: (id: string) => {
+      saveState({
+        ...state,
+        sinkingFunds: (state.sinkingFunds ?? []).filter(item => item.id !== id),
+      });
+    },
+    disburseSinkingFund: (id: string, disbursedMonth: number, disbursedYear: number) => {
+      saveState({
+        ...state,
+        sinkingFunds: (state.sinkingFunds ?? []).map(item => {
+          if (item.id === id) {
+            return { ...item, status: 'disbursed', disbursedMonth, disbursedYear };
+          }
+          return item;
+        }),
+      });
+    },
+
+    addDebt: (item: Omit<import('../types/finance').DebtLiability, 'id'>) => {
+      saveState({
+        ...state,
+        debts: [...(state.debts ?? []), { ...item, id: `debt_${Date.now()}_${Math.random().toString(36).substring(2, 9)}` }],
+      });
+    },
+    updateDebt: (updated: import('../types/finance').DebtLiability) => {
+      saveState({
+        ...state,
+        debts: (state.debts ?? []).map(item => item.id === updated.id ? updated : item),
+      });
+    },
+    deleteDebt: (id: string) => {
+      saveState({
+        ...state,
+        debts: (state.debts ?? []).filter(item => item.id !== id),
+      });
+    },
+    settleDebt: (id: string) => {
+      saveState({
+        ...state,
+        debts: (state.debts ?? []).map(item => {
+          if (item.id === id) {
+            return { ...item, status: 'settled' };
+          }
+          return item;
+        }),
+      });
+    },
+    addIncomeCategory: (item: Omit<import('../types/finance').IncomeCategory, 'id'>) => {
+      saveState({
+        ...state,
+        incomeCategories: [...(state.incomeCategories ?? []), { ...item, id: `inc_cat_${Date.now()}` }],
+      });
+    },
+    updateIncomeCategory: (updated: import('../types/finance').IncomeCategory) => {
+      saveState({
+        ...state,
+        incomeCategories: (state.incomeCategories ?? []).map(item => item.id === updated.id ? updated : item),
+      });
+    },
+    deleteIncomeCategory: (id: string) => {
+      saveState({
+        ...state,
+        incomeCategories: (state.incomeCategories ?? []).filter(item => item.id !== id),
+      });
+    },
+
     addProjectionAdjustment,
     updateProjectionAdjustment,
     deleteProjectionAdjustment,

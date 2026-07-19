@@ -1,4 +1,4 @@
-import type { FamilyProfile, IncomeScheduleItem, LifeEvent, Assumptions, InvestmentDeal, SavingsDeposit, LifeStage } from '../types/finance';
+import type { FamilyProfile, IncomeScheduleItem, LifeEvent, Assumptions, InvestmentDeal, SavingsDeposit, LifeStage, DebtLiability } from '../types/finance';
 import type { BudgetRatioScheduleItem, ExpenseScheduleItem } from '../types/budget';
 import type { AssetConfig, AssetType } from '../types/portfolio';
 import type { ProjectionMonthlyRow, ProjectionYearlyRow, ProjectionOutput, ProjectionAdjustmentRecord } from '../types/projection';
@@ -8,7 +8,7 @@ import { calculateBudget } from './budgetEngine';
 import { calculateCashflow } from './cashflowEngine';
 import { calculateChildCost } from './childEngine';
 import { calculateFire } from './fireEngine';
-import { safeNumber, safeArray } from '../utils/math';
+import { safeNumber, safeArray, calculatePMT } from '../utils/math';
 
 export interface ProjectionEngineInput {
   profile: FamilyProfile;
@@ -20,6 +20,8 @@ export interface ProjectionEngineInput {
   assumptions: Assumptions;
   investmentDeals?: InvestmentDeal[];
   savingsDeposits?: SavingsDeposit[];
+  sinkingFunds?: import('../types/finance').SinkingFund[];
+  debts?: DebtLiability[];
   projectionAdjustments?: ProjectionAdjustmentRecord[];
   lifeStages?: LifeStage[];
 }
@@ -40,6 +42,8 @@ export function runProjection(input: ProjectionEngineInput): ProjectionOutput {
   const assumptions = input.assumptions;
   const investmentDeals = safeArray(input.investmentDeals);
   const savingsDeposits = safeArray(input.savingsDeposits);
+  const sinkingFunds = safeArray(input.sinkingFunds);
+  const debts = safeArray(input.debts);
   const projectionAdjustments = safeArray(input.projectionAdjustments);
   const lifeStages = safeArray(input.lifeStages);
 
@@ -63,6 +67,7 @@ export function runProjection(input: ProjectionEngineInput): ProjectionOutput {
   const initialCapital = Math.max(0, safeNumber(profile.startingCapital, 0));
   let totalInvestable = initialCapital;
   let currentSavingBalance = 0; // Cumulative Saving balance
+  let currentDebtReserveBalance = 0; // Cumulative Debt Reserve balance
   let cumulativeContribution = 0;
   let cumulativePnl = 0;
 
@@ -74,6 +79,10 @@ export function runProjection(input: ProjectionEngineInput): ProjectionOutput {
     crypto: 0,
   };
 
+  const sinkingFundStates: Record<string, { buckets: { principal: number; termStart: number }[]; balance: number; contribution: number; interest: number }> = {};
+  const savingsStates: Record<string, { buckets: { principal: number; termStart: number }[]; balance: number; contribution: number; interest: number }> = {};
+  const debtStates: Record<string, { remainingPrincipal: number }> = {};
+
   const monthlyRows: ProjectionMonthlyRow[] = [];
 
   // 3. Simulation loop
@@ -81,6 +90,31 @@ export function runProjection(input: ProjectionEngineInput): ProjectionOutput {
     // Resolve Income
     const incomeRes = calculateIncome({ period, incomeSchedule });
     warnings.push(...incomeRes.warnings.map(w => `[Thu nhập] ${w}`));
+
+    // Resolve Debt Payments (Dư nợ giảm dần)
+    let activeDebtPaymentMonthly = 0;
+    let totalDebtPrincipalRemaining = 0;
+    let totalDebtInterestPaidMonthly = 0;
+    debts.forEach((debt) => {
+      if (!debtStates[debt.id]) {
+        debtStates[debt.id] = { remainingPrincipal: debt.principal };
+      }
+      const start = debt.startYear * 12 + debt.startMonth;
+      const current = period.year * 12 + period.month;
+      const end = start + debt.termMonths;
+      const isSettled = debt.status === 'settled';
+
+      if (current >= start && current < end && !isSettled) {
+        // Assume fixed monthly payment (PMT)
+        const pmt = calculatePMT(debt.principal, debt.interestRateAnnual, debt.termMonths);
+        const monthlyInterest = debtStates[debt.id].remainingPrincipal * ((debt.interestRateAnnual / 100) / 12);
+        const principalPayment = pmt - monthlyInterest;
+        debtStates[debt.id].remainingPrincipal = Math.max(0, debtStates[debt.id].remainingPrincipal - principalPayment);
+        activeDebtPaymentMonthly += pmt;
+        totalDebtInterestPaidMonthly += monthlyInterest;
+        totalDebtPrincipalRemaining += debtStates[debt.id].remainingPrincipal;
+      }
+    });
 
     // Resolve active stage for childCost parameters
     const activeStage = lifeStages.find(
@@ -101,7 +135,8 @@ export function runProjection(input: ProjectionEngineInput): ProjectionOutput {
       generalInflationAnnual: assumptions.generalInflationRateAnnual,
     });
 
-    // Resolve Budget (Inject childCost)
+    // Do NOT deduct debt payment from income before budgeting.
+    // The budget should be calculated on full income.
     const budgetRes = calculateBudget({
       period,
       incomeMonthly: incomeRes.incomeMonthly,
@@ -137,6 +172,21 @@ export function runProjection(input: ProjectionEngineInput): ProjectionOutput {
     });
     warnings.push(...cashflowRes.warnings.map(w => `[Dòng tiền] ${w}`));
 
+    // Add budget's debt reserve allocation to the running balance
+    currentDebtReserveBalance += safeNumber(cashflowRes.debtReserveMonthly, 0);
+
+    // Pay active debt from the reserve balance
+    currentDebtReserveBalance -= activeDebtPaymentMonthly;
+
+    if (currentDebtReserveBalance < 0) {
+      const deficit = Math.abs(currentDebtReserveBalance);
+      // Deduct the missing amount from free cashflow (netCashflowMonthly)
+      cashflowRes.netCashflowMonthly -= deficit;
+      currentDebtReserveBalance = 0;
+      
+      warnings.push(`[Công nợ] Tháng ${period.month}/${period.year}: Quỹ Dự Phòng Nợ thiếu hụt ${deficit.toFixed(1)} tr. Đã tự động trừ vào dòng tiền tự do (Cashflow). Bạn có thể điều chỉnh ngân sách thủ công để bù đắp.`);
+    }
+
     // Handle Life Event balances directly
     const activePeriodEvents = lifeEvents.filter(
       (e) => safeNumber(e.month) === period.month && safeNumber(e.year) === period.year
@@ -169,6 +219,15 @@ export function runProjection(input: ProjectionEngineInput): ProjectionOutput {
         : Infinity;
       
       if (current >= start && current <= end) {
+        let currentCapital = safeNumber(deal.capital, 0);
+        if (deal.withdrawals) {
+           deal.withdrawals.forEach(w => {
+              if (w.year * 12 + w.month < current) {
+                 currentCapital -= w.amount;
+              }
+           });
+        }
+        
         let acc = 0;
         if (deal.status === 'settled') {
           const investStart = deal.isConverted && deal.conversionYear && deal.conversionMonth
@@ -177,25 +236,207 @@ export function runProjection(input: ProjectionEngineInput): ProjectionOutput {
           const duration = end - investStart + 1;
           acc = (safeNumber(deal.realizedProfit, 0) / duration) * Math.max(0, current - investStart);
         }
-        activeValueUpToLastMonth += safeNumber(deal.capital, 0) + acc;
+        activeValueUpToLastMonth += Math.max(0, currentCapital) + acc;
       }
     });
 
     let activeSavingsPrincipalThisMonth = 0;
+    let activeSavingsContrib_saving = 0;
+    let activeSavingsMaturedThisMonth_saving = 0;
+    let activeSavingsMaturedThisMonth_unallocated = 0;
+
     savingsDeposits.forEach((dep) => {
-      // Do NOT exit early if status === 'matured' here, because the simulation iterates 
-      // over historical months and needs to include this deposit in the past.
+      if (!savingsStates[dep.id]) {
+        savingsStates[dep.id] = { buckets: [], balance: 0, contribution: 0, interest: 0 };
+      }
+      const state = savingsStates[dep.id];
       const depStart = dep.startYear * 12 + dep.startMonth;
       const depEnd = dep.status === 'settled_early' && dep.settledYear && dep.settledMonth
         ? dep.settledYear * 12 + dep.settledMonth
-        : depStart + dep.termMonths;
+        : Infinity;
+      const originalMaturity = depStart + dep.termMonths;
       const current = period.year * 12 + period.month;
-      if (current >= depStart && current < depEnd) {
-        activeSavingsPrincipalThisMonth += dep.principal;
+      const term = dep.termMonths || 1;
+
+      if (current >= depStart && current <= depEnd) {
+        let maturingAmount = 0;
+        
+        if (current === depEnd && dep.status === 'settled_early') {
+           maturingAmount = state.balance + safeNumber(dep.realizedInterest, 0);
+           state.buckets = [];
+           state.interest += safeNumber(dep.realizedInterest, 0);
+           state.balance = 0;
+        } else {
+           // Handle withdrawals in this month
+           const currentWithdrawals = (dep.withdrawals || []).filter(w => w.month === period.month && w.year === period.year);
+           if (currentWithdrawals.length > 0) {
+              currentWithdrawals.forEach(w => {
+                 let amountToDeduct = w.amount;
+                 for (let i = 0; i < state.buckets.length && amountToDeduct > 0; i++) {
+                    if (state.buckets[i].principal >= amountToDeduct) {
+                       state.buckets[i].principal -= amountToDeduct;
+                       amountToDeduct = 0;
+                    } else {
+                       amountToDeduct -= state.buckets[i].principal;
+                       state.buckets[i].principal = 0;
+                    }
+                 }
+                 maturingAmount += w.amount + safeNumber(w.realizedInterest, 0);
+                 state.interest += safeNumber(w.realizedInterest, 0);
+              });
+              state.buckets = state.buckets.filter(b => b.principal > 0);
+           }
+
+           state.buckets = state.buckets.filter(b => {
+              if (current - b.termStart === term && current > b.termStart) {
+                 const interest = b.principal * ((dep.interestRateAnnual || 0) / 100 / 12) * term;
+                 maturingAmount += b.principal + interest;
+                 state.interest += interest;
+                 return false;
+              }
+              return true;
+           });
+
+           let newContrib = 0;
+           if (current === depStart) newContrib += (dep.principal || 0);
+           
+           // Stop contributing when original term is reached
+           if (current > depStart && current < originalMaturity) {
+               newContrib += (dep.monthlyContribution || 0);
+           } else if (current === originalMaturity && (dep.monthlyContribution || 0) > 0) {
+               warnings.push(`[Tiết kiệm] Khoản "${dep.name}" đã hết kỳ hạn gốc (${dep.termMonths} tháng). Việc đóng góp hàng tháng (${dep.monthlyContribution}M) sẽ tự động dừng lại.`);
+           }
+
+           state.contribution += newContrib;
+           if (newContrib > 0) {
+              state.buckets.push({ principal: newContrib, termStart: current });
+           }
+           state.balance = state.buckets.reduce((sum, b) => sum + b.principal, 0);
+        }
+
+        if (maturingAmount > 0) {
+           if (dep.pool === 'saving') {
+               activeSavingsMaturedThisMonth_saving += maturingAmount;
+           } else {
+               activeSavingsMaturedThisMonth_unallocated += maturingAmount;
+           }
+        }
+        
+        activeSavingsPrincipalThisMonth += state.balance;
+        if (dep.pool === 'saving' && current < originalMaturity && current <= depEnd) {
+           activeSavingsContrib_saving += (current === depStart ? (dep.principal + (dep.monthlyContribution||0)) : (dep.monthlyContribution||0));
+        }
       }
     });
 
-    const _unallocatedForCompounding = Math.max(0, totalInvestable - activeValueUpToLastMonth - activeSavingsPrincipalThisMonth);
+    let activeSinkingFundsBalance_unallocated = 0;
+    let activeSinkingFundsBalance_saving = 0;
+    let activeSinkingFundsBalance_debtReserve = 0;
+    let activeSinkingFundsContrib_saving = 0;
+    
+    let sinkingFundMaturedThisMonth_saving = 0;
+    let sinkingFundMaturedThisMonth_debtReserve = 0;
+    let sinkingFundMaturedThisMonth_unallocated = 0;
+
+    sinkingFunds.forEach(sf => {
+      if (!sinkingFundStates[sf.id]) {
+        sinkingFundStates[sf.id] = { buckets: [], balance: 0, contribution: 0, interest: 0 };
+      }
+      const state = sinkingFundStates[sf.id];
+      const start = sf.startYear * 12 + sf.startMonth;
+      const end = sf.status === 'disbursed' && sf.disbursedYear && sf.disbursedMonth
+        ? sf.disbursedYear * 12 + sf.disbursedMonth
+        : Infinity;
+      const current = period.year * 12 + period.month;
+      const term = sf.termMonths || 1;
+      const source = sf.sourceOfFund || (sf.fundType === 'debt_prep' ? 'debt_reserve' : 'unallocated');
+      
+      if (current >= start && current <= end) {
+        let maturingAmount = 0;
+        let newContrib = 0;
+        
+        if (current === end && sf.status === 'disbursed') {
+            maturingAmount = state.balance;
+            state.buckets = [];
+            state.balance = 0;
+        } else {
+            // Handle withdrawals in this month
+            const currentWithdrawals = (sf.withdrawals || []).filter(w => w.month === period.month && w.year === period.year);
+            if (currentWithdrawals.length > 0) {
+               currentWithdrawals.forEach(w => {
+                  let amountToDeduct = w.amount;
+                  for (let i = 0; i < state.buckets.length && amountToDeduct > 0; i++) {
+                     if (state.buckets[i].principal >= amountToDeduct) {
+                        state.buckets[i].principal -= amountToDeduct;
+                        amountToDeduct = 0;
+                     } else {
+                        amountToDeduct -= state.buckets[i].principal;
+                        state.buckets[i].principal = 0;
+                     }
+                  }
+                  maturingAmount += w.amount + safeNumber(w.realizedInterest, 0);
+                  state.interest += safeNumber(w.realizedInterest, 0);
+               });
+               state.buckets = state.buckets.filter(b => b.principal > 0);
+            }
+
+            state.buckets = state.buckets.filter(b => {
+               if (current - b.termStart === term && current > b.termStart) {
+                  const interest = b.principal * ((sf.interestRateAnnual || 0) / 100 / 12) * term;
+                  maturingAmount += b.principal + interest;
+                  state.interest += interest;
+                  return false;
+               }
+               return true;
+            });
+            
+            if (current === start) {
+               newContrib += (sf.initialDeposit || 0);
+            }
+            if (current >= start) {
+               newContrib += (sf.monthlyContribution || 0);
+            }
+            
+            state.contribution += newContrib;
+            
+            if (newContrib > 0 || maturingAmount > 0) {
+               state.buckets.push({ principal: newContrib + maturingAmount, termStart: current });
+            }
+            
+            state.balance = state.buckets.reduce((sum, b) => sum + b.principal, 0);
+        }
+        if (maturingAmount > 0) {
+           if (source === 'saving') {
+               sinkingFundMaturedThisMonth_saving += maturingAmount;
+           } else if (source === 'debt_reserve') {
+               sinkingFundMaturedThisMonth_debtReserve += maturingAmount;
+           } else {
+               sinkingFundMaturedThisMonth_unallocated += maturingAmount;
+           }
+        }
+        
+        if (source === 'unallocated') {
+          activeSinkingFundsBalance_unallocated += state.balance;
+        } else if (source === 'saving') {
+          activeSinkingFundsBalance_saving += state.balance;
+          if (current < end) activeSinkingFundsContrib_saving += newContrib;
+        } else if (source === 'debt_reserve') {
+          activeSinkingFundsBalance_debtReserve += state.balance;
+          if (current < end) currentDebtReserveBalance -= newContrib;
+        }
+      }
+    });
+
+    currentDebtReserveBalance += sinkingFundMaturedThisMonth_debtReserve;
+
+    if (currentDebtReserveBalance < 0) {
+      const deficit = Math.abs(currentDebtReserveBalance);
+      cashflowRes.netCashflowMonthly -= deficit;
+      currentDebtReserveBalance = 0;
+      warnings.push(`[Công nợ] Tháng ${period.month}/${period.year}: Quỹ Chuẩn bị Trả nợ (Sinking Fund) thiếu hụt ${deficit.toFixed(1)} tr. Đã tự động trừ vào dòng tiền tự do (Cashflow). Bạn có thể điều chỉnh ngân sách thủ công để bù đắp.`);
+    }
+
+    const _unallocatedForCompounding = Math.max(0, totalInvestable - activeValueUpToLastMonth - activeSavingsPrincipalThisMonth - activeSinkingFundsBalance_unallocated);
 
     // Evaluate adjustments for the current month
     let adjustedSavingRate: number | null = null;
@@ -224,9 +465,9 @@ export function runProjection(input: ProjectionEngineInput): ProjectionOutput {
     const savingsRateRatio = activeSavingRate > 1 ? activeSavingRate / 100 : activeSavingRate;
     const savingsMonthlyYield = savingsRateRatio / 12;
 
-    const savingMonthlyContribution = cashflowRes.savingMonthly;
+    const savingMonthlyContribution = cashflowRes.savingMonthly - activeSinkingFundsContrib_saving - activeSavingsContrib_saving;
     const savingPnl = currentSavingBalance * savingsMonthlyYield + savingMonthlyContribution * (savingsMonthlyYield / 2);
-    currentSavingBalance = currentSavingBalance + savingMonthlyContribution + savingPnl;
+    currentSavingBalance = currentSavingBalance + savingMonthlyContribution + savingPnl + activeSavingsMaturedThisMonth_saving + sinkingFundMaturedThisMonth_saving;
 
     const monthlyContribution = cashflowRes.investmentMonthly;
     
@@ -241,55 +482,66 @@ export function runProjection(input: ProjectionEngineInput): ProjectionOutput {
     const dealSettleNotes: string[] = [];
     
     investmentDeals.forEach(deal => {
-      const isOriginallyEarmarked = deal.isEarmarked ?? deal.isConverted;
       const start = deal.startYear * 12 + deal.startMonth;
       const current = period.year * 12 + period.month;
       const end = deal.status === 'settled' && deal.endYear && deal.endMonth 
         ? deal.endYear * 12 + deal.endMonth 
         : Infinity;
-      const term = safeNumber(deal.savingTermMonths, 12);
-      const maturity = start + term;
-      const conversion = (deal.isConverted && deal.conversionYear && deal.conversionMonth)
-        ? (deal.conversionYear * 12 + deal.conversionMonth)
-        : Infinity;
-      const savingEnd = isOriginallyEarmarked ? Math.min(maturity, conversion, end) : start;
 
       if (current >= start && current <= end) {
         if (deal.status === 'settled') {
-          const investStart = deal.isConverted && deal.conversionYear && deal.conversionMonth
-            ? deal.conversionYear * 12 + deal.conversionMonth
+          const investStart = (deal as any).isConverted && (deal as any).conversionYear && (deal as any).conversionMonth
+            ? (deal as any).conversionYear * 12 + (deal as any).conversionMonth
             : start;
           if (current >= investStart && current <= end) {
             const duration = end - investStart + 1;
             totalDealPnlThisMonth += safeNumber(deal.realizedProfit, 0) / duration;
           }
         }
-      }
+        
+        // --- NEW: Handle Cash Flow ---
+        if ((deal.dealType === 'cash_flow' || deal.realEstateType === 'cash_flow') && deal.cashflowYieldAnnual && current > start) {
+           let currentCapital = safeNumber(deal.capital, 0);
+           if (deal.withdrawals) {
+              deal.withdrawals.forEach(w => {
+                 if (w.year * 12 + w.month < current) currentCapital -= w.amount;
+              });
+           }
+           const monthlyYield = (deal.cashflowYieldAnnual / 100) / 12;
+           if (!deal.cashflowTrackedInIncome) {
+             totalDealPnlThisMonth += Math.max(0, currentCapital) * monthlyYield;
+           }
+        }
 
-      // One-time savings interest payout at the savingEnd month
-      if (isOriginallyEarmarked && current === savingEnd) {
-        const monthsSavingsActive = savingEnd - start;
-        if (monthsSavingsActive > 0) {
-          const rate = safeNumber(deal.expectedSavingRate, 0);
-          const totalSavingsInterest = deal.realizedSavingInterest ?? (deal.capital * (rate / 100 / 12) * monthsSavingsActive);
-          totalDealPnlThisMonth += totalSavingsInterest;
-          
-          let cause = "đáo hạn";
-          if (savingEnd === conversion) cause = "chuyển sang đầu tư";
-          else if (savingEnd === end) cause = "tất toán";
-          dealSettleNotes.push(`Ghi nhận lãi tiết kiệm (${cause}) của ${deal.name}: +${totalSavingsInterest.toFixed(2)}M`);
+        // --- NEW: Handle Partial Withdrawals Profit ---
+        if (deal.withdrawals) {
+           deal.withdrawals.forEach(w => {
+              if (w.year === period.year && w.month === period.month) {
+                 totalDealPnlThisMonth += safeNumber(w.realizedProfit, 0);
+              }
+           });
         }
       }
 
       if (deal.status === 'settled' && deal.endMonth === period.month && deal.endYear === period.year) {
         const profit = safeNumber(deal.realizedProfit, 0);
-        dealSettleNotes.push(`Tất toán ${deal.name}: ${profit >= 0 ? `Lãi +` : `Lỗ `}${String(profit)}M`);
+        dealSettleNotes.push(`Tất toán toàn bộ ${deal.name}: ${profit >= 0 ? `Lãi +` : `Lỗ `}${String(profit)}M`);
+      }
+      
+      if (deal.withdrawals) {
+        deal.withdrawals.forEach(w => {
+           if (w.year === period.year && w.month === period.month) {
+              const profit = w.realizedProfit || 0;
+              dealSettleNotes.push(`Rút một phần ${deal.name}: Gốc ${w.amount}M, ${profit >= 0 ? `Lãi +` : `Lỗ `}${profit}M`);
+           }
+        });
       }
     });
 
     const investmentPnl = genericPnl + totalDealPnlThisMonth;
     const previousTotalInvestable = totalInvestable;
-    totalInvestable += monthlyContribution + investmentPnl;
+    // For unallocated matured funds, they flow into totalInvestable
+    totalInvestable += monthlyContribution + investmentPnl + activeSavingsMaturedThisMonth_unallocated + sinkingFundMaturedThisMonth_unallocated;
 
     // Derived actual monthly rate based on custom profit
     const _actualInvestmentRateMonthly = previousTotalInvestable > 0 ? investmentPnl / previousTotalInvestable : 0;
@@ -300,7 +552,6 @@ export function runProjection(input: ProjectionEngineInput): ProjectionOutput {
 
     // Distribute accumulated PnL into asset classes
     investmentDeals.forEach((deal) => {
-      const isOriginallyEarmarked = deal.isEarmarked ?? deal.isConverted;
       const start = deal.startYear * 12 + deal.startMonth;
       const current = period.year * 12 + period.month;
       const end = deal.status === 'settled' && deal.endYear && deal.endMonth 
@@ -308,43 +559,46 @@ export function runProjection(input: ProjectionEngineInput): ProjectionOutput {
         : Infinity;
       
       if (current >= start && current < end) {
-        const term = safeNumber(deal.savingTermMonths, 12);
-        const maturity = start + term;
-        const conversion = (deal.isConverted && deal.conversionYear && deal.conversionMonth)
-          ? (deal.conversionYear * 12 + deal.conversionMonth)
-          : Infinity;
-        const savingEnd = isOriginallyEarmarked ? Math.min(maturity, conversion, end) : start;
-
-        // Is it currently earmarked in this month?
-        const isCurrentlyEarmarked = isOriginallyEarmarked && current < conversion;
-
         let accumulatedPnl = 0;
         if (deal.status === 'settled') {
-          const investStart = deal.isConverted && deal.conversionYear && deal.conversionMonth
-            ? deal.conversionYear * 12 + deal.conversionMonth
+          const investStart = (deal as any).isConverted && (deal as any).conversionYear && (deal as any).conversionMonth
+            ? (deal as any).conversionYear * 12 + (deal as any).conversionMonth
             : start;
           if (current >= investStart) {
             const duration = end - investStart + 1;
             const monthsActiveSoFar = current - investStart + 1;
             accumulatedPnl = (safeNumber(deal.realizedProfit, 0) / duration) * monthsActiveSoFar;
           }
-        } else if (isCurrentlyEarmarked) {
-          // Earmarked saving interest accumulation
-          const rate = safeNumber(deal.expectedSavingRate, 0);
-          const monthsActive = current < savingEnd ? current - start + 1 : savingEnd - start;
-          accumulatedPnl = safeNumber(deal.capital, 0) * (rate / 100 / 12) * monthsActive;
         }
 
-        const totalValue = safeNumber(deal.capital, 0);
-        
-        if (isCurrentlyEarmarked) {
-          earmarkedBalances[deal.assetType] += totalValue;
-          totalEarmarkedCapital += totalValue;
-        } else {
-          // If settled or regular active, add to active assets. Note that for settled deals we add the accrued profit too.
-          assetBalances[deal.assetType] += totalValue + (deal.status === 'settled' ? accumulatedPnl : 0);
+        let currentCapital = safeNumber(deal.capital, 0);
+        if (deal.withdrawals) {
+           deal.withdrawals.forEach(w => {
+              if (w.year * 12 + w.month <= current) {
+                 currentCapital -= w.amount;
+              }
+           });
         }
+        
+        assetBalances[deal.assetType] += Math.max(0, currentCapital) + (deal.status === 'settled' ? accumulatedPnl : 0);
       }
+    });
+
+    sinkingFunds.forEach(sf => {
+       const source = sf.sourceOfFund || (sf.fundType === 'debt_prep' ? 'debt_reserve' : 'unallocated');
+       if (source !== 'unallocated') return;
+
+       const start = sf.startYear * 12 + sf.startMonth;
+       const end = sf.status === 'disbursed' && sf.disbursedYear && sf.disbursedMonth
+        ? sf.disbursedYear * 12 + sf.disbursedMonth
+        : Infinity;
+       const current = period.year * 12 + period.month;
+       
+       if (current >= start && current < end) {
+          const state = sinkingFundStates[sf.id] || { balance: 0 };
+          earmarkedBalances[sf.targetAssetType] += state.balance;
+          totalEarmarkedCapital += state.balance;
+       }
     });
 
     const standardTypes: AssetType[] = ['fx_reserve_usd', 'gold', 'real_estate', 'stocks', 'crypto'];
@@ -361,49 +615,36 @@ export function runProjection(input: ProjectionEngineInput): ProjectionOutput {
     }
 
     // Calculate savings deposits at this period
-    let totalSavingsPrincipal = 0;
-    let totalSavingsInterest = 0;
+    let portfolioSavingsPrincipal = 0;
+    let portfolioSavingsInterest = 0;
+    let defenseSavingsPrincipal = 0;
+    let defenseSavingsInterest = 0;
+    
     savingsDeposits.forEach((dep) => {
+      const state = savingsStates[dep.id] || { balance: 0, interest: 0 };
       const depStart = dep.startYear * 12 + dep.startMonth;
       const depEnd = dep.status === 'settled_early' && dep.settledYear && dep.settledMonth
         ? dep.settledYear * 12 + dep.settledMonth
-        : depStart + dep.termMonths;
+        : Infinity;
       const current = period.year * 12 + period.month;
-      if (current >= depStart && current < depEnd) {
-        // Use expected interest (or realized interest if settled early) for the UI representation
-        const expectedInterest = dep.status === 'settled_early'
-          ? safeNumber(dep.realizedInterest, 0)
-          : dep.principal * (safeNumber(dep.interestRateAnnual, 0) / 100 / 12) * dep.termMonths;
-        totalSavingsPrincipal += dep.principal;
-        totalSavingsInterest += expectedInterest;
+      if (current >= depStart && current <= depEnd) {
+        const expectedInterest = state.interest;
+        
+        if (dep.pool === 'saving') {
+          defenseSavingsPrincipal += state.balance;
+          defenseSavingsInterest += expectedInterest;
+        } else {
+          portfolioSavingsPrincipal += state.balance;
+          portfolioSavingsInterest += expectedInterest;
+        }
       }
     });
 
-    // Savings interest contributes to totalInvestable growth only at maturity or early settlement month
-    const savingsInterestThisMonth = (() => {
-      let interest = 0;
-      savingsDeposits.forEach((dep) => {
-        const depStart = dep.startYear * 12 + dep.startMonth;
-        const depEnd = depStart + dep.termMonths;
-        const current = period.year * 12 + period.month;
-        if (dep.status === 'settled_early' && dep.settledYear && dep.settledMonth) {
-          const settleTime = dep.settledYear * 12 + dep.settledMonth;
-          if (current === settleTime) {
-            interest += safeNumber(dep.realizedInterest, 0);
-          }
-        } else if (dep.status === 'active' || dep.status === 'matured') {
-          if (current === depEnd) {
-            const totalInterest = dep.principal * (safeNumber(dep.interestRateAnnual, 0) / 100 / 12) * dep.termMonths;
-            interest += totalInterest;
-          }
-        }
-      });
-      return interest;
-    })();
-    totalInvestable += savingsInterestThisMonth;
+    // Savings/Sinking interests are now naturally handled by matured amounts flowing into respective pools
+    const totalYieldThisMonth = activeSavingsMaturedThisMonth_saving + activeSavingsMaturedThisMonth_unallocated + sinkingFundMaturedThisMonth_saving + sinkingFundMaturedThisMonth_unallocated + sinkingFundMaturedThisMonth_debtReserve;
     
     cumulativeContribution += monthlyContribution;
-    cumulativePnl += (investmentPnl + savingsInterestThisMonth);
+    cumulativePnl += (investmentPnl + totalYieldThisMonth); // Approximate total PnL generated
 
     const portfolioOutput = {
       assets: {
@@ -415,17 +656,19 @@ export function runProjection(input: ProjectionEngineInput): ProjectionOutput {
       },
       totalBeginningBalance: previousTotalInvestable,
       totalContribution: monthlyContribution,
-      totalPnl: investmentPnl + savingsInterestThisMonth,
+      totalPnl: investmentPnl + totalYieldThisMonth,
       totalEndingBalance: totalInvestable,
-      unallocatedEndingBalance: Math.max(0, unallocatedCash - totalSavingsPrincipal),
-      savingsBalance: totalSavingsPrincipal,
-      savingsInterestAccrued: totalSavingsInterest,
+      unallocatedEndingBalance: Math.max(0, unallocatedCash - portfolioSavingsPrincipal),
+      savingsBalance: portfolioSavingsPrincipal,
+      savingsInterestAccrued: portfolioSavingsInterest,
+      defenseSavingsBalance: defenseSavingsPrincipal,
+      defenseSavingsInterestAccrued: defenseSavingsInterest,
       cumulativeContribution,
       cumulativePnl,
     };
 
     // Calculate Net Worth
-    const nominalNetWorth = portfolioOutput.totalEndingBalance + currentSavingBalance;
+    const nominalNetWorth = portfolioOutput.totalEndingBalance + currentSavingBalance + activeSinkingFundsBalance_saving;
 
     // Calculate Real Value Today
     const inflationRate = safeNumber(assumptions.generalInflationRateAnnual, 0);
@@ -461,14 +704,17 @@ export function runProjection(input: ProjectionEngineInput): ProjectionOutput {
       expensesMonthly: cashflowRes.expensesMonthly,
       investmentMonthly: cashflowRes.investmentMonthly,
       savingMonthly: cashflowRes.savingMonthly,
+      debtReserveMonthly: cashflowRes.debtReserveMonthly,
       liquidityMonthly: 0,
       healthMonthly: 0,
       childCostMonthly: childCostRes.totalMonthly,
       lifeEventImpactMonthly: cashflowRes.lifeEventImpactMonthly + cashflowRes.oneTimeEventImpact,
+      debtPaymentMonthly: activeDebtPaymentMonthly,
       netCashflowMonthly: cashflowRes.netCashflowMonthly,
       liquidityBalance: 0,
       healthBalance: 0,
       savingBalance: currentSavingBalance,
+      debtReserveBalance: currentDebtReserveBalance,
       portfolio: portfolioOutput,
       propertyValue: assetBalances.real_estate,
       nominalNetWorth,
@@ -477,6 +723,9 @@ export function runProjection(input: ProjectionEngineInput): ProjectionOutput {
       fireProgress: fireRes.fireProgress,
       fireGap: fireRes.fireGap,
       notes,
+      _activeSinkingFundsDebtReserve: activeSinkingFundsBalance_debtReserve,
+      _totalDebtPrincipalRemaining: totalDebtPrincipalRemaining,
+      _totalDebtInterestPaidMonthly: totalDebtInterestPaidMonthly,
     });
     
     // Attach additional runtime metrics to the row for aggregation later
@@ -500,8 +749,10 @@ export function runProjection(input: ProjectionEngineInput): ProjectionOutput {
 
     const totalIncome = yearRows.reduce((sum, r) => sum + r.incomeMonthly, 0);
     const totalExpenses = yearRows.reduce((sum, r) => sum + r.expensesMonthly, 0);
+    const totalDebtPayment = yearRows.reduce((sum, r) => sum + r.debtPaymentMonthly, 0);
     const avgInvestment = yearRows.reduce((sum, r) => sum + r.investmentMonthly, 0) / yearRows.length;
     const avgSaving = yearRows.reduce((sum, r) => sum + r.savingMonthly, 0) / yearRows.length;
+    const avgDebtReserve = yearRows.reduce((sum, r) => sum + r.debtReserveMonthly, 0) / yearRows.length;
     
     const totalCustomProfit = yearRows.reduce((sum, r) => sum + (r._customProfit ?? 0), 0);
     const avgSavingRate = yearRows.reduce((sum, r) => sum + (r._savingInterestRateAnnual ?? 0), 0) / yearRows.length;
@@ -547,14 +798,17 @@ export function runProjection(input: ProjectionEngineInput): ProjectionOutput {
       monthlyIncomeEndYear: lastRow.incomeMonthly,
       totalIncomeYearly: totalIncome,
       totalExpensesYearly: totalExpenses,
+      totalDebtPaymentYearly: totalDebtPayment,
       averageInvestmentMonthly: avgInvestment,
       averageSavingMonthly: avgSaving,
+      averageDebtReserveMonthly: avgDebtReserve,
       investmentReturnRateAnnual: Number(investmentReturnRateAnnualDisplay),
       savingInterestRateAnnual: Number(avgSavingRate.toFixed(2)),
       averageChildCostMonthly: avgChildCost,
       passiveCashFlowMonthly: passiveCashFlowMonthly,
       endingInvestmentBalance: lastRow.portfolio.totalEndingBalance,
       endingSavingBalance: lastRow.savingBalance,
+      endingDebtReserveBalance: lastRow.debtReserveBalance,
       lifeEventNotes: eventNotes,
       nominalNetWorth: lastRow.nominalNetWorth,
       realNetWorth: lastRow.realNetWorth,

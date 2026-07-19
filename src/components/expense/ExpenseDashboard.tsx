@@ -2,6 +2,7 @@ import React, { useMemo } from 'react';
 import { useAppContext } from '../../context/AppContext';
 import { analyzeExpense } from '../../engines/expenseEngine';
 import { Card, CardHeader, CardTitle, CardContent } from '../ui/Card';
+import { HelpTooltip } from '../ui/HelpTooltip';
 import { formatTableMoneyVNDMillion } from '../../utils/format';
 import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip as RechartsTooltip, Legend, Bar, Line, XAxis, YAxis, CartesianGrid, ComposedChart } from 'recharts';
 import { PieChart as PieChartIcon } from 'lucide-react';
@@ -82,8 +83,11 @@ export const ExpenseDashboard: React.FC<ExpenseDashboardProps> = ({ filter, setF
         {/* Total Summary Sparkline-like Cards */}
         <Card className="bg-white/80 border-family-accent/10 md:col-span-1">
           <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-semibold text-family-textMuted uppercase flex justify-between">
-              <span>Ngân sách vs Thực tế (Cộng dồn)</span>
+            <CardTitle className="text-sm font-semibold text-family-textMuted uppercase flex items-center justify-between">
+              <span className="flex items-center gap-1.5">
+                Ngân sách vs Thực tế (Cộng dồn)
+                <HelpTooltip text="Theo dõi tỷ lệ sử dụng ngân sách so với hạn mức đã phân bổ trong thời gian quan sát." />
+              </span>
               <PieChartIcon className="w-4 h-4" />
             </CardTitle>
           </CardHeader>
@@ -143,8 +147,9 @@ export const ExpenseDashboard: React.FC<ExpenseDashboardProps> = ({ filter, setF
         {/* Monthly Series Chart */}
         <Card className="bg-white/80 border-family-accent/10 md:col-span-2">
           <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-semibold text-family-textMuted uppercase">
+            <CardTitle className="text-sm font-semibold text-family-textMuted uppercase flex items-center gap-1.5">
               Biến động chi tiêu theo tháng (Column & Line)
+              <HelpTooltip text="Biểu diễn mức chi tiêu thực tế (cột) so với ngân sách mục tiêu (đường) qua từng tháng." />
             </CardTitle>
           </CardHeader>
           <CardContent>

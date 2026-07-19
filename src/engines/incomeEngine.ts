@@ -10,7 +10,7 @@ export interface IncomeOutput {
   incomeMonthly: number;
   activeScheduleId: string;
   activeScheduleIds: string[];
-  breakdown: Record<IncomeType, number>;
+  breakdown: Record<string, number>;
   warnings: string[];
 }
 
@@ -23,13 +23,7 @@ export function calculateIncome(input: IncomeEngineInput): IncomeOutput {
   const period = input.period;
   const schedule = safeArray(input.incomeSchedule);
 
-  const breakdown: Record<IncomeType, number> = {
-    fulltime_salary: 0,
-    parttime_salary: 0,
-    self_employed: 0,
-    passive_income: 0,
-    irregular_income: 0,
-  };
+  const breakdown: Record<string, number> = {};
 
   let totalIncome = 0;
   const activeScheduleIds: string[] = [];

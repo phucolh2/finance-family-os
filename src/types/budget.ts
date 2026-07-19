@@ -33,6 +33,7 @@ export interface BudgetCategoryOutput {
   amountYearly: number;
   ruleType: BudgetRuleType;
   isActive: boolean;
+  classification?: 'expense' | 'investment' | 'savings' | 'debt_reserve';
 }
 
 export interface MonthlyBudgetOutput {
@@ -44,6 +45,7 @@ export interface MonthlyBudgetOutput {
   totalExpenseMonthly: number;
   investmentMonthly: number;
   savingMonthly: number;
+  debtReserveMonthly: number;
   freeCashflowMonthly: number;
   deficitMonthly: number;
   warnings: string[];
@@ -64,7 +66,7 @@ export interface BudgetTreeNode {
   isActive: boolean;
   sortOrder: number;
 
-  classification?: 'expense' | 'investment' | 'savings'; // Dimension classification
+  classification?: 'expense' | 'investment' | 'savings' | 'debt_reserve'; // Dimension classification
 
   children?: BudgetTreeNode[];
 }

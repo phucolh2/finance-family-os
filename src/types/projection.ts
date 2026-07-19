@@ -19,16 +19,22 @@ export interface ProjectionMonthlyRow {
   expensesMonthly: number;
   investmentMonthly: number;
   savingMonthly: number;
+  debtReserveMonthly: number;
   liquidityMonthly: number;
   healthMonthly: number;
   childCostMonthly: number;
   lifeEventImpactMonthly: number;
+  debtPaymentMonthly: number;
   netCashflowMonthly: number;
+  
+  _totalDebtPrincipalRemaining?: number;
+  _totalDebtInterestPaidMonthly?: number;
   
   // Reserve balances
   liquidityBalance: number;
   healthBalance: number;
   savingBalance: number;
+  debtReserveBalance: number;
   
   // Portfolio balances
   portfolio: PortfolioMonthlyOutput;
@@ -55,6 +61,7 @@ export interface ProjectionMonthlyRow {
   _childCost1?: number;
   _childCost2?: number;
   _childCostOther?: number;
+  _activeSinkingFundsDebtReserve?: number;
 }
 
 export interface ProjectionYearlyRow {
@@ -64,14 +71,17 @@ export interface ProjectionYearlyRow {
   monthlyIncomeEndYear: number;
   totalIncomeYearly: number;
   totalExpensesYearly: number;
+  totalDebtPaymentYearly: number;
   averageInvestmentMonthly: number;
   averageSavingMonthly: number;
+  averageDebtReserveMonthly: number;
   investmentReturnRateAnnual: number;
   savingInterestRateAnnual: number;
   averageChildCostMonthly: number;
   passiveCashFlowMonthly: number;
   endingInvestmentBalance: number;
   endingSavingBalance: number;
+  endingDebtReserveBalance: number;
   lifeEventNotes: string[];
   nominalNetWorth: number;
   realNetWorth: number;

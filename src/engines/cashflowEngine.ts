@@ -15,6 +15,7 @@ export interface CashflowOutput {
   expensesMonthly: number;
   investmentMonthly: number;
   savingMonthly: number;
+  debtReserveMonthly: number;
   childCostMonthly: number;
   lifeEventImpactMonthly: number; // cumulative recurring impacts
   oneTimeEventImpact: number;     // one-time impact in this exact month
@@ -41,6 +42,7 @@ export function calculateCashflow(input: CashflowEngineInput): CashflowOutput {
     
   const investment = safeNumber(budget.investmentMonthly, 0);
   const saving = safeNumber(budget.savingMonthly, 0);
+  const debtReserveMonthly = safeNumber(budget.debtReserveMonthly, 0);
 
   // 1. One-time events matching this exact month/year
   const currentEvents = events.filter(
@@ -66,7 +68,7 @@ export function calculateCashflow(input: CashflowEngineInput): CashflowOutput {
 
   // 4. Calculate Net Cashflow
   // Net Cashflow = Free cashflow (income - total allocated) + events
-  const freeCashflow = income - (expenses + investment + saving);
+  const freeCashflow = income - (expenses + investment + saving + debtReserveMonthly);
   const netCashflow = freeCashflow + oneTimeImpact + recurringImpact;
 
   if (netCashflow < 0) {
@@ -80,6 +82,7 @@ export function calculateCashflow(input: CashflowEngineInput): CashflowOutput {
     expensesMonthly: expenses,
     investmentMonthly: investment,
     savingMonthly: saving,
+    debtReserveMonthly,
     childCostMonthly: childCost,
     lifeEventImpactMonthly: recurringImpact,
     oneTimeEventImpact: oneTimeImpact,

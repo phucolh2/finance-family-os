@@ -2,11 +2,186 @@ import React, { useRef, useState } from 'react';
 import { useAppContext } from '../context/AppContext';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '../components/ui/Card';
 import { Button } from '../components/ui/Button';
+import { Input } from '../components/ui/Input';
 import { WarningBox } from '../components/ui/WarningBox';
-import { Download, Upload, ShieldAlert, CheckCircle2 } from 'lucide-react';
+import { Download, Upload, ShieldAlert, CheckCircle2, Plus, Trash2 } from 'lucide-react';
+import type { NonTermInterestRatePeriod, IncomeCategory } from '../types/finance';
+
+const IncomeCategoriesSettings: React.FC = () => {
+  const { state, addIncomeCategory, updateIncomeCategory, deleteIncomeCategory } = useAppContext();
+  const categories = state.incomeCategories || [];
+
+  const [newCat, setNewCat] = useState<Omit<IncomeCategory, 'id'>>({
+    name: '',
+    type: 'active',
+  });
+
+  const handleAdd = () => {
+    if (!newCat.name) return;
+    addIncomeCategory(newCat);
+    setNewCat({ name: '', type: 'active' });
+  };
+
+  const handleToggleType = (cat: IncomeCategory) => {
+    updateIncomeCategory({
+      ...cat,
+      type: cat.type === 'active' ? 'passive' : 'active',
+    });
+  };
+
+  return (
+    <Card className="lg:col-span-3">
+      <CardHeader>
+        <CardTitle>Cấu hình Danh mục Thu nhập</CardTitle>
+        <CardDescription>Quản lý các loại thu nhập và phân loại Chủ động/Thụ động để phục vụ báo cáo Dòng tiền.</CardDescription>
+      </CardHeader>
+      <CardContent className="space-y-4">
+        <div className="bg-family-bgDark/20 p-4 rounded-xl border border-family-accent/10">
+          <h4 className="font-semibold text-sm mb-3">Thêm loại thu nhập mới</h4>
+          <div className="flex flex-wrap items-end gap-3">
+            <div className="w-64">
+              <Input label="Tên danh mục" type="text" value={newCat.name} placeholder="VD: Thuê nhà, Cổ tức..." onChange={e => setNewCat({...newCat, name: e.target.value})} />
+            </div>
+            <div className="w-48">
+              <label className="block text-xs font-semibold text-family-textMuted uppercase mb-1.5">Loại (Chủ động/Thụ động)</label>
+              <select 
+                className="w-full bg-family-bgDeep border border-family-accent/20 rounded-xl px-4 py-2.5 text-family-text focus:outline-none focus:border-family-accent/60 transition-colors text-xs h-[42px]"
+                value={newCat.type}
+                onChange={(e) => setNewCat({...newCat, type: e.target.value as 'active' | 'passive'})}
+              >
+                <option value="active">Chủ động (Active)</option>
+                <option value="passive">Thụ động (Passive)</option>
+              </select>
+            </div>
+            <Button onClick={handleAdd} size="sm" className="h-[42px] mb-[2px] gap-1"><Plus className="w-4 h-4"/> Thêm</Button>
+          </div>
+        </div>
+
+        {categories.length > 0 ? (
+          <table className="w-full text-left text-sm mt-4 border-collapse">
+            <thead>
+              <tr className="border-b border-family-accent/10 text-family-textMuted text-xs uppercase">
+                <th className="py-2 font-semibold">Tên danh mục</th>
+                <th className="py-2 font-semibold">Phân loại</th>
+                <th className="py-2 font-semibold text-right">Thao tác</th>
+              </tr>
+            </thead>
+            <tbody>
+              {categories.map((cat, idx) => (
+                <tr key={idx} className="border-b border-family-accent/5 hover:bg-family-bgDark/10">
+                  <td className="py-3 font-medium">
+                    {cat.name}
+                    {cat.isDefault && <span className="ml-2 text-[10px] bg-gray-200 text-gray-600 px-1.5 py-0.5 rounded">Mặc định</span>}
+                  </td>
+                  <td className="py-3">
+                    <button onClick={() => handleToggleType(cat)} className={`text-xs px-2 py-1 rounded font-bold ${cat.type === 'passive' ? 'bg-green-100 text-green-700' : 'bg-blue-100 text-blue-700'}`}>
+                      {cat.type === 'passive' ? 'Thụ động' : 'Chủ động'}
+                    </button>
+                  </td>
+                  <td className="py-3 text-right">
+                    {!cat.isDefault && (
+                      <Button variant="outline" size="sm" onClick={() => deleteIncomeCategory(cat.id)} className="text-red-500 hover:text-red-700 hover:bg-red-50 px-2 h-8">
+                        <Trash2 className="w-4 h-4" />
+                      </Button>
+                    )}
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        ) : (
+          <p className="text-sm text-family-textMuted italic pt-2">Chưa có danh mục thu nhập nào.</p>
+        )}
+      </CardContent>
+    </Card>
+  );
+};
+
+const AssumptionsSettings: React.FC = () => {
+  const { state, updateAssumptions } = useAppContext();
+  const schedule = state.assumptions.nonTermInterestRateSchedule || [];
+  
+  const [newPeriod, setNewPeriod] = useState<NonTermInterestRatePeriod>({
+    startMonth: 1,
+    startYear: 2024,
+    rateAnnual: 0.1,
+  });
+
+  const handleAdd = () => {
+    updateAssumptions({
+      ...state.assumptions,
+      nonTermInterestRateSchedule: [...schedule, newPeriod].sort((a, b) => 
+        (a.startYear * 12 + a.startMonth) - (b.startYear * 12 + b.startMonth)
+      ),
+    });
+    setNewPeriod({ startMonth: 1, startYear: 2024, rateAnnual: 0.1 });
+  };
+
+  const handleRemove = (index: number) => {
+    const updated = [...schedule];
+    updated.splice(index, 1);
+    updateAssumptions({
+      ...state.assumptions,
+      nonTermInterestRateSchedule: updated,
+    });
+  };
+
+  return (
+    <Card className="lg:col-span-3">
+      <CardHeader>
+        <CardTitle>Cấu hình Tham số Dòng tiền (Assumptions)</CardTitle>
+        <CardDescription>Cấu hình Lịch sử Lãi suất không kỳ hạn để hệ thống tự động tính toán số tiền lãi khi rút gốc từng phần hoặc tất toán trước hạn.</CardDescription>
+      </CardHeader>
+      <CardContent className="space-y-4">
+        <div className="bg-family-bgDark/20 p-4 rounded-xl border border-family-accent/10">
+          <h4 className="font-semibold text-sm mb-3">Thêm mốc Lãi suất không kỳ hạn</h4>
+          <div className="flex flex-wrap items-end gap-3">
+            <div className="w-24">
+              <Input label="Tháng" type="number" min={1} max={12} value={newPeriod.startMonth} onChange={e => setNewPeriod({...newPeriod, startMonth: Number(e.target.value)})} />
+            </div>
+            <div className="w-28">
+              <Input label="Năm" type="number" min={2000} max={2060} value={newPeriod.startYear} onChange={e => setNewPeriod({...newPeriod, startYear: Number(e.target.value)})} />
+            </div>
+            <div className="w-32">
+              <Input label="Lãi suất (%/năm)" type="number" step="0.1" value={newPeriod.rateAnnual || ''} placeholder="VD: 0.1" onChange={e => setNewPeriod({...newPeriod, rateAnnual: Number(e.target.value)})} />
+            </div>
+            <Button onClick={handleAdd} size="sm" className="h-10 mb-[2px] gap-1"><Plus className="w-4 h-4"/> Thêm</Button>
+          </div>
+        </div>
+
+        {schedule.length > 0 ? (
+          <table className="w-full text-left text-sm mt-4 border-collapse">
+            <thead>
+              <tr className="border-b border-family-accent/10 text-family-textMuted text-xs uppercase">
+                <th className="py-2 font-semibold">Thời điểm áp dụng</th>
+                <th className="py-2 font-semibold">Lãi suất (%/năm)</th>
+                <th className="py-2 font-semibold text-right">Thao tác</th>
+              </tr>
+            </thead>
+            <tbody>
+              {schedule.map((p, idx) => (
+                <tr key={idx} className="border-b border-family-accent/5 hover:bg-family-bgDark/10">
+                  <td className="py-3">Từ Tháng {p.startMonth}/{p.startYear}</td>
+                  <td className="py-3 text-emerald-500 font-semibold">{p.rateAnnual}%</td>
+                  <td className="py-3 text-right">
+                    <Button variant="outline" size="sm" onClick={() => handleRemove(idx)} className="text-red-500 hover:text-red-700 hover:bg-red-50 px-2 h-8">
+                      <Trash2 className="w-4 h-4" />
+                    </Button>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        ) : (
+          <p className="text-sm text-family-textMuted italic pt-2">Chưa có cấu hình lãi suất. Hệ thống sẽ mặc định lãi suất 0% cho phần rút trước hạn nếu không có dữ liệu.</p>
+        )}
+      </CardContent>
+    </Card>
+  );
+};
 
 export const Settings: React.FC = () => {
-  const { state, lastSaved, schemaVersion, importState, resetToDefault } = useAppContext();
+  const { state, lastSaved, schemaVersion, importState, resetToDefault, updateAssumptions } = useAppContext();
 
   const fileInputRef = useRef<HTMLInputElement>(null);
   
@@ -103,6 +278,8 @@ export const Settings: React.FC = () => {
       {errorMsg && <WarningBox type="danger" message={errorMsg} />}
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        <IncomeCategoriesSettings />
+        <AssumptionsSettings />
         {/* Local storage controls */}
         <Card className="lg:col-span-2">
           <CardHeader>

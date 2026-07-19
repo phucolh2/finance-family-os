@@ -65,22 +65,25 @@ export function rebuildTreeFromFlatRatios(flatRatios: BudgetRatio[]): BudgetTree
 /**
  * Recursively collects leaf nodes of the budget tree.
  */
-export function collectLeafNodes(node: BudgetTreeNode): BudgetTreeNode[] {
+export function collectLeafNodes(node: BudgetTreeNode, inheritedClassification?: 'expense' | 'investment' | 'savings' | 'debt_reserve'): BudgetTreeNode[] {
   const isActive = node.isActive;
   if (!isActive) return [];
 
+  const currentClassification = node.classification || inheritedClassification;
+  const nodeWithClassification = { ...node, classification: currentClassification };
+
   if (!node.children || node.children.length === 0) {
-    return [node];
+    return [nodeWithClassification];
   }
   
   // If parent is active, process active children
   const activeChildren = node.children.filter(c => c.isActive);
   if (activeChildren.length === 0) {
     // If no active children, parent acts as leaf
-    return [node];
+    return [nodeWithClassification];
   }
   
-  return activeChildren.flatMap(collectLeafNodes);
+  return activeChildren.flatMap(c => collectLeafNodes(c, currentClassification));
 }
 
 /**
@@ -157,7 +160,7 @@ export function calculateBudget(input: BudgetEngineInput): MonthlyBudgetOutput {
   }
 
   // 3. Extract leaf nodes as flat categories output
-  const leafNodes = activeTree.flatMap(collectLeafNodes);
+  const leafNodes = activeTree.flatMap(node => collectLeafNodes(node));
 
   const categories: BudgetCategoryOutput[] = leafNodes.map((node) => {
     const amount = (income * node.ratioPercent) / 100;
@@ -170,6 +173,7 @@ export function calculateBudget(input: BudgetEngineInput): MonthlyBudgetOutput {
       amountYearly: amount * 12,
       ruleType: 'percent',
       isActive: node.isActive,
+      classification: node.classification,
     };
   });
 
@@ -194,15 +198,19 @@ export function calculateBudget(input: BudgetEngineInput): MonthlyBudgetOutput {
 
   // 5. Compute investment, saving and spending categories
   const investmentMonthly = categories
-    .filter((c) => c.group === 'future_investing')
+    .filter((c) => c.classification === 'investment' || c.group === 'future_investing')
     .reduce((sum, c) => sum + c.amountMonthly, 0);
 
   const savingMonthly = categories
-    .filter((c) => c.group === 'safety_reserve')
+    .filter((c) => c.classification === 'savings')
+    .reduce((sum, c) => sum + c.amountMonthly, 0);
+
+  const debtReserveMonthly = categories
+    .filter((c) => c.classification === 'debt_reserve')
     .reduce((sum, c) => sum + c.amountMonthly, 0);
 
   const totalExpenseMonthly = categories
-    .filter((c) => c.group !== 'future_investing' && c.group !== 'safety_reserve')
+    .filter((c) => c.classification === 'expense' || (!c.classification && c.group !== 'future_investing' && c.group !== 'safety_reserve'))
     .reduce((sum, c) => sum + c.amountMonthly, 0);
 
   const freeCashflowMonthly = income - totalAllocated;
@@ -223,6 +231,7 @@ export function calculateBudget(input: BudgetEngineInput): MonthlyBudgetOutput {
     totalExpenseMonthly,
     investmentMonthly,
     savingMonthly,
+    debtReserveMonthly,
     freeCashflowMonthly,
     deficitMonthly,
     warnings,
