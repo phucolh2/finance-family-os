@@ -7,6 +7,7 @@ import { useAppContext } from '../../context/AppContext';
 import { HelpTooltip } from '../ui/HelpTooltip';
 import { runProjection } from '../../engines/projectionEngine';
 import { formatMoneyVNDMillion } from '../../utils/format';
+import { WarningBox } from '../ui/WarningBox';
 
 interface TransferFormProps {
   onSuccess: () => void;
@@ -21,6 +22,7 @@ export const TransferForm: React.FC<TransferFormProps> = ({ onSuccess, onCancel 
   
   const [amount, setAmount] = useState<string>('');
   const [note, setNote] = useState<string>('');
+  const [formError, setFormError] = useState<string>('');
 
   const [currentYear, currentMonth] = (selectedPeriodKey || `${new Date().getFullYear()}-${String(new Date().getMonth() + 1).padStart(2, '0')}`).split('-').map(Number);
 
@@ -42,17 +44,50 @@ export const TransferForm: React.FC<TransferFormProps> = ({ onSuccess, onCancel 
   const currentRow = projection.monthlyRows.find(r => r.period.key === currentKey);
   const idleCashflow = currentRow ? currentRow.netCashflowMonthly : 0;
 
+  const [srcType, srcId] = sourceValue.split(':');
+  const [destType, destId] = destinationValue.split(':');
+
+  let availableBalance = 0;
+  if (srcType === 'cashflow') {
+    availableBalance = idleCashflow;
+  } else if (srcType === 'life_event') {
+    availableBalance = state.lifeEvents?.find(e => e.id === srcId)?.amount || 0;
+  } else if (srcType === 'investment') {
+    availableBalance = state.investmentDeals?.find(d => d.id === srcId)?.capital || 0;
+  } else if (srcType === 'sinking_fund') {
+    availableBalance = state.sinkingFunds?.find(f => f.id === srcId)?.initialDeposit || 0;
+  } else if (srcType === 'savings') {
+    availableBalance = state.savingsDeposits?.find(s => s.id === srcId)?.principal || 0;
+  }
+
+  let maxDebtPayment = 0;
+  if (destType === 'debt') {
+    maxDebtPayment = state.debts?.find(d => d.id === destId)?.principal || 0;
+  }
+
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!amount || Number(amount) <= 0) return;
+    const numAmount = Number(amount);
+    
+    if (!amount || numAmount <= 0) {
+      setFormError('Số tiền điều chuyển phải lớn hơn 0.');
+      return;
+    }
+    if (numAmount > availableBalance) {
+      setFormError(`Số tiền điều chuyển (${numAmount} Tr) vượt quá số dư khả dụng của nguồn (${formatMoneyVNDMillion(availableBalance)} Tr).`);
+      return;
+    }
+    if (destType === 'debt' && numAmount > maxDebtPayment) {
+      setFormError(`Số tiền trả nợ (${numAmount} Tr) vượt quá dư nợ gốc hiện tại (${formatMoneyVNDMillion(maxDebtPayment)} Tr).`);
+      return;
+    }
 
-    const [srcType, srcId] = sourceValue.split(':');
-    const [destType, destId] = destinationValue.split(':');
+    setFormError('');
 
     addFundTransfer({
       month: currentMonth,
       year: currentYear,
-      amount: Number(amount),
+      amount: numAmount,
       sourceType: srcType as any,
       sourceId: srcId || undefined,
       destinationType: destType as any,
@@ -172,6 +207,10 @@ export const TransferForm: React.FC<TransferFormProps> = ({ onSuccess, onCancel 
                  />
               </div>
            </div>
+
+           {formError && (
+             <WarningBox type="danger" message={formError} />
+           )}
 
            <div className="flex justify-end gap-3 pt-4 border-t border-family-accent/10">
               <Button type="button" variant="outline" onClick={onCancel}>Hủy</Button>

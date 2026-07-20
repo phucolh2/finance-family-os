@@ -693,6 +693,25 @@ export function useAppState() {
       const nextState = { ...state };
       nextState.fundTransfers = [...(state.fundTransfers ?? []), newTransfer];
       
+      // Deduct from Source
+      if (transfer.sourceType === 'investment' && transfer.sourceId) {
+        nextState.investmentDeals = (nextState.investmentDeals ?? []).map(deal => 
+          deal.id === transfer.sourceId ? { ...deal, capital: Math.max(0, deal.capital - transfer.amount) } : deal
+        );
+      } else if (transfer.sourceType === 'sinking_fund' && transfer.sourceId) {
+        nextState.sinkingFunds = (nextState.sinkingFunds ?? []).map(fund => 
+          fund.id === transfer.sourceId ? { ...fund, initialDeposit: Math.max(0, fund.initialDeposit - transfer.amount) } : fund
+        );
+      } else if (transfer.sourceType === 'life_event' && transfer.sourceId) {
+        nextState.lifeEvents = (nextState.lifeEvents ?? []).map(evt => 
+          evt.id === transfer.sourceId ? { ...evt, amount: Math.max(0, evt.amount - transfer.amount) } : evt
+        );
+      } else if (transfer.sourceType === 'savings' && transfer.sourceId) {
+        nextState.savingsDeposits = (nextState.savingsDeposits ?? []).map(sav => 
+          sav.id === transfer.sourceId ? { ...sav, principal: Math.max(0, sav.principal - transfer.amount) } : sav
+        );
+      }
+
       // Auto-handle destination logic if applicable
       if (transfer.destinationType === 'savings') {
         const newSavings: import('../types/finance').SavingsDeposit = {
@@ -703,7 +722,7 @@ export function useAppState() {
           termMonths: 6,
           startMonth: transfer.month,
           startYear: transfer.year,
-          pool: transfer.sourceType === 'cashflow' ? 'idle' : 'saving',
+          pool: transfer.sourceType === 'savings' ? 'saving' : 'idle',
           status: 'active',
           notes: transfer.note
         };
