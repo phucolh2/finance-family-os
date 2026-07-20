@@ -65,9 +65,10 @@ export const BudgetHistory: React.FC = () => {
   // Find the real resolved income at the active milestone month using O(1) index map
   const activePeriodKey = `${activeVersion.effectiveYear}-${String(activeVersion.effectiveMonth).padStart(2, '0')}`;
   const activeDbItem = state.resolvedMonthlyDbMap?.[activePeriodKey];
-  const milestoneIncome = activeVersion?.allocationBaseAmount && activeVersion.allocationBaseAmount > 0 
+  const actualIncome = activeDbItem ? activeDbItem.income : 80;
+  const allocationBase = activeVersion?.allocationBaseAmount && activeVersion.allocationBaseAmount > 0 
     ? activeVersion.allocationBaseAmount 
-    : (activeDbItem ? activeDbItem.income : 80);
+    : actualIncome;
   const [formError, setFormError] = useState<string | null>(null);
 
   // New version creator state
@@ -537,15 +538,15 @@ export const BudgetHistory: React.FC = () => {
       {workspaceTab === 'charts' && (() => {
         const expenseAmt = rootGroups
           .filter(g => g.isActive && g.classification === 'expense')
-          .reduce((sum, g) => sum + (g.ratioPercent / 100) * milestoneIncome, 0);
+          .reduce((sum, g) => sum + (g.ratioPercent / 100) * allocationBase, 0);
 
         const investmentAmt = rootGroups
           .filter(g => g.isActive && g.classification === 'investment')
-          .reduce((sum, g) => sum + (g.ratioPercent / 100) * milestoneIncome, 0);
+          .reduce((sum, g) => sum + (g.ratioPercent / 100) * allocationBase, 0);
 
         const savingsAmt = rootGroups
           .filter(g => g.isActive && g.classification === 'savings')
-          .reduce((sum, g) => sum + (g.ratioPercent / 100) * milestoneIncome, 0);
+          .reduce((sum, g) => sum + (g.ratioPercent / 100) * allocationBase, 0);
 
         return (
           <div className="space-y-6">
@@ -557,11 +558,21 @@ export const BudgetHistory: React.FC = () => {
                 </h2>
               </div>
               
-              <div className="text-right">
-                <span className="text-xs text-family-textMuted uppercase font-bold tracking-wider block">Thu nhập thực tế mốc</span>
-                <span className="text-xl font-extrabold text-family-text">
-                  {milestoneIncome} Tr VND
-                </span>
+              <div className="flex items-center gap-6 text-right">
+                {activeVersion?.allocationBaseAmount && activeVersion.allocationBaseAmount > 0 && (
+                  <div>
+                    <span className="text-xs text-orange-400 uppercase font-bold tracking-wider block">Gốc phân bổ</span>
+                    <span className="text-xl font-extrabold text-orange-400">
+                      {allocationBase} Tr VND
+                    </span>
+                  </div>
+                )}
+                <div className="pl-6 border-l border-family-accent/20">
+                  <span className="text-xs text-family-textMuted uppercase font-bold tracking-wider block">Thu nhập thực tế mốc</span>
+                  <span className="text-xl font-extrabold text-family-text">
+                    {actualIncome} Tr VND
+                  </span>
+                </div>
               </div>
             </div>
 
@@ -569,8 +580,10 @@ export const BudgetHistory: React.FC = () => {
             <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
               <Card className="bg-family-bgDark/20 border border-family-accent/10">
                 <CardContent className="p-4 flex flex-col items-center justify-center text-center">
-                  <span className="text-[10px] uppercase text-family-textMuted font-bold mb-1">Thu Nhập</span>
-                  <span className="text-xl font-bold text-family-text">{milestoneIncome} Tr</span>
+                  <span className="text-[10px] uppercase text-family-textMuted font-bold mb-1">
+                    {activeVersion?.allocationBaseAmount ? 'Gốc Phân Bổ' : 'Thu Nhập'}
+                  </span>
+                  <span className="text-xl font-bold text-family-text">{allocationBase} Tr</span>
                 </CardContent>
               </Card>
               <Card className="bg-red-500/10 border border-red-500/20">
@@ -628,7 +641,7 @@ export const BudgetHistory: React.FC = () => {
             </div>
 
             <div className="bg-family-bgDark/20 rounded-xl p-4 shadow-inner">
-              <BudgetDetailedList rootGroups={rootGroups} income={milestoneIncome} />
+              <BudgetDetailedList rootGroups={rootGroups} income={allocationBase} />
             </div>
           </Card>
 
