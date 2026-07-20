@@ -252,6 +252,24 @@ export const SinkingFundModule: React.FC<SinkingFundModuleProps> = ({
               placeholder="VD: 5.5"
               onChange={(e) => { setForm({ ...form, interestRateAnnual: safeNumber(Number(e.target.value), 0) }); }}
             />
+            <div className="grid grid-cols-2 gap-2">
+              <Input
+                label="Tháng bắt đầu"
+                type="number"
+                min={1}
+                max={12}
+                value={form.startMonth}
+                onChange={(e) => { setForm({ ...form, startMonth: Number(e.target.value) }); }}
+              />
+              <Input
+                label="Năm bắt đầu"
+                type="number"
+                min={2026}
+                max={2060}
+                value={form.startYear}
+                onChange={(e) => { setForm({ ...form, startYear: Number(e.target.value) }); }}
+              />
+            </div>
             <div>
               <label className="block text-xs font-semibold text-family-textMuted uppercase tracking-wider mb-1">Kỳ hạn (Tháng)</label>
               <select 
