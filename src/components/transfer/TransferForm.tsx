@@ -14,11 +14,8 @@ interface TransferFormProps {
 export const TransferForm: React.FC<TransferFormProps> = ({ onSuccess, onCancel }) => {
   const { state, addFundTransfer, selectedPeriodKey } = useAppContext();
   
-  const [sourceType, setSourceType] = useState<string>('cashflow');
-  const [sourceId, setSourceId] = useState<string>('');
-  
-  const [destinationType, setDestinationType] = useState<string>('savings');
-  const [destinationId, setDestinationId] = useState<string>('');
+  const [sourceValue, setSourceValue] = useState<string>('cashflow:');
+  const [destinationValue, setDestinationValue] = useState<string>('savings:new');
   
   const [amount, setAmount] = useState<string>('');
   const [note, setNote] = useState<string>('');
@@ -29,111 +26,21 @@ export const TransferForm: React.FC<TransferFormProps> = ({ onSuccess, onCancel 
     e.preventDefault();
     if (!amount || Number(amount) <= 0) return;
 
+    const [srcType, srcId] = sourceValue.split(':');
+    const [destType, destId] = destinationValue.split(':');
+
     addFundTransfer({
       month: currentMonth,
       year: currentYear,
       amount: Number(amount),
-      sourceType: sourceType as any,
-      sourceId,
-      destinationType: destinationType as any,
-      destinationId,
+      sourceType: srcType as any,
+      sourceId: srcId || undefined,
+      destinationType: destType as any,
+      destinationId: destId === 'new' ? undefined : destId,
       note,
     });
     
     onSuccess();
-  };
-
-  const renderSourceOptions = () => {
-    switch(sourceType) {
-      case 'savings':
-        return (
-          <Select 
-            value={sourceId} 
-            onChange={e => setSourceId(e.target.value)} 
-            options={[
-              { value: '', label: '-- Chọn Sổ tiết kiệm --' },
-              ...(state.savingsDeposits?.filter(s => s.status === 'active').map(s => ({ value: s.id, label: `${s.name} (${s.principal} Tr)` })) || [])
-            ]}
-          />
-        );
-      case 'investment':
-        return (
-          <Select 
-            value={sourceId} 
-            onChange={e => setSourceId(e.target.value)} 
-            options={[
-              { value: '', label: '-- Chọn Thương vụ đầu tư --' },
-              ...(state.investmentDeals?.filter(d => d.status === 'active').map(d => ({ value: d.id, label: `${d.name} (${d.capital} Tr)` })) || [])
-            ]}
-          />
-        );
-      case 'sinking_fund':
-        return (
-          <Select 
-            value={sourceId} 
-            onChange={e => setSourceId(e.target.value)} 
-            options={[
-              { value: '', label: '-- Chọn Quỹ mục tiêu --' },
-              ...(state.sinkingFunds?.filter(f => f.status === 'active').map(f => ({ value: f.id, label: `${f.name}` })) || [])
-            ]}
-          />
-        );
-      case 'life_event':
-        return (
-          <Select 
-            value={sourceId} 
-            onChange={e => setSourceId(e.target.value)} 
-            options={[
-              { value: '', label: '-- Chọn Sự kiện cuộc đời --' },
-              ...(state.lifeEvents?.map(e => ({ value: e.id, label: `${e.name} (${e.amount > 0 ? '+' : ''}${e.amount} Tr)` })) || [])
-            ]}
-          />
-        );
-      case 'cashflow':
-      default:
-        return <div className="text-sm text-family-textMuted p-2 bg-family-bgDark/30 rounded border border-family-accent/10">Trực tiếp từ số dư ngân sách tháng</div>;
-    }
-  };
-
-  const renderDestinationOptions = () => {
-    switch(destinationType) {
-      case 'investment':
-        return (
-          <Select 
-            value={destinationId} 
-            onChange={e => setDestinationId(e.target.value)} 
-            options={[
-              { value: '', label: '-- Chọn Thương vụ đầu tư --' },
-              ...(state.investmentDeals?.filter(d => d.status === 'active').map(d => ({ value: d.id, label: `${d.name}` })) || [])
-            ]}
-          />
-        );
-      case 'sinking_fund':
-        return (
-          <Select 
-            value={destinationId} 
-            onChange={e => setDestinationId(e.target.value)} 
-            options={[
-              { value: '', label: '-- Chọn Quỹ mục tiêu --' },
-              ...(state.sinkingFunds?.filter(f => f.status === 'active').map(f => ({ value: f.id, label: `${f.name}` })) || [])
-            ]}
-          />
-        );
-      case 'debt':
-        return (
-           <Select 
-            value={destinationId} 
-            onChange={e => setDestinationId(e.target.value)} 
-            options={[
-              { value: '', label: '-- Chọn Khoản Nợ --' },
-              ...(state.debts?.filter(d => d.status === 'active').map(d => ({ value: d.id, label: `${d.name}` })) || [])
-            ]}
-          />
-        );
-      case 'savings':
-      default:
-        return <div className="text-sm text-family-textMuted p-2 bg-family-bgDark/30 rounded border border-family-accent/10">Mở sổ Tiết kiệm mới</div>;
-    }
   };
 
   return (
@@ -153,22 +60,37 @@ export const TransferForm: React.FC<TransferFormProps> = ({ onSuccess, onCancel 
               <div className="space-y-4 bg-family-bgDark/30 p-4 rounded-xl border border-family-accent/10">
                  <h4 className="font-bold text-sm text-family-textLight uppercase tracking-wider mb-2">TỪ (Nguồn)</h4>
                  <div>
-                    <label className="text-xs text-family-textMuted mb-1 block">Loại nguồn tiền</label>
-                    <Select 
-                      value={sourceType} 
-                      onChange={e => { setSourceType(e.target.value); setSourceId(''); }}
-                      options={[
-                        { value: 'cashflow', label: 'Ngân sách Dòng tiền' },
-                        { value: 'life_event', label: 'Sự kiện cuộc đời' },
-                        { value: 'savings', label: 'Rút từ Sổ Tiết Kiệm' },
-                        { value: 'investment', label: 'Rút vốn Đầu tư' },
-                        { value: 'sinking_fund', label: 'Rút từ Quỹ mục tiêu' },
-                      ]}
-                    />
-                 </div>
-                 <div>
-                    <label className="text-xs text-family-textMuted mb-1 block">Chi tiết nguồn</label>
-                    {renderSourceOptions()}
+                    <label className="text-xs text-family-textMuted mb-1 block">Tài sản / Khoản mục Nguồn</label>
+                    <select 
+                      value={sourceValue}
+                      onChange={e => setSourceValue(e.target.value)}
+                      className="w-full bg-family-bg border border-family-accent/20 rounded p-2 text-sm text-family-text focus:outline-none focus:border-blue-500"
+                    >
+                      <optgroup label="Màn hình: Kế hoạch Thu nhập (Dòng tiền)">
+                        <option value="cashflow:">Ngân sách Dòng tiền (Chưa phân bổ)</option>
+                      </optgroup>
+                      
+                      <optgroup label="Màn hình: Sự kiện cuộc đời">
+                        {state.lifeEvents?.filter(e => e.amount > 0).map(e => (
+                          <option key={e.id} value={`life_event:${e.id}`}>Tiền dôi dư: {e.name} (+{e.amount} Tr)</option>
+                        ))}
+                      </optgroup>
+
+                      <optgroup label="Màn hình: Danh mục đầu tư">
+                        {state.investmentDeals?.filter(d => d.status === 'active').map(d => (
+                          <option key={d.id} value={`investment:${d.id}`}>Rút vốn Thương vụ: {d.name} ({d.capital} Tr)</option>
+                        ))}
+                        {state.sinkingFunds?.filter(f => f.status === 'active').map(f => (
+                          <option key={f.id} value={`sinking_fund:${f.id}`}>Tất toán Quỹ: {f.name} ({f.initialDeposit} Tr gốc)</option>
+                        ))}
+                      </optgroup>
+
+                      <optgroup label="Màn hình: Tiết kiệm & Nợ">
+                        {state.savingsDeposits?.filter(s => s.status === 'active').map(s => (
+                          <option key={s.id} value={`savings:${s.id}`}>Tất toán Sổ tiết kiệm: {s.name} ({s.principal} Tr)</option>
+                        ))}
+                      </optgroup>
+                    </select>
                  </div>
               </div>
 
@@ -180,21 +102,32 @@ export const TransferForm: React.FC<TransferFormProps> = ({ onSuccess, onCancel 
               <div className="space-y-4 bg-family-bgDark/30 p-4 rounded-xl border border-family-accent/10">
                  <h4 className="font-bold text-sm text-family-textLight uppercase tracking-wider mb-2">ĐẾN (Đích)</h4>
                  <div>
-                    <label className="text-xs text-family-textMuted mb-1 block">Loại đích đến</label>
-                    <Select 
-                      value={destinationType} 
-                      onChange={e => { setDestinationType(e.target.value); setDestinationId(''); }}
-                      options={[
-                        { value: 'savings', label: 'Chuyển vào Tiết Kiệm (Mở sổ mới)' },
-                        { value: 'investment', label: 'Bơm vốn Đầu tư' },
-                        { value: 'sinking_fund', label: 'Bơm vốn Quỹ mục tiêu' },
-                        { value: 'debt', label: 'Trả nợ sớm' },
-                      ]}
-                    />
-                 </div>
-                 <div>
-                    <label className="text-xs text-family-textMuted mb-1 block">Chi tiết đích</label>
-                    {renderDestinationOptions()}
+                    <label className="text-xs text-family-textMuted mb-1 block">Tài sản / Khoản mục Đích</label>
+                    <select 
+                      value={destinationValue}
+                      onChange={e => setDestinationValue(e.target.value)}
+                      className="w-full bg-family-bg border border-family-accent/20 rounded p-2 text-sm text-family-text focus:outline-none focus:border-blue-500"
+                    >
+                      <optgroup label="Màn hình: Kế hoạch Thu nhập (Dòng tiền)">
+                        <option value="cashflow:">Bổ sung vào Ngân sách Dòng tiền</option>
+                      </optgroup>
+                      
+                      <optgroup label="Màn hình: Danh mục đầu tư">
+                        {state.investmentDeals?.filter(d => d.status === 'active').map(d => (
+                          <option key={d.id} value={`investment:${d.id}`}>Bơm vốn Thương vụ: {d.name}</option>
+                        ))}
+                        {state.sinkingFunds?.filter(f => f.status === 'active').map(f => (
+                          <option key={f.id} value={`sinking_fund:${f.id}`}>Bơm tiền Quỹ: {f.name}</option>
+                        ))}
+                      </optgroup>
+
+                      <optgroup label="Màn hình: Tiết kiệm & Nợ">
+                        <option value="savings:new">Mở Sổ tiết kiệm mới</option>
+                        {state.debts?.filter(d => d.status === 'active').map(d => (
+                          <option key={d.id} value={`debt:${d.id}`}>Trả nợ sớm: {d.name} (Dư nợ: {d.principal} Tr)</option>
+                        ))}
+                      </optgroup>
+                    </select>
                  </div>
               </div>
            </div>
