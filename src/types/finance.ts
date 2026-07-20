@@ -1,4 +1,6 @@
 import type { AssetConfig } from './portfolio';
+import type { AssetType } from './portfolio';
+import type { FundingSourceId } from '../constants/fundingSources';
 import type { LifecycleProps } from './ledger';
 
 export interface FamilyProfile {
@@ -195,7 +197,7 @@ export interface SinkingFund {
   id: string;
   name: string; // VD: Quỹ mua chung cư
   fundType?: 'investment' | 'debt_prep';
-  sourceOfFund?: 'unallocated' | 'saving' | 'debt_reserve';
+  sourceOfFund?: FundingSourceId;
   targetAssetType: 'fx_reserve_usd' | 'gold' | 'real_estate' | 'stocks' | 'crypto';
   targetAmount: number; // Mục tiêu cần đạt (VD: 2000 Tr VND)
   

@@ -28,10 +28,10 @@ export const SavingsDepositModule: React.FC<SavingsDepositModuleProps> = ({
   filterPools = ['idle'],
   title = '🏦 Gửi Tiết kiệm Ngân hàng',
   description = (
-    <>Tạo các khoản gửi tiết kiệm từ phần <strong>Tiền chưa có kế hoạch</strong>.</>
+    <>Tạo các khoản gửi tiết kiệm từ phần <strong>Ngân sách Đầu tư (Chưa có kế hoạch)</strong>.</>
   ),
   emptyStateTitle = 'Chưa có khoản tiết kiệm nào',
-  emptyStateDescription = "Nhấn 'Tạo khoản tiết kiệm' để gửi tiết kiệm từ phần tiền chưa có kế hoạch."
+  emptyStateDescription = "Nhấn 'Tạo khoản tiết kiệm' để gửi tiết kiệm từ phần Ngân sách Đầu tư (Chưa có kế hoạch)."
 }) => {
   const { 
     state, 
@@ -216,9 +216,9 @@ export const SavingsDepositModule: React.FC<SavingsDepositModuleProps> = ({
                 value={savingsForm.pool}
                 onChange={(e) => { setSavingsForm({ ...savingsForm, pool: e.target.value as 'idle' | 'planned' | 'saving' }); }}
               >
-                {filterPools.includes('idle') && <option value="idle">Tiền chưa có kế hoạch</option>}
+                {filterPools.includes('idle') && <option value="idle">Ngân sách Đầu tư (Chưa có kế hoạch)</option>}
                 {filterPools.includes('planned') && <option value="planned">Quỹ tích lũy mục tiêu (Chờ phân bổ)</option>}
-                {filterPools.includes('saving') && <option value="saving">Số dư Quỹ Tiết Kiệm</option>}
+                {filterPools.includes('saving') && <option value="saving">Số dư Quỹ Tiết Kiệm & Nợ</option>}
               </select>
             </div>
           </div>
@@ -226,7 +226,7 @@ export const SavingsDepositModule: React.FC<SavingsDepositModuleProps> = ({
           {isSavingsOverLimit && (
             <WarningBox 
               type="danger" 
-              message={`Số tiền gửi (${savingsForm.principal} Tr VND) vượt quá số dư khả dụng của nguồn vốn "${savingsForm.pool === 'idle' ? 'Tiền chưa có kế hoạch' : savingsForm.pool === 'planned' ? 'Quỹ tích lũy mục tiêu' : 'Số dư Quỹ Tiết Kiệm'}" tại tháng ${savingsForm.startMonth}/${savingsForm.startYear} (Số dư khả dụng: ${availableSavingsPoolBalance.toFixed(1)} Tr VND).`} 
+              message={`Số tiền gửi (${savingsForm.principal} Tr VND) vượt quá số dư khả dụng của nguồn vốn "${savingsForm.pool === 'idle' ? 'Ngân sách Đầu tư (Chưa có kế hoạch)' : savingsForm.pool === 'planned' ? 'Quỹ tích lũy mục tiêu' : 'Số dư Quỹ Tiết Kiệm & Nợ'}" tại tháng ${savingsForm.startMonth}/${savingsForm.startYear} (Số dư khả dụng: ${availableSavingsPoolBalance.toFixed(1)} Tr VND).`} 
             />
           )}
           {formError && (
@@ -366,7 +366,7 @@ export const SavingsDepositModule: React.FC<SavingsDepositModuleProps> = ({
                       </td>
                       <td className="p-3 text-center">
                         <span className={`text-[10px] px-1.5 py-0.5 rounded ${dep.pool === 'idle' ? 'bg-sky-100 text-sky-700' : dep.pool === 'planned' ? 'bg-violet-100 text-violet-700' : 'bg-emerald-100 text-emerald-700'}`}>
-                          {dep.pool === 'idle' ? 'Chưa có KH' : dep.pool === 'planned' ? 'Quỹ mục tiêu' : 'Quỹ Tiết Kiệm'}
+                          {dep.pool === 'idle' ? 'Chưa có KH' : dep.pool === 'planned' ? 'Quỹ mục tiêu' : 'Quỹ Tiết Kiệm & Nợ'}
                         </span>
                       </td>
                       <td className="p-3 text-center">

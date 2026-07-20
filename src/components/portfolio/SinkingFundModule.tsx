@@ -9,10 +9,12 @@ import { formatTableMoneyVNDMillion } from '../../utils/format';
 import { safeNumber, calculateNonTermInterest } from '../../utils/math';
 import { runProjection } from '../../engines/projectionEngine';
 import type { AssetType } from '../../types/portfolio';
+import { FUNDING_SOURCES, SCREEN_FUNDING_CONSTRAINTS } from '../../constants/fundingSources';
+import type { FundingSourceId } from '../../constants/fundingSources';
 
 interface SinkingFundModuleProps {
   filterFundType?: 'investment' | 'debt_prep';
-  filterSources?: ('unallocated' | 'saving' | 'debt_reserve')[];
+  filterSources?: FundingSourceId[];
   title?: string;
   description?: string;
   emptyStateTitle?: string;
@@ -56,7 +58,7 @@ export const SinkingFundModule: React.FC<SinkingFundModuleProps> = ({
   const initMonth = now.getMonth() + 1;
   const initYear = now.getFullYear();
 
-  const activeSources = filterSources || (filterFundType === 'debt_prep' ? ['debt_reserve'] : ['unallocated']);
+  const activeSources = filterSources || (filterFundType === 'debt_prep' ? SCREEN_FUNDING_CONSTRAINTS.debt_prep : SCREEN_FUNDING_CONSTRAINTS.portfolio);
 
   const [showAddForm, setShowAddForm] = useState(false);
   const [editingFundId, setEditingFundId] = useState<string | null>(null);
@@ -74,7 +76,7 @@ export const SinkingFundModule: React.FC<SinkingFundModuleProps> = ({
     monthlyContribution: 0,
     interestRateAnnual: 5.5,
     termMonths: 1,
-    sourceOfFund: activeSources[0],
+    sourceOfFund: activeSources[0] as FundingSourceId,
     startMonth: initMonth,
     startYear: initYear,
   });
@@ -203,9 +205,9 @@ export const SinkingFundModule: React.FC<SinkingFundModuleProps> = ({
                 value={form.sourceOfFund}
                 onChange={e => { setForm({...form, sourceOfFund: e.target.value as any}); }}
               >
-                {activeSources.includes('unallocated') && <option value="unallocated">Tiền chưa có kế hoạch</option>}
-                {activeSources.includes('saving') && <option value="saving">Số dư Quỹ Tiết Kiệm</option>}
-                {activeSources.includes('debt_reserve') && <option value="debt_reserve">Ngân sách Trả nợ</option>}
+                {activeSources.map(sourceId => (
+                  <option key={sourceId} value={sourceId}>{FUNDING_SOURCES[sourceId]?.label}</option>
+                ))}
               </select>
             </div>
             {filterFundType === 'investment' && (
@@ -394,7 +396,7 @@ export const SinkingFundModule: React.FC<SinkingFundModuleProps> = ({
                   </div>
                   <div className="flex flex-col">
                     <span className="text-[10px] text-family-textMuted uppercase tracking-wide">Nguồn tiền</span>
-                    <span className="text-xs font-medium text-family-text">{fund.sourceOfFund === 'saving' ? 'Quỹ Tiết Kiệm' : fund.sourceOfFund === 'debt_reserve' ? 'Quỹ Trả nợ' : 'Chưa có kế hoạch'}</span>
+                    <span className="text-xs font-medium text-family-text">{FUNDING_SOURCES[fund.sourceOfFund as FundingSourceId]?.shortLabel || fund.sourceOfFund}</span>
                   </div>
                 </div>
 
