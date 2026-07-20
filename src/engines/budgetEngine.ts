@@ -98,6 +98,7 @@ export function calculateBudget(input: BudgetEngineInput): MonthlyBudgetOutput {
   const childCost = input.childCost;
 
   let activeTree: BudgetTreeNode[] = DEFAULT_BUDGET_TREE;
+  let activeItem: BudgetRatioScheduleItem | null = null;
 
   if (schedule.length > 0) {
     // 1. Filter schedule items whose effective date is <= current period
@@ -107,8 +108,6 @@ export function calculateBudget(input: BudgetEngineInput): MonthlyBudgetOutput {
         { year: period.year, month: period.month }
       );
     });
-
-    let activeItem: BudgetRatioScheduleItem | null = null;
 
     if (pastOrActiveItems.length > 0) {
       pastOrActiveItems.sort((a, b) => {
@@ -162,8 +161,12 @@ export function calculateBudget(input: BudgetEngineInput): MonthlyBudgetOutput {
   // 3. Extract leaf nodes as flat categories output
   const leafNodes = activeTree.flatMap(node => collectLeafNodes(node));
 
+  const allocationBase = (activeItem?.allocationBaseAmount && activeItem.allocationBaseAmount > 0) 
+    ? activeItem.allocationBaseAmount 
+    : income;
+
   const categories: BudgetCategoryOutput[] = leafNodes.map((node) => {
-    const amount = (income * node.ratioPercent) / 100;
+    const amount = (allocationBase * node.ratioPercent) / 100;
     return {
       categoryId: node.id,
       categoryName: node.name,

@@ -5,6 +5,8 @@ import { Select } from '../ui/Select';
 import { Button } from '../ui/Button';
 import { useAppContext } from '../../context/AppContext';
 import { HelpTooltip } from '../ui/HelpTooltip';
+import { runProjection } from '../../engines/projectionEngine';
+import { formatMoneyVNDMillion } from '../../utils/format';
 
 interface TransferFormProps {
   onSuccess: () => void;
@@ -20,7 +22,25 @@ export const TransferForm: React.FC<TransferFormProps> = ({ onSuccess, onCancel 
   const [amount, setAmount] = useState<string>('');
   const [note, setNote] = useState<string>('');
 
-  const [currentYear, currentMonth] = (selectedPeriodKey || `${new Date().getFullYear()}-${new Date().getMonth() + 1}`).split('-').map(Number);
+  const [currentYear, currentMonth] = (selectedPeriodKey || `${new Date().getFullYear()}-${String(new Date().getMonth() + 1).padStart(2, '0')}`).split('-').map(Number);
+
+  // Run projection dynamically to get actual idle cashflow for the selected period
+  const projection = runProjection({
+    profile: state.profile,
+    incomeSchedule: state.incomeSchedule,
+    budgetSchedule: state.budgetSchedule,
+    lifeEvents: state.lifeEvents,
+    assets: state.assets,
+    assumptions: state.assumptions,
+    investmentDeals: state.investmentDeals,
+    savingsDeposits: state.savingsDeposits,
+    projectionAdjustments: state.projectionAdjustments,
+    lifeStages: state.lifeStages,
+  });
+
+  const currentKey = `${currentYear}-${String(currentMonth).padStart(2, '0')}`;
+  const currentRow = projection.monthlyRows.find(r => r.period.key === currentKey);
+  const idleCashflow = currentRow ? currentRow.netCashflowMonthly : 0;
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -67,7 +87,7 @@ export const TransferForm: React.FC<TransferFormProps> = ({ onSuccess, onCancel 
                       className="w-full bg-family-bg border border-family-accent/20 rounded p-2 text-sm text-family-text focus:outline-none focus:border-blue-500"
                     >
                       <optgroup label="Màn hình: Kế hoạch Thu nhập (Dòng tiền)">
-                        <option value="cashflow:">Ngân sách Dòng tiền (Chưa phân bổ)</option>
+                        <option value="cashflow:">Ngân sách Dòng tiền (Chưa phân bổ: {formatMoneyVNDMillion(idleCashflow)})</option>
                       </optgroup>
                       
                       <optgroup label="Màn hình: Sự kiện cuộc đời">

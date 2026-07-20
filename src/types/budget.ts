@@ -76,6 +76,7 @@ export interface BudgetRatioScheduleItem extends Partial<LifecycleProps> {
   effectiveMonth: number;
   effectiveYear: number;
   note?: string;
+  allocationBaseAmount?: number; // Tùy chọn: Tổng số tiền làm gốc phân bổ (nếu không nhập sẽ lấy full Thu nhập)
   
   rootGroups: BudgetTreeNode[];
   ratios?: BudgetRatio[]; // Keep this optional legacy field for backward compatibility/migration

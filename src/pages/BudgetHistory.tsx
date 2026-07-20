@@ -60,11 +60,14 @@ export const BudgetHistory: React.FC = () => {
   const [editMonth, setEditMonth] = useState<number>(1);
   const [editYear, setEditYear] = useState<number>(2028);
   const [editNote, setEditNote] = useState<string>('');
+  const [editBaseAmount, setEditBaseAmount] = useState<number | ''>('');
   
   // Find the real resolved income at the active milestone month using O(1) index map
   const activePeriodKey = `${activeVersion.effectiveYear}-${String(activeVersion.effectiveMonth).padStart(2, '0')}`;
   const activeDbItem = state.resolvedMonthlyDbMap?.[activePeriodKey];
-  const milestoneIncome = activeDbItem ? activeDbItem.income : 80;
+  const milestoneIncome = activeVersion?.allocationBaseAmount && activeVersion.allocationBaseAmount > 0 
+    ? activeVersion.allocationBaseAmount 
+    : (activeDbItem ? activeDbItem.income : 80);
   const [formError, setFormError] = useState<string | null>(null);
 
   // New version creator state
@@ -76,6 +79,7 @@ export const BudgetHistory: React.FC = () => {
   const [newMonth, setNewMonth] = useState<number>(10);
   const [newYear, setNewYear] = useState<number>(2027);
   const [newNote, setNewNote] = useState<string>('');
+  const [newBaseAmount, setNewBaseAmount] = useState<number | ''>('');
 
   // Expanded groups in tree editor
   const [expandedGroups, setExpandedGroups] = useState<Record<string, boolean>>({
@@ -92,6 +96,7 @@ export const BudgetHistory: React.FC = () => {
       setEditMonth(activeVersion.effectiveMonth);
       setEditYear(activeVersion.effectiveYear);
       setEditNote(activeVersion.note || '');
+      setEditBaseAmount(activeVersion.allocationBaseAmount || '');
       
       if (activeVersion.rootGroups && activeVersion.rootGroups.length > 0) {
         setRootGroups(JSON.parse(JSON.stringify(activeVersion.rootGroups)));
@@ -346,6 +351,7 @@ export const BudgetHistory: React.FC = () => {
       effectiveMonth: editMonth,
       effectiveYear: editYear,
       note: editNote,
+      allocationBaseAmount: editBaseAmount === '' ? undefined : editBaseAmount,
       rootGroups: rootGroups,
     });
     setFormError(null);
@@ -370,12 +376,14 @@ export const BudgetHistory: React.FC = () => {
       effectiveMonth: newMonth,
       effectiveYear: newYear,
       note: newNote,
+      allocationBaseAmount: newBaseAmount === '' ? undefined : newBaseAmount,
       rootGroups: templateTree,
     };
 
     addBudgetScheduleItem(newItem);
     setIsCreatingNew(false);
     setNewNote('');
+    setNewBaseAmount('');
     setFormError(null);
   };
 
@@ -393,6 +401,7 @@ export const BudgetHistory: React.FC = () => {
     editMonth !== activeVersion.effectiveMonth ||
     editYear !== activeVersion.effectiveYear ||
     editNote !== (activeVersion.note || '') ||
+    editBaseAmount !== (activeVersion.allocationBaseAmount || '') ||
     currentTreeStr !== savedTreeStr
   ) : false;
 
@@ -475,7 +484,7 @@ export const BudgetHistory: React.FC = () => {
           </CardHeader>
           <CardContent>
             <form onSubmit={handleCreateNew} className="space-y-4">
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
                 <Input
                   label="Tháng hiệu lực"
                   type="number"
@@ -500,6 +509,17 @@ export const BudgetHistory: React.FC = () => {
                   placeholder="Ví dụ: Khi sinh bé thứ 2..."
                   value={newNote}
                   onChange={(e) => { setNewNote(e.target.value); }}
+                />
+                <Input
+                  label={
+                    <span className="flex items-center gap-1">
+                      Số tiền phân bổ <HelpTooltip text="Bỏ trống để dùng Toàn bộ thu nhập tháng" />
+                    </span>
+                  }
+                  type="number"
+                  placeholder="Triệu VND"
+                  value={newBaseAmount}
+                  onChange={(e) => { setNewBaseAmount(e.target.value === '' ? '' : Number(e.target.value)); }}
                 />
               </div>
               <div className="flex justify-end gap-2">
@@ -785,7 +805,7 @@ export const BudgetHistory: React.FC = () => {
                   </div>
 
                   {/* Settings form fields (effective date inputs moved here!) */}
-                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mt-4 bg-family-bgDark/35 p-4 rounded-2xl border border-family-accent/5">
+                  <div className="grid grid-cols-1 sm:grid-cols-4 gap-4 mt-4 bg-family-bgDark/35 p-4 rounded-2xl border border-family-accent/5">
                     <Input
                       label={
                         <span className="flex items-center gap-1">
@@ -814,6 +834,17 @@ export const BudgetHistory: React.FC = () => {
                       type="text"
                       value={editNote}
                       onChange={(e) => { setEditNote(e.target.value); }}
+                    />
+                    <Input
+                      label={
+                        <span className="flex items-center gap-1">
+                          Số tiền phân bổ <HelpTooltip text="Bỏ trống để dùng Toàn bộ thu nhập tháng" />
+                        </span>
+                      }
+                      placeholder="Triệu VND"
+                      type="number"
+                      value={editBaseAmount}
+                      onChange={(e) => { setEditBaseAmount(e.target.value === '' ? '' : Number(e.target.value)); }}
                     />
                   </div>
                 </CardHeader>

@@ -6,6 +6,7 @@ import { Input } from '../components/ui/Input';
 import { WarningBox } from '../components/ui/WarningBox';
 import { generateTimeline } from '../engines/timelineEngine';
 import { calculateIncome } from '../engines/incomeEngine';
+import { runProjection } from '../engines/projectionEngine';
 import { formatTableMoneyVNDMillion, formatKpiMoneyVNDMillion } from '../utils/format';
 import { safeNumber } from '../utils/math';
 import { Trash2, Plus, Save, RotateCcw, BarChart2, Check, Sliders, AlertTriangle } from 'lucide-react';
@@ -245,6 +246,24 @@ export const IncomeSchedule: React.FC = () => {
     return `${cat.name} ${typeLabel}`;
   };
 
+  // Run projection dynamically to get actual idle cashflow for the selected period
+  const projection = runProjection({
+    profile: state.profile,
+    incomeSchedule: state.incomeSchedule,
+    budgetSchedule: state.budgetSchedule,
+    lifeEvents: state.lifeEvents,
+    assets: state.assets,
+    assumptions: state.assumptions,
+    investmentDeals: state.investmentDeals,
+    savingsDeposits: state.savingsDeposits,
+    projectionAdjustments: state.projectionAdjustments,
+    lifeStages: state.lifeStages,
+  });
+
+  const currentKey = selectedPeriodKey || `${new Date().getFullYear()}-${String(new Date().getMonth() + 1).padStart(2, '0')}`;
+  const currentRow = projection.monthlyRows.find(r => r.period.key === currentKey);
+  const idleCashflow = currentRow ? currentRow.netCashflowMonthly : 0;
+
   return (
     <div className="space-y-6">
       {/* Top Page Header */}
@@ -260,6 +279,21 @@ export const IncomeSchedule: React.FC = () => {
         </div>
         <ObservationControls />
       </div>
+
+      {idleCashflow > 0 && (
+        <div className="bg-orange-500/10 border-l-4 border-orange-500 p-4 rounded-r-lg shadow-sm">
+           <div className="flex items-start gap-3">
+             <AlertTriangle className="w-5 h-5 text-orange-500 shrink-0 mt-0.5" />
+             <div>
+               <h3 className="font-bold text-orange-400 text-sm">Tiền dư chưa phân bổ kỳ này: {formatTableMoneyVNDMillion(idleCashflow)} Tr VND</h3>
+               <p className="text-family-textMuted text-xs mt-1">
+                 Bạn đang có một khoản tiền nhàn rỗi trong kỳ quan sát này chưa được điều chuyển hay đầu tư sinh lời. 
+                 Lời khuyên: Hãy vào màn hình <strong>Điều chuyển dòng tiền</strong> để đẩy số tiền này vào Sổ Tiết kiệm hoặc Thương vụ đầu tư.
+               </p>
+             </div>
+           </div>
+        </div>
+      )}
 
       {/* Dynamic Cashflow History Summary Banner */}
       {flow && (
