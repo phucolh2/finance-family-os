@@ -14,7 +14,8 @@ export const FundTransfers: React.FC = () => {
 
   const getSourceLabel = (type: string, id?: string) => {
     switch (type) {
-      case 'cashflow': return 'Dòng tiền / Tiền mặt';
+      case 'cashflow': return 'Ngân sách Dòng tiền';
+      case 'life_event': return `Sự kiện: ${state.lifeEvents?.find(e => e.id === id)?.name || 'N/A'}`;
       case 'savings': return `Tiết kiệm: ${state.savingsDeposits?.find(s => s.id === id)?.name || 'N/A'}`;
       case 'investment': return `Đầu tư: ${state.investmentDeals?.find(d => d.id === id)?.name || 'N/A'}`;
       case 'sinking_fund': return `Quỹ: ${state.sinkingFunds?.find(f => f.id === id)?.name || 'N/A'}`;

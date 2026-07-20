@@ -78,8 +78,20 @@ export const TransferForm: React.FC<TransferFormProps> = ({ onSuccess, onCancel 
             ]}
           />
         );
+      case 'life_event':
+        return (
+          <Select 
+            value={sourceId} 
+            onChange={e => setSourceId(e.target.value)} 
+            options={[
+              { value: '', label: '-- Chọn Sự kiện cuộc đời --' },
+              ...(state.lifeEvents?.map(e => ({ value: e.id, label: `${e.name} (${e.amount > 0 ? '+' : ''}${e.amount} Tr)` })) || [])
+            ]}
+          />
+        );
+      case 'cashflow':
       default:
-        return <div className="text-sm text-family-textMuted p-2 bg-family-bgDark/30 rounded border border-family-accent/10">Trực tiếp từ Dòng tiền (Cashflow)</div>;
+        return <div className="text-sm text-family-textMuted p-2 bg-family-bgDark/30 rounded border border-family-accent/10">Trực tiếp từ số dư ngân sách tháng</div>;
     }
   };
 
@@ -146,7 +158,8 @@ export const TransferForm: React.FC<TransferFormProps> = ({ onSuccess, onCancel 
                       value={sourceType} 
                       onChange={e => { setSourceType(e.target.value); setSourceId(''); }}
                       options={[
-                        { value: 'cashflow', label: 'Dòng tiền / Tiền mặt' },
+                        { value: 'cashflow', label: 'Ngân sách Dòng tiền' },
+                        { value: 'life_event', label: 'Sự kiện cuộc đời' },
                         { value: 'savings', label: 'Rút từ Sổ Tiết Kiệm' },
                         { value: 'investment', label: 'Rút vốn Đầu tư' },
                         { value: 'sinking_fund', label: 'Rút từ Quỹ mục tiêu' },

@@ -31,7 +31,6 @@ export const Sidebar: React.FC<SidebarProps> = ({ activeTab, setActiveTab, onClo
       items: [
         { id: 'dashboard', name: 'Tổng quan tài chính gia đình', icon: Home },
         { id: 'cashflow', name: 'Báo cáo Dòng tiền (RDPD)', icon: Activity },
-        { id: 'fund_transfers', name: 'Sổ cái Điều chuyển', icon: ArrowRightLeft },
         { id: 'event_ledger', name: 'Nhật ký sự kiện (Ledger)', icon: History },
       ],
     },
@@ -43,6 +42,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ activeTab, setActiveTab, onClo
         { id: 'life_stages', name: 'Sự kiện cuộc đời', icon: Milestone },
         { id: 'portfolio', name: 'Danh mục đầu tư', icon: Briefcase },
         { id: 'savings_debt', name: 'Tiết kiệm & Nợ', icon: ShieldCheck },
+        { id: 'fund_transfers', name: 'Sổ cái Điều chuyển', icon: ArrowRightLeft },
       ],
     },
     {
