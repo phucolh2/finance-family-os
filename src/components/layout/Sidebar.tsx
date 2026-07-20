@@ -42,7 +42,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ activeTab, setActiveTab, onClo
         { id: 'life_stages', name: 'Sự kiện cuộc đời', icon: Milestone },
         { id: 'portfolio', name: 'Danh mục đầu tư', icon: Briefcase },
         { id: 'savings_debt', name: 'Tiết kiệm & Nợ', icon: ShieldCheck },
-        { id: 'fund_transfers', name: 'Sổ cái Điều chuyển', icon: ArrowRightLeft },
+        { id: 'fund_transfers', name: 'Điều chuyển dòng tiền', icon: ArrowRightLeft },
       ],
     },
     {

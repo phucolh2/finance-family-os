@@ -4,6 +4,7 @@ import { Button } from '../components/ui/Button';
 import { ArrowRightLeft, Plus, History } from 'lucide-react';
 import { useAppContext } from '../context/AppContext';
 import { TransferForm } from '../components/transfer/TransferForm';
+import { ObservationControls } from '../components/ui/ObservationControls';
 import { formatMoneyVNDMillion } from '../utils/format';
 
 export const FundTransfers: React.FC = () => {
@@ -39,17 +40,20 @@ export const FundTransfers: React.FC = () => {
         <div>
           <h2 className="text-2xl font-serif font-bold text-family-text flex items-center gap-2">
             <ArrowRightLeft className="w-6 h-6 text-blue-500" />
-            Điều Chuyển Dòng Tiền (Sổ cái)
+            Điều Chuyển Dòng Tiền
           </h2>
           <p className="text-family-textMuted text-sm mt-1">
             Ghi nhận và mô phỏng các nghiệp vụ chuyển tiền thực tế giữa các nguồn.
           </p>
         </div>
-        {!showTransferForm && (
-          <Button onClick={() => setShowTransferForm(true)} className="bg-blue-600 hover:bg-blue-700 text-white gap-2">
-            <Plus className="w-4 h-4" /> Thực hiện Điều chuyển
-          </Button>
-        )}
+        <div className="flex items-center gap-4">
+          <ObservationControls />
+          {!showTransferForm && (
+            <Button onClick={() => setShowTransferForm(true)} className="bg-blue-600 hover:bg-blue-700 text-white gap-2 shrink-0">
+              <Plus className="w-4 h-4" /> Thực hiện Điều chuyển
+            </Button>
+          )}
+        </div>
       </div>
 
       {showTransferForm && (
