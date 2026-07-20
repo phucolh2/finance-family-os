@@ -151,6 +151,7 @@ export const SavingsAndDebt: React.FC = () => {
         <SinkingFundModule 
           title="🎯 Quỹ Chuẩn bị Trả nợ"
           filterFundType="debt_prep"
+          filterSources={['saving', 'debt_reserve', 'unallocated']}
           description="Gom tiền định kỳ từ ngân sách để chuẩn bị tất toán trước hạn các khoản vay dư nợ gốc lớn."
           emptyStateTitle="Chưa có quỹ chuẩn bị trả nợ nào"
           emptyStateDescription="Hãy tạo quỹ để gom tiền định kỳ từ ngân sách chuẩn bị tất toán sớm các khoản vay."
