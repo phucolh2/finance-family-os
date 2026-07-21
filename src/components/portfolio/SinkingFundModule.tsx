@@ -106,7 +106,13 @@ export const SinkingFundModule: React.FC<SinkingFundModuleProps> = ({
       let balance = 0;
       let prefix = '';
       if (sourceId === 'unallocated' || sourceId === 'investment') {
-         balance = currentRow ? currentRow.portfolio.idleCashflow : 0;
+         if (currentRow) {
+           const port = currentRow.portfolio;
+           const invested = state.assets.reduce((sum, asset) => sum + port.assets[asset.type].endingBalance, 0);
+           const planned = state.assets.reduce((sum, asset) => sum + (port.assets[asset.type].earmarkedEndingBalance || 0), 0);
+           balance = Math.max(0, port.totalEndingBalance - invested - planned);
+         }
+         
          if (filterFundType === 'investment') {
             prefix = 'Chưa có kế hoạch (Dòng tiền nhàn rỗi)';
          } else {
