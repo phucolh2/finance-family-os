@@ -96,6 +96,10 @@ export const FundTransfers: React.FC = () => {
                   <span className="text-emerald-600 font-bold">ĐẾN:</span> Bơm vốn Thương vụ: VIX<br/>
                   <span className="text-blue-600 font-bold">SỐ TIỀN:</span> 100 Tr
                 </div>
+                <div className="bg-sky-50 rounded-lg px-2.5 py-1.5 text-[10px] text-sky-800 border border-sky-100">
+                  <span className="font-bold">📍 Nguồn tiền lấy ở đâu?</span><br/>
+                  Số tiền này chính là phần <strong>"Chưa có kế hoạch"</strong> hiển thị trên KPI card màn hình <em>Danh mục Đầu tư</em>. Nó là tiền dư ra sau khi trừ đi tất cả thương vụ đang hoạt động, quỹ tích lũy và sổ tiết kiệm. Sau khi chuyển, KPI này sẽ giảm 100 Tr, và vốn thương vụ VIX tăng thêm 100 Tr.
+                </div>
               </div>
 
               {/* Scenario 2 */}
@@ -112,7 +116,10 @@ export const FundTransfers: React.FC = () => {
                   <span className="text-emerald-600 font-bold">ĐẾN:</span> Mở Sổ tiết kiệm mới<br/>
                   <span className="text-blue-600 font-bold">SỐ TIỀN:</span> 50 Tr
                 </div>
-                <p className="text-[10px] text-violet-600 italic">→ Hệ thống tự tạo Sổ tiết kiệm mới, kế thừa DNA nguồn tiền.</p>
+                <div className="bg-sky-50 rounded-lg px-2.5 py-1.5 text-[10px] text-sky-800 border border-sky-100">
+                  <span className="font-bold">📍 Nguồn tiền lấy ở đâu?</span><br/>
+                  Tiền này đến từ <strong>màn hình Sự kiện Cuộc đời</strong> — một khoản thu nhập đột xuất (thưởng, quà tặng, bán tài sản cũ...). Sau khi chuyển, số tiền Sự kiện bị trừ 50 Tr và hệ thống <em>tự tạo một Sổ tiết kiệm mới</em> với DNA nguồn = "idle" (vì nguồn gốc không phải Quỹ phòng thủ).
+                </div>
               </div>
 
               {/* Scenario 3 */}
@@ -128,6 +135,10 @@ export const FundTransfers: React.FC = () => {
                   <span className="text-red-500 font-bold">TỪ:</span> Rút vốn Thương vụ: Vàng SJC<br/>
                   <span className="text-emerald-600 font-bold">ĐẾN:</span> Bơm tiền Quỹ: Mua nhà 2028<br/>
                   <span className="text-blue-600 font-bold">SỐ TIỀN:</span> 200 Tr
+                </div>
+                <div className="bg-sky-50 rounded-lg px-2.5 py-1.5 text-[10px] text-sky-800 border border-sky-100">
+                  <span className="font-bold">📍 Nguồn tiền lấy ở đâu?</span><br/>
+                  Tiền đến từ <strong>một Thương vụ đang hoạt động trên màn hình Danh mục Đầu tư</strong>. Cụ thể là bạn rút bớt vốn gốc từ thương vụ Vàng SJC (200 Tr). Sau khi chuyển, vốn thương vụ Vàng giảm 200 Tr, và Quỹ mua nhà tăng thêm 200 Tr tiền mặt — giúp đạt mục tiêu nhanh hơn.
                 </div>
               </div>
 
@@ -145,7 +156,10 @@ export const FundTransfers: React.FC = () => {
                   <span className="text-emerald-600 font-bold">ĐẾN:</span> Trả nợ sớm: Vay mua xe<br/>
                   <span className="text-blue-600 font-bold">SỐ TIỀN:</span> 300 Tr
                 </div>
-                <p className="text-[10px] text-red-500 italic">→ Hệ thống trừ thẳng vào Dư nợ gốc. Không cho trả vượt mức.</p>
+                <div className="bg-sky-50 rounded-lg px-2.5 py-1.5 text-[10px] text-sky-800 border border-sky-100">
+                  <span className="font-bold">📍 Nguồn tiền lấy ở đâu?</span><br/>
+                  Tiền đến từ <strong>Quỹ Chuẩn bị Trả nợ trên màn hình Tiết kiệm &amp; Nợ</strong>. Quỹ này được nuôi hàng tháng bằng "Ngân sách Trả nợ" (10% thu nhập). Sau khi chuyển, Quỹ bị trừ 300 Tr, và Dư nợ gốc khoản vay mua xe cũng giảm 300 Tr. <em>Hệ thống chặn cứng nếu số trả vượt dư nợ gốc.</em>
+                </div>
               </div>
 
               {/* Scenario 5 */}
@@ -161,6 +175,10 @@ export const FundTransfers: React.FC = () => {
                   <span className="text-red-500 font-bold">TỪ:</span> Tất toán Sổ tiết kiệm: BIDV 12T<br/>
                   <span className="text-emerald-600 font-bold">ĐẾN:</span> Bơm vốn Thương vụ: BĐS Quận 9<br/>
                   <span className="text-blue-600 font-bold">SỐ TIỀN:</span> 200 Tr
+                </div>
+                <div className="bg-sky-50 rounded-lg px-2.5 py-1.5 text-[10px] text-sky-800 border border-sky-100">
+                  <span className="font-bold">📍 Nguồn tiền lấy ở đâu?</span><br/>
+                  Tiền đến từ <strong>một Sổ tiết kiệm đang hoạt động trên màn hình Tiết kiệm &amp; Nợ</strong> (hoặc trên Danh mục Đầu tư nếu là sổ "idle"). Khi rút, số gốc của Sổ cũ bị trừ 200 Tr. Tiền này chảy sang tăng vốn cho thương vụ BĐS Quận 9 trên màn hình Danh mục Đầu tư.
                 </div>
               </div>
 
@@ -178,7 +196,10 @@ export const FundTransfers: React.FC = () => {
                   <span className="text-emerald-600 font-bold">ĐẾN:</span> Bơm vốn Thương vụ: Chung cư Q2<br/>
                   <span className="text-blue-600 font-bold">SỐ TIỀN:</span> 500 Tr
                 </div>
-                <p className="text-[10px] text-violet-600 italic">→ Tạo Thương vụ trước ở Danh mục Đầu tư, rồi quay lại đây chuyển tiền.</p>
+                <div className="bg-sky-50 rounded-lg px-2.5 py-1.5 text-[10px] text-sky-800 border border-sky-100">
+                  <span className="font-bold">📍 Nguồn tiền lấy ở đâu?</span><br/>
+                  Tiền đến từ <strong>Quỹ tích lũy mục tiêu trên màn hình Danh mục Đầu tư</strong>. Quỹ này được nuôi hàng tháng bằng "Ngân sách Đầu tư" (20% thu nhập). Khi giải ngân, Quỹ bị trừ 500 Tr và vốn Thương vụ Chung cư Q2 tăng 500 Tr. <em>Lưu ý: Tạo Thương vụ trước ở màn hình Đầu tư, rồi quay lại đây chuyển tiền.</em>
+                </div>
               </div>
 
             </div>
