@@ -266,7 +266,7 @@ export const Portfolio: React.FC = () => {
         const plannedCapital = totalEarmarkedCapital;
         const savBal = activeRow?.portfolio.savingsBalance || 0;
         const savInterest = activeRow?.portfolio.savingsInterestAccrued || 0;
-        const idleCash = Math.max(0, totalInvestable - investedCapital - plannedCapital - savBal);
+        const idleCash = activeRow ? (activeRow.portfolio.unallocatedEndingBalance || 0) : genericUnallocatedBalance;
 
         const cumContribution = activeRow?.portfolio.cumulativeContribution || 0;
         const cumPnl = activeRow?.portfolio.cumulativePnl || 0;

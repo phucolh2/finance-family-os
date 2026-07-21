@@ -104,9 +104,7 @@ export const SinkingFundModule: React.FC<SinkingFundModuleProps> = ({
       if (sourceId === 'unallocated' || sourceId === 'investment') {
          if (currentRow) {
            const port = currentRow.portfolio;
-           const invested = state.assets.reduce((sum, asset) => sum + port.assets[asset.type].endingBalance, 0);
-           const planned = state.assets.reduce((sum, asset) => sum + (port.assets[asset.type].earmarkedEndingBalance || 0), 0);
-           balance = Math.max(0, port.totalEndingBalance - invested - planned - (port.savingsBalance || 0));
+           balance = port.unallocatedEndingBalance || 0;
          } else {
            balance = safeNumber(state.profile.startingCapital, 100);
          }

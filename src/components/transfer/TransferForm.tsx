@@ -46,9 +46,7 @@ export const TransferForm: React.FC<TransferFormProps> = ({ onSuccess, onCancel 
   let idleCashflow = 0;
   if (currentRow) {
     const port = currentRow.portfolio;
-    const invested = state.assets.reduce((sum, asset) => sum + port.assets[asset.type].endingBalance, 0);
-    const planned = state.assets.reduce((sum, asset) => sum + (port.assets[asset.type].earmarkedEndingBalance || 0), 0);
-    idleCashflow = Math.max(0, port.totalEndingBalance - invested - planned - (port.savingsBalance || 0));
+    idleCashflow = port.unallocatedEndingBalance || 0;
   }
   
   const savingBalance = currentRow?.savingBalance || 0;

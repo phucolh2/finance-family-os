@@ -109,9 +109,8 @@ export const SavingsDepositModule: React.FC<SavingsDepositModuleProps> = ({
       availableSavingsPoolBalance = savingsTargetMonthRow.savingBalance;
     } else {
       const port = savingsTargetMonthRow.portfolio;
-      const invested = state.assets.reduce((sum, asset) => sum + port.assets[asset.type].endingBalance, 0);
       const planned = state.assets.reduce((sum, asset) => sum + (port.assets[asset.type].earmarkedEndingBalance || 0), 0);
-      const idle = Math.max(0, port.totalEndingBalance - invested - planned - (port.savingsBalance || 0));
+      const idle = port.unallocatedEndingBalance || 0;
       availableSavingsPoolBalance = savingsForm.pool === 'idle' ? idle : planned;
     }
   } else {
@@ -129,9 +128,8 @@ export const SavingsDepositModule: React.FC<SavingsDepositModuleProps> = ({
         prefix = 'Số dư Quỹ Tiết Kiệm & Nợ';
       } else {
         const port = savingsTargetMonthRow.portfolio;
-        const invested = state.assets.reduce((sum, asset) => sum + port.assets[asset.type].endingBalance, 0);
         const planned = state.assets.reduce((sum, asset) => sum + (port.assets[asset.type].earmarkedEndingBalance || 0), 0);
-        const idle = Math.max(0, port.totalEndingBalance - invested - planned - (port.savingsBalance || 0));
+        const idle = port.unallocatedEndingBalance || 0;
         
         if (poolId === 'idle') {
           balance = idle;
