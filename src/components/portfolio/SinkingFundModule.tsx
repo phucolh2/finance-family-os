@@ -126,14 +126,22 @@ export const SinkingFundModule: React.FC<SinkingFundModuleProps> = ({
 
   // Helper to find latest state of a fund from projection
   const getFundBalance = (fundId: string) => {
-    const currentKey = `${initYear}-${String(initMonth).padStart(2, '0')}`;
+    let currentObservedMonth = initMonth;
+    let currentObservedYear = initYear;
+    
+    if (selectedPeriodKey) {
+       const [y, m] = selectedPeriodKey.split('-').map(Number);
+       currentObservedYear = y;
+       currentObservedMonth = m;
+    }
+    
     const fund = activeFunds.find(f => f.id === fundId);
     if (!fund) return { balance: 0, progress: 0 };
     
     let buckets: { principal: number; termStart: number }[] = [];
     const term = fund.termMonths || 1;
     const start = fund.startYear * 12 + fund.startMonth;
-    const current = initYear * 12 + initMonth;
+    const current = currentObservedYear * 12 + currentObservedMonth;
     
     if (current >= start) {
        for (let m = start; m <= current; m++) {
@@ -178,8 +186,8 @@ export const SinkingFundModule: React.FC<SinkingFundModuleProps> = ({
     }
     
     let totalNonTermInterest = 0;
-    const currentMonth = initMonth;
-    const currentYear = initYear;
+    const currentMonth = currentObservedMonth;
+    const currentYear = currentObservedYear;
     buckets.forEach(b => {
        const bMonth = ((b.termStart - 1) % 12) + 1;
        const bYear = Math.floor((b.termStart - 1) / 12);
