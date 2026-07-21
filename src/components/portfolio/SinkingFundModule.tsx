@@ -453,9 +453,11 @@ export const SinkingFundModule: React.FC<SinkingFundModuleProps> = ({
                       )}
                     </div>
                   </div>
-                  <div className="text-right">
-                    <p className="text-xs text-family-textMuted mb-1">Định kì phân bổ hằng tháng</p>
-                    <span className="text-sm font-semibold text-family-text">+{formatTableMoneyVNDMillion(fund.monthlyContribution)}</span>
+                  <div>
+                    <p className="text-xs text-family-textMuted mb-1 text-right">Vốn ban đầu / Định kỳ</p>
+                    <p className="text-sm font-bold text-family-text text-right">
+                      {formatTableMoneyVNDMillion(fund.initialDeposit)} / +{formatTableMoneyVNDMillion(fund.monthlyContribution)}
+                    </p>
                   </div>
                 </div>
 
