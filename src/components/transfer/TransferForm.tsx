@@ -133,7 +133,7 @@ export const TransferForm: React.FC<TransferFormProps> = ({ onSuccess, onCancel 
                       className="w-full bg-family-bg border border-family-accent/20 rounded p-2 text-sm text-family-text focus:outline-none focus:border-blue-500"
                     >
                       <optgroup label="Màn hình: Kế hoạch Thu nhập (Dòng tiền)">
-                        <option value="cashflow:">Ngân sách Dòng tiền (Chưa phân bổ: {formatMoneyVNDMillion(idleCashflow)})</option>
+                        <option value="cashflow:">Dòng tiền Nhàn rỗi (Chưa phân bổ + Sinh hoạt dư: {formatMoneyVNDMillion(idleCashflow)} Tr)</option>
                       </optgroup>
                       
                       <optgroup label="Màn hình: Sự kiện cuộc đời">
@@ -179,7 +179,7 @@ export const TransferForm: React.FC<TransferFormProps> = ({ onSuccess, onCancel 
                       className="w-full bg-family-bg border border-family-accent/20 rounded p-2 text-sm text-family-text focus:outline-none focus:border-blue-500"
                     >
                       <optgroup label="Màn hình: Kế hoạch Thu nhập (Dòng tiền)">
-                        <option value="cashflow:">Bổ sung vào Ngân sách Dòng tiền</option>
+                        <option value="cashflow:">Bổ sung vào Dòng tiền Nhàn rỗi</option>
                       </optgroup>
                       
                       <optgroup label="Màn hình: Danh mục đầu tư">
