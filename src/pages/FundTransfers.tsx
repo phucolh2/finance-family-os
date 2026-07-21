@@ -1,8 +1,9 @@
 import React, { useState } from 'react';
-import { Card, CardHeader, CardTitle, CardContent } from '../components/ui/Card';
+import { Card, CardHeader, CardTitle, CardContent, CardDescription } from '../components/ui/Card';
 import { Button } from '../components/ui/Button';
-import { ArrowRightLeft, Plus, History } from 'lucide-react';
+import { ArrowRightLeft, Plus, History, Lightbulb, ChevronDown, ChevronUp } from 'lucide-react';
 import { useAppContext } from '../context/AppContext';
+import { HelpTooltip } from '../components/ui/HelpTooltip';
 import { TransferForm } from '../components/transfer/TransferForm';
 import { ObservationControls } from '../components/ui/ObservationControls';
 import { formatMoneyVNDMillion } from '../utils/format';
@@ -12,6 +13,7 @@ export const FundTransfers: React.FC = () => {
   const { fundTransfers = [] } = state;
   
   const [showTransferForm, setShowTransferForm] = useState(false);
+  const [showGuide, setShowGuide] = useState(true);
 
   const getSourceLabel = (type: string, id?: string) => {
     switch (type) {
@@ -61,6 +63,128 @@ export const FundTransfers: React.FC = () => {
             <TransferForm onSuccess={() => setShowTransferForm(false)} onCancel={() => setShowTransferForm(false)} />
          </div>
       )}
+
+      {/* Scenarios Guide */}
+      <Card className="border border-amber-300/30 bg-gradient-to-br from-amber-50/80 to-orange-50/50 overflow-hidden">
+        <CardHeader className="pb-2 cursor-pointer select-none" onClick={() => setShowGuide(!showGuide)}>
+          <CardTitle className="text-sm flex items-center justify-between">
+            <span className="flex items-center gap-2 text-amber-700">
+              <Lightbulb className="w-4 h-4" />
+              Hướng dẫn: Các kịch bản Điều chuyển dòng tiền thực tế
+              <HelpTooltip text="Đây là các ví dụ minh họa cụ thể để bạn hiểu cách sử dụng tính năng Điều chuyển. Nhấn vào tiêu đề để thu gọn/mở rộng." />
+            </span>
+            <span className="text-amber-500">
+              {showGuide ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
+            </span>
+          </CardTitle>
+        </CardHeader>
+        {showGuide && (
+          <CardContent className="pt-0 pb-5 px-5">
+            <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-3 mt-2">
+
+              {/* Scenario 1 */}
+              <div className="bg-white/70 rounded-xl p-3.5 border border-amber-200/40 space-y-2">
+                <div className="flex items-center gap-1.5">
+                  <span className="text-base">💰</span>
+                  <span className="text-xs font-bold text-amber-800">Kịch bản 1: Rót vốn vào Thương vụ</span>
+                </div>
+                <p className="text-[11px] text-slate-600 leading-relaxed">
+                  Bạn có <strong>100 Tr</strong> tiền nhàn rỗi trên Danh mục Đầu tư, muốn rót vào thương vụ chứng khoán VIX.
+                </p>
+                <div className="bg-amber-50 rounded-lg px-2.5 py-1.5 text-[10px] font-mono text-amber-900">
+                  <span className="text-red-500 font-bold">TỪ:</span> Ngân sách Dòng tiền (Chưa phân bổ)<br/>
+                  <span className="text-emerald-600 font-bold">ĐẾN:</span> Bơm vốn Thương vụ: VIX<br/>
+                  <span className="text-blue-600 font-bold">SỐ TIỀN:</span> 100 Tr
+                </div>
+              </div>
+
+              {/* Scenario 2 */}
+              <div className="bg-white/70 rounded-xl p-3.5 border border-amber-200/40 space-y-2">
+                <div className="flex items-center gap-1.5">
+                  <span className="text-base">🏦</span>
+                  <span className="text-xs font-bold text-amber-800">Kịch bản 2: Gửi Tiết kiệm Ngân hàng</span>
+                </div>
+                <p className="text-[11px] text-slate-600 leading-relaxed">
+                  Bạn nhận <strong>thưởng Tết 50 Tr</strong> (Sự kiện cuộc đời), muốn gửi tiết kiệm ngân hàng để an toàn.
+                </p>
+                <div className="bg-amber-50 rounded-lg px-2.5 py-1.5 text-[10px] font-mono text-amber-900">
+                  <span className="text-red-500 font-bold">TỪ:</span> Tiền dôi dư: Thưởng Tết 2026<br/>
+                  <span className="text-emerald-600 font-bold">ĐẾN:</span> Mở Sổ tiết kiệm mới<br/>
+                  <span className="text-blue-600 font-bold">SỐ TIỀN:</span> 50 Tr
+                </div>
+                <p className="text-[10px] text-violet-600 italic">→ Hệ thống tự tạo Sổ tiết kiệm mới, kế thừa DNA nguồn tiền.</p>
+              </div>
+
+              {/* Scenario 3 */}
+              <div className="bg-white/70 rounded-xl p-3.5 border border-amber-200/40 space-y-2">
+                <div className="flex items-center gap-1.5">
+                  <span className="text-base">🎯</span>
+                  <span className="text-xs font-bold text-amber-800">Kịch bản 3: Bơm tiền Quỹ tích lũy</span>
+                </div>
+                <p className="text-[11px] text-slate-600 leading-relaxed">
+                  Bạn chốt lời thương vụ Vàng được <strong>200 Tr</strong>, muốn dội thẳng vào Quỹ mua nhà để rút ngắn thời gian đạt mục tiêu.
+                </p>
+                <div className="bg-amber-50 rounded-lg px-2.5 py-1.5 text-[10px] font-mono text-amber-900">
+                  <span className="text-red-500 font-bold">TỪ:</span> Rút vốn Thương vụ: Vàng SJC<br/>
+                  <span className="text-emerald-600 font-bold">ĐẾN:</span> Bơm tiền Quỹ: Mua nhà 2028<br/>
+                  <span className="text-blue-600 font-bold">SỐ TIỀN:</span> 200 Tr
+                </div>
+              </div>
+
+              {/* Scenario 4 */}
+              <div className="bg-white/70 rounded-xl p-3.5 border border-amber-200/40 space-y-2">
+                <div className="flex items-center gap-1.5">
+                  <span className="text-base">💳</span>
+                  <span className="text-xs font-bold text-amber-800">Kịch bản 4: Trả nợ sớm</span>
+                </div>
+                <p className="text-[11px] text-slate-600 leading-relaxed">
+                  Quỹ chuẩn bị trả nợ đã đủ <strong>300 Tr</strong>, bạn quyết định tất toán sớm khoản vay mua xe.
+                </p>
+                <div className="bg-amber-50 rounded-lg px-2.5 py-1.5 text-[10px] font-mono text-amber-900">
+                  <span className="text-red-500 font-bold">TỪ:</span> Tất toán Quỹ: Trả nợ xe<br/>
+                  <span className="text-emerald-600 font-bold">ĐẾN:</span> Trả nợ sớm: Vay mua xe<br/>
+                  <span className="text-blue-600 font-bold">SỐ TIỀN:</span> 300 Tr
+                </div>
+                <p className="text-[10px] text-red-500 italic">→ Hệ thống trừ thẳng vào Dư nợ gốc. Không cho trả vượt mức.</p>
+              </div>
+
+              {/* Scenario 5 */}
+              <div className="bg-white/70 rounded-xl p-3.5 border border-amber-200/40 space-y-2">
+                <div className="flex items-center gap-1.5">
+                  <span className="text-base">🔄</span>
+                  <span className="text-xs font-bold text-amber-800">Kịch bản 5: Tái đầu tư Tiết kiệm đáo hạn</span>
+                </div>
+                <p className="text-[11px] text-slate-600 leading-relaxed">
+                  Sổ tiết kiệm <strong>12 tháng đáo hạn</strong> (Gốc 200 Tr), bạn muốn rót vào thương vụ Bất động sản.
+                </p>
+                <div className="bg-amber-50 rounded-lg px-2.5 py-1.5 text-[10px] font-mono text-amber-900">
+                  <span className="text-red-500 font-bold">TỪ:</span> Tất toán Sổ tiết kiệm: BIDV 12T<br/>
+                  <span className="text-emerald-600 font-bold">ĐẾN:</span> Bơm vốn Thương vụ: BĐS Quận 9<br/>
+                  <span className="text-blue-600 font-bold">SỐ TIỀN:</span> 200 Tr
+                </div>
+              </div>
+
+              {/* Scenario 6 */}
+              <div className="bg-white/70 rounded-xl p-3.5 border border-amber-200/40 space-y-2">
+                <div className="flex items-center gap-1.5">
+                  <span className="text-base">🏠</span>
+                  <span className="text-xs font-bold text-amber-800">Kịch bản 6: Giải ngân Quỹ → Thương vụ</span>
+                </div>
+                <p className="text-[11px] text-slate-600 leading-relaxed">
+                  Quỹ tích lũy mua nhà đã đạt mục tiêu <strong>500 Tr</strong>, bạn muốn giải ngân để tạo Thương vụ BĐS mới.
+                </p>
+                <div className="bg-amber-50 rounded-lg px-2.5 py-1.5 text-[10px] font-mono text-amber-900">
+                  <span className="text-red-500 font-bold">TỪ:</span> Tất toán Quỹ: Mua nhà 2028<br/>
+                  <span className="text-emerald-600 font-bold">ĐẾN:</span> Bơm vốn Thương vụ: Chung cư Q2<br/>
+                  <span className="text-blue-600 font-bold">SỐ TIỀN:</span> 500 Tr
+                </div>
+                <p className="text-[10px] text-violet-600 italic">→ Tạo Thương vụ trước ở Danh mục Đầu tư, rồi quay lại đây chuyển tiền.</p>
+              </div>
+
+            </div>
+          </CardContent>
+        )}
+      </Card>
 
       <Card className="border border-family-accent/20 bg-family-bgDeep overflow-hidden">
         <CardHeader className="border-b border-family-accent/10 pb-4">
