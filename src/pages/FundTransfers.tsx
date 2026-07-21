@@ -158,7 +158,7 @@ export const FundTransfers: React.FC = () => {
                 </div>
                 <div className="bg-sky-50 rounded-lg px-2.5 py-1.5 text-[10px] text-sky-800 border border-sky-100">
                   <span className="font-bold">📍 Nguồn tiền lấy ở đâu?</span><br/>
-                  Tiền đến từ <strong>Quỹ Chuẩn bị Trả nợ trên màn hình Tiết kiệm &amp; Nợ</strong>. Quỹ này được nuôi hàng tháng bằng "Ngân sách Trả nợ" (10% thu nhập). Sau khi chuyển, Quỹ bị trừ 300 Tr, và Dư nợ gốc khoản vay mua xe cũng giảm 300 Tr. <em>Hệ thống chặn cứng nếu số trả vượt dư nợ gốc.</em>
+                  Tiền đến từ <strong>Quỹ Chuẩn bị Trả nợ trên màn hình Tiết kiệm &amp; Nợ</strong>. Quỹ này được nuôi hàng tháng bằng phần "Ngân sách Trả nợ" mà bạn đã thiết lập trên màn hình <em>Kế hoạch Thu nhập</em>. Sau khi chuyển, Quỹ bị trừ 300 Tr, và Dư nợ gốc khoản vay mua xe cũng giảm 300 Tr. <em>Hệ thống chặn cứng nếu số trả vượt dư nợ gốc.</em>
                 </div>
               </div>
 
@@ -198,7 +198,7 @@ export const FundTransfers: React.FC = () => {
                 </div>
                 <div className="bg-sky-50 rounded-lg px-2.5 py-1.5 text-[10px] text-sky-800 border border-sky-100">
                   <span className="font-bold">📍 Nguồn tiền lấy ở đâu?</span><br/>
-                  Tiền đến từ <strong>Quỹ tích lũy mục tiêu trên màn hình Danh mục Đầu tư</strong>. Quỹ này được nuôi hàng tháng bằng "Ngân sách Đầu tư" (20% thu nhập). Khi giải ngân, Quỹ bị trừ 500 Tr và vốn Thương vụ Chung cư Q2 tăng 500 Tr. <em>Lưu ý: Tạo Thương vụ trước ở màn hình Đầu tư, rồi quay lại đây chuyển tiền.</em>
+                  Tiền đến từ <strong>Quỹ tích lũy mục tiêu trên màn hình Danh mục Đầu tư</strong>. Quỹ này được nuôi hàng tháng bằng phần "Ngân sách Đầu tư" mà bạn đã thiết lập trên màn hình <em>Kế hoạch Thu nhập</em>. Khi giải ngân, Quỹ bị trừ 500 Tr và vốn Thương vụ Chung cư Q2 tăng 500 Tr. <em>Lưu ý: Tạo Thương vụ trước ở màn hình Đầu tư, rồi quay lại đây chuyển tiền.</em>
                 </div>
               </div>
 
