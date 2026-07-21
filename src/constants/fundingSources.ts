@@ -35,7 +35,7 @@ export const FUNDING_SOURCES: Record<FundingSourceId, FundingSourceDef> = {
 };
 
 export const SCREEN_FUNDING_CONSTRAINTS = {
-  portfolio: ['investment', 'unallocated'] as FundingSourceId[],
+  portfolio: ['investment'] as FundingSourceId[],
   savings_deposit: ['saving', 'unallocated'] as FundingSourceId[],
   debt_prep: ['debt_reserve', 'saving'] as FundingSourceId[]
 };
