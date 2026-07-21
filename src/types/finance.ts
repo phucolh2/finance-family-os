@@ -235,7 +235,7 @@ export interface FundTransfer {
   month: number;
   year: number;
   amount: number; // Số tiền (Tr VND)
-  sourceType: 'cashflow' | 'savings' | 'sinking_fund' | 'investment' | 'life_event';
+  sourceType: 'cashflow' | 'savings' | 'sinking_fund' | 'investment' | 'life_event' | 'pool';
   sourceId?: string; // ID của nguồn nếu có (ví dụ ID sổ tiết kiệm)
   destinationType: 'cashflow' | 'savings' | 'sinking_fund' | 'investment' | 'debt';
   destinationId?: string; // ID của đích nếu có (ví dụ ID thương vụ đầu tư)
