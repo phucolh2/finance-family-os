@@ -95,12 +95,8 @@ export const SinkingFundModule: React.FC<SinkingFundModuleProps> = ({
 
   const activeFunds = state.sinkingFunds?.filter(f => f.status === 'active' && (f.fundType || 'investment') === filterFundType) || [];
 
-  const currentKey = `${initYear}-${String(initMonth).padStart(2, '0')}`;
-  let match = projection.monthlyRows.find(r => r.period.key === currentKey);
-  if (!match && projection.monthlyRows.length > 0) {
-      match = projection.monthlyRows[projection.monthlyRows.length - 1];
-  }
-  const currentRow = match;
+  const targetKey = `${form.startYear}-${String(form.startMonth).padStart(2, '0')}`;
+  const currentRow = projection.monthlyRows.find(r => r.period.key === targetKey);
   
   const getSourceLabelWithBalance = (sourceId: string) => {
       let balance = 0;
@@ -110,7 +106,9 @@ export const SinkingFundModule: React.FC<SinkingFundModuleProps> = ({
            const port = currentRow.portfolio;
            const invested = state.assets.reduce((sum, asset) => sum + port.assets[asset.type].endingBalance, 0);
            const planned = state.assets.reduce((sum, asset) => sum + (port.assets[asset.type].earmarkedEndingBalance || 0), 0);
-           balance = Math.max(0, port.totalEndingBalance - invested - planned);
+           balance = Math.max(0, port.totalEndingBalance - invested - planned - (port.savingsBalance || 0));
+         } else {
+           balance = safeNumber(state.profile.startingCapital, 100);
          }
          
          if (filterFundType === 'investment') {
