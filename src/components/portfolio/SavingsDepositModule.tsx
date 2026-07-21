@@ -346,8 +346,17 @@ export const SavingsDepositModule: React.FC<SavingsDepositModuleProps> = ({
               {displayDeposits.map((dep) => {
                 const maturityMonth = ((dep.startMonth - 1 + dep.termMonths) % 12) + 1;
                 const maturityYear = dep.startYear + Math.floor((dep.startMonth - 1 + dep.termMonths) / 12);
-                
-                const current = defaultStartYear && defaultStartMonth ? defaultStartYear * 12 + defaultStartMonth : now.getFullYear() * 12 + now.getMonth() + 1;
+                let observedMonth = now.getMonth() + 1;
+                let observedYear = now.getFullYear();
+                if (defaultStartMonth && defaultStartYear) {
+                   observedMonth = defaultStartMonth;
+                   observedYear = defaultStartYear;
+                } else if (selectedPeriodKey) {
+                   const [y, m] = selectedPeriodKey.split('-').map(Number);
+                   observedYear = y;
+                   observedMonth = m;
+                }
+                const current = observedYear * 12 + observedMonth;
                 const depStart = dep.startYear * 12 + dep.startMonth;
                 const depEnd = depStart + dep.termMonths;
                 
@@ -437,8 +446,8 @@ export const SavingsDepositModule: React.FC<SavingsDepositModuleProps> = ({
                           {isActive && (
                             <button
                               onClick={() => {
-                                const sm = defaultStartMonth || dep.startMonth;
-                                const sy = defaultStartYear || dep.startYear;
+                                const sm = observedMonth;
+                                const sy = observedYear;
                                 const nonTermInterest = calculateNonTermInterest(
                                   dep.principal, 
                                   dep.startMonth, dep.startYear, 
