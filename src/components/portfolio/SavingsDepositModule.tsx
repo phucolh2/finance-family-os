@@ -219,29 +219,31 @@ export const SavingsDepositModule: React.FC<SavingsDepositModuleProps> = ({
               placeholder="VD: 5.5"
               onChange={(e) => { setSavingsForm({ ...savingsForm, interestRate: safeNumber(Number(e.target.value), 0) }); }}
             />
-            <Input
-              label="Tháng bắt đầu"
-              placeholder="VD: 1"
-              type="number"
-              min={1}
-              max={12}
-              value={savingsForm.startMonth}
-              onChange={(e) => { setSavingsForm({ ...savingsForm, startMonth: safeNumber(Number(e.target.value), 1) }); }}
-            />
-            <Input
-              label="Năm bắt đầu"
-              placeholder="VD: 2026"
-              type="number"
-              min={2024}
-              max={2060}
-              value={savingsForm.startYear}
-              onChange={(e) => { setSavingsForm({ ...savingsForm, startYear: safeNumber(Number(e.target.value), 2026) }); }}
-            />
-            <div>
+            <div className="grid grid-cols-2 gap-2">
+              <Input
+                label="Tháng bắt đầu"
+                placeholder="VD: 1"
+                type="number"
+                min={1}
+                max={12}
+                value={savingsForm.startMonth}
+                onChange={(e) => { setSavingsForm({ ...savingsForm, startMonth: safeNumber(Number(e.target.value), 1) }); }}
+              />
+              <Input
+                label="Năm bắt đầu"
+                placeholder="VD: 2026"
+                type="number"
+                min={2024}
+                max={2060}
+                value={savingsForm.startYear}
+                onChange={(e) => { setSavingsForm({ ...savingsForm, startYear: safeNumber(Number(e.target.value), 2026) }); }}
+              />
+            </div>
+            <div className="sm:col-span-2">
               <label className="block text-xs font-semibold text-family-textMuted uppercase tracking-wider mb-1">Nguồn tiền</label>
               <select
                 disabled={filterPools.length === 1}
-                className={`block w-full rounded-xl border border-family-accent/20 py-2.5 px-3 text-sm text-family-text focus:border-family-accent focus:outline-none focus:ring-1 focus:ring-family-accent transition-colors ${filterPools.length === 1 ? 'bg-gray-50 cursor-not-allowed opacity-80' : 'bg-white/60 focus:bg-white'}`}
+                className={`block w-full rounded-xl border border-family-accent/20 py-2.5 px-3 pr-8 text-sm text-family-text text-ellipsis overflow-hidden whitespace-nowrap focus:border-family-accent focus:outline-none focus:ring-1 focus:ring-family-accent transition-colors ${filterPools.length === 1 ? 'bg-gray-50 cursor-not-allowed opacity-80' : 'bg-white/60 focus:bg-white'}`}
                 value={savingsForm.pool}
                 onChange={(e) => { setSavingsForm({ ...savingsForm, pool: e.target.value as 'idle' | 'planned' | 'saving' }); }}
               >

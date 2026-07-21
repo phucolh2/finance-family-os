@@ -222,11 +222,11 @@ export const SinkingFundModule: React.FC<SinkingFundModuleProps> = ({
               placeholder="VD: Quỹ mua ô tô / Trả nợ nhà"
               onChange={(e) => { setForm({ ...form, name: e.target.value }); }}
             />
-            <div>
+            <div className="sm:col-span-2 lg:col-span-2">
               <label className="block text-xs font-semibold text-family-textMuted uppercase tracking-wider mb-1">Nguồn tiền</label>
               <select 
                 disabled={activeSources.length === 1}
-                className={`block w-full rounded-xl border border-family-accent/20 py-2.5 px-3 text-sm text-family-text focus:border-family-accent focus:outline-none focus:ring-1 focus:ring-family-accent transition-colors ${activeSources.length === 1 ? 'bg-gray-50 cursor-not-allowed opacity-80' : 'bg-white/60 focus:bg-white'}`}
+                className={`block w-full rounded-xl border border-family-accent/20 py-2.5 px-3 pr-8 text-sm text-family-text text-ellipsis overflow-hidden whitespace-nowrap focus:border-family-accent focus:outline-none focus:ring-1 focus:ring-family-accent transition-colors ${activeSources.length === 1 ? 'bg-gray-50 cursor-not-allowed opacity-80' : 'bg-white/60 focus:bg-white'}`}
                 value={form.sourceOfFund}
                 onChange={e => { setForm({...form, sourceOfFund: e.target.value as any}); }}
               >
