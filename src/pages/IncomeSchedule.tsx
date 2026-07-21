@@ -258,6 +258,7 @@ export const IncomeSchedule: React.FC = () => {
     savingsDeposits: state.savingsDeposits,
     projectionAdjustments: state.projectionAdjustments,
     lifeStages: state.lifeStages,
+    fundTransfers: state.fundTransfers,
   });
 
   const currentKey = selectedPeriodKey || `${new Date().getFullYear()}-${String(new Date().getMonth() + 1).padStart(2, '0')}`;

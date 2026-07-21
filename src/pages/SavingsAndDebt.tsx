@@ -27,6 +27,7 @@ export const SavingsAndDebt: React.FC = () => {
     savingsDeposits: state.savingsDeposits,
     projectionAdjustments: state.projectionAdjustments,
     lifeStages: state.lifeStages,
+    fundTransfers: state.fundTransfers,
   });
 
   const hasData = projection.monthlyRows.length > 0;

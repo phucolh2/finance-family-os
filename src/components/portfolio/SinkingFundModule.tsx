@@ -52,6 +52,7 @@ export const SinkingFundModule: React.FC<SinkingFundModuleProps> = ({
     sinkingFunds: state.sinkingFunds,
     projectionAdjustments: state.projectionAdjustments,
     lifeStages: state.lifeStages,
+    fundTransfers: state.fundTransfers,
   });
 
   const now = new Date();

@@ -170,6 +170,7 @@ export function useAppState() {
       savingsDeposits: newState.savingsDeposits ?? [],
       projectionAdjustments: newState.projectionAdjustments,
       lifeStages: newState.lifeStages,
+      fundTransfers: newState.fundTransfers,
     });
 
     const updatedList = resolvedDb.list.map(dbItem => {

@@ -24,6 +24,7 @@ export interface ProjectionEngineInput {
   debts?: DebtLiability[];
   projectionAdjustments?: ProjectionAdjustmentRecord[];
   lifeStages?: LifeStage[];
+  fundTransfers?: import('../types/finance').FundTransfer[];
 }
 
 /**
@@ -46,6 +47,7 @@ export function runProjection(input: ProjectionEngineInput): ProjectionOutput {
   const debts = safeArray(input.debts);
   const projectionAdjustments = safeArray(input.projectionAdjustments);
   const lifeStages = safeArray(input.lifeStages);
+  const fundTransfers = safeArray(input.fundTransfers);
 
   // 1. Generate monthly timeline
   const timelineResult = generateTimeline({
@@ -207,6 +209,28 @@ export function runProjection(input: ProjectionEngineInput): ProjectionOutput {
         // safety_reserve, family_experience, housing_basic, health_growth, saving, v.v...
         currentSavingBalance = Math.max(0, currentSavingBalance + amt);
       }
+    });
+
+    // Process Fund Transfers for abstract buckets and edge cases
+    const transfersThisMonth = fundTransfers.filter(t => t.month === period.month && t.year === period.year);
+    transfersThisMonth.forEach(t => {
+       // If money was transferred FROM an abstract pool, we must reduce the pool's calculated balance
+       if (t.sourceType === 'pool' && t.sourceId === 'saving') {
+          currentSavingBalance -= t.amount;
+          if (t.destinationType === 'cashflow') {
+             totalInvestable += t.amount;
+          }
+       } else if (t.sourceType === 'pool' && t.sourceId === 'debt_reserve') {
+          currentDebtReserveBalance -= t.amount;
+          if (t.destinationType === 'cashflow') {
+             totalInvestable += t.amount;
+          }
+       } 
+       // If money was transferred FROM a Life Event TO Cashflow, 
+       // since the Life Event amount is shrunk in AppState, totalInvestable drops. We must add it back.
+       else if (t.sourceType === 'life_event' && t.destinationType === 'cashflow') {
+          totalInvestable += t.amount;
+       }
     });
 
     // We will calculate Active Deal Values up to LAST month, to find unallocated compounding base

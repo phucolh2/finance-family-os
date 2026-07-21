@@ -92,13 +92,13 @@ export const FundTransfers: React.FC = () => {
                   Bạn có <strong>100 Tr</strong> tiền nhàn rỗi trên Danh mục Đầu tư, muốn rót vào thương vụ chứng khoán VIX.
                 </p>
                 <div className="bg-amber-50 rounded-lg px-2.5 py-1.5 text-[10px] font-mono text-amber-900">
-                  <span className="text-red-500 font-bold">TỪ:</span> Ngân sách Dòng tiền (Chưa phân bổ)<br/>
+                  <span className="text-red-500 font-bold">TỪ:</span> Dòng tiền Nhàn rỗi (Chưa phân bổ + Sinh hoạt dư)<br/>
                   <span className="text-emerald-600 font-bold">ĐẾN:</span> Bơm vốn Thương vụ: VIX<br/>
                   <span className="text-blue-600 font-bold">SỐ TIỀN:</span> 100 Tr
                 </div>
                 <div className="bg-sky-50 rounded-lg px-2.5 py-1.5 text-[10px] text-sky-800 border border-sky-100">
                   <span className="font-bold">📍 Nguồn tiền lấy ở đâu?</span><br/>
-                  Số tiền này chính là phần <strong>"Chưa có kế hoạch"</strong> hiển thị trên KPI card màn hình <em>Danh mục Đầu tư</em>. Nó là tiền dư ra sau khi trừ đi tất cả thương vụ đang hoạt động, quỹ tích lũy và sổ tiết kiệm. Sau khi chuyển, KPI này sẽ giảm 100 Tr, và vốn thương vụ VIX tăng thêm 100 Tr.
+                  Số tiền này chính là <strong>Dòng tiền nhàn rỗi</strong> chưa có kế hoạch cụ thể, cộng dồn từ phần Thu nhập chưa phân bổ hết và các khoản Ngân sách (như Sinh hoạt phí) còn dư trong tháng. Sau khi chuyển, dòng tiền nhàn rỗi sẽ giảm đi, và vốn thương vụ VIX tăng thêm 100 Tr.
                 </div>
               </div>
 
@@ -152,7 +152,7 @@ export const FundTransfers: React.FC = () => {
                   Quỹ chuẩn bị trả nợ đã đủ <strong>300 Tr</strong>, bạn quyết định tất toán sớm khoản vay mua xe.
                 </p>
                 <div className="bg-amber-50 rounded-lg px-2.5 py-1.5 text-[10px] font-mono text-amber-900">
-                  <span className="text-red-500 font-bold">TỪ:</span> Tất toán Quỹ: Trả nợ xe<br/>
+                  <span className="text-red-500 font-bold">TỪ:</span> Số dư Quỹ Chuẩn bị Trả nợ<br/>
                   <span className="text-emerald-600 font-bold">ĐẾN:</span> Trả nợ sớm: Vay mua xe<br/>
                   <span className="text-blue-600 font-bold">SỐ TIỀN:</span> 300 Tr
                 </div>

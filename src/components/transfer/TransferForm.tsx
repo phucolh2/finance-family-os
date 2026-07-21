@@ -38,6 +38,7 @@ export const TransferForm: React.FC<TransferFormProps> = ({ onSuccess, onCancel 
     savingsDeposits: state.savingsDeposits,
     projectionAdjustments: state.projectionAdjustments,
     lifeStages: state.lifeStages,
+    fundTransfers: state.fundTransfers,
   });
 
   const currentKey = `${currentYear}-${String(currentMonth).padStart(2, '0')}`;
@@ -179,7 +180,7 @@ export const TransferForm: React.FC<TransferFormProps> = ({ onSuccess, onCancel 
                       className="w-full bg-family-bg border border-family-accent/20 rounded p-2 text-sm text-family-text focus:outline-none focus:border-blue-500"
                     >
                       <optgroup label="Màn hình: Kế hoạch Thu nhập (Dòng tiền)">
-                        <option value="cashflow:">Bổ sung vào Dòng tiền Nhàn rỗi</option>
+                        <option value="cashflow:">Bổ sung vào Dòng tiền Nhàn rỗi (Chưa phân bổ + Sinh hoạt dư)</option>
                       </optgroup>
                       
                       <optgroup label="Màn hình: Danh mục đầu tư">
