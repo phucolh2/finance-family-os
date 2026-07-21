@@ -43,6 +43,9 @@ export const TransferForm: React.FC<TransferFormProps> = ({ onSuccess, onCancel 
   const currentKey = `${currentYear}-${String(currentMonth).padStart(2, '0')}`;
   const currentRow = projection.monthlyRows.find(r => r.period.key === currentKey);
   const idleCashflow = currentRow ? currentRow.netCashflowMonthly : 0;
+  
+  const savingBalance = currentRow?.savingBalance || 0;
+  const debtReserveBalance = (currentRow?.debtReserveBalance || 0) + (currentRow?._activeSinkingFundsDebtReserve || 0);
 
   const [srcType, srcId] = sourceValue.split(':');
   const [destType, destId] = destinationValue.split(':');
@@ -58,6 +61,10 @@ export const TransferForm: React.FC<TransferFormProps> = ({ onSuccess, onCancel 
     availableBalance = state.sinkingFunds?.find(f => f.id === srcId)?.initialDeposit || 0;
   } else if (srcType === 'savings') {
     availableBalance = state.savingsDeposits?.find(s => s.id === srcId)?.principal || 0;
+  } else if (srcType === 'pool' && srcId === 'saving') {
+    availableBalance = savingBalance;
+  } else if (srcType === 'pool' && srcId === 'debt_reserve') {
+    availableBalance = debtReserveBalance;
   }
 
   let maxDebtPayment = 0;
@@ -125,33 +132,28 @@ export const TransferForm: React.FC<TransferFormProps> = ({ onSuccess, onCancel 
                         <option value="cashflow:">Ngân sách Dòng tiền (Chưa phân bổ: {formatMoneyVNDMillion(idleCashflow)})</option>
                       </optgroup>
                       
-                      {state.lifeEvents && state.lifeEvents.filter(e => e.amount > 0).length > 0 && (
-                        <optgroup label="Màn hình: Sự kiện cuộc đời">
-                          {state.lifeEvents.filter(e => e.amount > 0).map(e => (
-                            <option key={e.id} value={`life_event:${e.id}`}>Tiền dôi dư: {e.name} (+{e.amount} Tr)</option>
-                          ))}
-                        </optgroup>
-                      )}
+                      <optgroup label="Màn hình: Sự kiện cuộc đời">
+                        {state.lifeEvents?.filter(e => e.amount > 0).map(e => (
+                          <option key={e.id} value={`life_event:${e.id}`}>Tiền dôi dư: {e.name} (+{e.amount} Tr)</option>
+                        ))}
+                      </optgroup>
 
-                      {((state.investmentDeals?.filter(d => d.status === 'active').length ?? 0) > 0 || 
-                        (state.sinkingFunds?.filter(f => f.status === 'active').length ?? 0) > 0) && (
-                        <optgroup label="Màn hình: Danh mục đầu tư">
-                          {state.investmentDeals?.filter(d => d.status === 'active').map(d => (
-                            <option key={d.id} value={`investment:${d.id}`}>Rút vốn Thương vụ: {d.name} ({d.capital} Tr)</option>
-                          ))}
-                          {state.sinkingFunds?.filter(f => f.status === 'active').map(f => (
-                            <option key={f.id} value={`sinking_fund:${f.id}`}>Tất toán Quỹ: {f.name} ({f.initialDeposit} Tr gốc)</option>
-                          ))}
-                        </optgroup>
-                      )}
+                      <optgroup label="Màn hình: Danh mục đầu tư">
+                        {state.investmentDeals?.filter(d => d.status === 'active').map(d => (
+                          <option key={d.id} value={`investment:${d.id}`}>Rút vốn Thương vụ: {d.name} ({d.capital} Tr)</option>
+                        ))}
+                        {state.sinkingFunds?.filter(f => f.status === 'active').map(f => (
+                          <option key={f.id} value={`sinking_fund:${f.id}`}>Tất toán Quỹ: {f.name} ({f.initialDeposit} Tr gốc)</option>
+                        ))}
+                      </optgroup>
 
-                      {state.savingsDeposits && state.savingsDeposits.filter(s => s.status === 'active').length > 0 && (
-                        <optgroup label="Màn hình: Tiết kiệm & Nợ">
-                          {state.savingsDeposits.filter(s => s.status === 'active').map(s => (
-                            <option key={s.id} value={`savings:${s.id}`}>Tất toán Sổ tiết kiệm: {s.name} ({s.principal} Tr)</option>
-                          ))}
-                        </optgroup>
-                      )}
+                      <optgroup label="Màn hình: Tiết kiệm & Nợ">
+                        <option value="pool:saving" disabled>Số dư Quỹ Tiết Kiệm & Nợ: {formatMoneyVNDMillion(savingBalance)} Tr (Không thể rút trực tiếp)</option>
+                        <option value="pool:debt_reserve" disabled>Quỹ Chuẩn bị Trả nợ: {formatMoneyVNDMillion(debtReserveBalance)} Tr (Không thể rút trực tiếp)</option>
+                        {state.savingsDeposits?.filter(s => s.status === 'active').map(s => (
+                          <option key={s.id} value={`savings:${s.id}`}>Tất toán Sổ tiết kiệm: {s.name} ({s.principal} Tr)</option>
+                        ))}
+                      </optgroup>
                     </select>
                  </div>
               </div>
@@ -174,17 +176,14 @@ export const TransferForm: React.FC<TransferFormProps> = ({ onSuccess, onCancel 
                         <option value="cashflow:">Bổ sung vào Ngân sách Dòng tiền</option>
                       </optgroup>
                       
-                      {((state.investmentDeals?.filter(d => d.status === 'active').length ?? 0) > 0 || 
-                        (state.sinkingFunds?.filter(f => f.status === 'active').length ?? 0) > 0) && (
-                        <optgroup label="Màn hình: Danh mục đầu tư">
-                          {state.investmentDeals?.filter(d => d.status === 'active').map(d => (
-                            <option key={d.id} value={`investment:${d.id}`}>Bơm vốn Thương vụ: {d.name}</option>
-                          ))}
-                          {state.sinkingFunds?.filter(f => f.status === 'active').map(f => (
-                            <option key={f.id} value={`sinking_fund:${f.id}`}>Bơm tiền Quỹ: {f.name}</option>
-                          ))}
-                        </optgroup>
-                      )}
+                      <optgroup label="Màn hình: Danh mục đầu tư">
+                        {state.investmentDeals?.filter(d => d.status === 'active').map(d => (
+                          <option key={d.id} value={`investment:${d.id}`}>Bơm vốn Thương vụ: {d.name}</option>
+                        ))}
+                        {state.sinkingFunds?.filter(f => f.status === 'active').map(f => (
+                          <option key={f.id} value={`sinking_fund:${f.id}`}>Bơm tiền Quỹ: {f.name}</option>
+                        ))}
+                      </optgroup>
 
                       <optgroup label="Màn hình: Tiết kiệm & Nợ">
                         <option value="savings:new">Mở Sổ tiết kiệm mới</option>
