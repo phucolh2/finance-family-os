@@ -95,14 +95,36 @@ export const SinkingFundModule: React.FC<SinkingFundModuleProps> = ({
 
   const activeFunds = state.sinkingFunds?.filter(f => f.status === 'active' && (f.fundType || 'investment') === filterFundType) || [];
 
+  const currentKey = `${initYear}-${String(initMonth).padStart(2, '0')}`;
+  let match = projection.monthlyRows.find(r => r.period.key === currentKey);
+  if (!match && projection.monthlyRows.length > 0) {
+      match = projection.monthlyRows[projection.monthlyRows.length - 1];
+  }
+  const currentRow = match;
+  
+  const getSourceLabelWithBalance = (sourceId: string) => {
+      let balance = 0;
+      let prefix = '';
+      if (sourceId === 'unallocated' || sourceId === 'investment') {
+         balance = currentRow ? currentRow.portfolio.idleCashflow : 0;
+         if (filterFundType === 'investment') {
+            prefix = 'Chưa có kế hoạch (Dòng tiền nhàn rỗi)';
+         } else {
+            prefix = 'Dòng tiền Nhàn rỗi (Chưa phân bổ)';
+         }
+      } else if (sourceId === 'saving') {
+         balance = currentRow ? currentRow.savingBalance : 0;
+         prefix = 'Số dư Quỹ Tiết Kiệm & Nợ';
+      } else if (sourceId === 'debt_reserve') {
+         balance = (currentRow ? currentRow.debtReserveBalance : 0) + (currentRow ? (currentRow as any)._activeSinkingFundsDebtReserve || 0 : 0);
+         prefix = 'Quỹ Chuẩn bị Trả nợ';
+      }
+      return `${prefix} (Còn: ${formatTableMoneyVNDMillion(balance)})`;
+  };
+
   // Helper to find latest state of a fund from projection
   const getFundBalance = (fundId: string) => {
     const currentKey = `${initYear}-${String(initMonth).padStart(2, '0')}`;
-    let match = projection.monthlyRows.find(r => r.period.key === currentKey);
-    if (!match && projection.monthlyRows.length > 0) {
-       match = projection.monthlyRows[projection.monthlyRows.length - 1];
-    }
-    
     const fund = activeFunds.find(f => f.id === fundId);
     if (!fund) return { balance: 0, progress: 0 };
     
@@ -207,7 +229,7 @@ export const SinkingFundModule: React.FC<SinkingFundModuleProps> = ({
                 onChange={e => { setForm({...form, sourceOfFund: e.target.value as any}); }}
               >
                 {activeSources.map(sourceId => (
-                  <option key={sourceId} value={sourceId}>{FUNDING_SOURCES[sourceId]?.label}</option>
+                  <option key={sourceId} value={sourceId}>{getSourceLabelWithBalance(sourceId)}</option>
                 ))}
               </select>
             </div>

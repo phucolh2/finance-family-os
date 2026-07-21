@@ -119,6 +119,40 @@ export const SavingsDepositModule: React.FC<SavingsDepositModuleProps> = ({
   }
   const isSavingsOverLimit = savingsForm.principal > availableSavingsPoolBalance;
 
+  const getPoolLabelWithBalance = (poolId: string) => {
+    let balance = 0;
+    let prefix = '';
+    
+    if (savingsTargetMonthRow) {
+      if (poolId === 'saving') {
+        balance = savingsTargetMonthRow.savingBalance;
+        prefix = 'Số dư Quỹ Tiết Kiệm & Nợ';
+      } else {
+        const port = savingsTargetMonthRow.portfolio;
+        const invested = state.assets.reduce((sum, asset) => sum + port.assets[asset.type].endingBalance, 0);
+        const planned = state.assets.reduce((sum, asset) => sum + (port.assets[asset.type].earmarkedEndingBalance || 0), 0);
+        const idle = Math.max(0, port.totalEndingBalance - invested - planned);
+        
+        if (poolId === 'idle') {
+          balance = idle;
+          if (filterPools.includes('planned')) {
+             prefix = 'Chưa có kế hoạch (Dòng tiền nhàn rỗi)';
+          } else {
+             prefix = 'Dòng tiền Nhàn rỗi (Chưa phân bổ)';
+          }
+        } else if (poolId === 'planned') {
+          balance = planned;
+          prefix = 'Quỹ tích lũy mục tiêu (Chờ phân bổ)';
+        }
+      }
+    } else {
+      balance = safeNumber(state.profile.startingCapital, 100);
+      prefix = poolId === 'saving' ? 'Số dư Quỹ Tiết Kiệm & Nợ' : poolId === 'idle' ? 'Dòng tiền Nhàn rỗi' : 'Quỹ tích lũy mục tiêu';
+    }
+    
+    return `${prefix} (Còn: ${formatTableMoneyVNDMillion(balance)})`;
+  };
+
   let displayDeposits = state.savingsDeposits || [];
   displayDeposits = displayDeposits.filter(d => filterPools.includes(d.pool as any));
 
@@ -217,9 +251,9 @@ export const SavingsDepositModule: React.FC<SavingsDepositModuleProps> = ({
                 value={savingsForm.pool}
                 onChange={(e) => { setSavingsForm({ ...savingsForm, pool: e.target.value as 'idle' | 'planned' | 'saving' }); }}
               >
-                {filterPools.includes('idle') && <option value="idle">Ngân sách Đầu tư (Chưa có kế hoạch)</option>}
-                {filterPools.includes('planned') && <option value="planned">Quỹ tích lũy mục tiêu (Chờ phân bổ)</option>}
-                {filterPools.includes('saving') && <option value="saving">Số dư Quỹ Tiết Kiệm & Nợ</option>}
+                {filterPools.includes('idle') && <option value="idle">{getPoolLabelWithBalance('idle')}</option>}
+                {filterPools.includes('planned') && <option value="planned">{getPoolLabelWithBalance('planned')}</option>}
+                {filterPools.includes('saving') && <option value="saving">{getPoolLabelWithBalance('saving')}</option>}
               </select>
             </div>
           </div>
