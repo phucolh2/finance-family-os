@@ -298,6 +298,99 @@ const AssumptionsSettings: React.FC = () => {
   );
 };
 
+const AssetAllocationSettings: React.FC = () => {
+  const { state, updateAssets } = useAppContext();
+  const [localAssets, setLocalAssets] = useState(state.assets);
+  const [isEditing, setIsEditing] = useState(false);
+
+  const totalAllocation = localAssets.reduce((sum, a) => sum + (a.targetAllocationPercent || 0), 0);
+  const isValid = Math.abs(totalAllocation - 100) < 0.01;
+
+  const handleSave = () => {
+    if (!isValid) {
+      alert('Tổng tỷ trọng mục tiêu phải đúng bằng 100%');
+      return;
+    }
+    updateAssets(localAssets);
+    setIsEditing(false);
+  };
+
+  const handleCancel = () => {
+    setLocalAssets(state.assets);
+    setIsEditing(false);
+  };
+
+  return (
+    <Card className="lg:col-span-3">
+      <CardHeader>
+        <CardTitle>Cấu hình Tỷ trọng Mục tiêu (Asset Allocation Target)</CardTitle>
+        <CardDescription>
+          Thiết lập cấu trúc danh mục đầu tư kỳ vọng (%). Biểu đồ Radar trên màn hình Danh mục Đầu tư sẽ lấy số liệu này làm tham chiếu.
+        </CardDescription>
+      </CardHeader>
+      <CardContent className="space-y-4">
+        <table className="w-full text-left text-sm border-collapse">
+          <thead>
+            <tr className="border-b border-family-accent/10 text-family-textMuted text-xs uppercase">
+              <th className="py-2 font-semibold">Lớp tài sản</th>
+              <th className="py-2 font-semibold">Ghi chú</th>
+              <th className="py-2 font-semibold text-right">Tỷ trọng (%)</th>
+            </tr>
+          </thead>
+          <tbody>
+            {localAssets.map((asset, idx) => (
+              <tr key={asset.id} className="border-b border-family-accent/5 hover:bg-family-bgDark/10">
+                <td className="py-3 font-medium text-family-text">{asset.name}</td>
+                <td className="py-3 text-xs text-family-textMuted max-w-xs">{asset.notes}</td>
+                <td className="py-3 text-right">
+                  {isEditing ? (
+                    <input
+                      type="number"
+                      min={0}
+                      max={100}
+                      value={asset.targetAllocationPercent}
+                      onChange={e => {
+                        const newAssets = [...localAssets];
+                        newAssets[idx] = { ...newAssets[idx], targetAllocationPercent: Number(e.target.value) };
+                        setLocalAssets(newAssets);
+                      }}
+                      className="w-20 text-right bg-family-bg border border-family-accent/30 rounded px-2 py-1 text-sm outline-none font-bold text-sky-700"
+                    />
+                  ) : (
+                    <span className="font-bold text-sky-700">{asset.targetAllocationPercent}%</span>
+                  )}
+                </td>
+              </tr>
+            ))}
+          </tbody>
+          <tfoot>
+            <tr>
+              <td colSpan={2} className="py-3 font-bold text-right text-family-textMuted">Tổng cộng:</td>
+              <td className={`py-3 font-bold text-right ${isValid ? 'text-green-600' : 'text-red-600'}`}>
+                {totalAllocation}%
+              </td>
+            </tr>
+          </tfoot>
+        </table>
+
+        <div className="flex justify-end gap-2 pt-2">
+          {isEditing ? (
+            <>
+              <Button variant="outline" onClick={handleCancel}>Hủy</Button>
+              <Button onClick={handleSave} disabled={!isValid}>Lưu cấu hình</Button>
+            </>
+          ) : (
+            <Button onClick={() => setIsEditing(true)}>Chỉnh sửa tỷ trọng</Button>
+          )}
+        </div>
+        {!isValid && isEditing && (
+          <p className="text-xs text-red-500 text-right">Tổng tỷ trọng hiện tại là {totalAllocation}%. Vui lòng điều chỉnh để tổng bằng đúng 100%.</p>
+        )}
+      </CardContent>
+    </Card>
+  );
+};
+
 export const Settings: React.FC = () => {
   const { state, lastSaved, schemaVersion, importState, resetToDefault, updateAssumptions } = useAppContext();
 
@@ -404,6 +497,7 @@ export const Settings: React.FC = () => {
       {errorMsg && <WarningBox type="danger" message={errorMsg} />}
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        <AssetAllocationSettings />
         <IncomeCategoriesSettings />
         <AssumptionsSettings />
         {/* Local storage controls */}
