@@ -135,11 +135,7 @@ export const SavingsDepositModule: React.FC<SavingsDepositModuleProps> = ({
         
         if (poolId === 'idle') {
           balance = idle;
-          if (filterPools.includes('planned')) {
-             prefix = 'Chưa có kế hoạch (Dòng tiền nhàn rỗi)';
-          } else {
-             prefix = 'Dòng tiền Nhàn rỗi (Chưa phân bổ)';
-          }
+          prefix = 'Ngân sách Đầu tư (Chưa có kế hoạch)';
         } else if (poolId === 'planned') {
           balance = planned;
           prefix = 'Quỹ tích lũy mục tiêu (Chờ phân bổ)';
