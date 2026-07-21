@@ -47,6 +47,10 @@ export const TransferForm: React.FC<TransferFormProps> = ({ onSuccess, onCancel 
   const savingBalance = currentRow?.savingBalance || 0;
   const debtReserveBalance = (currentRow?.debtReserveBalance || 0) + (currentRow?._activeSinkingFundsDebtReserve || 0);
 
+  const totalLifeEventsMoney = state.lifeEvents?.reduce((sum, e) => sum + Math.max(0, e.amount), 0) || 0;
+  const hasActiveInvestments = (state.investmentDeals?.filter(d => d.status === 'active').length ?? 0) > 0 || 
+                               (state.sinkingFunds?.filter(f => f.status === 'active').length ?? 0) > 0;
+
   const [srcType, srcId] = sourceValue.split(':');
   const [destType, destId] = destinationValue.split(':');
 
@@ -133,12 +137,14 @@ export const TransferForm: React.FC<TransferFormProps> = ({ onSuccess, onCancel 
                       </optgroup>
                       
                       <optgroup label="Màn hình: Sự kiện cuộc đời">
+                        <option value="pool:life_events" disabled>Tổng tiền chờ phân bổ: {formatMoneyVNDMillion(totalLifeEventsMoney)} Tr</option>
                         {state.lifeEvents?.filter(e => e.amount > 0).map(e => (
                           <option key={e.id} value={`life_event:${e.id}`}>Tiền dôi dư: {e.name} (+{e.amount} Tr)</option>
                         ))}
                       </optgroup>
 
                       <optgroup label="Màn hình: Danh mục đầu tư">
+                        {!hasActiveInvestments && <option disabled>(Không có Thương vụ / Quỹ nào đang hoạt động)</option>}
                         {state.investmentDeals?.filter(d => d.status === 'active').map(d => (
                           <option key={d.id} value={`investment:${d.id}`}>Rút vốn Thương vụ: {d.name} ({d.capital} Tr)</option>
                         ))}
@@ -177,6 +183,7 @@ export const TransferForm: React.FC<TransferFormProps> = ({ onSuccess, onCancel 
                       </optgroup>
                       
                       <optgroup label="Màn hình: Danh mục đầu tư">
+                        {!hasActiveInvestments && <option disabled>(Không có Thương vụ / Quỹ nào để nhận vốn)</option>}
                         {state.investmentDeals?.filter(d => d.status === 'active').map(d => (
                           <option key={d.id} value={`investment:${d.id}`}>Bơm vốn Thương vụ: {d.name}</option>
                         ))}
