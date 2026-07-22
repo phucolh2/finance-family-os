@@ -70,6 +70,7 @@ export function runProjection(input: ProjectionEngineInput): ProjectionOutput {
   let totalInvestable = initialCapital;
   let currentSavingBalance = 0; // Cumulative Saving balance
   let currentDebtReserveBalance = 0; // Cumulative Debt Reserve balance
+  let currentLiquidityBalance = 0; // Cumulative Operational Free Cashflow
   let cumulativeContribution = 0;
   let cumulativePnl = 0;
 
@@ -564,9 +565,13 @@ export function runProjection(input: ProjectionEngineInput): ProjectionOutput {
 
     const investmentPnl = genericPnl + totalDealPnlThisMonth;
     const previousTotalInvestable = totalInvestable;
-    // For unallocated matured funds, they flow into totalInvestable
+    
+    // Unspent budget and recurring cash flow impacts flow into Liquidity (Operational Cash)
     const operationalCashflow = cashflowRes.netCashflowMonthly - cashflowRes.oneTimeEventImpact;
-    totalInvestable += monthlyContribution + operationalCashflow + investmentPnl + activeSavingsMaturedThisMonth_unallocated + sinkingFundMaturedThisMonth_unallocated;
+    currentLiquidityBalance += operationalCashflow;
+
+    // For unallocated matured funds, they flow into totalInvestable
+    totalInvestable += monthlyContribution + investmentPnl + activeSavingsMaturedThisMonth_unallocated + sinkingFundMaturedThisMonth_unallocated;
 
     // Derived actual monthly rate based on custom profit
     const _actualInvestmentRateMonthly = previousTotalInvestable > 0 ? investmentPnl / previousTotalInvestable : 0;
@@ -693,7 +698,7 @@ export function runProjection(input: ProjectionEngineInput): ProjectionOutput {
     };
 
     // Calculate Net Worth
-    const nominalNetWorth = portfolioOutput.totalEndingBalance + currentSavingBalance + activeSinkingFundsBalance_saving;
+    const nominalNetWorth = portfolioOutput.totalEndingBalance + currentSavingBalance + activeSinkingFundsBalance_saving + currentLiquidityBalance;
 
     // Calculate Real Value Today
     const inflationRate = safeNumber(assumptions.generalInflationRateAnnual, 0);
@@ -730,13 +735,13 @@ export function runProjection(input: ProjectionEngineInput): ProjectionOutput {
       investmentMonthly: cashflowRes.investmentMonthly,
       savingMonthly: cashflowRes.savingMonthly,
       debtReserveMonthly: cashflowRes.debtReserveMonthly,
-      liquidityMonthly: 0,
+      liquidityMonthly: operationalCashflow,
       healthMonthly: 0,
       childCostMonthly: childCostRes.totalMonthly,
       lifeEventImpactMonthly: cashflowRes.lifeEventImpactMonthly + cashflowRes.oneTimeEventImpact,
       debtPaymentMonthly: activeDebtPaymentMonthly,
       netCashflowMonthly: cashflowRes.netCashflowMonthly,
-      liquidityBalance: 0,
+      liquidityBalance: currentLiquidityBalance,
       healthBalance: 0,
       savingBalance: currentSavingBalance,
       debtReserveBalance: currentDebtReserveBalance,
