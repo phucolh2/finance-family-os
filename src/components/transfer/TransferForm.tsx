@@ -16,8 +16,7 @@ interface TransferFormProps {
 
 export const TransferForm: React.FC<TransferFormProps> = ({ onSuccess, onCancel }) => {
   const { state, addFundTransfer, selectedPeriodKey } = useAppContext();
-  
-  const [sourceValue, setSourceValue] = useState<string>('cashflow:');
+  const [sourceValue, setSourceValue] = useState<string>('cashflow:investable');
   const [destinationValue, setDestinationValue] = useState<string>('savings:new');
   
   const [amount, setAmount] = useState<string>('');
@@ -44,9 +43,11 @@ export const TransferForm: React.FC<TransferFormProps> = ({ onSuccess, onCancel 
   const currentKey = `${currentYear}-${String(currentMonth).padStart(2, '0')}`;
   const currentRow = projection.monthlyRows.find(r => r.period.key === currentKey);
   let idleCashflow = 0;
+  let liquidityBalance = 0;
   if (currentRow) {
     const port = currentRow.portfolio;
     idleCashflow = port.unallocatedEndingBalance || 0;
+    liquidityBalance = currentRow.liquidityBalance || 0;
   }
   
   const savingBalance = currentRow?.savingBalance || 0;
@@ -138,7 +139,8 @@ export const TransferForm: React.FC<TransferFormProps> = ({ onSuccess, onCancel 
                       className="w-full bg-family-bg border border-family-accent/20 rounded p-2 text-sm text-family-text focus:outline-none focus:border-blue-500"
                     >
                       <optgroup label="💵 Dòng tiền">
-                        <option value="cashflow:">Dòng tiền Nhàn rỗi ({formatMoneyVNDMillion(idleCashflow)} có sẵn)</option>
+                        <option value="cashflow:investable">Quỹ Đầu tư Nhàn rỗi ({formatMoneyVNDMillion(idleCashflow)})</option>
+                        <option value="cashflow:liquidity">Quỹ Thanh khoản Sinh hoạt ({formatMoneyVNDMillion(liquidityBalance)})</option>
                       </optgroup>
                       
                       <optgroup label="🎯 Sự kiện cuộc đời">
@@ -186,7 +188,8 @@ export const TransferForm: React.FC<TransferFormProps> = ({ onSuccess, onCancel 
                       className="w-full bg-family-bg border border-family-accent/20 rounded p-2 text-sm text-family-text focus:outline-none focus:border-blue-500"
                     >
                       <optgroup label="💵 Dòng tiền">
-                        <option value="cashflow:">Dòng tiền Nhàn rỗi (Bổ sung vào)</option>
+                        <option value="cashflow:investable">Quỹ Đầu tư Nhàn rỗi (Bổ sung vào)</option>
+                        <option value="cashflow:liquidity">Quỹ Thanh khoản Sinh hoạt (Bổ sung vào)</option>
                       </optgroup>
 
                       <optgroup label="🎯 Sự kiện cuộc đời">

@@ -215,21 +215,26 @@ export function runProjection(input: ProjectionEngineInput): ProjectionOutput {
     // Process Fund Transfers for abstract buckets and edge cases
     const transfersThisMonth = fundTransfers.filter(t => t.month === period.month && t.year === period.year);
     transfersThisMonth.forEach(t => {
-       // If money was transferred FROM an abstract pool, we must reduce the pool's calculated balance
+       // --- 1. SOURCE DEDUCTIONS ---
        if (t.sourceType === 'pool' && t.sourceId === 'saving') {
           currentSavingBalance -= t.amount;
-          if (t.destinationType === 'cashflow') {
-             totalInvestable += t.amount;
-          }
        } else if (t.sourceType === 'pool' && t.sourceId === 'debt_reserve') {
           currentDebtReserveBalance -= t.amount;
-          if (t.destinationType === 'cashflow') {
+       } else if (t.sourceType === 'cashflow' && t.sourceId === 'liquidity') {
+          currentLiquidityBalance -= t.amount;
+       } else if (t.sourceType === 'cashflow' && (!t.sourceId || t.sourceId === 'investable')) {
+          totalInvestable -= t.amount;
+       }
+
+       // --- 2. DESTINATION ADDITIONS ---
+       if (t.destinationType === 'cashflow') {
+          if (t.destinationId === 'liquidity') {
+             currentLiquidityBalance += t.amount;
+          } else {
              totalInvestable += t.amount;
           }
-       } 
-       // If money was transferred FROM a Life Event TO Cashflow, 
-       // since the Life Event amount is shrunk in AppState, totalInvestable drops. We must add it back.
-       else if (t.sourceType === 'life_event' && t.destinationType === 'cashflow') {
+       } else if (t.destinationType === 'investment' || t.destinationType === 'sinking_fund') {
+          // Any money that lands in an investment deal/fund must be part of the totalInvestable universe.
           totalInvestable += t.amount;
        }
     });
