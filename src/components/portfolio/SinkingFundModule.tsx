@@ -64,6 +64,7 @@ export const SinkingFundModule: React.FC<SinkingFundModuleProps> = ({
 
   const [showAddForm, setShowAddForm] = useState(false);
   const [editingFundId, setEditingFundId] = useState<string | null>(null);
+  const [expandedFundId, setExpandedFundId] = useState<string | null>(null);
   
   React.useEffect(() => {
     setShowAddForm(false);
@@ -137,7 +138,7 @@ export const SinkingFundModule: React.FC<SinkingFundModuleProps> = ({
     }
     
     const fund = activeFunds.find(f => f.id === fundId);
-    if (!fund) return { balance: 0, progress: 0 };
+    if (!fund) return { balance: 0, progress: 0, buckets: [] };
     
     let buckets: { principal: number; termStart: number }[] = [];
     const term = fund.termMonths || 1;
@@ -460,6 +461,39 @@ export const SinkingFundModule: React.FC<SinkingFundModuleProps> = ({
                       {formatTableMoneyVNDMillion(fund.initialDeposit)} / +{formatTableMoneyVNDMillion(fund.monthlyContribution)}
                     </p>
                   </div>
+                </div>
+
+                <div className="flex flex-col gap-2 mt-3 pt-3 border-t border-family-accent/10">
+                   <button 
+                     onClick={() => setExpandedFundId(expandedFundId === fund.id ? null : fund.id)}
+                     className="text-[11px] text-family-accent hover:text-family-accent/80 font-semibold flex items-center gap-1 w-fit"
+                   >
+                     {expandedFundId === fund.id ? 'Thu gọn chi tiết' : 'Chi tiết dòng tiền (Cashflow)'}
+                   </button>
+                   
+                   {expandedFundId === fund.id && (
+                     <div className="bg-white/60 p-3 rounded-lg border border-family-accent/10 text-xs space-y-2 mt-1">
+                        <div className="flex justify-between border-b border-gray-100 pb-1">
+                           <span className="text-family-textMuted">Tổng vốn đã nộp:</span>
+                           <span className="font-semibold">{formatTableMoneyVNDMillion(getFundBalance(fund.id).buckets.reduce((sum, b) => sum + b.principal, 0))} Tr</span>
+                        </div>
+                        <div className="flex justify-between border-b border-gray-100 pb-1">
+                           <span className="text-family-textMuted">Lãi cộng dồn:</span>
+                           <span className="font-semibold text-emerald-600">+{formatTableMoneyVNDMillion(balance - getFundBalance(fund.id).buckets.reduce((sum, b) => sum + b.principal, 0))} Tr</span>
+                        </div>
+                        <div className="pt-1">
+                           <span className="text-family-textMuted text-[10px] uppercase mb-1 block">Các khoản đang gửi tích lũy:</span>
+                           <div className="space-y-1 max-h-32 overflow-y-auto pr-1">
+                              {getFundBalance(fund.id).buckets.map((b, i) => (
+                                 <div key={i} className="flex justify-between text-[11px] bg-white p-1.5 rounded shadow-sm border border-gray-50">
+                                    <span>Kỳ T{((b.termStart - 1) % 12) + 1}/{Math.floor((b.termStart - 1) / 12)}</span>
+                                    <span className="font-medium text-family-text">{formatTableMoneyVNDMillion(b.principal)} Tr</span>
+                                 </div>
+                              ))}
+                           </div>
+                        </div>
+                     </div>
+                   )}
                 </div>
 
                 {isDisbursing ? (

@@ -472,7 +472,7 @@ export function runProjection(input: ProjectionEngineInput): ProjectionOutput {
            }
         }
         
-        if (source === 'unallocated') {
+        if (source === 'unallocated' || source === 'investment') {
           activeSinkingFundsBalance_unallocated += state.balance;
         } else if (source === 'saving') {
           activeSinkingFundsBalance_saving += state.balance;
@@ -648,7 +648,7 @@ export function runProjection(input: ProjectionEngineInput): ProjectionOutput {
 
     sinkingFunds.forEach(sf => {
        const source = sf.sourceOfFund || (sf.fundType === 'debt_prep' ? 'debt_reserve' : 'unallocated');
-       if (source !== 'unallocated') return;
+       if (source !== 'unallocated' && source !== 'investment') return;
 
        const start = sf.startYear * 12 + sf.startMonth;
        const end = sf.status === 'disbursed' && sf.disbursedYear && sf.disbursedMonth
