@@ -104,6 +104,22 @@ export function analyzeExpense(
       });
     }
 
+    // Add Life Events spending that hit these expense groups
+    const currentMonthEvents = lifeEvents.filter(e => safeNumber(e.month) === dbItem.month && safeNumber(e.year) === dbItem.year);
+    currentMonthEvents.forEach(e => {
+       const amt = safeNumber(e.amount);
+       if (amt < 0) { // Only count expenses (negative amount)
+          const groupId = e.spendingCategory ? e.spendingCategory.split('/')[0] : e.source;
+          if (expenseGroupsSet.has(groupId)) {
+             const absAmt = Math.abs(amt);
+             if (groupId in monthlyActuals) {
+                monthlyActuals[groupId] += absAmt;
+             }
+             monthlyActuals.all += absAmt;
+          }
+       }
+    });
+
     // Accumulate and push to series
     groups.forEach(g => {
       summaryByGroup[g].totalBudget += monthlyBudgets[g] || 0;

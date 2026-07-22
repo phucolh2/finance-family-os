@@ -197,18 +197,39 @@ export function runProjection(input: ProjectionEngineInput): ProjectionOutput {
 
     activePeriodEvents.forEach((event) => {
       const amt = event.amount; // âm là chi tiền, dương là nhận tiền
-      if (event.source === 'investment' || event.source === 'future_investing') {
+      
+      // 1. External sources do not affect family internal pools
+      if (event.source === 'external') {
+         return; 
+      }
+
+      // 2. Determine classification dynamically based on budget definition
+      let classification = 'expense'; // default fallback
+      if (event.source === 'future_investing' || event.source === 'investment') classification = 'investment';
+      else if (event.source === 'safety_reserve') classification = 'savings';
+      else if (event.source === 'debt') classification = 'debt_reserve';
+      
+      const matchedCategory = budgetRes.categories.find(c => c.group === event.source);
+      if (matchedCategory && matchedCategory.classification) {
+          classification = matchedCategory.classification;
+      }
+
+      // 3. Deduct/Add to the correct bucket
+      if (classification === 'investment') {
         if (event.type === 'buy_property') {
-          // Chỉ chuyển đổi tài sản từ stocks sang real_estate (amount là số âm khi mua)
-          assetAdjustments.stocks += amt; // amt âm -> trừ stocks
-          assetAdjustments.real_estate -= amt; // trừ trừ thành cộng
+          assetAdjustments.stocks += amt; 
+          assetAdjustments.real_estate -= amt; 
         } else {
           assetAdjustments.stocks += amt;
           totalInvestable = Math.max(0, totalInvestable + amt);
         }
-      } else {
-        // safety_reserve, family_experience, housing_basic, health_growth, saving, v.v...
+      } else if (classification === 'savings') {
         currentSavingBalance = Math.max(0, currentSavingBalance + amt);
+      } else if (classification === 'expense') {
+        // Expense unspent budget piles up in Liquidity, so events draw from Liquidity
+        currentLiquidityBalance += amt; 
+      } else if (classification === 'debt_reserve') {
+        currentDebtReserveBalance += amt;
       }
     });
 
