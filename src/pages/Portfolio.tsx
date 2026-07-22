@@ -512,17 +512,6 @@ export const Portfolio: React.FC = () => {
                     <td className="p-3 text-slate-400 font-medium">---</td>
                   </tr>
                 )}
-                {genericUnallocatedPercent > 0.01 && (
-                  <tr className="border-b border-family-accent/5 bg-slate-500/5 hover:bg-slate-500/10">
-                    <td className="p-3 font-semibold text-slate-500">Tiền mặt nhàn rỗi (Chung)</td>
-                    <td className="p-3 font-medium text-slate-500">
-                      {formatTableMoneyVNDMillion(genericUnallocatedBalance)}
-                    </td>
-                    <td className="p-3 font-bold text-slate-500">{genericUnallocatedPercent.toFixed(1)}%</td>
-                    <td className="p-3 text-slate-400 font-bold">---</td>
-                    <td className="p-3 text-slate-400 font-medium">---</td>
-                  </tr>
-                )}
               </tbody>
             </table>
           </CardContent>
