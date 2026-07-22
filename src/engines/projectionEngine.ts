@@ -361,6 +361,9 @@ export function runProjection(input: ProjectionEngineInput): ProjectionOutput {
            state.contribution += newContrib;
            if (newContrib > 0) {
               state.buckets.push({ principal: newContrib, termStart: current });
+              if (dep.pool === 'liquidity') {
+                  currentLiquidityBalance -= newContrib;
+              }
            }
            state.balance = state.buckets.reduce((sum, b) => sum + b.principal, 0);
         }
@@ -368,6 +371,8 @@ export function runProjection(input: ProjectionEngineInput): ProjectionOutput {
         if (maturingAmount > 0) {
            if (dep.pool === 'saving') {
                activeSavingsMaturedThisMonth_saving += maturingAmount;
+           } else if (dep.pool === 'liquidity') {
+               currentLiquidityBalance += maturingAmount;
            } else {
                activeSavingsMaturedThisMonth_unallocated += maturingAmount;
            }

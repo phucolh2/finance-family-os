@@ -15,6 +15,7 @@ import {
 } from 'lucide-react';
 import { ExpenseDashboard } from '../components/expense/ExpenseDashboard';
 import { ExpenseScheduleView } from '../components/expense/ExpenseScheduleView';
+import { SavingsAndLiquidityView } from '../components/expense/SavingsAndLiquidityView';
 import { ObservationControls } from '../components/ui/ObservationControls';
 
 import type { BudgetGroup } from '../types/budget';
@@ -25,7 +26,7 @@ export const LifeStages: React.FC = () => {
   
   // Dashboard filter state
   const [dashboardFilter, setDashboardFilter] = useState<BudgetGroup | 'all'>('all');
-  const [activeTab, setActiveTab] = useState<'timeline' | 'monthly_reconciliation'>('monthly_reconciliation');
+  const [activeTab, setActiveTab] = useState<'timeline' | 'monthly_reconciliation' | 'savings_liquidity'>('monthly_reconciliation');
 
   // Generate spending category options from the latest budget schedule
   const activeBudget = state.budgetSchedule.length > 0 ? state.budgetSchedule[state.budgetSchedule.length - 1] : null;
@@ -100,6 +101,7 @@ export const LifeStages: React.FC = () => {
     if (!formData.name.trim()) {
       setFormError('Vui lòng điền tên sự kiện.');
       return;
+    }
     const formattedData = {
       ...formData,
       amount: -Math.abs(safeNumber(formData.amount)),
@@ -217,16 +219,6 @@ export const LifeStages: React.FC = () => {
       {/* Tabs */}
       <div className="flex space-x-2 border-b border-gray-200">
         <button
-          onClick={() => { setActiveTab('timeline'); }}
-          className={`py-2 px-4 text-sm font-semibold transition-colors border-b-2 ${
-            activeTab === 'timeline' 
-              ? 'border-family-accent text-family-accent' 
-              : 'border-transparent text-gray-500 hover:text-gray-700'
-          }`}
-        >
-          Dòng thời gian Sự kiện
-        </button>
-        <button
           onClick={() => { setActiveTab('monthly_reconciliation'); }}
           className={`py-2 px-4 text-sm font-semibold transition-colors border-b-2 ${
             activeTab === 'monthly_reconciliation' 
@@ -235,6 +227,26 @@ export const LifeStages: React.FC = () => {
           }`}
         >
           Thực tế chi tiêu
+        </button>
+        <button
+          onClick={() => { setActiveTab('savings_liquidity'); }}
+          className={`py-2 px-4 text-sm font-semibold transition-colors border-b-2 ${
+            activeTab === 'savings_liquidity' 
+              ? 'border-family-accent text-family-accent' 
+              : 'border-transparent text-gray-500 hover:text-gray-700'
+          }`}
+        >
+          Tiết kiệm & Thanh khoản
+        </button>
+        <button
+          onClick={() => { setActiveTab('timeline'); }}
+          className={`py-2 px-4 text-sm font-semibold transition-colors border-b-2 ${
+            activeTab === 'timeline' 
+              ? 'border-family-accent text-family-accent' 
+              : 'border-transparent text-gray-500 hover:text-gray-700'
+          }`}
+        >
+          Dòng thời gian Sự kiện
         </button>
       </div>
 
@@ -458,6 +470,8 @@ export const LifeStages: React.FC = () => {
 
 
       {activeTab === 'monthly_reconciliation' && <ExpenseScheduleView />}
+      
+      {activeTab === 'savings_liquidity' && <SavingsAndLiquidityView />}
 
       {/* Timeline View */}
       {activeTab === 'timeline' && (
@@ -582,3 +596,4 @@ export const LifeStages: React.FC = () => {
     </div>
   );
 };
+

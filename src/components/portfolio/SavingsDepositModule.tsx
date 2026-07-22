@@ -14,7 +14,7 @@ interface SavingsDepositModuleProps {
   defaultStartMonth?: number;
   defaultStartYear?: number;
   filterCurrentMonthOnly?: boolean;
-  filterPools?: ('idle' | 'planned' | 'saving')[];
+  filterPools?: ('idle' | 'planned' | 'saving' | 'liquidity')[];
   title?: string;
   description?: React.ReactNode;
   emptyStateTitle?: string;
@@ -107,6 +107,8 @@ export const SavingsDepositModule: React.FC<SavingsDepositModuleProps> = ({
   if (savingsTargetMonthRow) {
     if (savingsForm.pool === 'saving') {
       availableSavingsPoolBalance = savingsTargetMonthRow.savingBalance;
+    } else if (savingsForm.pool === 'liquidity') {
+      availableSavingsPoolBalance = savingsTargetMonthRow.liquidityBalance || 0;
     } else {
       const port = savingsTargetMonthRow.portfolio;
       const planned = state.assets.reduce((sum, asset) => sum + (port.assets[asset.type].earmarkedEndingBalance || 0), 0);
@@ -126,6 +128,9 @@ export const SavingsDepositModule: React.FC<SavingsDepositModuleProps> = ({
       if (poolId === 'saving') {
         balance = savingsTargetMonthRow.savingBalance;
         prefix = 'Số dư Quỹ Tiết Kiệm & Nợ';
+      } else if (poolId === 'liquidity') {
+        balance = savingsTargetMonthRow.liquidityBalance || 0;
+        prefix = 'Quỹ Thanh Khoản Sinh Hoạt (Tiền dư)';
       } else {
         const port = savingsTargetMonthRow.portfolio;
         const planned = state.assets.reduce((sum, asset) => sum + (port.assets[asset.type].earmarkedEndingBalance || 0), 0);
@@ -250,6 +255,7 @@ export const SavingsDepositModule: React.FC<SavingsDepositModuleProps> = ({
                 {filterPools.includes('idle') && <option value="idle">{getPoolLabelWithBalance('idle')}</option>}
                 {filterPools.includes('planned') && <option value="planned">{getPoolLabelWithBalance('planned')}</option>}
                 {filterPools.includes('saving') && <option value="saving">{getPoolLabelWithBalance('saving')}</option>}
+                {filterPools.includes('liquidity') && <option value="liquidity">{getPoolLabelWithBalance('liquidity')}</option>}
               </select>
             </div>
           </div>

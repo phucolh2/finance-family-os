@@ -479,55 +479,6 @@ export const ExpenseScheduleView: React.FC = () => {
                 })}
               </div>
               
-              {/* Unspent Dashboard */}
-              {totalRemaining > 0 && activeVersion && (
-                <div className="pt-6 border-t border-family-accent/10 mt-8">
-                  <h3 className="text-lg font-bold text-family-text mb-4 flex items-center gap-2">
-                    <Wallet className="w-5 h-5 text-family-accent" /> Phân bổ Tiền dư trong tháng
-                  </h3>
-                  
-                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
-                    <div className="bg-white p-4 rounded-xl shadow-sm border border-slate-100 flex items-center justify-between">
-                      <div>
-                        <p className="text-sm font-semibold text-family-textMuted uppercase">Tổng tiền dư</p>
-                        <p className="text-2xl font-bold text-emerald-600">{formatTableMoneyVNDMillion(totalRemaining)} Tr</p>
-                      </div>
-                      <div className="w-10 h-10 rounded-full bg-emerald-100 flex items-center justify-center text-emerald-600">
-                        <Wallet className="w-5 h-5" />
-                      </div>
-                    </div>
-                    
-                    <div className="bg-white p-4 rounded-xl shadow-sm border border-slate-100 flex items-center justify-between">
-                      <div>
-                        <p className="text-sm font-semibold text-family-textMuted uppercase">Đã gửi tiết kiệm</p>
-                        <p className="text-2xl font-bold text-sky-600">{formatTableMoneyVNDMillion(savingsThisMonth)} Tr</p>
-                      </div>
-                      <div className="w-10 h-10 rounded-full bg-sky-100 flex items-center justify-center text-sky-600">
-                        <PiggyBank className="w-5 h-5" />
-                      </div>
-                    </div>
-                    
-                    <div className={`bg-white p-4 rounded-xl shadow-sm border border-slate-100 flex items-center justify-between ${idleMoney > 0 ? 'ring-1 ring-orange-200' : ''}`}>
-                      <div>
-                        <p className="text-sm font-semibold text-family-textMuted uppercase">Tiền nhàn rỗi (Chưa sinh lời)</p>
-                        <p className={`text-2xl font-bold ${idleMoney > 0 ? 'text-orange-600' : 'text-slate-400'}`}>{formatTableMoneyVNDMillion(idleMoney)} Tr</p>
-                      </div>
-                      <div className={`w-10 h-10 rounded-full flex items-center justify-center ${idleMoney > 0 ? 'bg-orange-100 text-orange-600' : 'bg-slate-100 text-slate-400'}`}>
-                        <CircleDollarSign className="w-5 h-5" />
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* Embed Savings Module directly for quick access */}
-                  <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-6">
-                    <SavingsDepositModule 
-                      defaultStartMonth={activeVersion.effectiveMonth} 
-                      defaultStartYear={activeVersion.effectiveYear} 
-                      filterCurrentMonthOnly={true} 
-                    />
-                  </div>
-                </div>
-              )}
             </CardContent>
           </Card>
         ) : (
