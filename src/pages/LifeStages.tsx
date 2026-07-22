@@ -102,12 +102,19 @@ export const LifeStages: React.FC = () => {
       return;
     }
 
+    const isIncomeEvent = ['sell_property', 'bonus', 'inheritance'].includes(formData.type);
+    const formattedData = {
+      ...formData,
+      amount: isIncomeEvent ? Math.abs(formData.amount) : -Math.abs(formData.amount),
+      recurringMonthlyImpact: isIncomeEvent ? Math.abs(formData.recurringMonthlyImpact) : -Math.abs(formData.recurringMonthlyImpact)
+    };
+
     if (isAdding) {
-      addLifeEvent(formData);
+      addLifeEvent(formattedData);
       setIsAdding(false);
     } else if (editingId) {
       updateLifeEvent({
-        ...formData,
+        ...formattedData,
         id: editingId,
       });
       setEditingId(null);
@@ -333,15 +340,13 @@ export const LifeStages: React.FC = () => {
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div className="relative">
                     <Input
-                      label="Số tiền tác động một lần (Tr VND)"
+                      label={`Số tiền tác động một lần (Tr VND) - ${['sell_property', 'bonus', 'inheritance'].includes(formData.type) ? 'THU NHẬP' : 'CHI PHÍ'}`}
                       type="number"
-                      placeholder="Ví dụ: -800 (nếu mua xe), hoặc 500 (nếu bán đất)"
-                      value={formData.amount}
-                      onChange={(e) => { setFormData({ ...formData, amount: safeNumber(Number(e.target.value)) }); }}
+                      placeholder="Ví dụ: 800 (Mua xe ô tô)"
+                      value={Math.abs(safeNumber(formData.amount)) || ''}
+                      onChange={(e) => { setFormData({ ...formData, amount: Number(e.target.value) }); }}
                       required
                     />
-                    {safeNumber(formData.amount) > 0 && <span className="absolute top-0 right-1 text-[10px] text-green-600 font-bold bg-green-100 px-2 py-0.5 rounded">Thu nhập +</span>}
-                    {safeNumber(formData.amount) < 0 && <span className="absolute top-0 right-1 text-[10px] text-red-600 font-bold bg-red-100 px-2 py-0.5 rounded">Chi phí -</span>}
                   </div>
                   <Select
                     label="Nguồn trừ/Cộng tài sản"
@@ -360,11 +365,11 @@ export const LifeStages: React.FC = () => {
                 </div>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <Input
-                    label="Tác động dòng tiền tháng (Tr/tháng)"
+                    label={`Tác động dòng tiền tháng (Tr/tháng) - ${['sell_property', 'bonus', 'inheritance'].includes(formData.type) ? 'TĂNG THU' : 'TĂNG CHI'}`}
                     type="number"
-                    placeholder="Ví dụ: -4 Tr/tháng vận hành nuôi xe"
-                    value={formData.recurringMonthlyImpact}
-                    onChange={(e) => { setFormData({ ...formData, recurringMonthlyImpact: safeNumber(Number(e.target.value)) }); }}
+                    placeholder="Ví dụ: 4 (Chi phí vận hành nuôi xe)"
+                    value={Math.abs(safeNumber(formData.recurringMonthlyImpact)) || ''}
+                    onChange={(e) => { setFormData({ ...formData, recurringMonthlyImpact: Number(e.target.value) }); }}
                   />
                   <div>
                     <Select
