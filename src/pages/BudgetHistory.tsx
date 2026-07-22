@@ -63,8 +63,10 @@ export const BudgetHistory: React.FC = () => {
   const [editBaseAmount, setEditBaseAmount] = useState<number | ''>('');
   
   // Find the real resolved income at the active milestone month using O(1) index map
-  const activePeriodKey = `${activeVersion.effectiveYear}-${String(activeVersion.effectiveMonth).padStart(2, '0')}`;
-  const activeDbItem = state.resolvedMonthlyDbMap?.[activePeriodKey];
+  const previewPeriodKey = workspaceTab === 'charts' && selectedPeriodKey 
+    ? selectedPeriodKey 
+    : `${activeVersion.effectiveYear}-${String(activeVersion.effectiveMonth).padStart(2, '0')}`;
+  const activeDbItem = state.resolvedMonthlyDbMap?.[previewPeriodKey];
   const actualIncome = activeDbItem ? activeDbItem.income : 80;
   const allocationBase = activeVersion?.allocationBaseAmount && activeVersion.allocationBaseAmount > 0 
     ? activeVersion.allocationBaseAmount 
@@ -547,9 +549,14 @@ export const BudgetHistory: React.FC = () => {
           <div className="space-y-6">
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-family-bgDark/35 p-4 rounded-2xl border border-family-accent/10 shadow-sm">
               <div>
-                <span className="text-xs text-family-textMuted uppercase font-bold tracking-wider">Phiên bản phân bổ đang chọn</span>
+                <div className="flex items-center gap-1">
+                  <span className="text-xs text-family-textMuted uppercase font-bold tracking-wider">KẾ HOẠCH PHÂN BỔ ÁP DỤNG</span>
+                  {workspaceTab === 'charts' && selectedPeriodKey && previewPeriodKey !== `${activeVersion?.effectiveYear}-${String(activeVersion?.effectiveMonth).padStart(2, '0')}` && (
+                    <HelpTooltip text={`Thiết lập phân bổ của Tháng ${activeVersion?.effectiveMonth}/${activeVersion?.effectiveYear} vẫn đang có hiệu lực và được tự động áp dụng để tính toán cho Tháng quan sát hiện tại (${selectedPeriodKey}).`} />
+                  )}
+                </div>
                 <h2 className="text-lg font-bold text-family-accent mt-0.5">
-                  Tháng {activeVersion?.effectiveMonth}/{activeVersion?.effectiveYear} — {activeVersion?.note || 'Không có ghi chú'}
+                  Gốc từ Tháng {activeVersion?.effectiveMonth}/{activeVersion?.effectiveYear} — {activeVersion?.note || 'Không có ghi chú'}
                 </h2>
               </div>
               
@@ -563,7 +570,9 @@ export const BudgetHistory: React.FC = () => {
                   </div>
                 )}
                 <div className="pl-6 border-l border-family-accent/20">
-                  <span className="text-xs text-family-textMuted uppercase font-bold tracking-wider block">Thu nhập thực tế mốc</span>
+                  <span className="text-xs text-family-textMuted uppercase font-bold tracking-wider block">
+                    {workspaceTab === 'charts' ? 'Thu nhập Tháng quan sát' : 'Thu nhập thực tế mốc'}
+                  </span>
                   <span className="text-xl font-extrabold text-family-text">
                     {actualIncome} Tr VND
                   </span>
