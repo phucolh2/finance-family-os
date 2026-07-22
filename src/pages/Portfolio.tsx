@@ -596,12 +596,6 @@ export const Portfolio: React.FC = () => {
       })()}
       </div>
 
-      {/* Gửi Tiết kiệm và Sinking Funds */}
-      <div className="flex flex-col gap-6 mt-6">
-        <SavingsDepositModule />
-        <SinkingFundModule filterFundType="investment" />
-      </div>
-
       {/* Deals Tracking Section */}
       <Card className="border-family-accent/20 mt-6">
         <CardHeader className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
