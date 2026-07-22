@@ -83,7 +83,7 @@ export function runProjection(input: ProjectionEngineInput): ProjectionOutput {
     crypto: 0,
   };
 
-  const sinkingFundStates: Record<string, { buckets: { principal: number; termStart: number }[]; balance: number; contribution: number; interest: number }> = {};
+  const sinkingFundStates: Record<string, { buckets: { principal: number; termStart: number; termMonths?: number; interestRateAnnual?: number }[]; balance: number; contribution: number; interest: number }> = {};
   const savingsStates: Record<string, { buckets: { principal: number; termStart: number }[]; balance: number; contribution: number; interest: number }> = {};
   const debtStates: Record<string, { remainingPrincipal: number }> = {};
 
@@ -438,27 +438,33 @@ export function runProjection(input: ProjectionEngineInput): ProjectionOutput {
             }
 
             state.buckets = state.buckets.filter(b => {
-               if (current - b.termStart === term && current > b.termStart) {
-                  const interest = b.principal * ((sf.interestRateAnnual || 0) / 100 / 12) * term;
-                  maturingAmount += b.principal + interest;
-                  state.interest += interest;
-                  return false;
-               }
-               return true;
-            });
-            
-            if (current === start) {
-               newContrib += (sf.initialDeposit || 0);
-            }
-            if (current >= start) {
-               newContrib += (sf.monthlyContribution || 0);
-            }
-            
-            state.contribution += newContrib;
-            
-            if (newContrib > 0 || maturingAmount > 0) {
-               state.buckets.push({ principal: newContrib + maturingAmount, termStart: current });
-            }
+                const bTerm = b.termMonths ?? (sf.termMonths || 1);
+                const bRate = b.interestRateAnnual ?? (sf.interestRateAnnual || 0);
+                if (current - b.termStart === bTerm && current > b.termStart) {
+                   const interest = b.principal * (bRate / 100 / 12) * bTerm;
+                   maturingAmount += b.principal + interest;
+                   state.interest += interest;
+                   return false;
+                }
+                return true;
+             });
+             
+             if (current === start) {
+                newContrib += (sf.initialDeposit || 0);
+             }
+             if (current >= start) {
+                newContrib += (sf.monthlyContribution || 0);
+             }
+             
+             state.contribution += newContrib;
+             
+             if (newContrib > 0 || maturingAmount > 0) {
+                const pKey = `${period.year}-${String(period.month).padStart(2, '0')}`;
+                const pCfg = sf.periodConfigs?.[pKey];
+                const bTerm = pCfg?.termMonths ?? (sf.termMonths || 1);
+                const bRate = pCfg?.interestRateAnnual ?? (sf.interestRateAnnual || 5.5);
+                state.buckets.push({ principal: newContrib + maturingAmount, termStart: current, termMonths: bTerm, interestRateAnnual: bRate });
+             }
             
             state.balance = state.buckets.reduce((sum, b) => sum + b.principal, 0);
         }

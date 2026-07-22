@@ -141,8 +141,7 @@ export const SinkingFundModule: React.FC<SinkingFundModuleProps> = ({
     const fund = activeFunds.find(f => f.id === fundId);
     if (!fund) return { balance: 0, progress: 0, buckets: [] };
     
-    let buckets: { principal: number; termStart: number }[] = [];
-    const term = fund.termMonths || 1;
+    let buckets: { principal: number; termStart: number; termMonths: number; interestRateAnnual: number; periodKey: string }[] = [];
     const start = fund.startYear * 12 + fund.startMonth;
     const current = currentObservedYear * 12 + currentObservedMonth;
     
@@ -152,6 +151,11 @@ export const SinkingFundModule: React.FC<SinkingFundModuleProps> = ({
           
           const mo = ((m - 1) % 12) + 1;
           const yr = Math.floor((m - 1) / 12);
+          const periodKey = `${yr}-${String(mo).padStart(2, '0')}`;
+          const periodCfg = fund.periodConfigs?.[periodKey];
+          const bTerm = periodCfg?.termMonths ?? (fund.termMonths || 1);
+          const bRate = periodCfg?.interestRateAnnual ?? (fund.interestRateAnnual || 5.5);
+
           const currentWithdrawals = (fund.withdrawals || []).filter(w => w.month === mo && w.year === yr);
           if (currentWithdrawals.length > 0) {
              currentWithdrawals.forEach(w => {
@@ -170,8 +174,8 @@ export const SinkingFundModule: React.FC<SinkingFundModuleProps> = ({
           }
           
           buckets = buckets.filter(b => {
-             if (m - b.termStart === term && m > b.termStart) {
-                const interest = b.principal * ((fund.interestRateAnnual || 0) / 100 / 12) * term;
+             if (m - b.termStart === b.termMonths && m > b.termStart) {
+                const interest = b.principal * (b.interestRateAnnual / 100 / 12) * b.termMonths;
                 maturingAmount += b.principal + interest;
                 return false;
              }
@@ -183,7 +187,7 @@ export const SinkingFundModule: React.FC<SinkingFundModuleProps> = ({
           if (m >= start) newContrib += fund.monthlyContribution;
           
           if (newContrib > 0 || maturingAmount > 0) {
-             buckets.push({ principal: newContrib + maturingAmount, termStart: m });
+             buckets.push({ principal: newContrib + maturingAmount, termStart: m, termMonths: bTerm, interestRateAnnual: bRate, periodKey });
           }
        }
     }
@@ -484,13 +488,81 @@ export const SinkingFundModule: React.FC<SinkingFundModuleProps> = ({
                         </div>
                         <div className="pt-1">
                            <span className="text-family-textMuted text-[10px] uppercase mb-1 block">Các khoản đang gửi tích lũy:</span>
-                           <div className="space-y-1 max-h-32 overflow-y-auto pr-1">
-                              {getFundBalance(fund.id).buckets.map((b, i) => (
-                                 <div key={i} className="flex justify-between text-[11px] bg-white p-1.5 rounded shadow-sm border border-gray-50">
-                                    <span>Kỳ T{((b.termStart - 1) % 12) + 1}/{Math.floor((b.termStart - 1) / 12)}</span>
-                                    <span className="font-medium text-family-text">{formatTableMoneyVNDMillion(b.principal)} Tr</span>
-                                 </div>
-                              ))}
+                           <div className="space-y-1.5 max-h-48 overflow-y-auto pr-1">
+                              {getFundBalance(fund.id).buckets.map((b, i) => {
+                                 const bMo = ((b.termStart - 1) % 12) + 1;
+                                 const bYr = Math.floor((b.termStart - 1) / 12);
+                                 const pKey = b.periodKey || `${bYr}-${String(bMo).padStart(2, '0')}`;
+
+                                 return (
+                                    <div key={i} className="flex flex-col sm:flex-row sm:items-center justify-between text-[11px] bg-white p-2 rounded shadow-sm border border-gray-100 gap-2">
+                                       <div className="flex items-center gap-2">
+                                          <span className="font-semibold text-family-text">Kỳ T{bMo}/{bYr}:</span>
+                                          <span className="font-bold text-family-accent">{formatTableMoneyVNDMillion(b.principal)} Tr</span>
+                                       </div>
+                                       
+                                       <div className="flex items-center gap-3 text-xs">
+                                          <div className="flex items-center gap-1">
+                                             <span className="text-[10px] text-family-textMuted">Kỳ hạn:</span>
+                                             <select
+                                                value={b.termMonths}
+                                                onChange={(e) => {
+                                                   const newTerm = Number(e.target.value);
+                                                   const updatedConfigs = {
+                                                      ...(fund.periodConfigs || {}),
+                                                      [pKey]: {
+                                                         ...(fund.periodConfigs?.[pKey] || {}),
+                                                         termMonths: newTerm,
+                                                         interestRateAnnual: b.interestRateAnnual,
+                                                      }
+                                                   };
+                                                   updateSinkingFund({
+                                                      ...fund,
+                                                      periodConfigs: updatedConfigs,
+                                                   });
+                                                }}
+                                                className="text-[10px] bg-slate-50 border border-slate-200 rounded px-1.5 py-0.5 font-medium text-family-text focus:outline-none focus:ring-1 focus:ring-family-accent"
+                                             >
+                                                <option value={0}>Không kỳ hạn</option>
+                                                <option value={1}>1 tháng</option>
+                                                <option value={3}>3 tháng</option>
+                                                <option value={6}>6 tháng</option>
+                                                <option value={12}>12 tháng</option>
+                                                <option value={24}>24 tháng</option>
+                                                <option value={36}>36 tháng</option>
+                                             </select>
+                                          </div>
+
+                                          <div className="flex items-center gap-1">
+                                             <span className="text-[10px] text-family-textMuted">Lãi suất:</span>
+                                             <input
+                                                type="number"
+                                                step="0.1"
+                                                min="0"
+                                                value={b.interestRateAnnual}
+                                                onChange={(e) => {
+                                                   const newRate = safeNumber(Number(e.target.value), 0);
+                                                   const updatedConfigs = {
+                                                      ...(fund.periodConfigs || {}),
+                                                      [pKey]: {
+                                                         ...(fund.periodConfigs?.[pKey] || {}),
+                                                         termMonths: b.termMonths,
+                                                         interestRateAnnual: newRate,
+                                                      }
+                                                   };
+                                                   updateSinkingFund({
+                                                      ...fund,
+                                                      periodConfigs: updatedConfigs,
+                                                   });
+                                                }}
+                                                className="w-12 text-center text-[10px] bg-slate-50 border border-slate-200 rounded px-1 py-0.5 font-medium text-family-text focus:outline-none focus:ring-1 focus:ring-family-accent"
+                                             />
+                                             <span className="text-[10px] text-family-textMuted">%/năm</span>
+                                          </div>
+                                       </div>
+                                    </div>
+                                 );
+                              })}
                            </div>
                         </div>
                      </div>
