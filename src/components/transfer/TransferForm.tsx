@@ -44,10 +44,12 @@ export const TransferForm: React.FC<TransferFormProps> = ({ onSuccess, onCancel 
   const currentRow = projection.monthlyRows.find(r => r.period.key === currentKey);
   let idleCashflow = 0;
   let liquidityBalance = 0;
+  let unallocatedCashBalance = 0;
   if (currentRow) {
     const port = currentRow.portfolio;
     idleCashflow = port.unallocatedEndingBalance || 0;
     liquidityBalance = currentRow.liquidityBalance || 0;
+    unallocatedCashBalance = currentRow.unallocatedCashBalance || 0;
   }
   
   const savingBalance = currentRow?.savingBalance || 0;
@@ -141,6 +143,7 @@ export const TransferForm: React.FC<TransferFormProps> = ({ onSuccess, onCancel 
                       <optgroup label="💵 Dòng tiền">
                         <option value="cashflow:investable">Quỹ Đầu tư Nhàn rỗi ({formatMoneyVNDMillion(idleCashflow)})</option>
                         <option value="cashflow:liquidity">Quỹ Thanh khoản Sinh hoạt ({formatMoneyVNDMillion(liquidityBalance)})</option>
+                        <option value="cashflow:unallocated">Dòng tiền chưa phân bổ ({formatMoneyVNDMillion(unallocatedCashBalance)})</option>
                       </optgroup>
                       
                       <optgroup label="🎯 Sự kiện cuộc đời">
@@ -190,6 +193,7 @@ export const TransferForm: React.FC<TransferFormProps> = ({ onSuccess, onCancel 
                       <optgroup label="💵 Dòng tiền">
                         <option value="cashflow:investable">Quỹ Đầu tư Nhàn rỗi (Bổ sung vào)</option>
                         <option value="cashflow:liquidity">Quỹ Thanh khoản Sinh hoạt (Bổ sung vào)</option>
+                        <option value="cashflow:unallocated">Dòng tiền chưa phân bổ (Bổ sung vào)</option>
                       </optgroup>
 
                       <optgroup label="🎯 Sự kiện cuộc đời">

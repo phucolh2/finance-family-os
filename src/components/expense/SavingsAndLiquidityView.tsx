@@ -38,7 +38,7 @@ export const SavingsAndLiquidityView: React.FC = () => {
 
   return (
     <div className="space-y-6">
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+      <div className="grid grid-cols-1 md:grid-cols-1 gap-4">
         <Card className="bg-white/80 border-family-accent/10 shadow-sm">
           <CardContent className="p-4 flex items-center justify-between">
             <div>
@@ -51,22 +51,6 @@ export const SavingsAndLiquidityView: React.FC = () => {
             </div>
             <div className="w-12 h-12 rounded-full bg-emerald-100 flex items-center justify-center text-emerald-600">
               <Wallet className="w-6 h-6" />
-            </div>
-          </CardContent>
-        </Card>
-        
-        <Card className="bg-white/80 border-family-accent/10 shadow-sm">
-          <CardContent className="p-4 flex items-center justify-between">
-            <div>
-              <p className="text-xs font-semibold text-family-textMuted uppercase tracking-wider mb-1">
-                Dòng tiền chưa phân bổ
-              </p>
-              <h3 className="text-2xl font-bold text-sky-600">
-                {formatTableMoneyVNDMillion(currentRow?.unallocatedCashBalance || 0)} Tr
-              </h3>
-            </div>
-            <div className="w-12 h-12 rounded-full bg-sky-100 flex items-center justify-center text-sky-600">
-              <PiggyBank className="w-6 h-6" />
             </div>
           </CardContent>
         </Card>
