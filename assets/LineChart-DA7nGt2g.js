@@ -1,0 +1,1 @@
+import{L as e,P as t}from"./index-C-Ikm1S4.js";import{Q as n,t as r}from"./CartesianChart-UpAxGoLp.js";var i=e(t()),a=[`axis`],o=(0,i.forwardRef)((e,t)=>i.createElement(r,{chartName:`LineChart`,defaultTooltipEventType:`axis`,validateTooltipEventTypes:a,tooltipPayloadSearcher:n,categoricalChartProps:e,ref:t}));export{o as t};
