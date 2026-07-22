@@ -252,7 +252,6 @@ export const LifeStages: React.FC = () => {
 
       {activeTab === 'timeline' && (
         <div className="space-y-6">
-                <ExpenseDashboard filter={dashboardFilter} setFilter={setDashboardFilter} />
 
                 {/* Dashboard Summary */}
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
@@ -469,7 +468,12 @@ export const LifeStages: React.FC = () => {
       )}
 
 
-      {activeTab === 'monthly_reconciliation' && <ExpenseScheduleView />}
+      {activeTab === 'monthly_reconciliation' && (
+        <div className="space-y-6">
+          <ExpenseDashboard filter={dashboardFilter} setFilter={setDashboardFilter} />
+          <ExpenseScheduleView />
+        </div>
+      )}
       
       {activeTab === 'savings_liquidity' && <SavingsAndLiquidityView />}
 
