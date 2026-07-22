@@ -212,8 +212,8 @@ export const ExpenseScheduleView: React.FC = () => {
 
   return (
     <div className="grid grid-cols-1 xl:grid-cols-4 gap-6 items-start h-full">
-      {/* Left Column: Timeline */}
-      <Card className="xl:col-span-1 border border-family-accent/10 shadow-sm self-start">
+      {/* Left Column: Timeline (Moved to right/bottom visually via CSS order) */}
+      <Card className="order-2 xl:order-2 xl:col-span-1 border border-family-accent/10 shadow-sm self-start">
         <CardHeader className="pb-3 border-b border-family-accent/5 flex flex-col gap-2">
           <div className="flex justify-between items-center">
             <CardTitle className="text-sm uppercase tracking-wider text-family-textMuted">Mốc thời gian</CardTitle>
@@ -280,8 +280,8 @@ export const ExpenseScheduleView: React.FC = () => {
         </CardContent>
       </Card>
 
-      {/* Right Column: Editor */}
-      <div className="w-full xl:col-span-3 flex flex-col gap-4">
+      {/* Right Column: Editor (Moved to left/top visually via CSS order) */}
+      <div className="order-1 xl:order-1 w-full xl:col-span-3 flex flex-col gap-4">
         {activeVersion ? (
           <Card className="flex-1 border border-family-accent/10 shadow-md">
             <CardHeader className="flex flex-col border-b border-family-accent/10 pb-4">
