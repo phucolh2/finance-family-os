@@ -1163,7 +1163,12 @@ export const Portfolio: React.FC = () => {
           </div>
         </CardContent>
       </Card>
-      
+
+      {/* Gửi Tiết kiệm và Sinking Funds */}
+      <div className="flex flex-col gap-6 mt-6">
+        <SavingsDepositModule />
+        <SinkingFundModule filterFundType="investment" />
+      </div>
     </div>
   );
 };
