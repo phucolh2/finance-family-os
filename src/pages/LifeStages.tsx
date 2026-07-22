@@ -25,7 +25,7 @@ export const LifeStages: React.FC = () => {
   
   // Dashboard filter state
   const [dashboardFilter, setDashboardFilter] = useState<BudgetGroup | 'all'>('all');
-  const [activeTab, setActiveTab] = useState<'timeline' | 'monthly_reconciliation'>('timeline');
+  const [activeTab, setActiveTab] = useState<'timeline' | 'monthly_reconciliation'>('monthly_reconciliation');
 
   // Generate spending category options from the latest budget schedule
   const activeBudget = state.budgetSchedule.length > 0 ? state.budgetSchedule[state.budgetSchedule.length - 1] : null;
@@ -214,57 +214,87 @@ export const LifeStages: React.FC = () => {
         </div>
       </div>
 
-      <ExpenseDashboard filter={dashboardFilter} setFilter={setDashboardFilter} />
-
-      {/* Dashboard Summary */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        <Card className="bg-white/80 border-family-accent/10">
-          <CardContent className="p-4 flex items-center justify-between">
-            <div>
-              <p className="text-xs font-semibold text-family-textMuted uppercase tracking-wider mb-1 flex items-center gap-1.5">
-                Tổng sự kiện
-                <HelpTooltip text="Tổng số sự kiện tài chính (cột mốc, biến cố) đã được ghi nhận." />
-              </p>
-              <h3 className="text-2xl font-bold text-family-text">{totalEvents}</h3>
-            </div>
-            <div className="w-12 h-12 rounded-full bg-blue-100 flex items-center justify-center text-blue-600">
-              <CalendarRange className="w-6 h-6" />
-            </div>
-          </CardContent>
-        </Card>
-        <Card className="bg-white/80 border-family-accent/10">
-          <CardContent className="p-4 flex items-center justify-between">
-            <div>
-              <p className="text-xs font-semibold text-family-textMuted uppercase tracking-wider mb-1 flex items-center gap-1.5">
-                Tác động 1 lần (Net)
-                <HelpTooltip text="Tổng giá trị tác động tài chính ngay lập tức (thu nhập trừ đi chi phí) của tất cả các sự kiện." />
-              </p>
-              <h3 className={`text-2xl font-bold ${netOneTime >= 0 ? 'text-green-600' : 'text-red-600'}`}>
-                {netOneTime > 0 ? '+' : ''}{formatTableMoneyVNDMillion(netOneTime)}
-              </h3>
-            </div>
-            <div className={`w-12 h-12 rounded-full flex items-center justify-center ${netOneTime >= 0 ? 'bg-green-100 text-green-600' : 'bg-red-100 text-red-600'}`}>
-              {netOneTime >= 0 ? <TrendingUp className="w-6 h-6" /> : <TrendingDown className="w-6 h-6" />}
-            </div>
-          </CardContent>
-        </Card>
-        <Card className="bg-white/80 border-family-accent/10">
-          <CardContent className="p-4 flex items-center justify-between">
-            <div>
-              <p className="text-xs font-semibold text-family-textMuted uppercase tracking-wider mb-1 flex items-center gap-1.5">
-                Tác động dòng tiền (Net)
-                <HelpTooltip text="Tổng sự thay đổi ròng trên dòng tiền hàng tháng do các sự kiện mang lại." />
-              </p>
-              <h3 className={`text-2xl font-bold ${netRecurring >= 0 ? 'text-green-600' : 'text-red-600'}`}>
-                {netRecurring > 0 ? '+' : ''}{formatTableMoneyVNDMillion(netRecurring)}<span className="text-sm font-medium">/tháng</span>
-              </h3>
-            </div>
-            <div className={`w-12 h-12 rounded-full flex items-center justify-center ${netRecurring >= 0 ? 'bg-green-100 text-green-600' : 'bg-red-100 text-red-600'}`}>
-              {netRecurring >= 0 ? <TrendingUp className="w-6 h-6" /> : <TrendingDown className="w-6 h-6" />}
-            </div>
-          </CardContent>
-        </Card>
+      {/* Tabs */}
+      <div className="flex space-x-2 border-b border-gray-200">
+        <button
+          onClick={() => { setActiveTab('timeline'); }}
+          className={`py-2 px-4 text-sm font-semibold transition-colors border-b-2 ${
+            activeTab === 'timeline' 
+              ? 'border-family-accent text-family-accent' 
+              : 'border-transparent text-gray-500 hover:text-gray-700'
+          }`}
+        >
+          Dòng thời gian Sự kiện
+        </button>
+        <button
+          onClick={() => { setActiveTab('monthly_reconciliation'); }}
+          className={`py-2 px-4 text-sm font-semibold transition-colors border-b-2 ${
+            activeTab === 'monthly_reconciliation' 
+              ? 'border-family-accent text-family-accent' 
+              : 'border-transparent text-gray-500 hover:text-gray-700'
+          }`}
+        >
+          Thực tế chi tiêu
+        </button>
       </div>
+
+      {activeTab === 'timeline' && (
+        <div className="space-y-6">
+                <ExpenseDashboard filter={dashboardFilter} setFilter={setDashboardFilter} />
+
+                {/* Dashboard Summary */}
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                  <Card className="bg-white/80 border-family-accent/10">
+                    <CardContent className="p-4 flex items-center justify-between">
+                      <div>
+                        <p className="text-xs font-semibold text-family-textMuted uppercase tracking-wider mb-1 flex items-center gap-1.5">
+                          Tổng sự kiện
+                          <HelpTooltip text="Tổng số sự kiện tài chính (cột mốc, biến cố) đã được ghi nhận." />
+                        </p>
+                        <h3 className="text-2xl font-bold text-family-text">{totalEvents}</h3>
+                      </div>
+                      <div className="w-12 h-12 rounded-full bg-blue-100 flex items-center justify-center text-blue-600">
+                        <CalendarRange className="w-6 h-6" />
+                      </div>
+                    </CardContent>
+                  </Card>
+                  <Card className="bg-white/80 border-family-accent/10">
+                    <CardContent className="p-4 flex items-center justify-between">
+                      <div>
+                        <p className="text-xs font-semibold text-family-textMuted uppercase tracking-wider mb-1 flex items-center gap-1.5">
+                          Tác động 1 lần (Net)
+                          <HelpTooltip text="Tổng giá trị tác động tài chính ngay lập tức (thu nhập trừ đi chi phí) của tất cả các sự kiện." />
+                        </p>
+                        <h3 className={`text-2xl font-bold ${netOneTime >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+                          {netOneTime > 0 ? '+' : ''}{formatTableMoneyVNDMillion(netOneTime)}
+                        </h3>
+                      </div>
+                      <div className={`w-12 h-12 rounded-full flex items-center justify-center ${netOneTime >= 0 ? 'bg-green-100 text-green-600' : 'bg-red-100 text-red-600'}`}>
+                        {netOneTime >= 0 ? <TrendingUp className="w-6 h-6" /> : <TrendingDown className="w-6 h-6" />}
+                      </div>
+                    </CardContent>
+                  </Card>
+                  <Card className="bg-white/80 border-family-accent/10">
+                    <CardContent className="p-4 flex items-center justify-between">
+                      <div>
+                        <p className="text-xs font-semibold text-family-textMuted uppercase tracking-wider mb-1 flex items-center gap-1.5">
+                          Tác động dòng tiền (Net)
+                          <HelpTooltip text="Tổng sự thay đổi ròng trên dòng tiền hàng tháng do các sự kiện mang lại." />
+                        </p>
+                        <h3 className={`text-2xl font-bold ${netRecurring >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+                          {netRecurring > 0 ? '+' : ''}{formatTableMoneyVNDMillion(netRecurring)}<span className="text-sm font-medium">/tháng</span>
+                        </h3>
+                      </div>
+                      <div className={`w-12 h-12 rounded-full flex items-center justify-center ${netRecurring >= 0 ? 'bg-green-100 text-green-600' : 'bg-red-100 text-red-600'}`}>
+                        {netRecurring >= 0 ? <TrendingUp className="w-6 h-6" /> : <TrendingDown className="w-6 h-6" />}
+                      </div>
+                    </CardContent>
+                  </Card>
+                </div>
+
+
+        </div>
+      )}
 
       {formError && <WarningBox type="danger" message={formError} />}
 
@@ -426,29 +456,6 @@ export const LifeStages: React.FC = () => {
         </Card>
       )}
 
-      {/* Tabs */}
-      <div className="flex space-x-2 border-b border-gray-200">
-        <button
-          onClick={() => { setActiveTab('timeline'); }}
-          className={`py-2 px-4 text-sm font-semibold transition-colors border-b-2 ${
-            activeTab === 'timeline' 
-              ? 'border-family-accent text-family-accent' 
-              : 'border-transparent text-gray-500 hover:text-gray-700'
-          }`}
-        >
-          Dòng thời gian Sự kiện
-        </button>
-        <button
-          onClick={() => { setActiveTab('monthly_reconciliation'); }}
-          className={`py-2 px-4 text-sm font-semibold transition-colors border-b-2 ${
-            activeTab === 'monthly_reconciliation' 
-              ? 'border-family-accent text-family-accent' 
-              : 'border-transparent text-gray-500 hover:text-gray-700'
-          }`}
-        >
-          Thực tế chi tiêu
-        </button>
-      </div>
 
       {activeTab === 'monthly_reconciliation' && <ExpenseScheduleView />}
 
