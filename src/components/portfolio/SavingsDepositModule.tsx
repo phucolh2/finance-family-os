@@ -52,9 +52,12 @@ export const SavingsDepositModule: React.FC<SavingsDepositModuleProps> = ({
     assumptions: state.assumptions,
     investmentDeals: state.investmentDeals,
     savingsDeposits: state.savingsDeposits,
+    sinkingFunds: state.sinkingFunds,
+    debts: state.debts,
     projectionAdjustments: state.projectionAdjustments,
     lifeStages: state.lifeStages,
     fundTransfers: state.fundTransfers,
+    expenseSchedule: state.expenseSchedule,
   });
 
   const now = new Date();
