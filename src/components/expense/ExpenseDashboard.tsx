@@ -106,7 +106,7 @@ export const ExpenseDashboard: React.FC<ExpenseDashboardProps> = ({ filter, setF
                 <span className="font-bold text-blue-500">{formatTableMoneyVNDMillion(currentSummary.totalActual)}</span>
               </div>
               <div className="flex justify-between items-end border-t border-dashed pt-1 mt-1">
-                <span className="text-xs font-semibold text-family-textMuted">Còn lại (Chưa dùng):</span>
+                <span className="text-xs font-semibold text-family-textMuted">Quỹ thanh khoản sinh hoạt:</span>
                 <span className="font-bold text-gray-400">{formatTableMoneyVNDMillion(remainingTotal)}</span>
               </div>
               
@@ -170,7 +170,7 @@ export const ExpenseDashboard: React.FC<ExpenseDashboardProps> = ({ filter, setF
                   <Legend wrapperStyle={{ fontSize: 11 }} />
                   {/* Stacked Columns for Actual and Remaining */}
                   <Bar dataKey="actual" name="Thực tế (Cột)" stackId="a" fill="#3b82f6" maxBarSize={40} />
-                  <Bar dataKey="remaining" name="Còn lại chưa dùng (Cột)" stackId="a" fill="#e2e8f0" radius={[4, 4, 0, 0]} maxBarSize={40} />
+                  <Bar dataKey="remaining" name="Thanh khoản sinh hoạt (Cột)" stackId="a" fill="#e2e8f0" radius={[4, 4, 0, 0]} maxBarSize={40} />
                   {/* Line for Budget */}
                   <Line type="monotone" dataKey="budget" name="Ngân sách (Đường)" stroke="#f97316" strokeWidth={3} dot={{ r: 3 }} activeDot={{ r: 5 }} />
                 </ComposedChart>
