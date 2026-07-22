@@ -4,7 +4,7 @@ import { analyzeExpense } from '../../engines/expenseEngine';
 import { Card, CardHeader, CardTitle, CardContent } from '../ui/Card';
 import { HelpTooltip } from '../ui/HelpTooltip';
 import { formatTableMoneyVNDMillion } from '../../utils/format';
-import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip as RechartsTooltip, Legend, Bar, Line, XAxis, YAxis, CartesianGrid, ComposedChart, BarChart } from 'recharts';
+import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip as RechartsTooltip, Legend, Bar, Line, XAxis, YAxis, CartesianGrid, ComposedChart, BarChart, LabelList } from 'recharts';
 import { PieChart as PieChartIcon } from 'lucide-react';
 import type { BudgetGroup } from '../../types/budget';
 
@@ -220,6 +220,12 @@ export const ExpenseDashboard: React.FC<ExpenseDashboardProps> = ({ filter, setF
                       cursor={{fill: 'transparent'}}
                     />
                     <Bar dataKey="value" name="Tiền dư" radius={[0, 4, 4, 0]} maxBarSize={30}>
+                      <LabelList 
+                        dataKey="value" 
+                        position="right" 
+                        formatter={(val: any) => `${formatTableMoneyVNDMillion(val as number)} Tr`} 
+                        style={{ fontSize: 11, fill: '#64748b', fontWeight: 600 }} 
+                      />
                       {liquidityBreakdownData.map((entry, index) => (
                         <Cell key={`cell-${index}`} fill={BREAKDOWN_COLORS[index % BREAKDOWN_COLORS.length]} />
                       ))}
