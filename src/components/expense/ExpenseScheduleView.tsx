@@ -47,6 +47,20 @@ export const ExpenseScheduleView: React.FC = () => {
   
   React.useEffect(() => {
     setIsCreatingNew(false);
+    if (selectedPeriodKey) {
+      const [y, m] = selectedPeriodKey.split('-').map(Number);
+      const pastOrActiveItems = sortedHistory.filter((item) => {
+        if (item.effectiveYear < y) return true;
+        if (item.effectiveYear === y && item.effectiveMonth <= m) return true;
+        return false;
+      });
+      if (pastOrActiveItems.length > 0) {
+        const effective = pastOrActiveItems[pastOrActiveItems.length - 1];
+        if (effective.id !== selectedVersionId) {
+          setSelectedVersionId(effective.id);
+        }
+      }
+    }
   }, [selectedPeriodKey]);
 
   const [newMonth, setNewMonth] = useState<number>(() => {
