@@ -565,7 +565,8 @@ export function runProjection(input: ProjectionEngineInput): ProjectionOutput {
     const investmentPnl = genericPnl + totalDealPnlThisMonth;
     const previousTotalInvestable = totalInvestable;
     // For unallocated matured funds, they flow into totalInvestable
-    totalInvestable += monthlyContribution + investmentPnl + activeSavingsMaturedThisMonth_unallocated + sinkingFundMaturedThisMonth_unallocated;
+    const operationalCashflow = cashflowRes.netCashflowMonthly - cashflowRes.oneTimeEventImpact;
+    totalInvestable += monthlyContribution + operationalCashflow + investmentPnl + activeSavingsMaturedThisMonth_unallocated + sinkingFundMaturedThisMonth_unallocated;
 
     // Derived actual monthly rate based on custom profit
     const _actualInvestmentRateMonthly = previousTotalInvestable > 0 ? investmentPnl / previousTotalInvestable : 0;
