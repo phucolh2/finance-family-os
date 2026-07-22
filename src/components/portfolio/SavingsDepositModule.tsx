@@ -14,7 +14,7 @@ interface SavingsDepositModuleProps {
   defaultStartMonth?: number;
   defaultStartYear?: number;
   filterCurrentMonthOnly?: boolean;
-  filterPools?: ('idle' | 'planned' | 'saving' | 'liquidity')[];
+  filterPools?: ('idle' | 'planned' | 'saving' | 'liquidity' | 'unallocated')[];
   title?: string;
   description?: React.ReactNode;
   emptyStateTitle?: string;
@@ -109,6 +109,8 @@ export const SavingsDepositModule: React.FC<SavingsDepositModuleProps> = ({
       availableSavingsPoolBalance = savingsTargetMonthRow.savingBalance;
     } else if (savingsForm.pool === 'liquidity') {
       availableSavingsPoolBalance = savingsTargetMonthRow.liquidityBalance || 0;
+    } else if (savingsForm.pool === 'unallocated') {
+      availableSavingsPoolBalance = savingsTargetMonthRow.unallocatedCashBalance || 0;
     } else {
       const port = savingsTargetMonthRow.portfolio;
       const planned = state.assets.reduce((sum, asset) => sum + (port.assets[asset.type].earmarkedEndingBalance || 0), 0);
@@ -250,11 +252,12 @@ export const SavingsDepositModule: React.FC<SavingsDepositModuleProps> = ({
                 disabled={filterPools.length === 1}
                 className={`block w-full rounded-xl border border-family-accent/20 py-2.5 px-3 pr-8 text-sm text-family-text text-ellipsis overflow-hidden whitespace-nowrap focus:border-family-accent focus:outline-none focus:ring-1 focus:ring-family-accent transition-colors ${filterPools.length === 1 ? 'bg-gray-50 cursor-not-allowed opacity-80' : 'bg-white/60 focus:bg-white'}`}
                 value={savingsForm.pool}
-                onChange={(e) => { setSavingsForm({ ...savingsForm, pool: e.target.value as 'idle' | 'planned' | 'saving' }); }}
+                onChange={(e) => { setSavingsForm({ ...savingsForm, pool: e.target.value as 'idle' | 'planned' | 'saving' | 'unallocated' | 'liquidity' }); }}
               >
                 {filterPools.includes('idle') && <option value="idle">{getPoolLabelWithBalance('idle')}</option>}
                 {filterPools.includes('planned') && <option value="planned">{getPoolLabelWithBalance('planned')}</option>}
                 {filterPools.includes('saving') && <option value="saving">{getPoolLabelWithBalance('saving')}</option>}
+                {filterPools.includes('unallocated') && <option value="unallocated">{getPoolLabelWithBalance('unallocated')}</option>}
                 {filterPools.includes('liquidity') && <option value="liquidity">{getPoolLabelWithBalance('liquidity')}</option>}
               </select>
             </div>
@@ -263,7 +266,7 @@ export const SavingsDepositModule: React.FC<SavingsDepositModuleProps> = ({
           {isSavingsOverLimit && (
             <WarningBox 
               type="danger" 
-              message={`Số tiền gửi (${savingsForm.principal} Tr VND) vượt quá số dư khả dụng của nguồn vốn "${savingsForm.pool === 'idle' ? 'Ngân sách Đầu tư (Chưa có kế hoạch)' : savingsForm.pool === 'planned' ? 'Quỹ tích lũy mục tiêu' : 'Số dư Quỹ Tiết Kiệm & Nợ'}" tại tháng ${savingsForm.startMonth}/${savingsForm.startYear} (Số dư khả dụng: ${availableSavingsPoolBalance.toFixed(1)} Tr VND).`} 
+              message={`Số tiền gửi (${savingsForm.principal} Tr VND) vượt quá số dư khả dụng của nguồn vốn "${savingsForm.pool === 'idle' ? 'Ngân sách Đầu tư (Chưa có kế hoạch)' : savingsForm.pool === 'planned' ? 'Quỹ tích lũy mục tiêu' : savingsForm.pool === 'unallocated' ? 'Dòng tiền chưa phân bổ' : 'Số dư Quỹ Tiết Kiệm & Nợ'}" tại tháng ${savingsForm.startMonth}/${savingsForm.startYear} (Số dư khả dụng: ${availableSavingsPoolBalance.toFixed(1)} Tr VND).`} 
             />
           )}
           {formError && (

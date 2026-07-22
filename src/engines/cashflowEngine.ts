@@ -20,6 +20,8 @@ export interface CashflowOutput {
   lifeEventImpactMonthly: number; // cumulative recurring impacts
   oneTimeEventImpact: number;     // one-time impact in this exact month
   netCashflowMonthly: number;
+  unspentExpense: number;         // Expense budget - actual expense
+  unallocatedIncome: number;      // Income - total allocated budget
   warnings: string[];
 }
 
@@ -87,6 +89,8 @@ export function calculateCashflow(input: CashflowEngineInput): CashflowOutput {
     lifeEventImpactMonthly: recurringImpact,
     oneTimeEventImpact: oneTimeImpact,
     netCashflowMonthly: netCashflow,
+    unspentExpense: safeNumber(budget.totalExpenseMonthly, 0) - expenses,
+    unallocatedIncome: income - (safeNumber(budget.totalExpenseMonthly, 0) + investment + saving + debtReserveMonthly),
     warnings,
   };
 }

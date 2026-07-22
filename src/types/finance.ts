@@ -184,7 +184,7 @@ export interface SavingsDeposit {
   termMonths: number;                    // Kì hạn (3, 6, 12, 24...)
   startMonth: number;
   startYear: number;
-  pool: 'planned' | 'idle' | 'saving' | 'liquidity';             // Thuộc phần tiền nào
+  pool: 'planned' | 'idle' | 'saving' | 'liquidity' | 'unallocated';             // Thuộc phần tiền nào
   status: 'active' | 'matured' | 'settled_early'; // matured = đáo hạn, settled_early = tất toán trước kì hạn
   settledMonth?: number;
   settledYear?: number;

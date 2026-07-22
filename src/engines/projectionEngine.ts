@@ -71,6 +71,7 @@ export function runProjection(input: ProjectionEngineInput): ProjectionOutput {
   let currentSavingBalance = 0; // Cumulative Saving balance
   let currentDebtReserveBalance = 0; // Cumulative Debt Reserve balance
   let currentLiquidityBalance = 0; // Cumulative Operational Free Cashflow
+  let currentUnallocatedCashBalance = 0; // Cumulative Unallocated Income
   let cumulativeContribution = 0;
   let cumulativePnl = 0;
 
@@ -598,8 +599,8 @@ export function runProjection(input: ProjectionEngineInput): ProjectionOutput {
     const previousTotalInvestable = totalInvestable;
     
     // Unspent budget and recurring cash flow impacts flow into Liquidity (Operational Cash)
-    const operationalCashflow = cashflowRes.netCashflowMonthly - cashflowRes.oneTimeEventImpact;
-    currentLiquidityBalance += operationalCashflow;
+    currentLiquidityBalance += cashflowRes.unspentExpense + cashflowRes.lifeEventImpactMonthly;
+    currentUnallocatedCashBalance += cashflowRes.unallocatedIncome;
 
     // For unallocated matured funds, they flow into totalInvestable
     totalInvestable += monthlyContribution + investmentPnl + activeSavingsMaturedThisMonth_unallocated + sinkingFundMaturedThisMonth_unallocated;
@@ -766,16 +767,17 @@ export function runProjection(input: ProjectionEngineInput): ProjectionOutput {
       investmentMonthly: cashflowRes.investmentMonthly,
       savingMonthly: cashflowRes.savingMonthly,
       debtReserveMonthly: cashflowRes.debtReserveMonthly,
-      liquidityMonthly: operationalCashflow,
+      liquidityMonthly: cashflowRes.unspentExpense + cashflowRes.lifeEventImpactMonthly,
       healthMonthly: 0,
       childCostMonthly: childCostRes.totalMonthly,
       lifeEventImpactMonthly: cashflowRes.lifeEventImpactMonthly + cashflowRes.oneTimeEventImpact,
       debtPaymentMonthly: activeDebtPaymentMonthly,
       netCashflowMonthly: cashflowRes.netCashflowMonthly,
       liquidityBalance: currentLiquidityBalance,
+      unallocatedCashBalance: currentUnallocatedCashBalance,
       healthBalance: 0,
-      savingBalance: currentSavingBalance,
-      debtReserveBalance: currentDebtReserveBalance,
+      savingBalance: Math.max(0, currentSavingBalance),
+      debtReserveBalance: Math.max(0, currentDebtReserveBalance),
       portfolio: portfolioOutput,
       propertyValue: assetBalances.real_estate,
       nominalNetWorth,

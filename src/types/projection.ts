@@ -35,6 +35,7 @@ export interface ProjectionMonthlyRow {
   healthBalance: number;
   savingBalance: number;
   debtReserveBalance: number;
+  unallocatedCashBalance: number;
   
   // Portfolio balances
   portfolio: PortfolioMonthlyOutput;
