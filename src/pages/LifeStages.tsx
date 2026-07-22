@@ -123,6 +123,7 @@ export const LifeStages: React.FC = () => {
 
   const eventTypes: { value: LifeEvent['type']; label: string }[] = [
     { value: 'buy_property', label: 'Mua bất động sản' },
+    { value: 'sell_property', label: 'Bán bất động sản / Thanh lý tài sản' },
     { value: 'buy_car', label: 'Mua xe ô tô' },
     { value: 'child_birth', label: 'Sinh con' },
     { value: 'medical', label: 'Sự kiện y tế hiểm nghèo' },
@@ -147,6 +148,7 @@ export const LifeStages: React.FC = () => {
   const getEventLabel = (type: string) => {
     switch (type) {
       case 'buy_property': return 'Mua nhà / BĐS';
+      case 'sell_property': return 'Bán BĐS / Thanh lý';
       case 'buy_car': return 'Mua xe';
       case 'child_birth': return 'Sinh con';
       case 'medical': return 'Y tế hiểm nghèo';
@@ -166,6 +168,7 @@ export const LifeStages: React.FC = () => {
   const getEventIcon = (type: string) => {
     switch (type) {
       case 'buy_property': return <Home className="w-5 h-5 text-white" />;
+      case 'sell_property': return <TrendingUp className="w-5 h-5 text-white" />;
       case 'buy_car': return <Car className="w-5 h-5 text-white" />;
       case 'child_birth': return <Baby className="w-5 h-5 text-white" />;
       case 'medical': return <HeartPulse className="w-5 h-5 text-white" />;
@@ -385,20 +388,37 @@ export const LifeStages: React.FC = () => {
                     value={formData.note}
                     onChange={(e) => { setFormData({ ...formData, note: e.target.value }); }}
                   />
-                  <div className="flex flex-col justify-center md:pl-6 md:mt-6">
-                    <div className="flex items-center">
-                      <input
-                        type="checkbox"
-                        id="isMilestone"
-                        checked={formData.isMilestone}
-                        onChange={(e) => { setFormData({ ...formData, isMilestone: e.target.checked }); }}
-                        className="w-4 h-4 text-family-accent border-gray-300 rounded focus:ring-family-accent cursor-pointer"
-                      />
-                      <label htmlFor="isMilestone" className="ml-2 block text-sm font-bold text-family-text cursor-pointer">
-                        Đánh dấu là Cột mốc Sự kiện
-                      </label>
+                  <div className="flex flex-col justify-center md:pl-6 md:mt-4 space-y-3">
+                    <div>
+                      <div className="flex items-center">
+                        <input
+                          type="checkbox"
+                          id="affectsNetWorth"
+                          checked={formData.affectsNetWorth}
+                          onChange={(e) => { setFormData({ ...formData, affectsNetWorth: e.target.checked }); }}
+                          className="w-4 h-4 text-family-accent border-gray-300 rounded focus:ring-family-accent cursor-pointer"
+                        />
+                        <label htmlFor="affectsNetWorth" className="ml-2 block text-sm font-bold text-family-text cursor-pointer">
+                          Ảnh hưởng Tài sản ròng (Net Worth)
+                        </label>
+                      </div>
+                      <p className="text-[10px] text-family-textMuted mt-1 ml-6 leading-tight">Bật nếu sự kiện này làm thay đổi tổng giá trị tài sản ròng của gia đình (VD: mua nhà, bán đất). Tắt nếu chỉ là chi phí tiêu dùng (VD: du lịch, tiệc).</p>
                     </div>
-                    <p className="text-[10px] text-family-textMuted mt-1 ml-6 leading-tight">Sự kiện này sẽ được đánh dấu nổi bật (highlight) trên Dòng thời gian sự kiện (Timeline).</p>
+                    <div>
+                      <div className="flex items-center">
+                        <input
+                          type="checkbox"
+                          id="isMilestone"
+                          checked={formData.isMilestone}
+                          onChange={(e) => { setFormData({ ...formData, isMilestone: e.target.checked }); }}
+                          className="w-4 h-4 text-family-accent border-gray-300 rounded focus:ring-family-accent cursor-pointer"
+                        />
+                        <label htmlFor="isMilestone" className="ml-2 block text-sm font-bold text-family-text cursor-pointer">
+                          Đánh dấu là Cột mốc Sự kiện
+                        </label>
+                      </div>
+                      <p className="text-[10px] text-family-textMuted mt-1 ml-6 leading-tight">Sự kiện này sẽ được đánh dấu nổi bật (highlight) trên Dòng thời gian sự kiện (Timeline).</p>
+                    </div>
                   </div>
                 </div>
               </div>
@@ -538,7 +558,7 @@ export const LifeStages: React.FC = () => {
         </CardHeader>
         <CardContent className="text-xs text-family-textMuted leading-relaxed space-y-2">
           <p>
-            **Giai đoạn linh hoạt** đại diện cho những phân kỳ dài hạn khác nhau của cuộc đời hộ gia đình. Từng giai đoạn có các ưu tiên tài chính khác biệt:
+            <strong>Giai đoạn linh hoạt</strong> đại diện cho những phân kỳ dài hạn khác nhau của cuộc đời hộ gia đình. Từng giai đoạn có các ưu tiên tài chính khác biệt:
           </p>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-3 mt-1.5">
             <div className="p-3 bg-white/70 rounded-xl border border-family-accent/5">
