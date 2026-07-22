@@ -100,13 +100,10 @@ export const LifeStages: React.FC = () => {
     if (!formData.name.trim()) {
       setFormError('Vui lòng điền tên sự kiện.');
       return;
-    }
-
-    const isIncomeEvent = ['sell_property', 'bonus', 'inheritance'].includes(formData.type);
     const formattedData = {
       ...formData,
-      amount: isIncomeEvent ? Math.abs(formData.amount) : -Math.abs(formData.amount),
-      recurringMonthlyImpact: isIncomeEvent ? Math.abs(formData.recurringMonthlyImpact) : -Math.abs(formData.recurringMonthlyImpact)
+      amount: -Math.abs(safeNumber(formData.amount)),
+      recurringMonthlyImpact: -Math.abs(safeNumber(formData.recurringMonthlyImpact))
     };
 
     if (isAdding) {
@@ -128,15 +125,12 @@ export const LifeStages: React.FC = () => {
     }
   };
 
-  const eventTypes: { value: LifeEvent['type']; label: string }[] = [
+    const eventTypes: { value: LifeEvent['type']; label: string }[] = [
     { value: 'buy_property', label: 'Mua bất động sản' },
-    { value: 'sell_property', label: 'Bán bất động sản / Thanh lý tài sản' },
     { value: 'buy_car', label: 'Mua xe ô tô' },
     { value: 'child_birth', label: 'Sinh con' },
     { value: 'medical', label: 'Sự kiện y tế hiểm nghèo' },
     { value: 'job_loss', label: 'Mất việc làm tạm thời' },
-    { value: 'bonus', label: 'Khoản thưởng đột xuất' },
-    { value: 'inheritance', label: 'Nhận thừa kế' },
     { value: 'retirement', label: 'Nghỉ hưu' },
     { value: 'travel', label: 'Du lịch trải nghiệm lớn' },
     { value: 'other', label: 'Sự kiện khác' },
@@ -155,16 +149,14 @@ export const LifeStages: React.FC = () => {
   const getEventLabel = (type: string) => {
     switch (type) {
       case 'buy_property': return 'Mua nhà / BĐS';
-      case 'sell_property': return 'Bán BĐS / Thanh lý';
-      case 'buy_car': return 'Mua xe';
+      case 'buy_car': return 'Mua Ô tô';
       case 'child_birth': return 'Sinh con';
-      case 'medical': return 'Y tế hiểm nghèo';
-      case 'job_loss': return 'Mất việc làm';
-      case 'bonus': return 'Thưởng đột xuất';
-      case 'inheritance': return 'Nhận thừa kế';
+      case 'medical': return 'Sự kiện y tế';
+      case 'job_loss': return 'Mất việc / Giảm thu nhập';
       case 'retirement': return 'Nghỉ hưu';
-      case 'travel': return 'Du lịch lớn';
-      default: return 'Khác';
+      case 'travel': return 'Du lịch / Trải nghiệm';
+      case 'other': return 'Sự kiện khác';
+      default: return 'Sự kiện';
     }
   };
 
@@ -175,13 +167,10 @@ export const LifeStages: React.FC = () => {
   const getEventIcon = (type: string) => {
     switch (type) {
       case 'buy_property': return <Home className="w-5 h-5 text-white" />;
-      case 'sell_property': return <TrendingUp className="w-5 h-5 text-white" />;
       case 'buy_car': return <Car className="w-5 h-5 text-white" />;
       case 'child_birth': return <Baby className="w-5 h-5 text-white" />;
       case 'medical': return <HeartPulse className="w-5 h-5 text-white" />;
       case 'job_loss': return <Briefcase className="w-5 h-5 text-white" />;
-      case 'bonus': return <Gift className="w-5 h-5 text-white" />;
-      case 'inheritance': return <Wallet className="w-5 h-5 text-white" />;
       case 'retirement': return <Milestone className="w-5 h-5 text-white" />;
       case 'travel': return <Plane className="w-5 h-5 text-white" />;
       default: return <CalendarRange className="w-5 h-5 text-white" />;
@@ -340,7 +329,7 @@ export const LifeStages: React.FC = () => {
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div className="relative">
                     <Input
-                      label={`Số tiền tác động một lần (Tr VND) - ${['sell_property', 'bonus', 'inheritance'].includes(formData.type) ? 'THU NHẬP' : 'CHI PHÍ'}`}
+                      label="Số tiền tác động một lần (Tr VND) - CHI PHÍ"
                       type="number"
                       placeholder="Ví dụ: 800 (Mua xe ô tô)"
                       value={Math.abs(safeNumber(formData.amount)) || ''}
@@ -365,7 +354,7 @@ export const LifeStages: React.FC = () => {
                 </div>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <Input
-                    label={`Tác động dòng tiền tháng (Tr/tháng) - ${['sell_property', 'bonus', 'inheritance'].includes(formData.type) ? 'TĂNG THU' : 'TĂNG CHI'}`}
+                    label="Tác động dòng tiền tháng (Tr/tháng) - TĂNG CHI"
                     type="number"
                     placeholder="Ví dụ: 4 (Chi phí vận hành nuôi xe)"
                     value={Math.abs(safeNumber(formData.recurringMonthlyImpact)) || ''}
