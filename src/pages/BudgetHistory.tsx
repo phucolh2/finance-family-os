@@ -551,13 +551,17 @@ export const BudgetHistory: React.FC = () => {
               <div>
                 <div className="flex items-center gap-1">
                   <span className="text-xs text-family-textMuted uppercase font-bold tracking-wider">KẾ HOẠCH PHÂN BỔ ÁP DỤNG</span>
-                  {workspaceTab === 'charts' && selectedPeriodKey && previewPeriodKey !== `${activeVersion?.effectiveYear}-${String(activeVersion?.effectiveMonth).padStart(2, '0')}` && (
-                    <HelpTooltip text={`Thiết lập phân bổ của Tháng ${activeVersion?.effectiveMonth}/${activeVersion?.effectiveYear} vẫn đang có hiệu lực và được tự động áp dụng để tính toán cho Tháng quan sát hiện tại (${selectedPeriodKey}).`} />
-                  )}
                 </div>
                 <h2 className="text-lg font-bold text-family-accent mt-0.5">
-                  Gốc từ Tháng {activeVersion?.effectiveMonth}/{activeVersion?.effectiveYear} — {activeVersion?.note || 'Không có ghi chú'}
+                  Tháng {workspaceTab === 'charts' && selectedPeriodKey ? `${selectedPeriodKey.split('-')[1]}/${selectedPeriodKey.split('-')[0]}` : `${activeVersion?.effectiveMonth}/${activeVersion?.effectiveYear}`}
                 </h2>
+                {workspaceTab === 'charts' && selectedPeriodKey && previewPeriodKey !== `${activeVersion?.effectiveYear}-${String(activeVersion?.effectiveMonth).padStart(2, '0')}` ? (
+                  <p className="text-xs text-family-textMuted mt-1">
+                    Kế thừa cơ cấu tỷ lệ từ mốc <strong>Tháng {activeVersion?.effectiveMonth}/{activeVersion?.effectiveYear}</strong> ({activeVersion?.note || 'Không có ghi chú'}).
+                  </p>
+                ) : (
+                  <p className="text-xs text-family-textMuted mt-1">{activeVersion?.note || 'Không có ghi chú'}</p>
+                )}
               </div>
               
               <div className="flex items-center gap-6 text-right">
