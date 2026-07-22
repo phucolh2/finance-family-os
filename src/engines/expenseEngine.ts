@@ -24,7 +24,8 @@ export interface ExpenseAnalysisResult {
 export function analyzeExpense(
   resolvedMonthlyDb: ResolvedMonthlyDbItem[],
   lifeEvents: LifeEvent[],
-  currentPeriodKey?: string
+  currentPeriodKey?: string,
+  dynamicExpenseGroupIds?: string[]
 ): ExpenseAnalysisResult {
   // Initialize summary and series
   const groups: (BudgetGroup | 'all')[] = [
@@ -58,11 +59,20 @@ export function analyzeExpense(
   // and ends at "Tháng quan sát" (targetIndex)
   const windowDb = resolvedMonthlyDb.slice(0, targetIndex + 1);
 
+  const expenseGroupsSet = new Set(
+    dynamicExpenseGroupIds && dynamicExpenseGroupIds.length > 0 
+      ? dynamicExpenseGroupIds 
+      : ['housing_basic', 'family_experience', 'health_growth', 'children', 'parents']
+  );
+
   windowDb.forEach(dbItem => {
     const bAmounts = dbItem.budgetAmounts;
-    // Only include actual expense groups in the 'all' budget total
-    const totalExpenseBudget = bAmounts.housing_basic + bAmounts.family_experience + 
-                               bAmounts.health_growth + bAmounts.children + bAmounts.parents;
+    
+    // Only include actual expense groups in the 'all' budget total based on dynamic classification
+    let totalExpenseBudget = 0;
+    expenseGroupsSet.forEach(gId => {
+      totalExpenseBudget += (bAmounts as any)[gId] || 0;
+    });
 
     // Monthly budgets
     const monthlyBudgets: Record<string, number> = {
@@ -82,8 +92,6 @@ export function analyzeExpense(
       'all': 0, 'housing_basic': 0, 'future_investing': 0, 'safety_reserve': 0,
       'family_experience': 0, 'health_growth': 0, 'children': 0, 'parents': 0
     };
-
-    const expenseGroupsSet = new Set(['housing_basic', 'family_experience', 'health_growth', 'children', 'parents']);
 
     if (dbItem.actualExpenseCategories) {
       Object.entries(dbItem.actualExpenseCategories).forEach(([categoryId, amount]) => {

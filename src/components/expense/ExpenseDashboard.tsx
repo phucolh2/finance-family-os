@@ -35,9 +35,13 @@ export const ExpenseDashboard: React.FC<ExpenseDashboardProps> = ({ filter, setF
     return groups;
   }, [state.budgetSchedule]);
 
+  const expenseGroupIds = useMemo(() => {
+    return FILTER_GROUPS.filter(f => f.value !== 'all').map(f => f.value as string);
+  }, [FILTER_GROUPS]);
+
   const expenseData = useMemo(() => {
-    return analyzeExpense(state.resolvedMonthlyDb || [], state.lifeEvents, selectedPeriodKey);
-  }, [state.resolvedMonthlyDb, state.lifeEvents, selectedPeriodKey]);
+    return analyzeExpense(state.resolvedMonthlyDb || [], state.lifeEvents, selectedPeriodKey, expenseGroupIds);
+  }, [state.resolvedMonthlyDb, state.lifeEvents, selectedPeriodKey, expenseGroupIds]);
 
   const currentSummary = expenseData.summaryByGroup[filter] || { totalBudget: 0, totalActual: 0 };
   const currentSeries = expenseData.monthlySeries[filter] || [];
