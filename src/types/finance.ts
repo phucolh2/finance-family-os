@@ -213,7 +213,7 @@ export interface SinkingFund {
   disbursedMonth?: number;
   disbursedYear?: number;
   withdrawals?: WithdrawalEvent[];
-  periodConfigs?: Record<string, { termMonths?: number; interestRateAnnual?: number }>;
+  periodConfigs?: Record<string, { termMonths?: number; interestRateAnnual?: number; contribution?: number }>;
   notes?: string;
 }
 
