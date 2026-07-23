@@ -4,7 +4,7 @@ import { Button } from '../ui/Button';
 import { Input } from '../ui/Input';
 import { EmptyState } from '../ui/EmptyState';
 import { HelpTooltip } from '../ui/HelpTooltip';
-import { Target, Plus, Trash2, ArrowRightCircle, Edit } from 'lucide-react';
+import { Target, Plus, Trash2, ArrowRightCircle, Edit, CheckCircle } from 'lucide-react';
 import { formatTableMoneyVNDMillion } from '../../utils/format';
 import { safeNumber, calculateNonTermInterest } from '../../utils/math';
 import { runProjection } from '../../engines/projectionEngine';
@@ -449,7 +449,40 @@ export const SinkingFundModule: React.FC<SinkingFundModuleProps> = ({
                       <div className="flex items-baseline gap-1.5">
                         <span className="text-lg font-bold text-family-text">{formatTableMoneyVNDMillion(balance)}</span>
                         <span className="text-sm text-family-textMuted font-medium">/ {formatTableMoneyVNDMillion(fund.targetAmount)}</span>
+                        {fund.targetAmount > 0 && (
+                          <span className="text-[10px] font-bold text-orange-600 bg-orange-100 px-1.5 py-0.5 rounded-md ml-1 inline-flex items-center">
+                            {progress.toFixed(1)}%
+                          </span>
+                        )}
                       </div>
+                      {(() => {
+                        const remaining = fund.targetAmount - balance;
+                        if (remaining > 0 && fund.monthlyContribution > 0) {
+                          const monthsRemaining = Math.ceil(remaining / fund.monthlyContribution);
+                          const currentM = Number(selectedPeriodKey ? selectedPeriodKey.split('-')[1] : new Date().getMonth() + 1);
+                          const currentY = Number(selectedPeriodKey ? selectedPeriodKey.split('-')[0] : new Date().getFullYear());
+                          const estMonth = ((currentM - 1 + monthsRemaining) % 12) + 1;
+                          const estYear = currentY + Math.floor((currentM - 1 + monthsRemaining) / 12);
+                          return (
+                            <p className="text-[10px] text-family-textMuted mt-0.5">
+                              Dự kiến hoàn thành: <span className="font-semibold text-family-text">T{estMonth}/{estYear}</span>
+                            </p>
+                          );
+                        }
+                        if (remaining <= 0 && fund.targetAmount > 0) {
+                          return (
+                            <p className="text-[10px] text-emerald-600 font-semibold mt-0.5 flex items-center gap-1">
+                              <CheckCircle className="w-3 h-3" /> Đã đạt mục tiêu
+                            </p>
+                          );
+                        }
+                        return null;
+                      })()}
+                      {fund.withdrawals && fund.withdrawals.length > 0 && (
+                        <p className="text-[10px] text-family-textMuted mt-0.5">
+                          Đã giải ngân: <span className="font-semibold text-red-500">{formatTableMoneyVNDMillion(fund.withdrawals.reduce((sum, w) => sum + w.amount, 0))} Tr</span>
+                        </p>
+                      )}
                       {fund.withdrawals && fund.withdrawals.length > 0 && (
                         <div className="flex flex-col gap-1 mt-1">
                           {fund.withdrawals.map((w, idx) => (
