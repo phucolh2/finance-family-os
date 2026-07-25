@@ -179,7 +179,7 @@ export const SinkingFundModule: React.FC<SinkingFundModuleProps> = ({
     
     if (current >= start) {
        for (let m = start; m <= current; m++) {
-          let maturingBuckets: { principal: number; parentId: string }[] = [];
+          let maturingBuckets: { principal: number; parentId: string; rolledOverPrincipal?: number; rolledOverInterest?: number }[] = [];
           
           const mo = ((m - 1) % 12) + 1;
           const yr = Math.floor((m - 1) / 12);
