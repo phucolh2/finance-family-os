@@ -498,14 +498,16 @@ export const SinkingFundModule: React.FC<SinkingFundModuleProps> = ({
                   if (existing) {
                     updateSinkingFund({
                       ...existing,
-                      ...form
+                      ...form,
+                      targetScreen: variant === 'lifestyle' ? 'life_stages' : variant
                     });
                   }
                 } else {
                   addSinkingFund({
                     ...form,
                     fundType: filterFundType,
-                    status: 'active'
+                    status: 'active',
+                    targetScreen: variant === 'lifestyle' ? 'life_stages' : variant
                   });
                   const newKey = `${form.startYear}-${String(form.startMonth).padStart(2, '0')}`;
                   setSelectedPeriodKey(newKey);

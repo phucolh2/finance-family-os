@@ -183,6 +183,7 @@ export interface SinkingFund {
   id: string;
   name: string; // VD: Quỹ mua chung cư
   fundType?: 'investment' | 'debt_prep' | 'lifestyle_savings' | 'expense_surplus' | 'savings';
+  targetScreen?: 'life_stages' | 'portfolio' | 'savings' | 'reserves';
   fundGroup?: string; // Tên nhóm quỹ hoặc hashtag
   sourceOfFund?: FundingSourceId | string;
   targetAssetType: 'fx_reserve_usd' | 'gold' | 'real_estate' | 'stocks' | 'crypto';
