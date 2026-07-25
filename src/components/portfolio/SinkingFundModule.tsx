@@ -678,6 +678,11 @@ export const SinkingFundModule: React.FC<SinkingFundModuleProps> = ({
                                                  className="w-12 text-center text-[10px] bg-slate-50 border border-slate-200 rounded px-1 py-0.5 font-medium text-family-text focus:outline-none focus:ring-1 focus:ring-family-accent"
                                               />
                                               <span className="text-[10px] text-family-textMuted">%/năm</span>
+                                              {b.termMonths > 0 && b.interestRateAnnual > 0 && (
+                                                 <span className="text-[10px] text-emerald-600 font-semibold ml-2">
+                                                    (+ {formatTableMoneyVNDMillion(b.principal * (b.interestRateAnnual / 100 / 12) * b.termMonths)} Tr lãi)
+                                                 </span>
+                                              )}
                                            </div>
                                         </div>
                                       </div>

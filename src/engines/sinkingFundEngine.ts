@@ -117,6 +117,8 @@ export function simulateSinkingFund(fund: SinkingFund, targetMonth?: number, tar
         bRate = periodCfg?.interestRateAnnual !== undefined ? periodCfg.interestRateAnnual : defaultRate;
      }
 
+     totalDeposited += newContrib;
+
      if (bTerm > 0) {
         if (newContrib > 0) {
            buckets.push({ 
