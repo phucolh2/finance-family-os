@@ -15,6 +15,7 @@ import { runProjection } from '../../engines/projectionEngine';
 import type { AssetType } from '../../types/portfolio';
 import { FUNDING_SOURCES, SCREEN_FUNDING_CONSTRAINTS } from '../../constants/fundingSources';
 import type { FundingSourceId } from '../../constants/fundingSources';
+import { VIETNAM_BANKS } from '../../constants/banks';
 
 interface DynamicSource {
   id: string;
@@ -89,6 +90,7 @@ export const SinkingFundModule: React.FC<SinkingFundModuleProps> = ({
   const [form, setForm] = useState({
     name: '',
     fundGroup: '',
+    depositBank: '',
     targetAssetType: 'real_estate' as AssetType,
     targetAmount: 0,
     initialDeposit: 0,
@@ -382,7 +384,20 @@ export const SinkingFundModule: React.FC<SinkingFundModuleProps> = ({
                 onChange={(e) => { setForm({ ...form, fundGroup: e.target.value }); }}
               />
             </div>
-            <div className="sm:col-span-2 lg:col-span-2">
+            <div className="sm:col-span-1 lg:col-span-1">
+              <label className="block text-xs font-semibold text-family-textMuted uppercase tracking-wider mb-1">Ngân hàng</label>
+              <select
+                className="block w-full rounded-xl border border-family-accent/20 bg-white/60 py-2.5 px-3 text-sm text-family-text focus:border-family-accent focus:bg-white focus:outline-none focus:ring-1 focus:ring-family-accent transition-colors"
+                value={form.depositBank}
+                onChange={(e) => { setForm({ ...form, depositBank: e.target.value }); }}
+              >
+                <option value="">-- Chọn NH / Ví --</option>
+                {VIETNAM_BANKS.map(bank => (
+                  <option key={bank.id} value={bank.id}>{bank.name}</option>
+                ))}
+              </select>
+            </div>
+            <div className="sm:col-span-1 lg:col-span-1">
               <label className="block text-xs font-semibold text-family-textMuted uppercase tracking-wider mb-1">Nguồn tiền</label>
               <select 
                 disabled={activeSources.length === 1}
@@ -489,7 +504,8 @@ export const SinkingFundModule: React.FC<SinkingFundModuleProps> = ({
             <Button variant="outline" onClick={() => {
               setShowAddForm(false);
               setEditingFundId(null);
-              setForm({ ...form, name: '', fundGroup: '', initialDeposit: 0, targetAmount: 0 });
+              setForm({ ...form, name: '', fundGroup: '',
+    depositBank: '', initialDeposit: 0, targetAmount: 0 });
             }}>Hủy</Button>
             <Button 
               onClick={() => {
@@ -514,7 +530,8 @@ export const SinkingFundModule: React.FC<SinkingFundModuleProps> = ({
                 }
                 setShowAddForm(false);
                 setEditingFundId(null);
-                setForm({ ...form, name: '', fundGroup: '', initialDeposit: 0, targetAmount: 0 });
+                setForm({ ...form, name: '', fundGroup: '',
+    depositBank: '', initialDeposit: 0, targetAmount: 0 });
               }}
               disabled={!form.name.trim()}
             >
@@ -538,6 +555,12 @@ export const SinkingFundModule: React.FC<SinkingFundModuleProps> = ({
 
             const renderCashflowDetails = (fund: any) => (
                     <div className="bg-white/60 p-3 rounded-lg border border-family-accent/10 text-xs space-y-2 mt-1">
+                         {fund.depositBank && (
+                             <div className="flex justify-between border-b border-gray-100 pb-1">
+                                <span className="text-family-textMuted">Ngân hàng gửi:</span>
+                                <span className="font-semibold">{VIETNAM_BANKS.find(b => b.id === fund.depositBank)?.name || fund.depositBank}</span>
+                             </div>
+                         )}
                          <div className="flex justify-between border-b border-gray-100 pb-1">
                             <span className="text-family-textMuted">Tổng vốn đã nộp:</span>
                             <span className="font-semibold">{formatTableMoneyVNDMillion(getFundBalance(fund.id).buckets.reduce((sum: number, b: any) => sum + b.principal, 0))} Tr</span>
@@ -849,6 +872,7 @@ export const SinkingFundModule: React.FC<SinkingFundModuleProps> = ({
                    setForm({
                      name: fund.name,
                      fundGroup: fund.fundGroup || '',
+                     depositBank: fund.depositBank || '',
                      targetAssetType: fund.targetAssetType,
                      targetAmount: fund.targetAmount,
                      initialDeposit: fund.initialDeposit,
