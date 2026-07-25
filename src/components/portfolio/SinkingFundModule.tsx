@@ -171,7 +171,7 @@ export const SinkingFundModule: React.FC<SinkingFundModuleProps> = ({
     const currentObservedYear = activeRow ? activeRow.period.year : initYear;
 
     const fund = activeFunds.find(f => f.id === fundId);
-    if (!fund) return { balance: 0, progress: 0, buckets: [], nonTermCash: 0 };
+    if (!fund) return { balance: 0, progress: 0, buckets: [], nonTermCash: 0, totalDisbursed: 0, autoRefundsByMonth: {}, totalDeposited: 0 };
     
     let buckets: { id: string; parentId?: string; principal: number; termStart: number; termMonths: number; interestRateAnnual: number; periodKey: string; contribAmount?: number }[] = [];
     let nonTermCash = 0;
@@ -551,7 +551,7 @@ export const SinkingFundModule: React.FC<SinkingFundModuleProps> = ({
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           {activeFunds.map((fund) => {
-            const { balance, progress, totalDisbursed } = getFundBalance(fund.id);
+            const { balance, progress, totalDisbursed, totalDeposited, nonTermCash } = getFundBalance(fund.id);
             const isDisbursing = disbursingId === fund.id;
 
             const renderCashflowDetails = (fund: any) => (
@@ -562,14 +562,20 @@ export const SinkingFundModule: React.FC<SinkingFundModuleProps> = ({
                                 <span className="font-semibold">{VIETNAM_BANKS.find(b => b.id === fund.depositBank)?.name || fund.depositBank}</span>
                              </div>
                          )}
-                         <div className="flex justify-between border-b border-gray-100 pb-1">
+                                                  <div className="flex justify-between border-b border-gray-100 pb-1">
                             <span className="text-family-textMuted">Tổng vốn đã nộp:</span>
-                            <span className="font-semibold">{formatTableMoneyVNDMillion(getFundBalance(fund.id).buckets.reduce((sum: number, b: any) => sum + b.principal, 0))} Tr</span>
+                            <span className="font-semibold">{formatTableMoneyVNDMillion(totalDeposited || 0)} Tr</span>
                          </div>
                          <div className="flex justify-between border-b border-gray-100 pb-1">
                             <span className="text-family-textMuted">Lãi cộng dồn:</span>
-                            <span className="font-semibold text-emerald-600">+{formatTableMoneyVNDMillion(balance - getFundBalance(fund.id).buckets.reduce((sum: number, b: any) => sum + b.principal, 0))} Tr</span>
+                            <span className="font-semibold text-emerald-600">+{formatTableMoneyVNDMillion(balance - (totalDeposited || 0))} Tr</span>
                          </div>
+                         {nonTermCash > 0 && (
+                            <div className="flex justify-between border-b border-gray-100 pb-1 bg-yellow-50 px-1 rounded">
+                               <span className="text-family-textMuted">Tiền chờ phân bổ (Không kỳ hạn):</span>
+                               <span className="font-semibold text-amber-600">{formatTableMoneyVNDMillion(nonTermCash)} Tr</span>
+                            </div>
+                         )}
                          <div className="pt-1">
                             <span className="text-family-textMuted text-[10px] uppercase mb-1 block">Các khoản đang gửi tích lũy:</span>
                             <div className="space-y-1.5 max-h-48 overflow-y-auto pr-1">

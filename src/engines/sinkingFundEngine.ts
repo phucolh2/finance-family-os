@@ -11,6 +11,7 @@ export function simulateSinkingFund(fund: SinkingFund, targetMonth?: number, tar
   let nonTermCash = 0;
   let buckets: any[] = [];
   const autoRefundsByMonth: Record<number, number> = {};
+  let totalDeposited = 0;
 
   for (let m = start; m <= end; m++) {
      const yr = Math.floor((m - 1) / 12);
@@ -23,6 +24,7 @@ export function simulateSinkingFund(fund: SinkingFund, targetMonth?: number, tar
      if (withdrawalsThisMonth.length > 0) {
         withdrawalsThisMonth.forEach(w => {
            let amountToDeduct = w.amount;
+           totalDeposited -= w.amount;
            if (nonTermCash >= amountToDeduct) {
               nonTermCash -= amountToDeduct;
               amountToDeduct = 0;
@@ -149,5 +151,5 @@ export function simulateSinkingFund(fund: SinkingFund, targetMonth?: number, tar
   }
   
   const totalPrincipal = buckets.reduce((sum, b) => sum + b.principal, 0);
-  return { nonTermCash, buckets, totalPrincipal, autoRefundsByMonth };
+  return { nonTermCash, buckets, totalPrincipal, autoRefundsByMonth, totalDeposited };
 }
