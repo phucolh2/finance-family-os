@@ -471,8 +471,8 @@ export const LifeStages: React.FC = () => {
       {activeTab === 'monthly_reconciliation' && (
         <div className="space-y-6">
           <ExpenseDashboard filter={dashboardFilter} setFilter={setDashboardFilter} />
-          <ExpenseScheduleView />
           <LiquidityBreakdownTable />
+          <ExpenseScheduleView />
         </div>
       )}
       
