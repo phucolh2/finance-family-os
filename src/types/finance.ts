@@ -202,8 +202,8 @@ export interface SinkingFund {
   disbursedMonth?: number;
   disbursedYear?: number;
   withdrawals?: WithdrawalEvent[];
-  rolloverStrategy?: 'principal_and_interest' | 'principal_only' | 'none';
-  periodConfigs?: Record<string, { termMonths?: number; interestRateAnnual?: number; contribution?: number }>;
+  rolloverStrategy?: 'principal_and_interest' | 'principal_only' | 'none' | 'return_to_source';
+  periodConfigs?: Record<string, { termMonths?: number; interestRateAnnual?: number; contribution?: number; depositBank?: string; rolloverStrategy?: 'principal_and_interest' | 'principal_only' | 'none' | 'return_to_source' }>;
   notes?: string;
 }
 

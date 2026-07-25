@@ -12,6 +12,7 @@ import { Target, Plus, Trash2, ArrowRightCircle, Edit, CheckCircle } from 'lucid
 import { formatTableMoneyVNDMillion } from '../../utils/format';
 import { safeNumber, calculateNonTermInterest } from '../../utils/math';
 import { runProjection } from '../../engines/projectionEngine';
+import { simulateSinkingFund } from '../../engines/sinkingFundEngine';
 import type { AssetType } from '../../types/portfolio';
 import { FUNDING_SOURCES, SCREEN_FUNDING_CONSTRAINTS } from '../../constants/fundingSources';
 import type { FundingSourceId } from '../../constants/fundingSources';
@@ -100,7 +101,7 @@ export const SinkingFundModule: React.FC<SinkingFundModuleProps> = ({
     sourceOfFund: activeSources[0] as string,
     startMonth: initMonth,
     startYear: initYear,
-    rolloverStrategy: 'principal_and_interest' as 'principal_and_interest' | 'principal_only' | 'none',
+    rolloverStrategy: 'principal_and_interest' as 'principal_and_interest' | 'principal_only' | 'none' | 'return_to_source',
   });
 
   const [disbursingId, setDisbursingId] = useState<string | null>(null);

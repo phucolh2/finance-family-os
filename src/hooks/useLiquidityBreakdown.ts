@@ -5,10 +5,25 @@ import { analyzeExpense } from '../engines/expenseEngine';
 export const useLiquidityBreakdown = () => {
   const { state, selectedPeriodKey } = useAppContext();
 
+  const activePeriodKey = useMemo(() => {
+    if (selectedPeriodKey) return selectedPeriodKey;
+    
+    const now = new Date();
+    const nowMonth = now.getMonth() + 1;
+    const nowYear = now.getFullYear();
+    const startYear = state.profile?.planningStartYear || nowYear;
+    const startMonth = state.profile?.planningStartMonth || nowMonth;
+    
+    if (nowYear < startYear || (nowYear === startYear && nowMonth < startMonth)) {
+      return `${startYear}-${String(startMonth).padStart(2, '0')}`;
+    }
+    return `${nowYear}-${String(nowMonth).padStart(2, '0')}`;
+  }, [selectedPeriodKey, state.profile]);
+
   const activeBudget = useMemo(() => {
     let budget = state.budgetSchedule.length > 0 ? state.budgetSchedule[state.budgetSchedule.length - 1] : null;
-    if (selectedPeriodKey) {
-      const parts = selectedPeriodKey.split('-');
+    if (activePeriodKey) {
+      const parts = activePeriodKey.split('-');
       const year = parseInt(parts[0], 10);
       const month = parseInt(parts[1], 10);
       const monthValue = year * 12 + month;
@@ -22,21 +37,20 @@ export const useLiquidityBreakdown = () => {
       }
     }
     return budget;
-  }, [state.budgetSchedule, selectedPeriodKey]);
+  }, [state.budgetSchedule, activePeriodKey]);
 
   const expenseData = useMemo(() => {
     const budgetTree = activeBudget ? activeBudget.rootGroups : [];
     const expenseTree = budgetTree.filter((g: any) => g.classification === 'expense');
     const expenseGroupIds = expenseTree.map((g: any) => g.groupId as string);
-    return analyzeExpense(state.resolvedMonthlyDb || [], state.lifeEvents, selectedPeriodKey, expenseGroupIds);
-  }, [state.resolvedMonthlyDb, state.lifeEvents, selectedPeriodKey, activeBudget]);
-
+    return analyzeExpense(state.resolvedMonthlyDb || [], state.lifeEvents, activePeriodKey, expenseGroupIds);
+  }, [state.resolvedMonthlyDb, state.lifeEvents, activePeriodKey, activeBudget]);
 
   const liquidityBreakdownData = useMemo(() => {
     const budgetTree = activeBudget ? activeBudget.rootGroups : [];
     const expenseTree = budgetTree.filter((g: any) => g.classification === 'expense');
 
-    const [selYearStr, selMonthStr] = selectedPeriodKey ? selectedPeriodKey.split('-') : [new Date().getFullYear().toString(), (new Date().getMonth() + 1).toString()];
+    const [selYearStr, selMonthStr] = activePeriodKey.split('-');
     const selYear = parseInt(selYearStr, 10);
     const selMonth = parseInt(selMonthStr, 10);
     const selMonthValue = selYear * 12 + selMonth;
@@ -92,7 +106,7 @@ export const useLiquidityBreakdown = () => {
         children
       };
     }).sort((a: any, b: any) => a.sortOrder - b.sortOrder);
-  }, [activeBudget, expenseData.summaryByGroup, expenseData.summaryByCategory, state.sinkingFunds, selectedPeriodKey]);
+  }, [activeBudget, expenseData.summaryByGroup, expenseData.summaryByCategory, state.sinkingFunds, activePeriodKey]);
 
   const totalBudgetSum = useMemo(() => liquidityBreakdownData.reduce((sum, g) => sum + g.totalBudget, 0), [liquidityBreakdownData]);
   const totalActualSum = useMemo(() => liquidityBreakdownData.reduce((sum, g) => sum + g.totalActual, 0), [liquidityBreakdownData]);
@@ -105,6 +119,6 @@ export const useLiquidityBreakdown = () => {
     totalActualSum,
     totalDeductedSum,
     totalRemainingSum,
-    selectedPeriodKey
+    selectedPeriodKey: activePeriodKey
   };
 };
