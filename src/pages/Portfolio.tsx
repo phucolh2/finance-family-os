@@ -14,7 +14,7 @@ import { Briefcase, RotateCcw, PlusCircle, Trash2 } from 'lucide-react';
 import type { AssetType } from '../types/portfolio';
 import { ObservationControls } from '../components/ui/ObservationControls';
 import { HelpTooltip } from '../components/ui/HelpTooltip';
-import { SavingsDepositModule } from '../components/portfolio/SavingsDepositModule';
+
 import { SinkingFundModule } from '../components/portfolio/SinkingFundModule';
 
 export const Portfolio: React.FC = () => {
@@ -580,9 +580,8 @@ export const Portfolio: React.FC = () => {
       })()}
       </div>
 
-      {/* Gửi Tiết kiệm và Sinking Funds */}
+      {/* Sinking Funds */}
       <div className="flex flex-col gap-6 mt-6">
-        <SavingsDepositModule />
         <SinkingFundModule filterFundType="investment" />
       </div>
 

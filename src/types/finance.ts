@@ -182,8 +182,9 @@ export interface SavingsDeposit {
 export interface SinkingFund {
   id: string;
   name: string; // VD: Quỹ mua chung cư
-  fundType?: 'investment' | 'debt_prep';
-  sourceOfFund?: FundingSourceId;
+  fundType?: 'investment' | 'debt_prep' | 'lifestyle_savings';
+  fundGroup?: string; // Tên nhóm quỹ hoặc hashtag
+  sourceOfFund?: FundingSourceId | string;
   targetAssetType: 'fx_reserve_usd' | 'gold' | 'real_estate' | 'stocks' | 'crypto';
   targetAmount: number; // Mục tiêu cần đạt (VD: 2000 Tr VND)
   
@@ -199,6 +200,7 @@ export interface SinkingFund {
   disbursedMonth?: number;
   disbursedYear?: number;
   withdrawals?: WithdrawalEvent[];
+  rolloverStrategy?: 'principal_and_interest' | 'principal_only' | 'none';
   periodConfigs?: Record<string, { termMonths?: number; interestRateAnnual?: number; contribution?: number }>;
   notes?: string;
 }

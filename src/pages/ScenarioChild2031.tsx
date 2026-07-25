@@ -3,7 +3,7 @@ import { useAppContext } from '../context/AppContext';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '../components/ui/Card';
 import { WarningBox } from '../components/ui/WarningBox';
 import { calculateChildCost } from '../engines/childEngine';
-import { formatTableMoneyVNDMillion, formatKpiMoneyVNDMillion } from '../utils/format';
+import { formatTableMoneyVNDMillion, formatKpiMoneyVNDMillion, formatAxisMoneyVNDMillion, formatTooltipMoneyVNDMillion } from '../utils/format';
 import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 import { Baby, GraduationCap, Coins } from 'lucide-react';
 import type { TimelinePeriod } from '../types/finance';
@@ -127,8 +127,8 @@ export const ScenarioChild2031: React.FC = () => {
               </defs>
               <CartesianGrid strokeDasharray="3 3" stroke="rgba(125, 83, 45, 0.08)" />
               <XAxis dataKey="age" stroke="#6f5d50" fontSize={10} label={{ value: 'Tuổi con', position: 'insideBottom', offset: -10, fontSize: 10 }} />
-              <YAxis stroke="#6f5d50" fontSize={10} label={{ value: 'Triệu đồng / tháng', angle: -90, position: 'insideLeft', offset: 10, fontSize: 10 }} />
-              <Tooltip formatter={(value) => `${value} tr VND`} />
+              <YAxis tickFormatter={(v) => formatAxisMoneyVNDMillion(v)} fontSize={12} stroke="#94a3b8" />
+              <Tooltip formatter={(value: any) => formatTooltipMoneyVNDMillion(value as number)} />
               <Area type="monotone" dataKey="Chi phí tháng" stroke="#d97706" fillOpacity={1} fill="url(#colorCost)" strokeWidth={2} />
             </AreaChart>
           </ResponsiveContainer>

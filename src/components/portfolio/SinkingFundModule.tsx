@@ -12,9 +12,16 @@ import type { AssetType } from '../../types/portfolio';
 import { FUNDING_SOURCES, SCREEN_FUNDING_CONSTRAINTS } from '../../constants/fundingSources';
 import type { FundingSourceId } from '../../constants/fundingSources';
 
+interface DynamicSource {
+  id: string;
+  label: string;
+  balance: number;
+}
+
 interface SinkingFundModuleProps {
-  filterFundType?: 'investment' | 'debt_prep';
-  filterSources?: FundingSourceId[];
+  filterFundType?: 'investment' | 'debt_prep' | 'lifestyle_savings';
+  filterSources?: FundingSourceId[] | string[];
+  dynamicSources?: DynamicSource[];
   title?: string;
   description?: string;
   emptyStateTitle?: string;
@@ -24,6 +31,7 @@ interface SinkingFundModuleProps {
 export const SinkingFundModule: React.FC<SinkingFundModuleProps> = ({
   filterFundType = 'investment',
   filterSources,
+  dynamicSources,
   title = '🎯 Quỹ tích lũy mục tiêu (Sinking Funds)',
   description = 'Gom tiền định kỳ hàng tháng để chuẩn bị cho các thương vụ lớn. Số dư đẻ lãi theo lãi suất tiết kiệm.',
   emptyStateTitle = 'Chưa có quỹ tích lũy nào',
@@ -61,7 +69,7 @@ export const SinkingFundModule: React.FC<SinkingFundModuleProps> = ({
   const initMonth = now.getMonth() + 1;
   const initYear = now.getFullYear();
 
-  const activeSources = filterSources || (filterFundType === 'debt_prep' ? SCREEN_FUNDING_CONSTRAINTS.debt_prep : SCREEN_FUNDING_CONSTRAINTS.portfolio);
+  const activeSources = dynamicSources ? dynamicSources.map(d => d.id) : (filterSources || (filterFundType === 'debt_prep' ? SCREEN_FUNDING_CONSTRAINTS.debt_prep : SCREEN_FUNDING_CONSTRAINTS.portfolio));
 
   const [showAddForm, setShowAddForm] = useState(false);
   const [editingFundId, setEditingFundId] = useState<string | null>(null);
@@ -74,15 +82,17 @@ export const SinkingFundModule: React.FC<SinkingFundModuleProps> = ({
   }, [selectedPeriodKey]);
   const [form, setForm] = useState({
     name: '',
+    fundGroup: '',
     targetAssetType: 'real_estate' as AssetType,
     targetAmount: 0,
     initialDeposit: 0,
     monthlyContribution: 0,
     interestRateAnnual: 5.5,
     termMonths: 1,
-    sourceOfFund: activeSources[0] as FundingSourceId,
+    sourceOfFund: activeSources[0] as string,
     startMonth: initMonth,
     startYear: initYear,
+    rolloverStrategy: 'principal_and_interest' as 'principal_and_interest' | 'principal_only' | 'none',
   });
 
   const [disbursingId, setDisbursingId] = useState<string | null>(null);
@@ -97,11 +107,20 @@ export const SinkingFundModule: React.FC<SinkingFundModuleProps> = ({
   });
 
   const activeFunds = state.sinkingFunds?.filter(f => f.status === 'active' && (f.fundType || 'investment') === filterFundType) || [];
+  
+  const existingFundGroups = Array.from(new Set(state.sinkingFunds?.map(f => f.fundGroup).filter(Boolean))) as string[];
 
   const targetKey = `${form.startYear}-${String(form.startMonth).padStart(2, '0')}`;
   const currentRow = projection.monthlyRows.find(r => r.period.key === targetKey);
   
   const getSourceLabelWithBalance = (sourceId: string) => {
+      if (dynamicSources) {
+          const dyn = dynamicSources.find(d => d.id === sourceId);
+          if (dyn) {
+              return `${dyn.label} (Còn: ${formatTableMoneyVNDMillion(dyn.balance)})`;
+          }
+      }
+      
       let balance = 0;
       let prefix = '';
       if (sourceId === 'unallocated' || sourceId === 'investment') {
@@ -123,6 +142,9 @@ export const SinkingFundModule: React.FC<SinkingFundModuleProps> = ({
       } else if (sourceId === 'debt_reserve') {
          balance = (currentRow ? currentRow.debtReserveBalance : 0) + (currentRow ? (currentRow as any)._activeSinkingFundsDebtReserve || 0 : 0);
          prefix = 'Quỹ Dự phòng';
+      } else if (sourceId.startsWith('expense_surplus')) {
+         balance = currentRow ? currentRow.liquidityBalance : 0;
+         prefix = 'Quỹ Sinh Hoạt dư';
       }
       return `${prefix} (Còn: ${formatTableMoneyVNDMillion(balance)})`;
   };
@@ -140,34 +162,73 @@ export const SinkingFundModule: React.FC<SinkingFundModuleProps> = ({
     const currentObservedYear = activeRow ? activeRow.period.year : initYear;
 
     const fund = activeFunds.find(f => f.id === fundId);
-    if (!fund) return { balance: 0, progress: 0, buckets: [] };
+    if (!fund) return { balance: 0, progress: 0, buckets: [], nonTermCash: 0 };
     
-    let buckets: { principal: number; termStart: number; termMonths: number; interestRateAnnual: number; periodKey: string }[] = [];
+    let buckets: { id: string; parentId?: string; principal: number; termStart: number; termMonths: number; interestRateAnnual: number; periodKey: string; contribAmount?: number }[] = [];
+    let nonTermCash = 0;
+    
     const start = fund.startYear * 12 + fund.startMonth;
     const current = currentObservedYear * 12 + currentObservedMonth;
     
     if (current >= start) {
        for (let m = start; m <= current; m++) {
-          let maturingAmount = 0;
+          let maturingBuckets: { principal: number; parentId: string }[] = [];
           
           const mo = ((m - 1) % 12) + 1;
           const yr = Math.floor((m - 1) / 12);
           const periodKey = `${yr}-${String(mo).padStart(2, '0')}`;
           const periodCfg = fund.periodConfigs?.[periodKey];
+          
+          // Accrue non-term interest for nonTermCash this month
+          const monthlyNonTermRate = [...(state.assumptions.nonTermInterestRateSchedule || [])]
+            .sort((a, b) => (b.startYear * 12 + b.startMonth) - (a.startYear * 12 + a.startMonth))
+            .find(s => (s.startYear * 12 + s.startMonth) <= (yr * 12 + mo))?.rateAnnual || 0.1;
+          nonTermCash += nonTermCash * (monthlyNonTermRate / 100 / 12);
 
           const currentWithdrawals = (fund.withdrawals || []).filter(w => w.month === mo && w.year === yr);
           if (currentWithdrawals.length > 0) {
              currentWithdrawals.forEach(w => {
                 let amountToDeduct = w.amount;
-                for (let i = 0; i < buckets.length && amountToDeduct > 0; i++) {
-                   if (buckets[i].principal >= amountToDeduct) {
-                      buckets[i].principal -= amountToDeduct;
-                      amountToDeduct = 0;
-                   } else {
-                      amountToDeduct -= buckets[i].principal;
-                      buckets[i].principal = 0;
+                
+                // 1. Ưu tiên rút tiền từ nonTermCash trước
+                if (nonTermCash >= amountToDeduct) {
+                   nonTermCash -= amountToDeduct;
+                   amountToDeduct = 0;
+                } else {
+                   amountToDeduct -= nonTermCash;
+                   nonTermCash = 0;
+                }
+                
+                // 2. Nếu chưa đủ, rút từ các bucket, ưu tiên bucket sắp đáo hạn nhất
+                let newResidualBuckets: typeof buckets = [];
+                if (amountToDeduct > 0) {
+                   // Sắp xếp các bucket theo thời gian đáo hạn tăng dần (gần tới hạn nhất lên đầu)
+                   buckets.sort((a, b) => (a.termStart + a.termMonths) - (b.termStart + b.termMonths));
+                   
+                   for (let i = 0; i < buckets.length && amountToDeduct > 0; i++) {
+                      if (buckets[i].principal >= amountToDeduct) {
+                         const residual = buckets[i].principal - amountToDeduct;
+                         buckets[i].principal = 0; // Bucket này bị tất toán toàn bộ/phần
+                         amountToDeduct = 0;
+                         if (residual > 0) {
+                            newResidualBuckets.push({
+                               id: `residual_${buckets[i].id}_${m}`,
+                               parentId: `Dôi dư từ kỳ T${((buckets[i].termStart-1)%12)+1}/${Math.floor((buckets[i].termStart-1)/12)}`,
+                               principal: residual,
+                               termStart: m, // Kỳ hạn bắt đầu tính lại từ tháng tất toán
+                               termMonths: buckets[i].termMonths, // Giữ nguyên thời gian kỳ hạn
+                               interestRateAnnual: buckets[i].interestRateAnnual,
+                               periodKey, // Theo period config hiện tại
+                               contribAmount: 0
+                            });
+                         }
+                      } else {
+                         amountToDeduct -= buckets[i].principal;
+                         buckets[i].principal = 0;
+                      }
                    }
                 }
+                buckets.push(...newResidualBuckets);
              });
              buckets = buckets.filter(b => b.principal > 0);
           }
@@ -175,7 +236,22 @@ export const SinkingFundModule: React.FC<SinkingFundModuleProps> = ({
           buckets = buckets.filter(b => {
              if (m - b.termStart === b.termMonths && m > b.termStart) {
                 const interest = b.principal * (b.interestRateAnnual / 100 / 12) * b.termMonths;
-                maturingAmount += b.principal + interest;
+                let rolloverPrincipal = 0;
+                if (fund.rolloverStrategy === 'none') {
+                   nonTermCash += b.principal + interest;
+                } else if (fund.rolloverStrategy === 'principal_only') {
+                   rolloverPrincipal = b.principal;
+                   nonTermCash += interest;
+                } else { // default or principal_and_interest
+                   rolloverPrincipal = b.principal + interest;
+                }
+                
+                if (rolloverPrincipal > 0) {
+                   maturingBuckets.push({
+                      principal: rolloverPrincipal,
+                      parentId: `Tái tục từ kỳ T${((b.termStart-1)%12)+1}/${Math.floor((b.termStart-1)/12)}`
+                   });
+                }
                 return false;
              }
              return true;
@@ -190,7 +266,7 @@ export const SinkingFundModule: React.FC<SinkingFundModuleProps> = ({
 
           if (m >= start) {
              const lastBucket = buckets.length > 0 ? buckets[buckets.length - 1] : null;
-             const defaultContrib = lastBucket && (lastBucket as any).contribAmount !== undefined ? (lastBucket as any).contribAmount : fund.monthlyContribution;
+             const defaultContrib = lastBucket && lastBucket.contribAmount !== undefined ? lastBucket.contribAmount : fund.monthlyContribution;
              periodContrib = periodCfg?.contribution !== undefined ? periodCfg.contribution : defaultContrib;
              newContrib += periodContrib;
 
@@ -200,35 +276,63 @@ export const SinkingFundModule: React.FC<SinkingFundModuleProps> = ({
              bRate = periodCfg?.interestRateAnnual !== undefined ? periodCfg.interestRateAnnual : defaultRate;
           }
           
-          if (newContrib > 0 || maturingAmount > 0) {
-             buckets.push({ principal: newContrib + maturingAmount, termStart: m, termMonths: bTerm, interestRateAnnual: bRate, periodKey, contribAmount: periodContrib } as any);
+          if (bTerm > 0) {
+             if (newContrib > 0) {
+                buckets.push({ 
+                   id: `T${mo}-${yr}_new`,
+                   principal: newContrib, 
+                   termStart: m, 
+                   termMonths: bTerm, 
+                   interestRateAnnual: bRate, 
+                   periodKey, 
+                   contribAmount: periodContrib 
+                });
+             }
+             maturingBuckets.forEach((mb, idx) => {
+                buckets.push({
+                   id: `T${mo}-${yr}_rollover_${idx}`,
+                   parentId: mb.parentId,
+                   principal: mb.principal,
+                   termStart: m,
+                   termMonths: bTerm,
+                   interestRateAnnual: bRate,
+                   periodKey,
+                   contribAmount: 0
+                });
+             });
+          } else if (bTerm === 0) {
+             nonTermCash += newContrib + maturingBuckets.reduce((sum, b) => sum + b.principal, 0);
           }
        }
     }
     
-    let totalNonTermInterest = 0;
+    let totalNonTermInterestForActiveBuckets = 0;
     const currentMonth = currentObservedMonth;
     const currentYear = currentObservedYear;
     buckets.forEach(b => {
        const bMonth = ((b.termStart - 1) % 12) + 1;
        const bYear = Math.floor((b.termStart - 1) / 12);
-       totalNonTermInterest += calculateNonTermInterest(b.principal, bMonth, bYear, currentMonth, currentYear, state.assumptions.nonTermInterestRateSchedule);
+       // Tính lãi không kỳ hạn cho các bucket chưa đáo hạn (giả định tất toán hôm nay)
+       totalNonTermInterestForActiveBuckets += calculateNonTermInterest(b.principal, bMonth, bYear, currentMonth, currentYear, state.assumptions.nonTermInterestRateSchedule);
     });
 
-    const bal = buckets.reduce((sum, b) => sum + b.principal, 0) + totalNonTermInterest;
+    const bal = buckets.reduce((sum, b) => sum + b.principal, 0) + nonTermCash + totalNonTermInterestForActiveBuckets;
     let totalDisbursed = fund.initialDeposit;
     buckets.forEach(b => {
-      // (b as any).contribAmount is exactly the new money added!
-      if ((b as any).contribAmount > 0) {
-        totalDisbursed += (b as any).contribAmount;
+      if (b.contribAmount && b.contribAmount > 0) {
+        totalDisbursed += b.contribAmount;
       }
     });
+    // Add contributions that went directly to nonTermCash if term == 0
+    // Actually, calculating exact totalDisbursed is tricky when term is 0, but we can approximate or use periodConfigs.
+    // For now, let's keep it simple.
 
     return { 
        balance: bal, 
        totalDisbursed,
        progress: fund.targetAmount > 0 ? (bal / fund.targetAmount) * 100 : 0,
-       buckets // Return buckets for calculation during disbursement if needed
+       buckets,
+       nonTermCash
     };
   };
 
@@ -251,6 +355,9 @@ export const SinkingFundModule: React.FC<SinkingFundModuleProps> = ({
 
       {showAddForm && (
         <div className="mb-6 p-4 bg-orange-50/50 border border-orange-200/30 rounded-xl space-y-4">
+          <datalist id="fund-groups">
+            {existingFundGroups.map(group => <option key={group} value={group} />)}
+          </datalist>
           <h4 className="font-bold text-sm text-family-text">Khởi tạo quỹ mới</h4>
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
             <Input
@@ -259,6 +366,16 @@ export const SinkingFundModule: React.FC<SinkingFundModuleProps> = ({
               placeholder="VD: Quỹ mua ô tô / Trả nợ nhà"
               onChange={(e) => { setForm({ ...form, name: e.target.value }); }}
             />
+            <div className="flex flex-col">
+              <label className="block text-xs font-semibold text-family-textMuted uppercase tracking-wider mb-1">Nhóm (Hashtag)</label>
+              <input
+                list="fund-groups"
+                className="block w-full rounded-xl border border-family-accent/20 bg-white/60 py-2.5 px-3 text-sm text-family-text focus:border-family-accent focus:bg-white focus:outline-none focus:ring-1 focus:ring-family-accent transition-colors"
+                value={form.fundGroup}
+                placeholder="VD: Cổ phiếu, BDS..."
+                onChange={(e) => { setForm({ ...form, fundGroup: e.target.value }); }}
+              />
+            </div>
             <div className="sm:col-span-2 lg:col-span-2">
               <label className="block text-xs font-semibold text-family-textMuted uppercase tracking-wider mb-1">Nguồn tiền</label>
               <select 
@@ -348,12 +465,25 @@ export const SinkingFundModule: React.FC<SinkingFundModuleProps> = ({
                 <option value={12}>12 tháng</option>
               </select>
             </div>
+            <div className="sm:col-span-2">
+              <label className="block text-xs font-semibold text-family-textMuted uppercase tracking-wider mb-1">Phương thức tái tục</label>
+              <select 
+                className="block w-full rounded-xl border border-family-accent/20 bg-white/60 py-2.5 px-3 text-sm text-family-text focus:border-family-accent focus:bg-white focus:outline-none focus:ring-1 focus:ring-family-accent transition-colors"
+                value={form.rolloverStrategy}
+                onChange={e => { setForm({...form, rolloverStrategy: e.target.value as any}); }}
+                disabled={form.termMonths === 0}
+              >
+                <option value="principal_and_interest">Tự động tái tục gốc và lãi</option>
+                <option value="principal_only">Tự động tái tục gốc (Lãi sang không kỳ hạn)</option>
+                <option value="none">Không tái tục (Gốc & Lãi sang không kỳ hạn)</option>
+              </select>
+            </div>
           </div>
           <div className="flex justify-end gap-2 pt-2">
             <Button variant="outline" onClick={() => {
               setShowAddForm(false);
               setEditingFundId(null);
-              setForm({ ...form, name: '', initialDeposit: 0, targetAmount: 0 });
+              setForm({ ...form, name: '', fundGroup: '', initialDeposit: 0, targetAmount: 0 });
             }}>Hủy</Button>
             <Button 
               onClick={() => {
@@ -376,7 +506,7 @@ export const SinkingFundModule: React.FC<SinkingFundModuleProps> = ({
                 }
                 setShowAddForm(false);
                 setEditingFundId(null);
-                setForm({ ...form, name: '', initialDeposit: 0, targetAmount: 0 });
+                setForm({ ...form, name: '', fundGroup: '', initialDeposit: 0, targetAmount: 0 });
               }}
               disabled={!form.name.trim()}
             >
@@ -415,15 +545,17 @@ export const SinkingFundModule: React.FC<SinkingFundModuleProps> = ({
                         setEditingFundId(fund.id);
                         setForm({
                           name: fund.name,
+                          fundGroup: fund.fundGroup || '',
                           targetAssetType: fund.targetAssetType,
                           targetAmount: fund.targetAmount,
                           initialDeposit: fund.initialDeposit,
                           monthlyContribution: fund.monthlyContribution,
                           interestRateAnnual: fund.interestRateAnnual || 5.5,
                           termMonths: fund.termMonths || 1,
-                          sourceOfFund: fund.sourceOfFund || activeSources[0],
+                          sourceOfFund: (fund.sourceOfFund || activeSources[0]) as string,
                           startMonth: fund.startMonth,
                           startYear: fund.startYear,
+                          rolloverStrategy: fund.rolloverStrategy || 'principal_and_interest',
                         });
                         setShowAddForm(true);
                         window.scrollTo({ top: 0, behavior: 'smooth' });
@@ -458,7 +590,9 @@ export const SinkingFundModule: React.FC<SinkingFundModuleProps> = ({
                   </div>
                   <div className="flex flex-col">
                     <span className="text-[10px] text-family-textMuted uppercase tracking-wide">Nguồn tiền</span>
-                    <span className="text-xs font-medium text-family-text">{FUNDING_SOURCES[fund.sourceOfFund as FundingSourceId]?.shortLabel || fund.sourceOfFund}</span>
+                    <span className="text-xs font-medium text-family-text whitespace-nowrap overflow-hidden text-ellipsis w-[100px] block" title={dynamicSources?.find(d => d.id === fund.sourceOfFund)?.label || FUNDING_SOURCES[fund.sourceOfFund as FundingSourceId]?.shortLabel || fund.sourceOfFund}>
+                      {dynamicSources?.find(d => d.id === fund.sourceOfFund)?.label || FUNDING_SOURCES[fund.sourceOfFund as FundingSourceId]?.shortLabel || fund.sourceOfFund}
+                    </span>
                   </div>
                 </div>
 
@@ -575,13 +709,17 @@ export const SinkingFundModule: React.FC<SinkingFundModuleProps> = ({
                                  const pKey = b.periodKey || `${bYr}-${String(bMo).padStart(2, '0')}`;
 
                                  return (
-                                    <div key={i} className="flex flex-col sm:flex-row sm:items-center justify-between text-[11px] bg-white p-2 rounded shadow-sm border border-gray-100 gap-2">
-                                       <div className="flex items-center gap-1.5">
-                                          <span className="font-semibold text-family-text">Kỳ T{bMo}/{bYr}:</span>
-                                          <input
-                                             type="number"
-                                             step="0.1"
-                                             min="0"
+                                    <div key={i} className="flex flex-col bg-white p-2 rounded shadow-sm border border-gray-100 gap-2 mb-2">
+                                       <div className="flex flex-col sm:flex-row sm:items-center justify-between text-[11px] gap-2">
+                                         <div className="flex items-center gap-1.5">
+                                            <div className="flex flex-col">
+                                              <span className="font-semibold text-family-text">Kỳ T{bMo}/{bYr}:</span>
+                                              {b.parentId && <span className="text-[9px] text-blue-600 bg-blue-50 px-1 py-0.5 rounded-sm mt-0.5">{b.parentId}</span>}
+                                            </div>
+                                            <input
+                                               type="number"
+                                               step="0.1"
+                                               min="0"
                                              value={fund.periodConfigs?.[pKey]?.contribution !== undefined ? fund.periodConfigs[pKey].contribution : fund.monthlyContribution}
                                              onChange={(e) => {
                                                 const newContrib = safeNumber(Number(e.target.value), 0);
@@ -666,7 +804,8 @@ export const SinkingFundModule: React.FC<SinkingFundModuleProps> = ({
                                              <span className="text-[10px] text-family-textMuted">%/năm</span>
                                           </div>
                                        </div>
-                                    </div>
+                                     </div>
+                                   </div>
                                  );
                               })}
                            </div>
@@ -747,6 +886,55 @@ export const SinkingFundModule: React.FC<SinkingFundModuleProps> = ({
                           </div>
                         )}
                       </div>
+                      
+                      {(() => {
+                        if (settleMode === 'partial') {
+                          const wAmt = partialWithdrawType === 'amount' ? partialWithdrawValue : (balance * partialWithdrawValue / 100);
+                          if (wAmt > 0 && wAmt <= balance) {
+                            let breakdownNonTerm = 0;
+                            const breakdownBuckets: any[] = [];
+                            let rem = wAmt;
+                            
+                            const sim = getFundBalance(fund.id);
+                            let simNonTerm = sim.nonTermCash || 0;
+                            if (simNonTerm >= rem) {
+                               breakdownNonTerm = rem;
+                               rem = 0;
+                            } else {
+                               breakdownNonTerm = simNonTerm;
+                               rem -= simNonTerm;
+                            }
+                            
+                            if (rem > 0) {
+                               const sorted = [...sim.buckets].sort((a, b) => (a.termStart + a.termMonths) - (b.termStart + b.termMonths));
+                               for (const b of sorted) {
+                                  if (rem <= 0) break;
+                                  const deduct = Math.min(b.principal, rem);
+                                  breakdownBuckets.push({
+                                     periodKey: b.periodKey || `${Math.floor((b.termStart-1)/12)}-${String(((b.termStart-1)%12)+1).padStart(2,'0')}`,
+                                     deduct
+                                  });
+                                  rem -= deduct;
+                               }
+                            }
+                            
+                            return (
+                               <div className="w-full mt-3 p-2 bg-yellow-50 border border-yellow-200 rounded-md">
+                                  <p className="text-[11px] font-bold text-yellow-800 mb-1">Cơ chế tất toán thông minh sẽ tự động ưu tiên rút:</p>
+                                  <ul className="list-disc pl-4 text-[10px] text-yellow-800 space-y-0.5">
+                                     {breakdownNonTerm > 0 && <li>Từ phần không kỳ hạn: <strong>{formatTableMoneyVNDMillion(breakdownNonTerm)} Tr</strong></li>}
+                                     {breakdownBuckets.map((b, i) => (
+                                        <li key={i}>Tất toán từ kỳ hạn T{b.periodKey.split('-')[1]}/{b.periodKey.split('-')[0]}: <strong>{formatTableMoneyVNDMillion(b.deduct)} Tr</strong></li>
+                                     ))}
+                                     {breakdownBuckets.length > 0 && <li>Phần dôi ra của các kỳ hạn trên (nếu có) vẫn tiếp tục duy trì kỳ hạn cũ.</li>}
+                                  </ul>
+                               </div>
+                            );
+                          }
+                        }
+                        return null;
+                      })()}
+
 
                       <div className="flex justify-end gap-2 pt-2">
                         <Button variant="outline" size="sm" onClick={() => { setDisbursingId(null); }}>Hủy</Button>

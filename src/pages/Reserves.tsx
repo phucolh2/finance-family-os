@@ -68,7 +68,7 @@ export const Reserves: React.FC = () => {
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold text-family-text">
-              {state.sinkingFunds?.filter(f => f.status === 'active').length || 0}
+              {state.sinkingFunds?.filter(f => f.status === 'active' && f.fundType === 'debt_prep').length || 0}
             </div>
             <p className="text-xs text-amber-500 mt-1">Quỹ đang hoạt động</p>
           </CardContent>
@@ -90,8 +90,7 @@ export const Reserves: React.FC = () => {
       <div className="flex flex-col gap-6 mt-6">
         <SinkingFundModule 
           title="🎯 Quỹ Mục tiêu & Dự phòng"
-          // We remove filterFundType to allow showing ALL sinking funds here, or we can keep it flexible.
-          // In the original, it filtered by debt_prep. Since this is the generic Reserve screen, let's remove filterFundType.
+          filterFundType="debt_prep"
           filterSources={['saving', 'debt_reserve', 'unallocated']}
           description="Lên kế hoạch và gom tiền định kỳ từ ngân sách cho các mục tiêu cụ thể (như tất toán nợ, khẩn cấp...)."
           emptyStateTitle="Chưa có quỹ dự phòng nào"

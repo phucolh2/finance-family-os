@@ -4,7 +4,7 @@ import { Card, CardHeader, CardTitle, CardContent } from '../ui/Card';
 import { formatTableMoneyVNDMillion } from '../../utils/format';
 import { safeNumber } from '../../utils/math';
 import { Calculator, Wallet, PiggyBank, CircleDollarSign } from 'lucide-react';
-import { SavingsDepositModule } from '../portfolio/SavingsDepositModule';
+
 import type { BudgetGroup } from '../../types/budget';
 
 export const MonthlyReconciliation: React.FC = () => {
@@ -198,7 +198,7 @@ export const MonthlyReconciliation: React.FC = () => {
                 <div className="bg-white p-4 rounded-xl shadow-sm border border-slate-100 flex items-center justify-between">
                   <div>
                     <p className="text-sm font-semibold text-family-textMuted uppercase">Tổng tiền dư</p>
-                    <p className="text-2xl font-bold text-emerald-600">{formatTableMoneyVNDMillion(totalRemaining)} Tr</p>
+                    <p className="text-2xl font-bold text-emerald-600">{formatTableMoneyVNDMillion(totalRemaining)}</p>
                   </div>
                   <div className="w-10 h-10 rounded-full bg-emerald-100 flex items-center justify-center text-emerald-600">
                     <Calculator className="w-5 h-5" />
@@ -208,7 +208,7 @@ export const MonthlyReconciliation: React.FC = () => {
                 <div className="bg-white p-4 rounded-xl shadow-sm border border-slate-100 flex items-center justify-between">
                   <div>
                     <p className="text-sm font-semibold text-family-textMuted uppercase">Đã gửi tiết kiệm</p>
-                    <p className="text-2xl font-bold text-sky-600">{formatTableMoneyVNDMillion(savingsThisMonth)} Tr</p>
+                    <p className="text-2xl font-bold text-sky-600">{formatTableMoneyVNDMillion(savingsThisMonth)}</p>
                   </div>
                   <div className="w-10 h-10 rounded-full bg-sky-100 flex items-center justify-center text-sky-600">
                     <PiggyBank className="w-5 h-5" />
@@ -218,7 +218,7 @@ export const MonthlyReconciliation: React.FC = () => {
                 <div className={`bg-white p-4 rounded-xl shadow-sm border border-slate-100 flex items-center justify-between ${idleMoney > 0 ? 'ring-1 ring-orange-200' : ''}`}>
                   <div>
                     <p className="text-sm font-semibold text-family-textMuted uppercase">Tiền nhàn rỗi (Chưa sinh lời)</p>
-                    <p className={`text-2xl font-bold ${idleMoney > 0 ? 'text-orange-600' : 'text-slate-400'}`}>{formatTableMoneyVNDMillion(idleMoney)} Tr</p>
+                    <p className={`text-2xl font-bold ${idleMoney > 0 ? 'text-orange-600' : 'text-slate-400'}`}>{formatTableMoneyVNDMillion(idleMoney)}</p>
                   </div>
                   <div className={`w-10 h-10 rounded-full flex items-center justify-center ${idleMoney > 0 ? 'bg-orange-100 text-orange-600' : 'bg-slate-100 text-slate-400'}`}>
                     <CircleDollarSign className="w-5 h-5" />
@@ -226,14 +226,6 @@ export const MonthlyReconciliation: React.FC = () => {
                 </div>
               </div>
 
-              {/* Embed Savings Module directly for quick access */}
-              <div className="bg-white rounded-xl shadow-sm border border-slate-200 p-6">
-                <SavingsDepositModule 
-                  defaultStartMonth={resolvedDbItem.month} 
-                  defaultStartYear={resolvedDbItem.year} 
-                  filterCurrentMonthOnly={true} 
-                />
-              </div>
             </div>
           )}
         </CardContent>

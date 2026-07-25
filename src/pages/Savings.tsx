@@ -3,7 +3,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/Card'
 import { ShieldCheck, Wallet } from 'lucide-react';
 import { useAppContext } from '../context/AppContext';
 import { formatKpiMoneyVNDMillion } from '../utils/format';
-import { SavingsDepositModule } from '../components/portfolio/SavingsDepositModule';
+import { SinkingFundModule } from '../components/portfolio/SinkingFundModule';
 import { HelpTooltip } from '../components/ui/HelpTooltip';
 import { ObservationControls } from '../components/ui/ObservationControls';
 import { runProjection } from '../engines/projectionEngine';
@@ -85,14 +85,13 @@ export const Savings: React.FC = () => {
       </div>
 
       <div className="flex flex-col gap-6 mt-6">
-        <SavingsDepositModule 
+        <SinkingFundModule 
           title="🏦 Danh sách Sổ Tiết kiệm"
-          filterPools={['saving']}
-          description={
-            <>Quản lý các khoản gửi tiết kiệm từ <strong>Quỹ Tiết kiệm</strong>.</>
-          }
+          filterFundType="investment"
+          filterSources={['saving']}
+          description="Quản lý các khoản gửi tiết kiệm từ Quỹ Tiết kiệm."
           emptyStateTitle="Chưa có khoản tiết kiệm phòng thủ nào"
-          emptyStateDescription="Nhấn 'Tạo khoản tiết kiệm' để gửi tiết kiệm từ Quỹ Tiết kiệm nhằm dự phòng thanh khoản an toàn."
+          emptyStateDescription="Nhấn 'Tạo quỹ mới' để gửi tiết kiệm từ Quỹ Tiết kiệm nhằm dự phòng thanh khoản an toàn."
         />
       </div>
     </div>

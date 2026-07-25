@@ -16,6 +16,7 @@ import {
   DEFAULT_LIFE_EVENTS,
   DEFAULT_INVESTMENT_DEALS,
   DEFAULT_INCOME_CATEGORIES,
+  DEFAULT_SINKING_FUNDS,
 } from '../data/defaultInputs';
 
 const LOCAL_STORAGE_KEY = 'family_finance_os_state';
@@ -43,6 +44,7 @@ const INITIAL_APP_STATE: AppState = {
   assumptions: DEFAULT_ASSUMPTIONS,
   investmentDeals: DEFAULT_INVESTMENT_DEALS,
   savingsDeposits: [],
+  sinkingFunds: DEFAULT_SINKING_FUNDS,
   resolvedMonthlyDb: initialDb.list,
   resolvedMonthlyDbMap: initialDb.map,
 };

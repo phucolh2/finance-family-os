@@ -1,4 +1,4 @@
-export type FundingSourceId = 'unallocated' | 'saving' | 'debt_reserve' | 'investment';
+export type FundingSourceId = 'unallocated' | 'saving' | 'debt_reserve' | 'investment' | 'expense_surplus';
 
 export interface FundingSourceDef {
   id: FundingSourceId;
@@ -31,11 +31,18 @@ export const FUNDING_SOURCES: Record<FundingSourceId, FundingSourceDef> = {
     label: 'Ngân sách Đầu tư (Chưa có kế hoạch)',
     shortLabel: 'Ngân sách Đầu tư',
     description: 'Ngân sách đầu tư tích luỹ nhàn rỗi.'
+  },
+  expense_surplus: {
+    id: 'expense_surplus',
+    label: 'Quỹ sinh hoạt dư (Lifestyle)',
+    shortLabel: 'Quỹ sinh hoạt dư',
+    description: 'Khoản tiền dư ra từ ngân sách chi tiêu sinh hoạt hàng tháng.'
   }
 };
 
 export const SCREEN_FUNDING_CONSTRAINTS = {
   portfolio: ['investment'] as FundingSourceId[],
   savings_deposit: ['saving', 'unallocated'] as FundingSourceId[],
-  debt_prep: ['debt_reserve', 'saving'] as FundingSourceId[]
+  debt_prep: ['debt_reserve', 'saving'] as FundingSourceId[],
+  lifestyle: ['expense_surplus'] as FundingSourceId[]
 };

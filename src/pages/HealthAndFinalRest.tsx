@@ -3,7 +3,7 @@ import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '../co
 import { Input } from '../components/ui/Input';
 import { WarningBox } from '../components/ui/WarningBox';
 import { calculateHealthDefense } from '../engines/healthEngine';
-import { formatKpiMoneyVNDMillion } from '../utils/format';
+import { formatKpiMoneyVNDMillion, formatAxisMoneyVNDMillion, formatTooltipMoneyVNDMillion } from '../utils/format';
 import { safeNumber } from '../utils/math';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
 import { Shield, HeartPulse, ShieldAlert } from 'lucide-react';
@@ -196,8 +196,8 @@ export const HealthAndFinalRest: React.FC = () => {
                 <BarChart data={chartData}>
                   <CartesianGrid strokeDasharray="3 3" stroke="rgba(125, 83, 45, 0.08)" />
                   <XAxis dataKey="name" stroke="#6f5d50" fontSize={10} />
-                  <YAxis stroke="#6f5d50" fontSize={10} tickFormatter={(v) => `${v} tr`} />
-                  <Tooltip formatter={(value) => `${value} tr VND`} />
+                  <YAxis stroke="#6f5d50" fontSize={10} tickFormatter={(v) => formatAxisMoneyVNDMillion(v)} />
+                  <Tooltip formatter={(value: any) => formatTooltipMoneyVNDMillion(value as number)} />
                   <Legend wrapperStyle={{ fontSize: 10 }} />
                   <Bar dataKey="Chi phí hôm nay" fill="#6f5d50" radius={[4, 4, 0, 0]} />
                   <Bar dataKey="Chi phí tương lai (10 năm sau)" fill="#dc2626" radius={[4, 4, 0, 0]} />

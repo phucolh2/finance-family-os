@@ -406,7 +406,7 @@ export function runProjection(input: ProjectionEngineInput): ProjectionOutput {
         : Infinity;
       const current = period.year * 12 + period.month;
       const term = sf.termMonths || 1;
-      const source = sf.sourceOfFund || (sf.fundType === 'debt_prep' ? 'debt_reserve' : 'unallocated');
+      const source = sf.sourceOfFund || (sf.fundType === 'debt_prep' ? 'debt_reserve' : (sf.fundType === 'lifestyle_savings' ? 'expense_surplus' : 'unallocated'));
       
       if (current >= start && current <= end) {
         let maturingAmount = 0;
@@ -484,6 +484,8 @@ export function runProjection(input: ProjectionEngineInput): ProjectionOutput {
                sinkingFundMaturedThisMonth_saving += maturingAmount;
            } else if (source === 'debt_reserve') {
                sinkingFundMaturedThisMonth_debtReserve += maturingAmount;
+           } else if (source === 'expense_surplus') {
+               currentLiquidityBalance += maturingAmount;
            } else {
                sinkingFundMaturedThisMonth_unallocated += maturingAmount;
            }
@@ -497,6 +499,8 @@ export function runProjection(input: ProjectionEngineInput): ProjectionOutput {
         } else if (source === 'debt_reserve') {
           activeSinkingFundsBalance_debtReserve += state.balance;
           if (current < end) currentDebtReserveBalance -= newContrib;
+        } else if (source === 'expense_surplus') {
+          if (current < end) currentLiquidityBalance -= newContrib;
         }
       }
     });
@@ -664,7 +668,7 @@ export function runProjection(input: ProjectionEngineInput): ProjectionOutput {
     });
 
     sinkingFunds.forEach(sf => {
-       const source = sf.sourceOfFund || (sf.fundType === 'debt_prep' ? 'debt_reserve' : 'unallocated');
+       const source = sf.sourceOfFund || (sf.fundType === 'debt_prep' ? 'debt_reserve' : (sf.fundType === 'lifestyle_savings' ? 'expense_surplus' : 'unallocated'));
        if (source !== 'unallocated' && source !== 'investment') return;
 
        const start = sf.startYear * 12 + sf.startMonth;

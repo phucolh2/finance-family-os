@@ -1,4 +1,4 @@
-import type { FamilyProfile, IncomeScheduleItem, LifeStage, Assumptions, LifeEvent, InvestmentDeal, IncomeCategory } from '../types/finance';
+import type { FamilyProfile, IncomeScheduleItem, LifeStage, Assumptions, LifeEvent, InvestmentDeal, IncomeCategory, SinkingFund } from '../types/finance';
 import type { BudgetRatio, BudgetRatioScheduleItem, BudgetTreeNode } from '../types/budget';
 import type { AssetConfig } from '../types/portfolio';
 
@@ -399,4 +399,37 @@ export const DEFAULT_INVESTMENT_DEALS: InvestmentDeal[] = [
     status: 'active',
     notes: 'Thương vụ mua cổ phiếu VIX ban đầu của hai vợ chồng',
   },
+];
+
+export const DEFAULT_SINKING_FUNDS: SinkingFund[] = [
+  {
+    id: 'sf_test_2026',
+    name: 'Quỹ thử nghiệm (Test Data)',
+    fundType: 'investment',
+    targetAssetType: 'gold',
+    targetAmount: 500,
+    initialDeposit: 100,
+    monthlyContribution: 20,
+    interestRateAnnual: 6,
+    termMonths: 3,
+    startMonth: 1,
+    startYear: 2026,
+    status: 'active',
+    rolloverStrategy: 'principal_and_interest',
+    withdrawals: [
+      {
+        id: 'w_test_1',
+        month: 4,
+        year: 2026,
+        amount: 30
+      }
+    ],
+    periodConfigs: {
+      '2026-04': {
+        termMonths: 3,
+        interestRateAnnual: 5.5,
+        contribution: 0
+      }
+    }
+  }
 ];

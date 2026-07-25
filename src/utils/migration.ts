@@ -246,6 +246,12 @@ export function migrateState(stored: unknown, defaultState: AppState): AppState 
             notes: d.notes,
           });
         });
+        
+        // 3. Ensure test data exists if empty
+        if (funds.length === 0 && defaultState.sinkingFunds) {
+          funds.push(...defaultState.sinkingFunds);
+        }
+        
         return funds;
       })(),
       savingsDeposits: Array.isArray(data.savingsDeposits) ? data.savingsDeposits : [],

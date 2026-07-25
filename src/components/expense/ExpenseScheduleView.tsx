@@ -8,7 +8,11 @@ import { Plus, Save, Trash2, Calendar, ChevronDown, ChevronRight, CheckCircle2, 
 import { safeNumber } from '../../utils/math';
 import { formatTableMoneyVNDMillion } from '../../utils/format';
 import { rebuildTreeFromFlatRatios, collectLeafNodes } from '../../engines/budgetEngine';
-import { SavingsDepositModule } from '../portfolio/SavingsDepositModule';
+
+import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip as RechartsTooltip, Legend } from 'recharts';
+
+const CHART_COLORS = ['#10b981', '#f59e0b', '#3b82f6', '#8b5cf6', '#ec4899', '#06b6d4', '#f43f5e', '#f97316', '#14b8a6'];
+
 
 export const ExpenseScheduleView: React.FC = () => {
   const { state, addExpenseScheduleItem, updateExpenseScheduleItem, deleteExpenseScheduleItem, selectedPeriodKey } = useAppContext();
@@ -213,7 +217,7 @@ export const ExpenseScheduleView: React.FC = () => {
       if (actual === -1) actual = budget; // dynamically mapped
 
       if (!isSettled && actual > budget) {
-        validationWarnings.push(`"${cat.name}" vượt ngân sách (lố ${formatTableMoneyVNDMillion(actual - budget)} tr).`);
+        validationWarnings.push(`"${cat.name}" vượt ngân sách (lố ${formatTableMoneyVNDMillion(actual - budget)}).`);
       }
     });
   }
@@ -358,20 +362,108 @@ export const ExpenseScheduleView: React.FC = () => {
                 </div>
               </div>
 
-              <div className="flex flex-wrap gap-4 mt-6">
-                <div className="px-4 py-3 bg-family-bgDark/35 rounded-xl border border-family-accent/5 flex-1 min-w-[200px]">
-                  <div className="text-xs text-family-textMuted font-bold uppercase tracking-wider mb-1">Tổng Thực Chi</div>
-                  <div className="text-2xl font-bold text-family-accent">{formatTableMoneyVNDMillion(totalActual)} <span className="text-sm font-normal text-family-textMuted">tr VNĐ</span></div>
-                </div>
-                <div className="px-4 py-3 bg-family-bgDark/35 rounded-xl border border-family-accent/5 flex-1 min-w-[200px]">
-                  <div className="text-xs text-family-textMuted font-bold uppercase tracking-wider mb-1">Ngân Sách (Tham khảo)</div>
-                  <div className="text-2xl font-bold text-family-text">{formatTableMoneyVNDMillion(totalBudget)} <span className="text-sm font-normal text-family-textMuted">tr VNĐ</span></div>
-                </div>
-                <div className="px-4 py-3 bg-family-bgDark/35 rounded-xl border border-family-accent/5 flex-1 min-w-[200px]">
-                  <div className="text-xs text-family-textMuted font-bold uppercase tracking-wider mb-1">Chênh Lệch</div>
-                  <div className={`text-2xl font-bold ${totalBudget - totalActual >= 0 ? 'text-emerald-600' : 'text-red-500'}`}>
-                    {totalBudget - totalActual >= 0 ? '+' : ''}{formatTableMoneyVNDMillion(totalBudget - totalActual)} <span className="text-sm font-normal text-family-textMuted">tr VNĐ</span>
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mt-6 bg-family-bgDark/5 p-5 rounded-2xl border border-family-accent/10">
+                <div className="flex flex-col justify-center gap-4">
+                  <div className="px-5 py-4 bg-white dark:bg-black/40 rounded-xl border border-family-accent/5 flex-1 shadow-sm flex flex-col justify-center">
+                    <div className="text-[11px] text-family-textMuted font-bold uppercase tracking-widest mb-1.5 flex items-center gap-1.5">
+                      <div className="w-2 h-2 rounded-full bg-family-accent"></div>
+                      Tổng Thực Chi
+                    </div>
+                    <div className="text-4xl font-bold text-family-accent">{formatTableMoneyVNDMillion(totalActual)}</div>
                   </div>
+                  <div className="flex gap-4">
+                    <div className="px-4 py-3 bg-white/80 dark:bg-black/20 rounded-xl border border-family-accent/5 flex-1 shadow-sm">
+                      <div className="text-[10px] text-family-textMuted font-bold uppercase tracking-widest mb-1">Ngân Sách (Tham khảo)</div>
+                      <div className="text-lg font-bold text-family-text">{formatTableMoneyVNDMillion(totalBudget)}</div>
+                    </div>
+                    <div className="px-4 py-3 bg-white/80 dark:bg-black/20 rounded-xl border border-family-accent/5 flex-1 shadow-sm">
+                      <div className="text-[10px] text-family-textMuted font-bold uppercase tracking-widest mb-1">Chênh Lệch</div>
+                      <div className={`text-lg font-bold ${totalBudget - totalActual >= 0 ? 'text-emerald-600' : 'text-red-500'}`}>
+                        {totalBudget - totalActual > 0 ? '+' : ''}{formatTableMoneyVNDMillion(totalBudget - totalActual)}
+                      </div>
+                    </div>
+                  </div>
+                </div>
+                
+                <div className="h-[220px] flex items-center justify-center relative bg-white/50 dark:bg-black/20 rounded-xl border border-family-accent/5 p-4">
+                  {(() => {
+                    const pieData = expenseTree.map(group => {
+                      const leaves = collectLeafNodes(group);
+                      const groupActual = leaves.reduce((sum, cat) => {
+                        let val = safeNumber(categories[cat.id], 0);
+                        if (val === -1) val = (activeIncome * cat.ratioPercent) / 100;
+                        return sum + val;
+                      }, 0);
+                      return { name: group.name, value: groupActual };
+                    }).filter(d => d.value > 0);
+
+                    const renderCustomizedLabel = ({ cx, cy, midAngle, innerRadius, outerRadius, percent }: any) => {
+                      const RADIAN = Math.PI / 180;
+                      const radius = innerRadius + (outerRadius - innerRadius) * 0.55;
+                      const x = cx + radius * Math.cos(-midAngle * RADIAN);
+                      const y = cy + radius * Math.sin(-midAngle * RADIAN);
+
+                      if (percent < 0.05) return null;
+
+                      return (
+                        <text x={x} y={y} fill="white" textAnchor="middle" dominantBaseline="central" fontSize="11" fontWeight="bold" style={{ textShadow: '0px 1px 3px rgba(0,0,0,0.4)' }}>
+                          {`${(percent * 100).toFixed(0)}%`}
+                        </text>
+                      );
+                    };
+
+                    if (totalActual === 0) {
+                      return (
+                        <div className="text-sm text-family-textMuted italic flex flex-col items-center justify-center h-full">
+                          <PieChart className="w-12 h-12 mb-2 text-gray-300" />
+                          Chưa có dữ liệu chi tiêu
+                        </div>
+                      );
+                    }
+
+                    return (
+                      <div className="flex flex-col w-full h-full">
+                        <div className="text-[10px] text-family-textMuted font-bold uppercase tracking-widest mb-1 w-full text-left pl-1">Cơ cấu Thực chi</div>
+                        <div className="flex w-full flex-1 items-center gap-6">
+                        <div className="w-[180px] h-[180px] relative shrink-0">
+                          <ResponsiveContainer width="100%" height="100%">
+                            <PieChart>
+                              <Pie
+                                data={pieData}
+                                cx="50%"
+                                cy="50%"
+                                outerRadius={85}
+                                dataKey="value"
+                                stroke="white"
+                                strokeWidth={2}
+                                labelLine={false}
+                                label={renderCustomizedLabel}
+                              >
+                                {pieData.map((entry, index) => (
+                                  <Cell key={`cell-${index}`} fill={CHART_COLORS[index % CHART_COLORS.length]} />
+                                ))}
+                              </Pie>
+                              <RechartsTooltip 
+                                formatter={(value: any) => [`${formatTableMoneyVNDMillion(value as number)}`, 'Thực chi']}
+                                contentStyle={{ borderRadius: '12px', border: '1px solid rgba(0,0,0,0.05)', boxShadow: '0 8px 24px rgba(0,0,0,0.12)' }}
+                                itemStyle={{ fontWeight: 600 }}
+                              />
+                            </PieChart>
+                          </ResponsiveContainer>
+                        </div>
+                        <div className="flex-1 flex flex-col gap-3 overflow-y-auto max-h-full pr-1">
+                          {pieData.map((d, i) => (
+                            <div key={d.name} className="flex items-center gap-2.5">
+                              <div className="w-3 h-3 rounded-sm shrink-0" style={{ backgroundColor: CHART_COLORS[i % CHART_COLORS.length] }}></div>
+                              <span className="text-[11px] font-medium text-family-text flex-1 truncate" title={d.name}>{d.name}</span>
+                              <span className="text-[11px] font-bold text-family-accent shrink-0">{formatTableMoneyVNDMillion(d.value)}</span>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                      </div>
+                    );
+                  })()}
                 </div>
               </div>
             </CardHeader>
@@ -396,6 +488,14 @@ export const ExpenseScheduleView: React.FC = () => {
                   
                   const isExpanded = expandedGroups[group.id];
                   
+                  const groupBudget = (activeIncome * group.ratioPercent) / 100;
+                  const groupActual = leaves.reduce((sum, cat) => {
+                    let val = safeNumber(categories[cat.id], 0);
+                    if (val === -1) val = (activeIncome * cat.ratioPercent) / 100;
+                    return sum + val;
+                  }, 0);
+                  const groupRemaining = groupBudget - groupActual;
+
                   // Check if group is completely filled (-1 dynamically)
                   const isGroupFilled = leaves.length > 0 && leaves.every(cat => {
                     return categories[cat.id] === -1;
@@ -426,10 +526,21 @@ export const ExpenseScheduleView: React.FC = () => {
                       >
                         {isExpanded ? <ChevronDown className="w-4 h-4 text-family-textMuted" /> : <ChevronRight className="w-4 h-4 text-family-textMuted" />}
                         <span>{group.name}</span>
-                        <div className="ml-auto flex items-center gap-3">
-                          <span className="text-xs font-normal px-2 py-0.5 bg-family-bgDeep border border-family-accent/10 rounded-md text-family-textMuted">
-                            {formatTableMoneyVNDMillion((activeIncome * group.ratioPercent) / 100)} tr
-                          </span>
+                        <div className="ml-auto flex items-center gap-2 md:gap-3">
+                          <div className="hidden sm:flex items-center gap-1.5 text-[10px] md:text-xs">
+                            <span className="px-2 py-0.5 bg-gray-100/80 rounded text-gray-500" title="Ngân sách phân bổ">
+                              PB: {formatTableMoneyVNDMillion(groupBudget)}
+                            </span>
+                            <span className="px-2 py-0.5 bg-gray-100/80 rounded text-gray-700 font-medium" title="Thực tế đã chi">
+                              TC: {formatTableMoneyVNDMillion(groupActual)}
+                            </span>
+                            <span className={`px-2 py-0.5 rounded font-bold ${groupRemaining >= 0 ? 'bg-emerald-50 text-emerald-600' : 'bg-red-50 text-red-500'}`} title="Tiền dư">
+                              Dư: {groupRemaining > 0 ? '+' : ''}{formatTableMoneyVNDMillion(groupRemaining)}
+                            </span>
+                          </div>
+                          <div className="sm:hidden text-xs font-bold text-family-textMuted">
+                            {formatTableMoneyVNDMillion(groupBudget)}
+                          </div>
                           <button 
                             type="button" 
                             onClick={handleToggleGroupFilled}
@@ -472,7 +583,7 @@ export const ExpenseScheduleView: React.FC = () => {
                                 <div className="flex items-center gap-5 shrink-0">
                                   <div className="flex flex-col items-end justify-center h-full">
                                     <span className="text-[9px] uppercase font-bold text-family-textMuted">Phân bổ</span>
-                                    <span className="text-sm font-bold text-family-textMuted">{formatTableMoneyVNDMillion(budget)} tr</span>
+                                    <span className="text-sm font-bold text-family-textMuted">{formatTableMoneyVNDMillion(budget)}</span>
                                   </div>
                                   <div className="w-[120px] flex flex-col items-end">
                                     <span className="text-[9px] uppercase font-bold text-family-textMuted mb-1">Thực tế (tr)</span>
@@ -494,6 +605,7 @@ export const ExpenseScheduleView: React.FC = () => {
                                           onChange={(e) => { handleCategoryChange(cat.id, e.target.value); }}
                                           placeholder="0"
                                           className={`text-right font-bold w-full h-8 px-2 text-sm ${isOver ? 'border-red-500 text-red-600 focus-visible:ring-red-500' : (isCatFilled ? 'text-emerald-600 bg-emerald-50/50' : 'text-family-accent')}`}
+                                          disabled={isSettled || isCatFilled}
                                         />
                                         {isOver && <span className="absolute -bottom-4 right-0 text-[9px] text-red-500 font-bold whitespace-nowrap">Vượt mức!</span>}
                                       </div>

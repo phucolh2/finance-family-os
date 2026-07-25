@@ -202,7 +202,7 @@ export const LifeStages: React.FC = () => {
       <div className="flex flex-col lg:flex-row lg:items-start justify-between gap-4">
         <div className="flex-1">
           <h1 className="text-3xl font-serif font-bold text-family-text flex items-center gap-3">
-            <Milestone className="w-8 h-8 text-family-accent shrink-0" /> Sự kiện cuộc đời & Quản lý Chi tiêu
+            <Milestone className="w-8 h-8 text-family-accent shrink-0" /> Quản lý Chi tiêu
             <HelpTooltip text="Ghi chép các sự kiện dòng tiền không thường xuyên (mua xe, đám cưới, sinh con) để đánh giá tác động lên dòng tiền và đối chiếu với ngân sách." />
           </h1>
           <p className="text-sm text-family-textMuted mt-1">
@@ -211,9 +211,6 @@ export const LifeStages: React.FC = () => {
         </div>
         <div className="flex flex-wrap items-center gap-3 shrink-0">
           <ObservationControls />
-          <Button onClick={handleAddClick} className="gap-2 text-xs h-9 shrink-0">
-            <Plus className="w-4 h-4 shrink-0" /> Thêm sự kiện
-          </Button>
         </div>
       </div>
 
@@ -230,6 +227,16 @@ export const LifeStages: React.FC = () => {
           Thực tế chi tiêu
         </button>
         <button
+          onClick={() => { setActiveTab('timeline'); }}
+          className={`py-2 px-4 text-sm font-semibold transition-colors border-b-2 ${
+            activeTab === 'timeline' 
+              ? 'border-family-accent text-family-accent' 
+              : 'border-transparent text-gray-500 hover:text-gray-700'
+          }`}
+        >
+          Sự kiện cuộc đời
+        </button>
+        <button
           onClick={() => { setActiveTab('savings_liquidity'); }}
           className={`py-2 px-4 text-sm font-semibold transition-colors border-b-2 ${
             activeTab === 'savings_liquidity' 
@@ -238,16 +245,6 @@ export const LifeStages: React.FC = () => {
           }`}
         >
           Tiết kiệm & Thanh khoản
-        </button>
-        <button
-          onClick={() => { setActiveTab('timeline'); }}
-          className={`py-2 px-4 text-sm font-semibold transition-colors border-b-2 ${
-            activeTab === 'timeline' 
-              ? 'border-family-accent text-family-accent' 
-              : 'border-transparent text-gray-500 hover:text-gray-700'
-          }`}
-        >
-          Dòng thời gian Sự kiện
         </button>
       </div>
 
@@ -484,15 +481,20 @@ export const LifeStages: React.FC = () => {
         <div className="space-y-6">
           <Card>
           <CardHeader>
-            <CardTitle className="flex items-center justify-between">
-              <span className="flex items-center gap-2">
-                Dòng thời gian sự kiện (Timeline)
-                <HelpTooltip text="Theo dõi và quản lý toàn bộ các biến cố, sự kiện tài chính được sắp xếp theo thời gian." />
-              </span>
-            </CardTitle>
-            <CardDescription>
-              Bức tranh toàn cảnh về các biến cố và cột mốc tài chính được sắp xếp theo thời gian.
-            </CardDescription>
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+              <div>
+                <CardTitle className="flex items-center gap-2 mb-1.5">
+                  Dòng thời gian sự kiện (Timeline)
+                  <HelpTooltip text="Theo dõi và quản lý toàn bộ các biến cố, sự kiện tài chính được sắp xếp theo thời gian." />
+                </CardTitle>
+                <CardDescription>
+                  Bức tranh toàn cảnh về các biến cố và cột mốc tài chính được sắp xếp theo thời gian.
+                </CardDescription>
+              </div>
+              <Button onClick={handleAddClick} className="gap-2 text-xs h-9 shrink-0">
+                <Plus className="w-4 h-4 shrink-0" /> Thêm sự kiện
+              </Button>
+            </div>
           </CardHeader>
         <CardContent>
           {sortedEvents.length > 0 ? (
