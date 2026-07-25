@@ -22,7 +22,7 @@ export const ReservesFundCard: React.FC<FundCardProps> = ({
             </h4>
             {fund.fundGroup && (
               <span className="text-[10px] font-semibold bg-rose-100/50 text-rose-700 px-2 py-0.5 rounded border border-rose-200 mt-1.5 inline-block uppercase tracking-wider">
-                # {fund.fundGroup}
+                {fund.fundGroup}
               </span>
             )}
           </div>

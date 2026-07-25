@@ -20,7 +20,7 @@ export const LifestyleFundCard: React.FC<FundCardProps> = ({
               {fund.name}
               {fund.fundGroup && (
                 <span className="text-[10px] font-semibold bg-orange-100 text-orange-700 px-2 py-0.5 rounded-full border border-orange-200 uppercase">
-                  #{fund.fundGroup}
+                  {fund.fundGroup}
                 </span>
               )}
             </h4>

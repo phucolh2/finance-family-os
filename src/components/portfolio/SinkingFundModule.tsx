@@ -595,33 +595,42 @@ export const SinkingFundModule: React.FC<SinkingFundModuleProps> = ({
                                                <span className="font-semibold text-family-text">Kỳ T{bMo}/{bYr}:</span>
                                                {b.parentId && <span className="text-[9px] text-blue-600 bg-blue-50 px-1 py-0.5 rounded-sm mt-0.5">{b.parentId}</span>}
                                              </div>
-                                             <input
-                                                type="number"
-                                                step="0.1"
-                                                min="0"
-                                              value={fund.periodConfigs?.[pKey]?.contribution !== undefined ? fund.periodConfigs[pKey].contribution : fund.monthlyContribution}
-                                              onChange={(e) => {
-                                                 const newContrib = safeNumber(Number(e.target.value), 0);
-                                                 const updatedConfigs = {
-                                                    ...(fund.periodConfigs || {}),
-                                                    [pKey]: {
-                                                       ...(fund.periodConfigs?.[pKey] || {}),
-                                                       contribution: newContrib,
-                                                    }
-                                                 };
-                                                 updateSinkingFund({
-                                                    ...fund,
-                                                    periodConfigs: updatedConfigs,
-                                                 });
-                                              }}
-                                              className="w-14 text-right text-[11px] bg-white border border-family-accent/30 rounded px-1 py-0.5 font-bold text-family-accent focus:outline-none focus:ring-1 focus:ring-family-accent"
-                                           />
-                                           <span className="font-bold text-family-accent text-[11px]">Tr</span>
-                                           {b.principal > (fund.periodConfigs?.[pKey]?.contribution ?? fund.monthlyContribution) + 0.01 && (
-                                              <span className="text-[9px] text-family-textMuted ml-0.5 whitespace-nowrap" title={`Gồm cả vốn ban đầu hoặc gốc đáo hạn`}>
-                                                 (Tổng {formatTableMoneyVNDMillion(b.principal)})
-                                              </span>
-                                           )}
+                                             {b.parentId ? (
+                                                <div className="flex items-center">
+                                                   <span className="font-bold text-family-accent text-[12px]">{formatTableMoneyVNDMillion(b.principal)}</span>
+                                                   <span className="font-bold text-family-accent text-[11px] ml-1">Tr</span>
+                                                </div>
+                                             ) : (
+                                                <>
+                                                   <input
+                                                      type="number"
+                                                      step="0.1"
+                                                      min="0"
+                                                    value={fund.periodConfigs?.[pKey]?.contribution !== undefined ? fund.periodConfigs[pKey].contribution : fund.monthlyContribution}
+                                                    onChange={(e) => {
+                                                       const newContrib = safeNumber(Number(e.target.value), 0);
+                                                       const updatedConfigs = {
+                                                          ...(fund.periodConfigs || {}),
+                                                          [pKey]: {
+                                                             ...(fund.periodConfigs?.[pKey] || {}),
+                                                             contribution: newContrib,
+                                                          }
+                                                       };
+                                                       updateSinkingFund({
+                                                          ...fund,
+                                                          periodConfigs: updatedConfigs,
+                                                       });
+                                                    }}
+                                                    className="w-14 text-right text-[11px] bg-white border border-family-accent/30 rounded px-1 py-0.5 font-bold text-family-accent focus:outline-none focus:ring-1 focus:ring-family-accent"
+                                                 />
+                                                 <span className="font-bold text-family-accent text-[11px]">Tr</span>
+                                                 {b.principal > (fund.periodConfigs?.[pKey]?.contribution ?? fund.monthlyContribution) + 0.01 && (
+                                                    <span className="text-[9px] text-family-textMuted ml-0.5 whitespace-nowrap">
+                                                       (Gồm {formatTableMoneyVNDMillion(fund.initialDeposit)} gốc ban đầu + {formatTableMoneyVNDMillion(fund.periodConfigs?.[pKey]?.contribution ?? fund.monthlyContribution)} định kỳ)
+                                                    </span>
+                                                 )}
+                                                </>
+                                             )}
                                         </div>
                                         
                                         <div className="flex items-center gap-3 text-xs">
