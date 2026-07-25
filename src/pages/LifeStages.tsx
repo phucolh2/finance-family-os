@@ -49,7 +49,7 @@ export const LifeStages: React.FC = () => {
     month: 1,
     year: 2030,
     amount: 0,
-    source: 'safety_reserve',
+    source: activeBudget?.rootGroups[0]?.groupId || 'debt',
     recurringMonthlyImpact: 0,
     affectsNetWorth: true,
     note: '',
@@ -87,7 +87,7 @@ export const LifeStages: React.FC = () => {
       month: 1,
       year: 2030,
       amount: 0,
-      source: 'safety_reserve',
+      source: activeBudget?.rootGroups[0]?.groupId || 'debt',
       recurringMonthlyImpact: 0,
       affectsNetWorth: true,
       note: '',
@@ -143,15 +143,17 @@ export const LifeStages: React.FC = () => {
     { value: 'other', label: 'Sự kiện khác' },
   ];
 
-  const sourceTypes: { value: LifeEvent['source']; label: string }[] = [
-    { value: 'housing_basic', label: 'Sinh hoạt & Cố định' },
-    { value: 'future_investing', label: 'Tương lai & Đầu tư' },
-    { value: 'safety_reserve', label: 'Bình an & Dự phòng' },
-    { value: 'family_experience', label: 'Yêu thương & Sự kiện' },
-    { value: 'health_growth', label: 'Sức khỏe & Phát triển' },
-    { value: 'debt', label: 'Vay nợ' },
-    { value: 'external', label: 'Nguồn tài trợ bên ngoài' },
-  ];
+  const sourceTypes = React.useMemo(() => {
+    const groups = activeBudget?.rootGroups.map(g => ({
+      value: g.groupId,
+      label: g.name
+    })) || [];
+    return [
+      ...groups,
+      { value: 'debt', label: 'Vay nợ' },
+      { value: 'external', label: 'Nguồn tài trợ bên ngoài' },
+    ];
+  }, [activeBudget]);
 
   const getEventLabel = (type: string) => {
     switch (type) {
