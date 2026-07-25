@@ -171,7 +171,7 @@ export const SinkingFundModule: React.FC<SinkingFundModuleProps> = ({
     const fund = activeFunds.find(f => f.id === fundId);
     if (!fund) return { balance: 0, progress: 0, buckets: [], nonTermCash: 0, totalDisbursed: 0, autoRefundsByMonth: {}, totalDeposited: 0 };
     
-    let buckets: { id: string; parentId?: string; principal: number; termStart: number; termMonths: number; interestRateAnnual: number; periodKey: string; contribAmount?: number }[] = [];
+    let buckets: { id: string; parentId?: string; principal: number; termStart: number; termMonths: number; interestRateAnnual: number; periodKey: string; contribAmount?: number; rolledOverPrincipal?: number; rolledOverInterest?: number }[] = [];
     let nonTermCash = 0;
     
     const start = fund.startYear * 12 + fund.startMonth;
@@ -253,12 +253,22 @@ export const SinkingFundModule: React.FC<SinkingFundModuleProps> = ({
                    rolloverPrincipal = b.principal + interest;
                 }
                 
-                if (rolloverPrincipal > 0) {
-                   maturingBuckets.push({
-                      principal: rolloverPrincipal,
-                      parentId: `Tái tục từ kỳ T${((b.termStart-1)%12)+1}/${Math.floor((b.termStart-1)/12)}`
-                   });
-                }
+                 if (rolloverPrincipal > 0) {
+                    const pId = `Tái tục từ kỳ T${((b.termStart-1)%12)+1}/${Math.floor((b.termStart-1)/12)}`;
+                    const existing = maturingBuckets.find(x => x.parentId === pId);
+                    if (existing) {
+                       existing.principal += rolloverPrincipal;
+                       existing.rolledOverPrincipal = (existing.rolledOverPrincipal || 0) + b.principal;
+                       existing.rolledOverInterest = (existing.rolledOverInterest || 0) + interest;
+                    } else {
+                       maturingBuckets.push({
+                          principal: rolloverPrincipal,
+                          parentId: pId,
+                          rolledOverPrincipal: b.principal,
+                          rolledOverInterest: interest
+                       });
+                    }
+                 }
                 return false;
              }
              return true;
@@ -272,8 +282,8 @@ export const SinkingFundModule: React.FC<SinkingFundModuleProps> = ({
           let bRate = fund.interestRateAnnual || 5.5;
 
           if (m >= start) {
-             const lastBucket = buckets.length > 0 ? buckets[buckets.length - 1] : null;
-             const defaultContrib = lastBucket && lastBucket.contribAmount !== undefined ? lastBucket.contribAmount : fund.monthlyContribution;
+             const lastNewBucket = [...buckets].reverse().find(b => !b.parentId && b.contribAmount !== undefined);
+             const defaultContrib = lastNewBucket ? lastNewBucket.contribAmount : fund.monthlyContribution;
              periodContrib = periodCfg?.contribution !== undefined ? periodCfg.contribution : defaultContrib;
              newContrib += periodContrib;
 
@@ -304,7 +314,9 @@ export const SinkingFundModule: React.FC<SinkingFundModuleProps> = ({
                    termMonths: bTerm,
                    interestRateAnnual: bRate,
                    periodKey,
-                   contribAmount: 0
+                   contribAmount: 0,
+                   rolledOverPrincipal: mb.rolledOverPrincipal,
+                   rolledOverInterest: mb.rolledOverInterest
                 });
              });
           } else if (bTerm === 0) {
@@ -593,21 +605,21 @@ export const SinkingFundModule: React.FC<SinkingFundModuleProps> = ({
                                                <span className="font-semibold text-family-text">Kỳ T{bMo}/{bYr}:</span>
                                                {b.parentId && <span className="text-[9px] text-blue-600 bg-blue-50 px-1 py-0.5 rounded-sm mt-0.5">{b.parentId}</span>}
                                              </div>
-                                             {b.parentId && !b.breakdown ? (
+                                             {b.parentId && b.rolledOverPrincipal === undefined ? (
                                                 <div className="flex items-center">
                                                    <span className="font-bold text-family-accent text-[12px]">{formatTableMoneyVNDMillion(b.principal)}</span>
                                                 </div>
                                              ) : (
                                                 <div className="flex items-center flex-wrap gap-1">
-                                                   {b.breakdown && (
+                                                   {b.rolledOverPrincipal !== undefined && (
                                                       <div className="flex items-center">
                                                          <span className="font-bold text-family-accent text-[12px]">{formatTableMoneyVNDMillion(b.principal)}</span>
                                                       </div>
                                                    )}
                                                    <div className="flex items-center">
-                                                      {b.breakdown && (
+                                                      {b.rolledOverPrincipal !== undefined && (
                                                          <span className="text-[10px] text-family-textMuted mr-1 ml-1 whitespace-nowrap">
-                                                            (Gồm {formatTableMoneyVNDMillion(b.breakdown.rolledOverPrincipal)} gốc cũ + {formatTableMoneyVNDMillion(b.breakdown.rolledOverInterest)} lãi +
+                                                            (Gồm {formatTableMoneyVNDMillion(b.rolledOverPrincipal)} gốc cũ + {formatTableMoneyVNDMillion(b.rolledOverInterest)} lãi +
                                                          </span>
                                                       )}
                                                       <input
@@ -632,7 +644,7 @@ export const SinkingFundModule: React.FC<SinkingFundModuleProps> = ({
                                                        className="w-14 text-right text-[11px] bg-white border border-family-accent/30 rounded px-1 py-0.5 font-bold text-family-accent focus:outline-none focus:ring-1 focus:ring-family-accent"
                                                     />
                                                     <span className="font-bold text-family-accent text-[11px] ml-1">triệu</span>
-                                                    {b.breakdown ? (
+                                                    {b.rolledOverPrincipal !== undefined ? (
                                                        <span className="text-[10px] text-family-textMuted ml-1 whitespace-nowrap">định kỳ)</span>
                                                     ) : (
                                                        b.principal > (fund.periodConfigs?.[pKey]?.contribution ?? fund.monthlyContribution) + 0.01 && (
