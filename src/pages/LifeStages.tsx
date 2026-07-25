@@ -130,13 +130,16 @@ export const LifeStages: React.FC = () => {
   };
 
     const eventTypes: { value: LifeEvent['type']; label: string }[] = [
-    { value: 'buy_property', label: 'Mua bất động sản' },
-    { value: 'buy_car', label: 'Mua xe ô tô' },
-    { value: 'child_birth', label: 'Sinh con' },
-    { value: 'medical', label: 'Sự kiện y tế hiểm nghèo' },
-    { value: 'job_loss', label: 'Mất việc làm tạm thời' },
-    { value: 'retirement', label: 'Nghỉ hưu' },
-    { value: 'travel', label: 'Du lịch trải nghiệm lớn' },
+    { value: 'buy_property', label: 'Mua / Đổi nhà, chung cư' },
+    { value: 'buy_car', label: 'Mua / Đổi xe ô tô, xe máy' },
+    { value: 'child_birth', label: 'Sinh con / Chăm sóc mẹ và bé' },
+    { value: 'education', label: 'Nuôi con ăn học / Đóng học phí' },
+    { value: 'home_renovation', label: 'Sửa chữa / Cải tạo nhà cửa' },
+    { value: 'wedding', label: 'Đám cưới / Đám hỏi' },
+    { value: 'large_purchase', label: 'Mua sắm trang thiết bị lớn' },
+    { value: 'travel', label: 'Du lịch nghỉ dưỡng gia đình' },
+    { value: 'medical', label: 'Biến cố y tế / Chữa bệnh' },
+    { value: 'family_support', label: 'Hỗ trợ tài chính người thân' },
     { value: 'other', label: 'Sự kiện khác' },
   ];
 
@@ -153,12 +156,15 @@ export const LifeStages: React.FC = () => {
   const getEventLabel = (type: string) => {
     switch (type) {
       case 'buy_property': return 'Mua nhà / BĐS';
-      case 'buy_car': return 'Mua Ô tô';
+      case 'buy_car': return 'Mua Ô tô / Xe máy';
       case 'child_birth': return 'Sinh con';
-      case 'medical': return 'Sự kiện y tế';
-      case 'job_loss': return 'Mất việc / Giảm thu nhập';
-      case 'retirement': return 'Nghỉ hưu';
+      case 'education': return 'Giáo dục / Học phí';
+      case 'home_renovation': return 'Sửa nhà';
+      case 'wedding': return 'Đám cưới / Đám hỏi';
+      case 'large_purchase': return 'Mua sắm lớn';
       case 'travel': return 'Du lịch / Trải nghiệm';
+      case 'medical': return 'Sự kiện y tế';
+      case 'family_support': return 'Hỗ trợ người thân';
       case 'other': return 'Sự kiện khác';
       default: return 'Sự kiện';
     }
@@ -173,10 +179,13 @@ export const LifeStages: React.FC = () => {
       case 'buy_property': return <Home className="w-5 h-5 text-white" />;
       case 'buy_car': return <Car className="w-5 h-5 text-white" />;
       case 'child_birth': return <Baby className="w-5 h-5 text-white" />;
-      case 'medical': return <HeartPulse className="w-5 h-5 text-white" />;
-      case 'job_loss': return <Briefcase className="w-5 h-5 text-white" />;
-      case 'retirement': return <Milestone className="w-5 h-5 text-white" />;
+      case 'education': return <Briefcase className="w-5 h-5 text-white" />; // Will use a generic or Briefcase for now
+      case 'home_renovation': return <Home className="w-5 h-5 text-white" />;
+      case 'wedding': return <HeartPulse className="w-5 h-5 text-white" />;
+      case 'large_purchase': return <Gift className="w-5 h-5 text-white" />;
       case 'travel': return <Plane className="w-5 h-5 text-white" />;
+      case 'medical': return <HeartPulse className="w-5 h-5 text-white" />;
+      case 'family_support': return <Gift className="w-5 h-5 text-white" />;
       default: return <CalendarRange className="w-5 h-5 text-white" />;
     }
   };
