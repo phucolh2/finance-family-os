@@ -378,7 +378,7 @@ export const LifeStages: React.FC = () => {
                     />
                   </div>
                   <Select
-                    label="Nguồn trừ/Cộng tài sản"
+                    label="Nguồn chi trả"
                     value={formData.source}
                     onChange={(e) => { setFormData({ ...formData, source: e.target.value as any }); }}
                     options={sourceTypes}
@@ -390,7 +390,7 @@ export const LifeStages: React.FC = () => {
               <div className="bg-family-bgDeep/10 border border-family-accent/10 rounded-xl p-4 shadow-sm space-y-4">
                 <div className="border-b border-family-accent/10 pb-2 mb-2">
                   <h3 className="text-sm font-bold text-family-text flex items-center gap-2">Tác động Dòng tiền Lâu dài & Báo cáo</h3>
-                  <p className="text-[11px] text-family-textMuted mt-1">Chi phí (hoặc thu nhập) phát sinh <strong>đều đặn mỗi tháng</strong> sau sự kiện này. Khoản này sẽ trừ thẳng vào Dòng tiền ròng tổng của gia đình thay vì nằm trong hạn mức Thực tế chi tiêu hàng ngày.</p>
+                  <p className="text-[11px] text-family-textMuted mt-1">Chi phí phát sinh <strong>đều đặn mỗi tháng</strong> sau sự kiện này. Khoản này sẽ trừ thẳng vào Dòng tiền ròng tổng của gia đình thay vì nằm trong hạn mức Thực tế chi tiêu hàng ngày.</p>
                 </div>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <Input
