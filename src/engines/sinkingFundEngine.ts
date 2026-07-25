@@ -126,33 +126,44 @@ export function simulateSinkingFund(fund: SinkingFund, targetMonth?: number, tar
      totalDeposited += newContrib;
 
      if (bTerm > 0) {
-        if (newContrib > 0) {
-           buckets.push({ 
-              id: `T${mo}-${yr}_new`,
-              principal: newContrib, 
-              termStart: m, 
-              termMonths: bTerm, 
-              interestRateAnnual: bRate, 
-              periodKey, 
-              contribAmount: periodContrib,
-              depositBank: bBank,
-              rolloverStrategy: bStrategy 
-           });
-        }
-        maturingBuckets.forEach((mb, idx) => {
+        let totalMaturing = 0;
+        let totalRolledOverPrincipal = 0;
+        let totalRolledOverInterest = 0;
+        let parentIds: string[] = [];
+
+        maturingBuckets.forEach(mb => {
+           totalMaturing += mb.principal;
+           // If we don't have explicit breakdown inside maturingBucket yet, 
+           // we can approximate or we can update maturingBucket to have it.
+           // Since we updated maturingBuckets logic, let's use it.
+           totalRolledOverPrincipal += mb.rolledOverPrincipal !== undefined ? mb.rolledOverPrincipal : mb.principal;
+           totalRolledOverInterest += mb.rolledOverInterest !== undefined ? mb.rolledOverInterest : 0;
+           parentIds.push(mb.parentId);
+        });
+
+        const totalPrincipal = totalMaturing + newContrib;
+        const isMerged = maturingBuckets.length > 0;
+
+        if (totalPrincipal > 0) {
            buckets.push({
-              id: `T${mo}-${yr}_roll_${idx}`,
-              principal: mb.principal,
-              parentId: mb.parentId,
+              id: isMerged ? `T${mo}-${yr}_merged` : `T${mo}-${yr}_new`,
+              principal: totalPrincipal,
               termStart: m,
               termMonths: bTerm,
               interestRateAnnual: bRate,
               periodKey,
-              contribAmount: 0,
-              depositBank: mb.depositBank,
-              rolloverStrategy: mb.rolloverStrategy
+              contribAmount: periodContrib, // Even if merged, we preserve the current contribAmount
+              depositBank: bBank,
+              rolloverStrategy: bStrategy,
+              parentId: isMerged ? parentIds.join(', ') : undefined,
+              breakdown: isMerged ? {
+                 maturingAmount: totalMaturing,
+                 rolledOverPrincipal: totalRolledOverPrincipal,
+                 rolledOverInterest: totalRolledOverInterest,
+                 newContrib: newContrib
+              } : undefined
            });
-        });
+        }
      } else {
         nonTermCash += newContrib + maturingBuckets.reduce((sum, mb) => sum + mb.principal, 0);
      }
