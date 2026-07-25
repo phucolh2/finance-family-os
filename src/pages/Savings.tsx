@@ -86,12 +86,13 @@ export const Savings: React.FC = () => {
 
       <div className="flex flex-col gap-6 mt-6">
         <SinkingFundModule 
-          title="🏦 Danh sách Sổ Tiết kiệm"
-          filterFundType="investment"
-          filterSources={['saving']}
-          description="Quản lý các khoản gửi tiết kiệm từ Quỹ Tiết kiệm."
-          emptyStateTitle="Chưa có khoản tiết kiệm phòng thủ nào"
-          emptyStateDescription="Nhấn 'Tạo quỹ mới' để gửi tiết kiệm từ Quỹ Tiết kiệm nhằm dự phòng thanh khoản an toàn."
+          filterFundType="savings" 
+          filterSources={['savings', 'savings_kids', 'savings_biz']}
+          title="Tích luỹ Dài hạn & Mục tiêu"
+          description="Lên kế hoạch và theo dõi các mục tiêu tài chính lớn (mua nhà, mua xe, hưu trí, học vấn con cái)."
+          emptyStateTitle="Chưa có quỹ tích luỹ nào"
+          emptyStateDescription="Bắt đầu tạo quỹ tích luỹ để hiện thực hoá các mục tiêu tài chính trong tương lai."
+          variant="savings"
         />
       </div>
     </div>

@@ -89,12 +89,13 @@ export const Reserves: React.FC = () => {
 
       <div className="flex flex-col gap-6 mt-6">
         <SinkingFundModule 
-          title="🎯 Quỹ Mục tiêu & Dự phòng"
-          filterFundType="debt_prep"
-          filterSources={['saving', 'debt_reserve', 'unallocated']}
-          description="Lên kế hoạch và gom tiền định kỳ từ ngân sách cho các mục tiêu cụ thể (như tất toán nợ, khẩn cấp...)."
-          emptyStateTitle="Chưa có quỹ dự phòng nào"
-          emptyStateDescription="Hãy tạo quỹ để gom tiền định kỳ từ ngân sách cho các mục tiêu tương lai."
+          title="Kho Dự phòng (Dạng Quỹ)"
+          filterFundType="debt_prep" 
+          filterSources={['reserves', 'reserves_biz', 'reserves_health']}
+          description="Lên kế hoạch và theo dõi các khoản dự phòng cần gom đủ."
+          emptyStateTitle="Chưa có quỹ dự phòng dạng tiết kiệm/đầu tư nào"
+          emptyStateDescription="Thêm quỹ dự phòng để theo dõi các khoản bảo vệ gia đình lâu dài."
+          variant="reserves"
         />
       </div>
     </div>

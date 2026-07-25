@@ -3,6 +3,10 @@ import { useAppContext } from '../../context/AppContext';
 import { Button } from '../ui/Button';
 import { Input } from '../ui/Input';
 import { EmptyState } from '../ui/EmptyState';
+import { LifestyleFundCard } from './fund-cards/LifestyleFundCard';
+import { PortfolioFundCard } from './fund-cards/PortfolioFundCard';
+import { SavingsFundCard } from './fund-cards/SavingsFundCard';
+import { ReservesFundCard } from './fund-cards/ReservesFundCard';
 import { HelpTooltip } from '../ui/HelpTooltip';
 import { Target, Plus, Trash2, ArrowRightCircle, Edit, CheckCircle } from 'lucide-react';
 import { formatTableMoneyVNDMillion } from '../../utils/format';
@@ -19,13 +23,14 @@ interface DynamicSource {
 }
 
 interface SinkingFundModuleProps {
-  filterFundType?: 'investment' | 'debt_prep' | 'lifestyle_savings';
+  filterFundType?: 'investment' | 'debt_prep' | 'lifestyle_savings' | 'expense_surplus' | 'savings';
   filterSources?: FundingSourceId[] | string[];
   dynamicSources?: DynamicSource[];
   title?: string;
   description?: string;
   emptyStateTitle?: string;
   emptyStateDescription?: string;
+  variant?: 'portfolio' | 'savings' | 'reserves' | 'lifestyle';
 }
 
 export const SinkingFundModule: React.FC<SinkingFundModuleProps> = ({
@@ -35,7 +40,8 @@ export const SinkingFundModule: React.FC<SinkingFundModuleProps> = ({
   title = '🎯 Quỹ tích lũy mục tiêu (Sinking Funds)',
   description = 'Gom tiền định kỳ hàng tháng để chuẩn bị cho các thương vụ lớn. Số dư đẻ lãi theo lãi suất tiết kiệm.',
   emptyStateTitle = 'Chưa có quỹ tích lũy nào',
-  emptyStateDescription = 'Hãy tạo quỹ để gom tiền dần cho các mục tiêu đầu tư lớn.'
+  emptyStateDescription = 'Hãy tạo quỹ để gom tiền dần cho các mục tiêu đầu tư lớn.',
+  variant = 'portfolio'
 }) => {
   const { 
     state, 
@@ -367,7 +373,7 @@ export const SinkingFundModule: React.FC<SinkingFundModuleProps> = ({
               onChange={(e) => { setForm({ ...form, name: e.target.value }); }}
             />
             <div className="flex flex-col">
-              <label className="block text-xs font-semibold text-family-textMuted uppercase tracking-wider mb-1">Nhóm (Hashtag)</label>
+              <label className="block text-xs font-semibold text-family-textMuted uppercase tracking-wider mb-1">Nhóm</label>
               <input
                 list="fund-groups"
                 className="block w-full rounded-xl border border-family-accent/20 bg-white/60 py-2.5 px-3 text-sm text-family-text focus:border-family-accent focus:bg-white focus:outline-none focus:ring-1 focus:ring-family-accent transition-colors"
@@ -528,294 +534,131 @@ export const SinkingFundModule: React.FC<SinkingFundModuleProps> = ({
             const { balance, progress, totalDisbursed } = getFundBalance(fund.id);
             const isDisbursing = disbursingId === fund.id;
 
-            return (
-              <div key={fund.id} className="border border-family-accent/20 rounded-xl p-4 bg-white/50 relative overflow-hidden group flex flex-col justify-between">
-                
-                <div>
-                  <div className="flex justify-between items-start mb-2">
-                    <div>
-                      <h4 className="font-bold text-family-text text-base">{fund.name}</h4>
-                      {filterFundType !== 'debt_prep' && (
-                        <p className="text-xs text-family-textMuted uppercase tracking-wider mt-0.5">Mục tiêu: {fund.targetAssetType}</p>
-                      )}
-                    </div>
-                  <div className="flex gap-2">
-                    <button 
-                      onClick={() => {
-                        setEditingFundId(fund.id);
-                        setForm({
-                          name: fund.name,
-                          fundGroup: fund.fundGroup || '',
-                          targetAssetType: fund.targetAssetType,
-                          targetAmount: fund.targetAmount,
-                          initialDeposit: fund.initialDeposit,
-                          monthlyContribution: fund.monthlyContribution,
-                          interestRateAnnual: fund.interestRateAnnual || 5.5,
-                          termMonths: fund.termMonths || 1,
-                          sourceOfFund: (fund.sourceOfFund || activeSources[0]) as string,
-                          startMonth: fund.startMonth,
-                          startYear: fund.startYear,
-                          rolloverStrategy: fund.rolloverStrategy || 'principal_and_interest',
-                        });
-                        setShowAddForm(true);
-                        window.scrollTo({ top: 0, behavior: 'smooth' });
-                      }} 
-                      className="text-amber-500 hover:text-amber-600 transition-colors opacity-0 group-hover:opacity-100"
-                    >
-                      <Edit className="w-4 h-4" />
-                    </button>
-                    <button 
-                      onClick={() => {
-                         if(confirm('Bạn có chắc muốn xoá quỹ này không?')) deleteSinkingFund(fund.id);
-                      }} 
-                      className="text-red-400 hover:text-red-600 transition-colors opacity-0 group-hover:opacity-100"
-                    >
-                      <Trash2 className="w-4 h-4" />
-                    </button>
-                  </div>
-                </div>
+            const renderCashflowDetails = (fund: any) => (
+                    <div className="bg-white/60 p-3 rounded-lg border border-family-accent/10 text-xs space-y-2 mt-1">
+                         <div className="flex justify-between border-b border-gray-100 pb-1">
+                            <span className="text-family-textMuted">Tổng vốn đã nộp:</span>
+                            <span className="font-semibold">{formatTableMoneyVNDMillion(getFundBalance(fund.id).buckets.reduce((sum: number, b: any) => sum + b.principal, 0))} Tr</span>
+                         </div>
+                         <div className="flex justify-between border-b border-gray-100 pb-1">
+                            <span className="text-family-textMuted">Lãi cộng dồn:</span>
+                            <span className="font-semibold text-emerald-600">+{formatTableMoneyVNDMillion(balance - getFundBalance(fund.id).buckets.reduce((sum: number, b: any) => sum + b.principal, 0))} Tr</span>
+                         </div>
+                         <div className="pt-1">
+                            <span className="text-family-textMuted text-[10px] uppercase mb-1 block">Các khoản đang gửi tích lũy:</span>
+                            <div className="space-y-1.5 max-h-48 overflow-y-auto pr-1">
+                               {getFundBalance(fund.id).buckets.map((b: any, i: number) => {
+                                  const bMo = ((b.termStart - 1) % 12) + 1;
+                                  const bYr = Math.floor((b.termStart - 1) / 12);
+                                  const pKey = b.periodKey || `${bYr}-${String(bMo).padStart(2, '0')}`;
 
-                <div className="mt-3 mb-4 grid grid-cols-2 gap-y-2 gap-x-4 bg-white/40 p-2.5 rounded-lg border border-slate-100">
-                  <div className="flex flex-col">
-                    <span className="text-[10px] text-family-textMuted uppercase tracking-wide">Bắt đầu</span>
-                    <span className="text-xs font-medium text-family-text">{fund.startMonth}/{fund.startYear}</span>
-                  </div>
-                  <div className="flex flex-col">
-                    <span className="text-[10px] text-family-textMuted uppercase tracking-wide">Kỳ hạn gửi</span>
-                    <span className="text-xs font-medium text-family-text">{fund.termMonths === 0 ? 'Không kỳ hạn' : `${fund.termMonths} tháng`}</span>
-                  </div>
-                  <div className="flex flex-col">
-                    <span className="text-[10px] text-family-textMuted uppercase tracking-wide">Lãi suất</span>
-                    <span className="text-xs font-medium text-family-text">{fund.interestRateAnnual || 0}%/năm</span>
-                  </div>
-                  <div className="flex flex-col">
-                    <span className="text-[10px] text-family-textMuted uppercase tracking-wide">Nguồn tiền</span>
-                    <span className="text-xs font-medium text-family-text whitespace-nowrap overflow-hidden text-ellipsis w-[100px] block" title={dynamicSources?.find(d => d.id === fund.sourceOfFund)?.label || FUNDING_SOURCES[fund.sourceOfFund as FundingSourceId]?.shortLabel || fund.sourceOfFund}>
-                      {dynamicSources?.find(d => d.id === fund.sourceOfFund)?.label || FUNDING_SOURCES[fund.sourceOfFund as FundingSourceId]?.shortLabel || fund.sourceOfFund}
-                    </span>
-                  </div>
-                </div>
-
-                <div className="mt-auto">
-                  <div className="flex justify-between items-end mt-2 mb-2">
-                    <div>
-                      <p className="text-xs text-family-textMuted mb-1">Số dư hiện tại / Mục tiêu</p>
-                      <div className="flex items-baseline gap-1.5">
-                        <span className="text-lg font-bold text-family-text">{formatTableMoneyVNDMillion(balance)}</span>
-                        <span className="text-sm text-family-textMuted font-medium">/ {formatTableMoneyVNDMillion(fund.targetAmount)}</span>
-                      </div>
-                      <p className="text-xs text-family-textMuted mt-1">
-                        Tổng vốn đã góp: <span className="font-medium text-family-text">{formatTableMoneyVNDMillion(totalDisbursed)}</span>
-                      </p>
-                    </div>
-                    
-                    {balance > 0 && filterFundType !== 'debt_prep' && (
-                      <Button
-                        size="sm"
-                        onClick={() => setDisbursingId(fund.id)}
-                        className="bg-family-accent/10 text-family-accent hover:bg-family-accent/20"
-                      >
-                        Giải ngân
-                      </Button>
-                    )}
-                  </div>
-
-                  {/* Mini Chart / Progress Bar */}
-                  {fund.targetAmount > 0 && (
-                    <div className="mt-3 pt-3 border-t border-family-accent/10">
-                      <div className="flex justify-between items-center mb-1.5">
-                        <span className="text-[10px] font-bold text-orange-600 bg-orange-100 px-2 py-0.5 rounded-md inline-flex items-center">
-                          {progress.toFixed(1)}% Hoàn thành
-                        </span>
-                        {(() => {
-                          const remaining = fund.targetAmount - balance;
-                          if (remaining > 0 && fund.monthlyContribution > 0) {
-                            const monthsRemaining = Math.ceil(remaining / fund.monthlyContribution);
-                            const currentM = Number(selectedPeriodKey ? selectedPeriodKey.split('-')[1] : new Date().getMonth() + 1);
-                            const currentY = Number(selectedPeriodKey ? selectedPeriodKey.split('-')[0] : new Date().getFullYear());
-                            const estMonth = ((currentM - 1 + monthsRemaining) % 12) + 1;
-                            const estYear = currentY + Math.floor((currentM - 1 + monthsRemaining) / 12);
-                            return (
-                              <span className="text-[10px] text-family-textMuted font-medium">
-                                Dự kiến: T{estMonth}/{estYear}
-                              </span>
-                            );
-                          }
-                          if (remaining <= 0 && fund.targetAmount > 0) {
-                            return <span className="text-[10px] text-green-600 font-medium">✨ Đã đạt mục tiêu</span>;
-                          }
-                          return null;
-                        })()}
-                      </div>
-                      <div className="h-2 w-full bg-family-accent/10 rounded-full overflow-hidden">
-                        <div 
-                          className="h-full bg-gradient-to-r from-orange-400 to-amber-400 transition-all duration-500 ease-out" 
-                          style={{ width: `${Math.min(100, progress)}%` }}
-                        ></div>
-                      </div>
-                    </div>
-                  )}
-                  
-                  <div className="mt-3">
-                    {fund.withdrawals && fund.withdrawals.length > 0 && (
-                      <p className="text-[10px] text-family-textMuted mt-0.5">
-                        Đã giải ngân: <span className="font-semibold text-red-500">{formatTableMoneyVNDMillion(fund.withdrawals.reduce((sum, w) => sum + w.amount, 0))} Tr</span>
-                      </p>
-                    )}
-                    {fund.withdrawals && fund.withdrawals.length > 0 && (
-                      <div className="flex flex-col gap-1 mt-1">
-                        {fund.withdrawals.map((w, idx) => (
-                          <div key={idx} className="text-[10px] text-family-textMuted bg-white border border-gray-100 px-1.5 py-0.5 rounded shadow-sm inline-flex items-center gap-1">
-                            <span className="text-red-500 font-bold">- {formatTableMoneyVNDMillion(w.amount)}</span> 
-                            (T{w.month}/{w.year}) 
-                          </div>
-                        ))}
-                      </div>
-                    )}
-                  </div>
-                </div>
-                  <div>
-                    <p className="text-xs text-family-textMuted mb-1 text-right">Vốn ban đầu / Định kỳ</p>
-                    <p className="text-sm font-bold text-family-text text-right">
-                      {formatTableMoneyVNDMillion(fund.initialDeposit)} / +{formatTableMoneyVNDMillion(fund.monthlyContribution)}
-                    </p>
-                  </div>
-                </div>
-
-                <div className="flex flex-col gap-2 mt-3 pt-3 border-t border-family-accent/10">
-                   <button 
-                     onClick={() => setExpandedFundId(expandedFundId === fund.id ? null : fund.id)}
-                     className="text-[11px] text-family-accent hover:text-family-accent/80 font-semibold flex items-center gap-1 w-fit"
-                   >
-                     {expandedFundId === fund.id ? 'Thu gọn chi tiết' : 'Chi tiết dòng tiền (Cashflow)'}
-                   </button>
-                   
-                   {expandedFundId === fund.id && (
-                     <div className="bg-white/60 p-3 rounded-lg border border-family-accent/10 text-xs space-y-2 mt-1">
-                        <div className="flex justify-between border-b border-gray-100 pb-1">
-                           <span className="text-family-textMuted">Tổng vốn đã nộp:</span>
-                           <span className="font-semibold">{formatTableMoneyVNDMillion(getFundBalance(fund.id).buckets.reduce((sum, b) => sum + b.principal, 0))} Tr</span>
-                        </div>
-                        <div className="flex justify-between border-b border-gray-100 pb-1">
-                           <span className="text-family-textMuted">Lãi cộng dồn:</span>
-                           <span className="font-semibold text-emerald-600">+{formatTableMoneyVNDMillion(balance - getFundBalance(fund.id).buckets.reduce((sum, b) => sum + b.principal, 0))} Tr</span>
-                        </div>
-                        <div className="pt-1">
-                           <span className="text-family-textMuted text-[10px] uppercase mb-1 block">Các khoản đang gửi tích lũy:</span>
-                           <div className="space-y-1.5 max-h-48 overflow-y-auto pr-1">
-                              {getFundBalance(fund.id).buckets.map((b, i) => {
-                                 const bMo = ((b.termStart - 1) % 12) + 1;
-                                 const bYr = Math.floor((b.termStart - 1) / 12);
-                                 const pKey = b.periodKey || `${bYr}-${String(bMo).padStart(2, '0')}`;
-
-                                 return (
-                                    <div key={i} className="flex flex-col bg-white p-2 rounded shadow-sm border border-gray-100 gap-2 mb-2">
-                                       <div className="flex flex-col sm:flex-row sm:items-center justify-between text-[11px] gap-2">
-                                         <div className="flex items-center gap-1.5">
-                                            <div className="flex flex-col">
-                                              <span className="font-semibold text-family-text">Kỳ T{bMo}/{bYr}:</span>
-                                              {b.parentId && <span className="text-[9px] text-blue-600 bg-blue-50 px-1 py-0.5 rounded-sm mt-0.5">{b.parentId}</span>}
-                                            </div>
-                                            <input
-                                               type="number"
-                                               step="0.1"
-                                               min="0"
-                                             value={fund.periodConfigs?.[pKey]?.contribution !== undefined ? fund.periodConfigs[pKey].contribution : fund.monthlyContribution}
-                                             onChange={(e) => {
-                                                const newContrib = safeNumber(Number(e.target.value), 0);
-                                                const updatedConfigs = {
-                                                   ...(fund.periodConfigs || {}),
-                                                   [pKey]: {
-                                                      ...(fund.periodConfigs?.[pKey] || {}),
-                                                      contribution: newContrib,
-                                                   }
-                                                };
-                                                updateSinkingFund({
-                                                   ...fund,
-                                                   periodConfigs: updatedConfigs,
-                                                });
-                                             }}
-                                             className="w-14 text-right text-[11px] bg-white border border-family-accent/30 rounded px-1 py-0.5 font-bold text-family-accent focus:outline-none focus:ring-1 focus:ring-family-accent"
-                                          />
-                                          <span className="font-bold text-family-accent text-[11px]">Tr</span>
-                                          {b.principal > (fund.periodConfigs?.[pKey]?.contribution ?? fund.monthlyContribution) + 0.01 && (
-                                             <span className="text-[9px] text-family-textMuted ml-0.5 whitespace-nowrap" title={`Gồm cả vốn ban đầu hoặc gốc đáo hạn`}>
-                                                (Tổng {formatTableMoneyVNDMillion(b.principal)})
-                                             </span>
-                                          )}
-                                       </div>
-                                       
-                                       <div className="flex items-center gap-3 text-xs">
-                                          <div className="flex items-center gap-1">
-                                             <span className="text-[10px] text-family-textMuted">Kỳ hạn:</span>
-                                             <select
-                                                value={b.termMonths}
-                                                onChange={(e) => {
-                                                   const newTerm = Number(e.target.value);
-                                                   const updatedConfigs = {
-                                                      ...(fund.periodConfigs || {}),
-                                                      [pKey]: {
-                                                         ...(fund.periodConfigs?.[pKey] || {}),
-                                                         termMonths: newTerm,
-                                                         interestRateAnnual: b.interestRateAnnual,
-                                                      }
-                                                   };
-                                                   updateSinkingFund({
-                                                      ...fund,
-                                                      periodConfigs: updatedConfigs,
-                                                   });
-                                                }}
-                                                className="text-[10px] bg-slate-50 border border-slate-200 rounded px-1.5 py-0.5 font-medium text-family-text focus:outline-none focus:ring-1 focus:ring-family-accent"
-                                             >
-                                                <option value={0}>Không kỳ hạn</option>
-                                                <option value={1}>1 tháng</option>
-                                                <option value={3}>3 tháng</option>
-                                                <option value={6}>6 tháng</option>
-                                                <option value={12}>12 tháng</option>
-                                                <option value={24}>24 tháng</option>
-                                                <option value={36}>36 tháng</option>
-                                             </select>
-                                          </div>
-
-                                          <div className="flex items-center gap-1">
-                                             <span className="text-[10px] text-family-textMuted">Lãi suất:</span>
+                                  return (
+                                     <div key={i} className="flex flex-col bg-white p-2 rounded shadow-sm border border-gray-100 gap-2 mb-2">
+                                        <div className="flex flex-col sm:flex-row sm:items-center justify-between text-[11px] gap-2">
+                                          <div className="flex items-center gap-1.5">
+                                             <div className="flex flex-col">
+                                               <span className="font-semibold text-family-text">Kỳ T{bMo}/{bYr}:</span>
+                                               {b.parentId && <span className="text-[9px] text-blue-600 bg-blue-50 px-1 py-0.5 rounded-sm mt-0.5">{b.parentId}</span>}
+                                             </div>
                                              <input
                                                 type="number"
                                                 step="0.1"
                                                 min="0"
-                                                value={b.interestRateAnnual}
-                                                onChange={(e) => {
-                                                   const newRate = safeNumber(Number(e.target.value), 0);
-                                                   const updatedConfigs = {
-                                                      ...(fund.periodConfigs || {}),
-                                                      [pKey]: {
-                                                         ...(fund.periodConfigs?.[pKey] || {}),
-                                                         termMonths: b.termMonths,
-                                                         interestRateAnnual: newRate,
-                                                      }
-                                                   };
-                                                   updateSinkingFund({
-                                                      ...fund,
-                                                      periodConfigs: updatedConfigs,
-                                                   });
-                                                }}
-                                                className="w-12 text-center text-[10px] bg-slate-50 border border-slate-200 rounded px-1 py-0.5 font-medium text-family-text focus:outline-none focus:ring-1 focus:ring-family-accent"
-                                             />
-                                             <span className="text-[10px] text-family-textMuted">%/năm</span>
-                                          </div>
-                                       </div>
-                                     </div>
-                                   </div>
-                                 );
-                              })}
-                           </div>
-                        </div>
-                     </div>
-                   )}
-                </div>
+                                              value={fund.periodConfigs?.[pKey]?.contribution !== undefined ? fund.periodConfigs[pKey].contribution : fund.monthlyContribution}
+                                              onChange={(e) => {
+                                                 const newContrib = safeNumber(Number(e.target.value), 0);
+                                                 const updatedConfigs = {
+                                                    ...(fund.periodConfigs || {}),
+                                                    [pKey]: {
+                                                       ...(fund.periodConfigs?.[pKey] || {}),
+                                                       contribution: newContrib,
+                                                    }
+                                                 };
+                                                 updateSinkingFund({
+                                                    ...fund,
+                                                    periodConfigs: updatedConfigs,
+                                                 });
+                                              }}
+                                              className="w-14 text-right text-[11px] bg-white border border-family-accent/30 rounded px-1 py-0.5 font-bold text-family-accent focus:outline-none focus:ring-1 focus:ring-family-accent"
+                                           />
+                                           <span className="font-bold text-family-accent text-[11px]">Tr</span>
+                                           {b.principal > (fund.periodConfigs?.[pKey]?.contribution ?? fund.monthlyContribution) + 0.01 && (
+                                              <span className="text-[9px] text-family-textMuted ml-0.5 whitespace-nowrap" title={`Gồm cả vốn ban đầu hoặc gốc đáo hạn`}>
+                                                 (Tổng {formatTableMoneyVNDMillion(b.principal)})
+                                              </span>
+                                           )}
+                                        </div>
+                                        
+                                        <div className="flex items-center gap-3 text-xs">
+                                           <div className="flex items-center gap-1">
+                                              <span className="text-[10px] text-family-textMuted">Kỳ hạn:</span>
+                                              <select
+                                                 value={b.termMonths}
+                                                 onChange={(e) => {
+                                                    const newTerm = Number(e.target.value);
+                                                    const updatedConfigs = {
+                                                       ...(fund.periodConfigs || {}),
+                                                       [pKey]: {
+                                                          ...(fund.periodConfigs?.[pKey] || {}),
+                                                          termMonths: newTerm,
+                                                          interestRateAnnual: b.interestRateAnnual,
+                                                       }
+                                                    };
+                                                    updateSinkingFund({
+                                                       ...fund,
+                                                       periodConfigs: updatedConfigs,
+                                                    });
+                                                 }}
+                                                 className="text-[10px] bg-slate-50 border border-slate-200 rounded px-1.5 py-0.5 font-medium text-family-text focus:outline-none focus:ring-1 focus:ring-family-accent"
+                                              >
+                                                 <option value={0}>Không kỳ hạn</option>
+                                                 <option value={1}>1 tháng</option>
+                                                 <option value={3}>3 tháng</option>
+                                                 <option value={6}>6 tháng</option>
+                                                 <option value={12}>12 tháng</option>
+                                                 <option value={24}>24 tháng</option>
+                                                 <option value={36}>36 tháng</option>
+                                              </select>
+                                           </div>
 
-                {isDisbursing ? (
-                  <div className="mt-4 p-3 bg-green-50 rounded-lg border border-green-200">
+                                           <div className="flex items-center gap-1">
+                                              <span className="text-[10px] text-family-textMuted">Lãi suất:</span>
+                                              <input
+                                                 type="number"
+                                                 step="0.1"
+                                                 min="0"
+                                                 value={b.interestRateAnnual}
+                                                 onChange={(e) => {
+                                                    const newRate = safeNumber(Number(e.target.value), 0);
+                                                    const updatedConfigs = {
+                                                       ...(fund.periodConfigs || {}),
+                                                       [pKey]: {
+                                                          ...(fund.periodConfigs?.[pKey] || {}),
+                                                          termMonths: b.termMonths,
+                                                          interestRateAnnual: newRate,
+                                                       }
+                                                    };
+                                                    updateSinkingFund({
+                                                       ...fund,
+                                                       periodConfigs: updatedConfigs,
+                                                    });
+                                                 }}
+                                                 className="w-12 text-center text-[10px] bg-slate-50 border border-slate-200 rounded px-1 py-0.5 font-medium text-family-text focus:outline-none focus:ring-1 focus:ring-family-accent"
+                                              />
+                                              <span className="text-[10px] text-family-textMuted">%/năm</span>
+                                           </div>
+                                        </div>
+                                      </div>
+                                    </div>
+                                  );
+                               })}
+                            </div>
+                         </div>
+                      </div>
+            );
+
+            const renderDisburseForm = (fund: any) => (
+                  <div className="p-3 bg-green-50 rounded-lg border border-green-200">
                     <div className="flex items-center justify-between mb-2">
                       <h5 className="text-xs font-bold text-green-800">
                         {filterFundType === 'debt_prep' ? 'Quản lý Tất toán & Rút gốc' : 'Giải ngân thành Thương vụ mới'}
@@ -906,7 +749,7 @@ export const SinkingFundModule: React.FC<SinkingFundModuleProps> = ({
                             }
                             
                             if (rem > 0) {
-                               const sorted = [...sim.buckets].sort((a, b) => (a.termStart + a.termMonths) - (b.termStart + b.termMonths));
+                               const sorted = [...sim.buckets].sort((a: any, b: any) => (a.termStart + a.termMonths) - (b.termStart + b.termMonths));
                                for (const b of sorted) {
                                   if (rem <= 0) break;
                                   const deduct = Math.min(b.principal, rem);
@@ -923,7 +766,7 @@ export const SinkingFundModule: React.FC<SinkingFundModuleProps> = ({
                                   <p className="text-[11px] font-bold text-yellow-800 mb-1">Cơ chế tất toán thông minh sẽ tự động ưu tiên rút:</p>
                                   <ul className="list-disc pl-4 text-[10px] text-yellow-800 space-y-0.5">
                                      {breakdownNonTerm > 0 && <li>Từ phần không kỳ hạn: <strong>{formatTableMoneyVNDMillion(breakdownNonTerm)} Tr</strong></li>}
-                                     {breakdownBuckets.map((b, i) => (
+                                     {breakdownBuckets.map((b: any, i: number) => (
                                         <li key={i}>Tất toán từ kỳ hạn T{b.periodKey.split('-')[1]}/{b.periodKey.split('-')[0]}: <strong>{formatTableMoneyVNDMillion(b.deduct)} Tr</strong></li>
                                      ))}
                                      {breakdownBuckets.length > 0 && <li>Phần dôi ra của các kỳ hạn trên (nếu có) vẫn tiếp tục duy trì kỳ hạn cũ.</li>}
@@ -972,54 +815,78 @@ export const SinkingFundModule: React.FC<SinkingFundModuleProps> = ({
                                    startMonth: disburseForm.disbursedMonth,
                                    startYear: disburseForm.disbursedYear,
                                    status: 'active',
-                                   notes: `Giải ngân một phần từ quỹ: ${fund.name}`
+                                   notes: `Giải ngân từng phần từ quỹ: ${fund.name}`
                                 });
                               }
-
-                              const newWd = {
-                                id: `wd_${Date.now()}`,
-                                month: disburseForm.disbursedMonth,
-                                year: disburseForm.disbursedYear,
-                                amount: wAmt,
-                                realizedInterest: 0 // Withdrawals from Sinking Funds don't realize interest to cash flow yet (since they go to Deal/Debt)
-                              };
-                              updateSinkingFund({
-                                ...fund,
-                                withdrawals: [...(fund.withdrawals || []), newWd]
+                              
+                              const updatedFund = JSON.parse(JSON.stringify(fund));
+                              if (!updatedFund.withdrawals) updatedFund.withdrawals = [];
+                              updatedFund.withdrawals.push({
+                                 amount: wAmt,
+                                 month: disburseForm.disbursedMonth,
+                                 year: disburseForm.disbursedYear,
                               });
+                              updateSinkingFund(updatedFund);
                             }
                             setDisbursingId(null);
                           }}
                         >
-                          Xác nhận {settleMode === 'full' ? 'Tất toán' : 'Giải ngân từng phần'}
+                          Xác nhận
                         </Button>
                       </div>
                     </div>
                   </div>
-                ) : (
-                  <div className="mt-4 flex gap-2">
-                    <Button 
-                      variant="outline" 
-                      className="w-full text-xs h-8 border-green-600/30 text-green-700 hover:bg-green-50"
-                      onClick={() => {
-                        setDisbursingId(fund.id);
-                        setSettleMode('full');
-                        setPartialWithdrawType('amount');
-                        setPartialWithdrawValue(0);
-                        setDisburseForm({
-                           disbursedMonth: initMonth,
-                           disbursedYear: initYear,
-                           dealName: fund.name,
-                           realizedInterest: 0,
-                        });
-                      }}
-                    >
-                      <ArrowRightCircle className="w-3.5 h-3.5 mr-1" /> {filterFundType === 'debt_prep' ? 'Tất toán Quỹ' : 'Giải ngân đầu tư'}
-                    </Button>
-                  </div>
-                )}
-              </div>
             );
+
+            const cardProps = {
+               fund: fund as any,
+               balance, progress, totalDisbursed: totalDisbursed ?? 0, isDisbursing,
+               expandedFundId, setExpandedFundId, 
+               onEdit: () => {
+                   setEditingFundId(fund.id);
+                   setForm({
+                     name: fund.name,
+                     fundGroup: fund.fundGroup || '',
+                     targetAssetType: fund.targetAssetType,
+                     targetAmount: fund.targetAmount,
+                     initialDeposit: fund.initialDeposit,
+                     monthlyContribution: fund.monthlyContribution,
+                     interestRateAnnual: fund.interestRateAnnual || 5.5,
+                     termMonths: fund.termMonths || 1,
+                     sourceOfFund: (fund.sourceOfFund || activeSources[0]) as string,
+                     startMonth: fund.startMonth,
+                     startYear: fund.startYear,
+                     rolloverStrategy: fund.rolloverStrategy || 'principal_and_interest',
+                   });
+                   setShowAddForm(true);
+                   window.scrollTo({ top: 0, behavior: 'smooth' });
+               },
+               onDelete: () => { if(window.confirm('Bạn có chắc muốn xoá quỹ này không?')) deleteSinkingFund(fund.id); },
+               onDisburse: () => {
+                   setDisbursingId(fund.id);
+                   setSettleMode('full');
+                   setPartialWithdrawType('amount');
+                   setPartialWithdrawValue(0);
+                   setDisburseForm({
+                     disbursedMonth: initMonth,
+                     disbursedYear: initYear,
+                     dealName: fund.name,
+                     realizedInterest: 0,
+                   });
+               },
+               renderDisburseForm, renderCashflowDetails,
+               dynamicSources, FUNDING_SOURCES, formatMoney: formatTableMoneyVNDMillion, filterFundType
+            };
+
+            return (
+              <React.Fragment key={fund.id}>
+                {variant === 'lifestyle' && <LifestyleFundCard {...cardProps} />}
+                {variant === 'savings' && <SavingsFundCard {...cardProps} />}
+                {variant === 'reserves' && <ReservesFundCard {...cardProps} />}
+                {variant === 'portfolio' && <PortfolioFundCard {...cardProps} />}
+              </React.Fragment>
+            );
+
           })}
         </div>
       )}

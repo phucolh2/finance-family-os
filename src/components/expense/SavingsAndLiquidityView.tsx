@@ -162,7 +162,7 @@ export const SavingsAndLiquidityView: React.FC = () => {
           <Card className="bg-white/80 border-family-accent/10">
           <CardHeader className="pb-2">
             <CardTitle className="text-sm font-semibold text-family-textMuted uppercase flex items-center gap-1.5">
-              Cấu trúc Tiền dư sinh hoạt (Tháng {selectedPeriodKey ? selectedPeriodKey.split('-')[1] : 'hiện tại'})
+              Cấu trúc Tiền dư sinh hoạt tính đến (Tháng {selectedPeriodKey ? selectedPeriodKey.split('-')[1] : 'hiện tại'})
               <HelpTooltip text="Bảng này chỉ phân tách số tiền dư của THÁNG ĐANG CHỌN. (Khác với con số 45 triệu ở trên là TỔNG tiền dư tích lũy của TẤT CẢ các tháng cộng lại)." />
             </CardTitle>
           </CardHeader>
@@ -251,9 +251,7 @@ export const SavingsAndLiquidityView: React.FC = () => {
 
         {/* Thêm SinkingFundModule dành riêng cho Quỹ sinh hoạt dư */}
         <div className="mt-8">
-          <SinkingFundModule 
-            filterFundType="lifestyle_savings" 
-            filterSources={['expense_surplus']}
+          <SinkingFundModule
             dynamicSources={[
               ...liquidityBreakdownData.map(group => ({
                 id: `expense_surplus_${group.id}`,
@@ -261,10 +259,10 @@ export const SavingsAndLiquidityView: React.FC = () => {
                 balance: group.remaining
               }))
             ]}
-            title="🌱 Tiết kiệm từ Sinh hoạt dư"
-            description="Trích số tiền dư sinh hoạt hàng tháng để gửi tiết kiệm sinh lời, tạo quỹ phòng thủ ngắn hạn."
-            emptyStateTitle="Chưa có khoản tiết kiệm sinh hoạt nào"
-            emptyStateDescription="Hãy trích một phần tiền dư sinh hoạt để mở sổ tiết kiệm hoặc bỏ vào heo đất điện tử."
+            filterFundType="expense_surplus"
+            emptyStateTitle="Chưa có Quỹ Sinh Hoạt nào"
+            emptyStateDescription="Tạo các quỹ sinh hoạt chuyên biệt (như Nhà cửa, Ăn uống) để quản lý ngân sách dư hiệu quả hơn."
+            variant="lifestyle"
           />
         </div>
         </>
