@@ -49,7 +49,7 @@ export const LifeStages: React.FC = () => {
     month: 1,
     year: 2030,
     amount: 0,
-    source: activeBudget?.rootGroups[0]?.groupId || 'debt',
+    source: activeBudget?.rootGroups.find(g => g.classification === 'expense')?.groupId || 'debt',
     recurringMonthlyImpact: 0,
     affectsNetWorth: true,
     note: '',
@@ -87,7 +87,7 @@ export const LifeStages: React.FC = () => {
       month: 1,
       year: 2030,
       amount: 0,
-      source: activeBudget?.rootGroups[0]?.groupId || 'debt',
+      source: activeBudget?.rootGroups.find(g => g.classification === 'expense')?.groupId || 'debt',
       recurringMonthlyImpact: 0,
       affectsNetWorth: true,
       note: '',
@@ -144,10 +144,11 @@ export const LifeStages: React.FC = () => {
   ];
 
   const sourceTypes = React.useMemo(() => {
-    const groups = activeBudget?.rootGroups.map(g => ({
+    const expenseGroups = activeBudget?.rootGroups.filter(g => g.classification === 'expense') || [];
+    const groups = expenseGroups.map(g => ({
       value: g.groupId,
-      label: g.name
-    })) || [];
+      label: `Quỹ dư: ${g.name}`
+    }));
     return [
       ...groups,
       { value: 'debt', label: 'Vay nợ' },
