@@ -13,6 +13,12 @@ export function simulateSinkingFund(fund: SinkingFund, targetMonth?: number, tar
   const autoRefundsByMonth: Record<number, number> = {};
   let totalDeposited = 0;
 
+  let currentMonthlyContrib = fund.monthlyContribution || 0;
+  let currentTerm = fund.termMonths || 1;
+  let currentBank = fund.depositBank;
+  let currentStrategy = fund.rolloverStrategy;
+  let currentRate = fund.interestRateAnnual || 5.5;
+
   for (let m = start; m <= end; m++) {
      const yr = Math.floor((m - 1) / 12);
      const mo = ((m - 1) % 12) + 1;
@@ -96,25 +102,25 @@ export function simulateSinkingFund(fund: SinkingFund, targetMonth?: number, tar
      if (m === start) newContrib += (fund.initialDeposit || 0);
 
      let periodContrib = 0;
-     let bTerm = fund.termMonths || 1;
-     let bBank = fund.depositBank;
-     let bStrategy = fund.rolloverStrategy;
-     let bRate = fund.interestRateAnnual || 5.5;
+     let bTerm = currentTerm;
+     let bBank = currentBank;
+     let bStrategy = currentStrategy;
+     let bRate = currentRate;
 
      if (m >= start) {
-        const lastBucket = buckets.length > 0 ? buckets[buckets.length - 1] : null;
-        const defaultContrib = lastBucket && lastBucket.contribAmount !== undefined ? lastBucket.contribAmount : (fund.monthlyContribution || 0);
-        periodContrib = periodCfg?.contribution !== undefined ? periodCfg.contribution : defaultContrib;
+        if (periodCfg?.contribution !== undefined) currentMonthlyContrib = periodCfg.contribution;
+        if (periodCfg?.termMonths !== undefined) currentTerm = periodCfg.termMonths;
+        if (periodCfg?.depositBank !== undefined) currentBank = periodCfg.depositBank;
+        if (periodCfg?.rolloverStrategy !== undefined) currentStrategy = periodCfg.rolloverStrategy;
+        if (periodCfg?.interestRateAnnual !== undefined) currentRate = periodCfg.interestRateAnnual;
+
+        periodContrib = currentMonthlyContrib;
         newContrib += periodContrib;
 
-        const defaultTerm = lastBucket ? lastBucket.termMonths : (fund.termMonths || 1);
-        const defaultRate = lastBucket ? lastBucket.interestRateAnnual : (fund.interestRateAnnual || 5.5);
-        bTerm = periodCfg?.termMonths !== undefined ? periodCfg.termMonths : defaultTerm;
-        const defaultBank = lastBucket ? lastBucket.depositBank : fund.depositBank;
-        const defaultStrategy = lastBucket ? lastBucket.rolloverStrategy : fund.rolloverStrategy;
-        bBank = periodCfg?.depositBank !== undefined ? periodCfg.depositBank : defaultBank;
-        bStrategy = periodCfg?.rolloverStrategy !== undefined ? periodCfg.rolloverStrategy : defaultStrategy;
-        bRate = periodCfg?.interestRateAnnual !== undefined ? periodCfg.interestRateAnnual : defaultRate;
+        bTerm = currentTerm;
+        bBank = currentBank;
+        bStrategy = currentStrategy;
+        bRate = currentRate;
      }
 
      totalDeposited += newContrib;

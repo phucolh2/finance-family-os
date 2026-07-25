@@ -83,7 +83,7 @@ export function runProjection(input: ProjectionEngineInput): ProjectionOutput {
     crypto: 0,
   };
 
-  const sinkingFundStates: Record<string, { buckets: { principal: number; termStart: number; termMonths?: number; interestRateAnnual?: number }[]; balance: number; contribution: number; interest: number }> = {};
+  const sinkingFundStates: Record<string, { buckets: { principal: number; termStart: number; termMonths?: number; interestRateAnnual?: number; contribAmount?: number; }[]; balance: number; contribution: number; interest: number; currentMonthlyContrib?: number; currentTerm?: number; currentRate?: number; }> = {};
   const savingsStates: Record<string, { buckets: { principal: number; termStart: number }[]; balance: number; contribution: number; interest: number }> = {};
   const debtStates: Record<string, { remainingPrincipal: number }> = {};
 
@@ -397,7 +397,12 @@ export function runProjection(input: ProjectionEngineInput): ProjectionOutput {
 
     sinkingFunds.forEach(sf => {
       if (!sinkingFundStates[sf.id]) {
-        sinkingFundStates[sf.id] = { buckets: [], balance: 0, contribution: 0, interest: 0 };
+        sinkingFundStates[sf.id] = { 
+           buckets: [], balance: 0, contribution: 0, interest: 0,
+           currentMonthlyContrib: sf.monthlyContribution || 0,
+           currentTerm: sf.termMonths || 1,
+           currentRate: sf.interestRateAnnual || 5.5
+        };
       }
       const state = sinkingFundStates[sf.id];
       const start = sf.startYear * 12 + sf.startMonth;
@@ -459,16 +464,16 @@ export function runProjection(input: ProjectionEngineInput): ProjectionOutput {
              if (current >= start) {
                 const pKey = `${period.year}-${String(period.month).padStart(2, '0')}`;
                 const pCfg = sf.periodConfigs?.[pKey];
-                const lastBucket = state.buckets.length > 0 ? state.buckets[state.buckets.length - 1] : null;
-                
-                const defaultContrib = lastBucket && (lastBucket as any).contribAmount !== undefined ? (lastBucket as any).contribAmount : (sf.monthlyContribution || 0);
-                periodContrib = pCfg?.contribution !== undefined ? pCfg.contribution : defaultContrib;
+
+                if (pCfg?.contribution !== undefined) state.currentMonthlyContrib = pCfg.contribution;
+                if (pCfg?.termMonths !== undefined) state.currentTerm = pCfg.termMonths;
+                if (pCfg?.interestRateAnnual !== undefined) state.currentRate = pCfg.interestRateAnnual;
+
+                periodContrib = state.currentMonthlyContrib || 0;
                 newContrib += periodContrib;
 
-                const defaultTerm = lastBucket ? (lastBucket.termMonths || 1) : (sf.termMonths || 1);
-                const defaultRate = lastBucket ? (lastBucket.interestRateAnnual || 5.5) : (sf.interestRateAnnual || 5.5);
-                bTerm = (pCfg?.termMonths !== undefined ? pCfg.termMonths : defaultTerm) || 1;
-                bRate = (pCfg?.interestRateAnnual !== undefined ? pCfg.interestRateAnnual : defaultRate) || 5.5;
+                bTerm = state.currentTerm || 1;
+                bRate = state.currentRate || 5.5;
              }
              
              state.contribution += newContrib;
