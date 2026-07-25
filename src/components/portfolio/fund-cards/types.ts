@@ -13,6 +13,7 @@ export interface FundCardProps {
   balance: number;
   progress: number;
   totalDisbursed: number;
+  totalDeposited: number;
   isDisbursing: boolean;
   expandedFundId: string | null;
   setExpandedFundId: (id: string | null) => void;

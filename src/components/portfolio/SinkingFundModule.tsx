@@ -877,7 +877,7 @@ export const SinkingFundModule: React.FC<SinkingFundModuleProps> = ({
 
             const cardProps = {
                fund: fund as any,
-               balance, progress, totalDisbursed: totalDisbursed ?? 0, isDisbursing,
+               balance, progress, totalDisbursed: totalDisbursed ?? 0, totalDeposited: totalDeposited ?? 0, isDisbursing,
                expandedFundId, setExpandedFundId, 
                onEdit: () => {
                    setEditingFundId(fund.id);

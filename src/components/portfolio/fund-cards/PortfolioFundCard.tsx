@@ -5,7 +5,7 @@ import type { FundCardProps } from './types';
 import type { FundingSourceId } from '../../../constants/fundingSources';
 
 export const PortfolioFundCard: React.FC<FundCardProps> = ({
-  fund, balance, progress, totalDisbursed, isDisbursing,
+  fund, balance, progress, totalDisbursed, totalDeposited, isDisbursing,
   expandedFundId, setExpandedFundId, onEdit, onDelete, onDisburse,
   renderDisburseForm, renderCashflowDetails,
   dynamicSources, FUNDING_SOURCES, formatMoney
@@ -69,7 +69,7 @@ export const PortfolioFundCard: React.FC<FundCardProps> = ({
                 <span className="text-sm text-slate-500 font-medium">/ {formatMoney(fund.targetAmount)}</span>
               </div>
               <p className="text-[11px] text-slate-500 mt-1">
-                Vốn thực góp: <span className="font-medium text-slate-700">{formatMoney(totalDisbursed)}</span>
+                Vốn thực góp: <span className="font-medium text-slate-700">{formatMoney(totalDeposited)}</span>
               </p>
             </div>
             
