@@ -326,19 +326,22 @@ export const SinkingFundModule: React.FC<SinkingFundModuleProps> = ({
     });
 
     const bal = buckets.reduce((sum, b) => sum + b.principal, 0) + nonTermCash + totalNonTermInterestForActiveBuckets;
-    let totalDisbursed = fund.initialDeposit;
+    let totalDeposited = fund.initialDeposit;
     buckets.forEach(b => {
       if (b.contribAmount && b.contribAmount > 0) {
-        totalDisbursed += b.contribAmount;
+        totalDeposited += b.contribAmount;
       }
     });
-    // Add contributions that went directly to nonTermCash if term == 0
-    // Actually, calculating exact totalDisbursed is tricky when term is 0, but we can approximate or use periodConfigs.
-    // For now, let's keep it simple.
+
+    let totalDisbursed = 0;
+    if (fund.withdrawals && fund.withdrawals.length > 0) {
+      totalDisbursed = fund.withdrawals.reduce((sum, w) => sum + w.amount, 0);
+    }
 
     return { 
        balance: bal, 
        totalDisbursed,
+       totalDeposited,
        progress: fund.targetAmount > 0 ? (bal / fund.targetAmount) * 100 : 0,
        buckets,
        nonTermCash
@@ -578,7 +581,7 @@ export const SinkingFundModule: React.FC<SinkingFundModuleProps> = ({
                          )}
                          <div className="pt-1">
                             <span className="text-family-textMuted text-[10px] uppercase mb-1 block">Các khoản đang gửi tích lũy:</span>
-                            <div className="space-y-1.5 max-h-[500px] overflow-y-auto pr-1">
+                            <div className="space-y-1.5 max-h-[800px] overflow-y-auto pr-1">
                                {getFundBalance(fund.id).buckets.map((b: any, i: number) => {
                                   const bMo = ((b.termStart - 1) % 12) + 1;
                                   const bYr = Math.floor((b.termStart - 1) / 12);
@@ -680,7 +683,7 @@ export const SinkingFundModule: React.FC<SinkingFundModuleProps> = ({
                                               <span className="text-[10px] text-family-textMuted">%/năm</span>
                                               {b.termMonths > 0 && b.interestRateAnnual > 0 && (
                                                  <span className="text-[10px] text-emerald-600 font-semibold ml-2">
-                                                    (+ {formatTableMoneyVNDMillion(b.principal * (b.interestRateAnnual / 100 / 12) * b.termMonths)} Tr lãi)
+                                                    (Dự kiến lãi: +{formatTableMoneyVNDMillion(b.principal * (b.interestRateAnnual / 100 / 12) * b.termMonths)} Tr)
                                                  </span>
                                               )}
                                            </div>
