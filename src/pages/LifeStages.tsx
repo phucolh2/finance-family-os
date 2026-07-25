@@ -314,7 +314,7 @@ export const LifeStages: React.FC = () => {
           <CardHeader>
             <CardTitle>{isAdding ? 'Thêm sự kiện mới' : 'Chỉnh sửa sự kiện'}</CardTitle>
             <CardDescription>
-              Thiết lập thông số tác động tài chính. Nhập số tiền âm cho các chi phí chi tiêu lớn (Ví dụ: -3500 cho mua nhà).
+              Sự kiện Đời sống là các khoản chi tiêu lớn một lần hoặc tạo ra dòng tiền dài hạn nằm ngoài ngân sách sinh hoạt cố định (Ví dụ: Mua đồ điện tử, mua xe, sinh con, đổi nhà...).
             </CardDescription>
           </CardHeader>
           <CardContent>
