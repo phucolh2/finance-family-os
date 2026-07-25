@@ -15,6 +15,7 @@ import {
 } from 'lucide-react';
 import { ExpenseDashboard } from '../components/expense/ExpenseDashboard';
 import { ExpenseScheduleView } from '../components/expense/ExpenseScheduleView';
+import { LiquidityBreakdownTable } from '../components/expense/LiquidityBreakdownTable';
 import { SavingsAndLiquidityView } from '../components/expense/SavingsAndLiquidityView';
 import { ObservationControls } from '../components/ui/ObservationControls';
 
@@ -471,6 +472,7 @@ export const LifeStages: React.FC = () => {
         <div className="space-y-6">
           <ExpenseDashboard filter={dashboardFilter} setFilter={setDashboardFilter} />
           <ExpenseScheduleView />
+          <LiquidityBreakdownTable />
         </div>
       )}
       
