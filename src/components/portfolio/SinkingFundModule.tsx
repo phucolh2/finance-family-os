@@ -549,7 +549,7 @@ export const SinkingFundModule: React.FC<SinkingFundModuleProps> = ({
           description={emptyStateDescription} 
         />
       ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div className="grid grid-cols-1 gap-4">
           {activeFunds.map((fund) => {
             const { balance, progress, totalDisbursed, totalDeposited, nonTermCash } = getFundBalance(fund.id);
             const isDisbursing = disbursingId === fund.id;
@@ -578,7 +578,7 @@ export const SinkingFundModule: React.FC<SinkingFundModuleProps> = ({
                          )}
                          <div className="pt-1">
                             <span className="text-family-textMuted text-[10px] uppercase mb-1 block">Các khoản đang gửi tích lũy:</span>
-                            <div className="space-y-1.5 max-h-48 overflow-y-auto pr-1">
+                            <div className="space-y-1.5 max-h-[500px] overflow-y-auto pr-1">
                                {getFundBalance(fund.id).buckets.map((b: any, i: number) => {
                                   const bMo = ((b.termStart - 1) % 12) + 1;
                                   const bYr = Math.floor((b.termStart - 1) / 12);
