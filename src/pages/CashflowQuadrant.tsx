@@ -6,6 +6,7 @@ import { runProjection } from '../engines/projectionEngine';
 import { calculateIncome } from '../engines/incomeEngine';
 import { calculateBudget } from '../engines/budgetEngine';
 import { formatTableMoneyVNDMillion } from '../utils/format';
+import { BUDGET_PILLARS } from '../constants/pillars';
 import { 
   ArrowUpRight, 
   ArrowRightLeft,
@@ -397,22 +398,22 @@ export const CashflowQuadrant: React.FC = () => {
                 <Legend wrapperStyle={{ fontSize: 12, paddingTop: '10px' }} />
                 
                 <Line
-                  name="Tổng Chi Phí"
                   type="monotone"
+                  name={BUDGET_PILLARS.expense.label}
                   dataKey="expenses"
-                  stroke="#f87171" // red-400
+                  stroke={BUDGET_PILLARS.expense.colorHex}
                   strokeWidth={2}
-                  dot={false}
-                  activeDot={{ r: 6, fill: '#f87171', strokeWidth: 0 }}
+                  dot={{ r: 3, fill: BUDGET_PILLARS.expense.colorHex, strokeWidth: 0 }}
+                  activeDot={{ r: 6, fill: BUDGET_PILLARS.expense.colorHex, strokeWidth: 0 }}
                 />
                 <Line
-                  name="Thu Nhập Thụ Động"
                   type="monotone"
+                  name={BUDGET_PILLARS.savings.label}
                   dataKey="passiveIncome"
-                  stroke="#10b981" // emerald-500
-                  strokeWidth={3}
-                  dot={false}
-                  activeDot={{ r: 6, fill: '#10b981', strokeWidth: 0 }}
+                  stroke={BUDGET_PILLARS.savings.colorHex}
+                  strokeWidth={2}
+                  dot={{ r: 3, fill: BUDGET_PILLARS.savings.colorHex, strokeWidth: 0 }}
+                  activeDot={{ r: 6, fill: BUDGET_PILLARS.savings.colorHex, strokeWidth: 0 }}
                 />
               </LineChart>
             </ResponsiveContainer>

@@ -37,6 +37,7 @@ export const SinkingFundModule: React.FC<SinkingFundModuleProps> = ({
     disburseSinkingFund,
     addInvestmentDeal,
     selectedPeriodKey,
+    setSelectedPeriodKey,
   } = useAppContext();
 
   const projection = runProjection({
@@ -118,10 +119,10 @@ export const SinkingFundModule: React.FC<SinkingFundModuleProps> = ({
          }
       } else if (sourceId === 'saving') {
          balance = currentRow ? currentRow.savingBalance : 0;
-         prefix = 'Số dư Quỹ Tiết Kiệm & Nợ';
+         prefix = 'Số dư Quỹ Tiết Kiệm & Dự phòng';
       } else if (sourceId === 'debt_reserve') {
          balance = (currentRow ? currentRow.debtReserveBalance : 0) + (currentRow ? (currentRow as any)._activeSinkingFundsDebtReserve || 0 : 0);
-         prefix = 'Quỹ Chuẩn bị Trả nợ';
+         prefix = 'Quỹ Dự phòng';
       }
       return `${prefix} (Còn: ${formatTableMoneyVNDMillion(balance)})`;
   };
@@ -153,8 +154,6 @@ export const SinkingFundModule: React.FC<SinkingFundModuleProps> = ({
           const yr = Math.floor((m - 1) / 12);
           const periodKey = `${yr}-${String(mo).padStart(2, '0')}`;
           const periodCfg = fund.periodConfigs?.[periodKey];
-          const bTerm = periodCfg?.termMonths ?? (fund.termMonths || 1);
-          const bRate = periodCfg?.interestRateAnnual ?? (fund.interestRateAnnual || 5.5);
 
           const currentWithdrawals = (fund.withdrawals || []).filter(w => w.month === mo && w.year === yr);
           if (currentWithdrawals.length > 0) {
@@ -184,12 +183,25 @@ export const SinkingFundModule: React.FC<SinkingFundModuleProps> = ({
           
           let newContrib = 0;
           if (m === start) newContrib += fund.initialDeposit;
+          
+          let periodContrib = 0;
+          let bTerm = fund.termMonths || 1;
+          let bRate = fund.interestRateAnnual || 5.5;
+
           if (m >= start) {
-             newContrib += periodCfg?.contribution !== undefined ? periodCfg.contribution : fund.monthlyContribution;
+             const lastBucket = buckets.length > 0 ? buckets[buckets.length - 1] : null;
+             const defaultContrib = lastBucket && (lastBucket as any).contribAmount !== undefined ? (lastBucket as any).contribAmount : fund.monthlyContribution;
+             periodContrib = periodCfg?.contribution !== undefined ? periodCfg.contribution : defaultContrib;
+             newContrib += periodContrib;
+
+             const defaultTerm = lastBucket ? lastBucket.termMonths : (fund.termMonths || 1);
+             const defaultRate = lastBucket ? lastBucket.interestRateAnnual : (fund.interestRateAnnual || 5.5);
+             bTerm = periodCfg?.termMonths !== undefined ? periodCfg.termMonths : defaultTerm;
+             bRate = periodCfg?.interestRateAnnual !== undefined ? periodCfg.interestRateAnnual : defaultRate;
           }
           
           if (newContrib > 0 || maturingAmount > 0) {
-             buckets.push({ principal: newContrib + maturingAmount, termStart: m, termMonths: bTerm, interestRateAnnual: bRate, periodKey });
+             buckets.push({ principal: newContrib + maturingAmount, termStart: m, termMonths: bTerm, interestRateAnnual: bRate, periodKey, contribAmount: periodContrib } as any);
           }
        }
     }
@@ -204,9 +216,17 @@ export const SinkingFundModule: React.FC<SinkingFundModuleProps> = ({
     });
 
     const bal = buckets.reduce((sum, b) => sum + b.principal, 0) + totalNonTermInterest;
+    let totalDisbursed = fund.initialDeposit;
+    buckets.forEach(b => {
+      // (b as any).contribAmount is exactly the new money added!
+      if ((b as any).contribAmount > 0) {
+        totalDisbursed += (b as any).contribAmount;
+      }
+    });
 
     return { 
        balance: bal, 
+       totalDisbursed,
        progress: fund.targetAmount > 0 ? (bal / fund.targetAmount) * 100 : 0,
        buckets // Return buckets for calculation during disbursement if needed
     };
@@ -351,6 +371,8 @@ export const SinkingFundModule: React.FC<SinkingFundModuleProps> = ({
                     fundType: filterFundType,
                     status: 'active'
                   });
+                  const newKey = `${form.startYear}-${String(form.startMonth).padStart(2, '0')}`;
+                  setSelectedPeriodKey(newKey);
                 }
                 setShowAddForm(false);
                 setEditingFundId(null);
@@ -373,22 +395,20 @@ export const SinkingFundModule: React.FC<SinkingFundModuleProps> = ({
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           {activeFunds.map((fund) => {
-            const { balance, progress } = getFundBalance(fund.id);
+            const { balance, progress, totalDisbursed } = getFundBalance(fund.id);
             const isDisbursing = disbursingId === fund.id;
 
             return (
-              <div key={fund.id} className="border border-family-accent/20 rounded-xl p-4 bg-white/50 relative overflow-hidden group">
-                <div className="absolute top-0 left-0 h-1 bg-family-accent/10 w-full">
-                  <div className="h-full bg-orange-400 transition-all" style={{ width: `${Math.min(100, progress)}%` }}></div>
-                </div>
+              <div key={fund.id} className="border border-family-accent/20 rounded-xl p-4 bg-white/50 relative overflow-hidden group flex flex-col justify-between">
                 
-                <div className="flex justify-between items-start mb-2 mt-1">
-                  <div>
-                    <h4 className="font-bold text-family-text text-base">{fund.name}</h4>
-                    {filterFundType !== 'debt_prep' && (
-                      <p className="text-xs text-family-textMuted uppercase tracking-wider mt-0.5">Mục tiêu: {fund.targetAssetType}</p>
-                    )}
-                  </div>
+                <div>
+                  <div className="flex justify-between items-start mb-2">
+                    <div>
+                      <h4 className="font-bold text-family-text text-base">{fund.name}</h4>
+                      {filterFundType !== 'debt_prep' && (
+                        <p className="text-xs text-family-textMuted uppercase tracking-wider mt-0.5">Mục tiêu: {fund.targetAssetType}</p>
+                      )}
+                    </div>
                   <div className="flex gap-2">
                     <button 
                       onClick={() => {
@@ -442,59 +462,84 @@ export const SinkingFundModule: React.FC<SinkingFundModuleProps> = ({
                   </div>
                 </div>
 
-                <div className="flex justify-between items-end mt-2">
-                  <div>
-                    <p className="text-xs text-family-textMuted mb-1">Số dư hiện tại / Mục tiêu</p>
-                    <div className="flex flex-col gap-1">
+                <div className="mt-auto">
+                  <div className="flex justify-between items-end mt-2 mb-2">
+                    <div>
+                      <p className="text-xs text-family-textMuted mb-1">Số dư hiện tại / Mục tiêu</p>
                       <div className="flex items-baseline gap-1.5">
                         <span className="text-lg font-bold text-family-text">{formatTableMoneyVNDMillion(balance)}</span>
                         <span className="text-sm text-family-textMuted font-medium">/ {formatTableMoneyVNDMillion(fund.targetAmount)}</span>
-                        {fund.targetAmount > 0 && (
-                          <span className="text-[10px] font-bold text-orange-600 bg-orange-100 px-1.5 py-0.5 rounded-md ml-1 inline-flex items-center">
-                            {progress.toFixed(1)}%
-                          </span>
-                        )}
                       </div>
-                      {(() => {
-                        const remaining = fund.targetAmount - balance;
-                        if (remaining > 0 && fund.monthlyContribution > 0) {
-                          const monthsRemaining = Math.ceil(remaining / fund.monthlyContribution);
-                          const currentM = Number(selectedPeriodKey ? selectedPeriodKey.split('-')[1] : new Date().getMonth() + 1);
-                          const currentY = Number(selectedPeriodKey ? selectedPeriodKey.split('-')[0] : new Date().getFullYear());
-                          const estMonth = ((currentM - 1 + monthsRemaining) % 12) + 1;
-                          const estYear = currentY + Math.floor((currentM - 1 + monthsRemaining) / 12);
-                          return (
-                            <p className="text-[10px] text-family-textMuted mt-0.5">
-                              Dự kiến hoàn thành: <span className="font-semibold text-family-text">T{estMonth}/{estYear}</span>
-                            </p>
-                          );
-                        }
-                        if (remaining <= 0 && fund.targetAmount > 0) {
-                          return (
-                            <p className="text-[10px] text-emerald-600 font-semibold mt-0.5 flex items-center gap-1">
-                              <CheckCircle className="w-3 h-3" /> Đã đạt mục tiêu
-                            </p>
-                          );
-                        }
-                        return null;
-                      })()}
-                      {fund.withdrawals && fund.withdrawals.length > 0 && (
-                        <p className="text-[10px] text-family-textMuted mt-0.5">
-                          Đã giải ngân: <span className="font-semibold text-red-500">{formatTableMoneyVNDMillion(fund.withdrawals.reduce((sum, w) => sum + w.amount, 0))} Tr</span>
-                        </p>
-                      )}
-                      {fund.withdrawals && fund.withdrawals.length > 0 && (
-                        <div className="flex flex-col gap-1 mt-1">
-                          {fund.withdrawals.map((w, idx) => (
-                            <div key={idx} className="text-[10px] text-family-textMuted bg-white border border-gray-100 px-1.5 py-0.5 rounded shadow-sm inline-flex items-center gap-1">
-                              <span className="text-red-500 font-bold">- {formatTableMoneyVNDMillion(w.amount)}</span> 
-                              (T{w.month}/{w.year}) 
-                            </div>
-                          ))}
-                        </div>
-                      )}
+                      <p className="text-xs text-family-textMuted mt-1">
+                        Tổng vốn đã góp: <span className="font-medium text-family-text">{formatTableMoneyVNDMillion(totalDisbursed)}</span>
+                      </p>
                     </div>
+                    
+                    {balance > 0 && filterFundType !== 'debt_prep' && (
+                      <Button
+                        size="sm"
+                        onClick={() => setDisbursingId(fund.id)}
+                        className="bg-family-accent/10 text-family-accent hover:bg-family-accent/20"
+                      >
+                        Giải ngân
+                      </Button>
+                    )}
                   </div>
+
+                  {/* Mini Chart / Progress Bar */}
+                  {fund.targetAmount > 0 && (
+                    <div className="mt-3 pt-3 border-t border-family-accent/10">
+                      <div className="flex justify-between items-center mb-1.5">
+                        <span className="text-[10px] font-bold text-orange-600 bg-orange-100 px-2 py-0.5 rounded-md inline-flex items-center">
+                          {progress.toFixed(1)}% Hoàn thành
+                        </span>
+                        {(() => {
+                          const remaining = fund.targetAmount - balance;
+                          if (remaining > 0 && fund.monthlyContribution > 0) {
+                            const monthsRemaining = Math.ceil(remaining / fund.monthlyContribution);
+                            const currentM = Number(selectedPeriodKey ? selectedPeriodKey.split('-')[1] : new Date().getMonth() + 1);
+                            const currentY = Number(selectedPeriodKey ? selectedPeriodKey.split('-')[0] : new Date().getFullYear());
+                            const estMonth = ((currentM - 1 + monthsRemaining) % 12) + 1;
+                            const estYear = currentY + Math.floor((currentM - 1 + monthsRemaining) / 12);
+                            return (
+                              <span className="text-[10px] text-family-textMuted font-medium">
+                                Dự kiến: T{estMonth}/{estYear}
+                              </span>
+                            );
+                          }
+                          if (remaining <= 0 && fund.targetAmount > 0) {
+                            return <span className="text-[10px] text-green-600 font-medium">✨ Đã đạt mục tiêu</span>;
+                          }
+                          return null;
+                        })()}
+                      </div>
+                      <div className="h-2 w-full bg-family-accent/10 rounded-full overflow-hidden">
+                        <div 
+                          className="h-full bg-gradient-to-r from-orange-400 to-amber-400 transition-all duration-500 ease-out" 
+                          style={{ width: `${Math.min(100, progress)}%` }}
+                        ></div>
+                      </div>
+                    </div>
+                  )}
+                  
+                  <div className="mt-3">
+                    {fund.withdrawals && fund.withdrawals.length > 0 && (
+                      <p className="text-[10px] text-family-textMuted mt-0.5">
+                        Đã giải ngân: <span className="font-semibold text-red-500">{formatTableMoneyVNDMillion(fund.withdrawals.reduce((sum, w) => sum + w.amount, 0))} Tr</span>
+                      </p>
+                    )}
+                    {fund.withdrawals && fund.withdrawals.length > 0 && (
+                      <div className="flex flex-col gap-1 mt-1">
+                        {fund.withdrawals.map((w, idx) => (
+                          <div key={idx} className="text-[10px] text-family-textMuted bg-white border border-gray-100 px-1.5 py-0.5 rounded shadow-sm inline-flex items-center gap-1">
+                            <span className="text-red-500 font-bold">- {formatTableMoneyVNDMillion(w.amount)}</span> 
+                            (T{w.month}/{w.year}) 
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                </div>
                   <div>
                     <p className="text-xs text-family-textMuted mb-1 text-right">Vốn ban đầu / Định kỳ</p>
                     <p className="text-sm font-bold text-family-text text-right">

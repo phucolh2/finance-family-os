@@ -77,6 +77,7 @@ export const LifeStages: React.FC = () => {
   };
 
   const handleAddClick = () => {
+    setActiveTab('timeline');
     setIsAdding(true);
     setEditingId(null);
     setFormData({
@@ -307,11 +308,11 @@ export const LifeStages: React.FC = () => {
         </div>
       )}
 
-      {formError && <WarningBox type="danger" message={formError} />}
-
       {/* Add / Edit Form Drawer */}
-      {(isAdding || editingId) && (
-        <Card className="border-family-accent/30 bg-family-bgDark/20 shadow-md transform transition-all">
+      {activeTab === 'timeline' && (isAdding || editingId) && (
+        <>
+          {formError && <WarningBox type="danger" message={formError} />}
+          <Card className="border-family-accent/30 bg-family-bgDark/20 shadow-md transform transition-all mt-6">
           <CardHeader>
             <CardTitle>{isAdding ? 'Thêm sự kiện mới' : 'Chỉnh sửa sự kiện'}</CardTitle>
             <CardDescription>
@@ -406,7 +407,7 @@ export const LifeStages: React.FC = () => {
                       label="Lớp Tiêu sản (Ánh xạ Ngân sách)"
                       value={formData.spendingCategory || ''}
                       onChange={(e) => { setFormData({ ...formData, spendingCategory: e.target.value }); }}
-                      options={[{value: '', label: '-- Không phân loại --'}, ...spendingCategoryOptions]}
+                      options={[{value: '', label: '-- Dự phòng --'}, ...spendingCategoryOptions]}
                     />
                     <p className="text-[10px] text-family-accent mt-1.5 ml-1 italic font-medium leading-tight">* Ánh xạ này chỉ dùng để gom nhóm trên Báo cáo vòng đời, hoàn toàn không tự động ghi đè vào bảng "Thực tế chi tiêu".</p>
                   </div>
@@ -465,6 +466,7 @@ export const LifeStages: React.FC = () => {
             </form>
           </CardContent>
         </Card>
+        </>
       )}
 
 

@@ -1,40 +1,49 @@
 import React from 'react';
 import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip, Legend } from 'recharts';
 import type { BudgetTreeNode } from '../../types/budget';
+import { BUDGET_PILLARS } from '../../constants/pillars';
 
-interface BudgetDonutChartProps {
+export interface BudgetDonutChartProps {
   rootGroups: BudgetTreeNode[];
 }
-
-const COLORS = ['#f87171', '#10b981', '#3b82f6']; // Red (Expense), Green (Savings), Blue (Investment)
 
 export const BudgetDonutChart: React.FC<BudgetDonutChartProps> = ({ rootGroups }) => {
   const data = [
     {
-      name: 'Chi phí (Expense)',
+      name: BUDGET_PILLARS.expense.label,
+      key: BUDGET_PILLARS.expense.id,
       value: rootGroups
         .filter(g => g.isActive && g.classification === 'expense')
         .reduce((sum, g) => sum + g.ratioPercent, 0),
     },
     {
-      name: 'Tiết kiệm (Savings)',
+      name: BUDGET_PILLARS.savings.label,
+      key: BUDGET_PILLARS.savings.id,
       value: rootGroups
         .filter(g => g.isActive && g.classification === 'savings')
         .reduce((sum, g) => sum + g.ratioPercent, 0),
     },
     {
-      name: 'Đầu tư (Investment)',
+      name: BUDGET_PILLARS.investment.label,
+      key: BUDGET_PILLARS.investment.id,
       value: rootGroups
         .filter(g => g.isActive && g.classification === 'investment')
+        .reduce((sum, g) => sum + g.ratioPercent, 0),
+    },
+    {
+      name: BUDGET_PILLARS.debt_reserve.label,
+      key: BUDGET_PILLARS.debt_reserve.id,
+      value: rootGroups
+        .filter(g => g.isActive && (g.classification === 'debt_reserve' || !g.classification))
         .reduce((sum, g) => sum + g.ratioPercent, 0),
     }
   ].filter(item => item.value > 0);
 
-  // Remap colors based on actual names if some are missing
-  const getFillColor = (name: string) => {
-    if (name.includes('Chi phí')) return '#f87171';
-    if (name.includes('Tiết kiệm')) return '#10b981';
-    if (name.includes('Đầu tư')) return '#3b82f6';
+  const getFillColor = (key: string) => {
+    if (key === BUDGET_PILLARS.expense.id) return BUDGET_PILLARS.expense.colorHex;
+    if (key === BUDGET_PILLARS.savings.id) return BUDGET_PILLARS.savings.colorHex;
+    if (key === BUDGET_PILLARS.investment.id) return BUDGET_PILLARS.investment.colorHex;
+    if (key === BUDGET_PILLARS.debt_reserve.id) return BUDGET_PILLARS.debt_reserve.colorHex;
     return '#9ca3af';
   }
 
@@ -52,7 +61,7 @@ export const BudgetDonutChart: React.FC<BudgetDonutChartProps> = ({ rootGroups }
           stroke="rgba(0,0,0,0)"
         >
           {data.map((entry, index) => (
-            <Cell key={`cell-${index}`} fill={getFillColor(entry.name)} />
+            <Cell key={`cell-${index}`} fill={getFillColor(entry.key)} />
           ))}
         </Pie>
         <Tooltip

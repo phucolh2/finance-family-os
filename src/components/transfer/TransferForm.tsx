@@ -168,7 +168,7 @@ export const TransferForm: React.FC<TransferFormProps> = ({ onSuccess, onCancel 
                         ))}
                       </optgroup>
 
-                      <optgroup label="🏦 Tiết kiệm & Nợ">
+                      <optgroup label="🏦 Tiết kiệm & Dự phòng">
                         <option value="pool:saving" disabled>Quỹ Tiết Kiệm ({formatMoneyVNDMillion(savingBalance)} — khóa)</option>
                         <option value="pool:debt_reserve" disabled>Quỹ Trả nợ ({formatMoneyVNDMillion(debtReserveBalance)} — khóa)</option>
                         {state.savingsDeposits?.filter(s => s.status === 'active').map(s => (
@@ -213,7 +213,7 @@ export const TransferForm: React.FC<TransferFormProps> = ({ onSuccess, onCancel 
                         ))}
                       </optgroup>
 
-                      <optgroup label="🏦 Tiết kiệm & Nợ">
+                      <optgroup label="🏦 Tiết kiệm & Dự phòng">
                         <option value="savings:new">Sổ TK: Mở sổ mới</option>
                         {state.debts?.filter(d => d.status === 'active').map(d => (
                           <option key={d.id} value={`debt:${d.id}`}>Khoản nợ: {d.name} (Trả sớm, {formatMoneyVNDMillion(d.principal)})</option>

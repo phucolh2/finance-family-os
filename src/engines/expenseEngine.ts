@@ -16,8 +16,15 @@ export interface ExpenseMonthlyPoint {
   actual: number;
 }
 
+export interface ExpenseCategorySummary {
+  categoryId: string;
+  totalBudget: number;
+  totalActual: number;
+}
+
 export interface ExpenseAnalysisResult {
   summaryByGroup: Record<string, ExpenseGroupSummary>;
+  summaryByCategory: Record<string, ExpenseCategorySummary>;
   monthlySeries: Record<string, ExpenseMonthlyPoint[]>; // key is groupId ('all', 'housing_basic', etc.)
 }
 
@@ -27,16 +34,25 @@ export function analyzeExpense(
   currentPeriodKey?: string,
   dynamicExpenseGroupIds?: string[]
 ): ExpenseAnalysisResult {
-  // Initialize summary and series
-  const groups: (BudgetGroup | 'all')[] = [
-    'all', 'housing_basic', 'future_investing', 'safety_reserve', 'family_experience', 'health_growth', 'children', 'parents'
-  ];
+  // Dynamically build groups from resolvedMonthlyDb
+  const groupsSet = new Set<string>(['all']);
+  resolvedMonthlyDb.forEach(db => {
+    if (db.budgetAmounts) {
+      Object.keys(db.budgetAmounts).forEach(k => groupsSet.add(k));
+    }
+  });
+  
+  // Ensure standard groups exist for backward compatibility and charting assumptions
+  ['housing_basic', 'future_investing', 'safety_reserve', 'family_experience', 'health_growth', 'children', 'parents'].forEach(k => groupsSet.add(k));
+
+  const groups = Array.from(groupsSet);
 
   const summaryByGroup: Record<string, ExpenseGroupSummary> = {};
+  const summaryByCategory: Record<string, ExpenseCategorySummary> = {};
   const monthlySeries: Record<string, ExpenseMonthlyPoint[]> = {};
   
   groups.forEach(g => {
-    summaryByGroup[g] = { groupId: g, totalBudget: 0, totalActual: 0 };
+    summaryByGroup[g] = { groupId: g as any, totalBudget: 0, totalActual: 0 };
     monthlySeries[g] = [];
   });
 
@@ -74,26 +90,40 @@ export function analyzeExpense(
       totalExpenseBudget += (bAmounts as any)[gId] || 0;
     });
 
-    // Monthly budgets
     const monthlyBudgets: Record<string, number> = {
       'all': totalExpenseBudget,
-      'housing_basic': bAmounts.housing_basic,
-      'future_investing': bAmounts.future_investing,
-      'safety_reserve': bAmounts.safety_reserve,
-      'family_experience': bAmounts.family_experience,
-      'health_growth': bAmounts.health_growth,
-      'children': bAmounts.children,
-      'parents': bAmounts.parents
     };
+    groups.forEach(g => {
+      if (g !== 'all') {
+        monthlyBudgets[g] = (bAmounts as any)[g] || 0;
+      }
+    });
 
     // Monthly Actuals
     // Extract actual expenses from dbItem.actualExpenseCategories (which comes from ExpenseSchedule)
-    const monthlyActuals: Record<string, number> = {
-      'all': 0, 'housing_basic': 0, 'future_investing': 0, 'safety_reserve': 0,
-      'family_experience': 0, 'health_growth': 0, 'children': 0, 'parents': 0
-    };
+    const monthlyActuals: Record<string, number> = { 'all': 0 };
+    groups.forEach(g => {
+      if (g !== 'all') {
+        monthlyActuals[g] = 0;
+      }
+    });
 
-    if (dbItem.actualExpenseCategories) {
+    if (dbItem.actualExpenseByGroup) {
+      Object.entries(dbItem.actualExpenseByGroup).forEach(([groupId, amount]) => {
+        const expenseAmount = safeNumber(amount);
+        if (expenseAmount <= 0) return;
+        
+        if (groupId in monthlyActuals) {
+          monthlyActuals[groupId] += expenseAmount;
+        }
+        
+        // Only sum actual expenses for 'all', excluding legacy investment/savings entries
+        if (expenseGroupsSet.has(groupId)) {
+          monthlyActuals.all += expenseAmount;
+        }
+      });
+    } else if (dbItem.actualExpenseCategories) {
+      // Fallback for older data that doesn't have actualExpenseByGroup
       Object.entries(dbItem.actualExpenseCategories).forEach(([categoryId, amount]) => {
         const expenseAmount = safeNumber(amount);
         if (expenseAmount <= 0) return;
@@ -128,6 +158,25 @@ export function analyzeExpense(
        }
     });
 
+    // Accumulate category summaries
+    if (dbItem.budgetAmountsByCategory) {
+      Object.entries(dbItem.budgetAmountsByCategory).forEach(([categoryId, amount]) => {
+        if (!summaryByCategory[categoryId]) {
+          summaryByCategory[categoryId] = { categoryId, totalBudget: 0, totalActual: 0 };
+        }
+        summaryByCategory[categoryId].totalBudget += safeNumber(amount);
+      });
+    }
+
+    if (dbItem.actualExpenseCategories) {
+      Object.entries(dbItem.actualExpenseCategories).forEach(([categoryId, amount]) => {
+        if (!summaryByCategory[categoryId]) {
+          summaryByCategory[categoryId] = { categoryId, totalBudget: 0, totalActual: 0 };
+        }
+        summaryByCategory[categoryId].totalActual += safeNumber(amount);
+      });
+    }
+
     // Accumulate and push to series
     groups.forEach(g => {
       summaryByGroup[g].totalBudget += monthlyBudgets[g] || 0;
@@ -143,5 +192,9 @@ export function analyzeExpense(
     });
   });
 
-  return { summaryByGroup, monthlySeries };
+  return {
+    summaryByGroup,
+    summaryByCategory,
+    monthlySeries,
+  };
 }

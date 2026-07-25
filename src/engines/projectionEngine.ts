@@ -452,18 +452,29 @@ export function runProjection(input: ProjectionEngineInput): ProjectionOutput {
              if (current === start) {
                 newContrib += (sf.initialDeposit || 0);
              }
+             let periodContrib = 0;
+             let bTerm = sf.termMonths || 1;
+             let bRate = sf.interestRateAnnual || 5.5;
+
              if (current >= start) {
-                newContrib += (sf.monthlyContribution || 0);
+                const pKey = `${period.year}-${String(period.month).padStart(2, '0')}`;
+                const pCfg = sf.periodConfigs?.[pKey];
+                const lastBucket = state.buckets.length > 0 ? state.buckets[state.buckets.length - 1] : null;
+                
+                const defaultContrib = lastBucket && (lastBucket as any).contribAmount !== undefined ? (lastBucket as any).contribAmount : (sf.monthlyContribution || 0);
+                periodContrib = pCfg?.contribution !== undefined ? pCfg.contribution : defaultContrib;
+                newContrib += periodContrib;
+
+                const defaultTerm = lastBucket ? (lastBucket.termMonths || 1) : (sf.termMonths || 1);
+                const defaultRate = lastBucket ? (lastBucket.interestRateAnnual || 5.5) : (sf.interestRateAnnual || 5.5);
+                bTerm = (pCfg?.termMonths !== undefined ? pCfg.termMonths : defaultTerm) || 1;
+                bRate = (pCfg?.interestRateAnnual !== undefined ? pCfg.interestRateAnnual : defaultRate) || 5.5;
              }
              
              state.contribution += newContrib;
              
              if (newContrib > 0 || maturingAmount > 0) {
-                const pKey = `${period.year}-${String(period.month).padStart(2, '0')}`;
-                const pCfg = sf.periodConfigs?.[pKey];
-                const bTerm = pCfg?.termMonths ?? (sf.termMonths || 1);
-                const bRate = pCfg?.interestRateAnnual ?? (sf.interestRateAnnual || 5.5);
-                state.buckets.push({ principal: newContrib + maturingAmount, termStart: current, termMonths: bTerm, interestRateAnnual: bRate });
+                state.buckets.push({ principal: newContrib + maturingAmount, termStart: current, termMonths: bTerm, interestRateAnnual: bRate, contribAmount: periodContrib } as any);
              }
             
             state.balance = state.buckets.reduce((sum, b) => sum + b.principal, 0);
@@ -496,7 +507,7 @@ export function runProjection(input: ProjectionEngineInput): ProjectionOutput {
       const deficit = Math.abs(currentDebtReserveBalance);
       cashflowRes.netCashflowMonthly -= deficit;
       currentDebtReserveBalance = 0;
-      warnings.push(`[Công nợ] Tháng ${period.month}/${period.year}: Quỹ Chuẩn bị Trả nợ (Sinking Fund) thiếu hụt ${deficit.toFixed(1)} tr. Đã tự động trừ vào dòng tiền tự do (Cashflow). Bạn có thể điều chỉnh ngân sách thủ công để bù đắp.`);
+      warnings.push(`[Dự phòng] Tháng ${period.month}/${period.year}: Quỹ Dự phòng (Sinking Fund) thiếu hụt ${deficit.toFixed(1)} tr. Đã tự động trừ vào dòng tiền tự do (Cashflow). Bạn có thể điều chỉnh ngân sách thủ công để bù đắp.`);
     }
 
     const _unallocatedForCompounding = Math.max(0, totalInvestable - activeValueUpToLastMonth - activeSavingsPrincipalThisMonth - activeSinkingFundsBalance_unallocated);

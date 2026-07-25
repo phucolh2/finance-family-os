@@ -94,23 +94,19 @@ export function useAppState() {
 
         const migrated = migrateState(parsed, INITIAL_APP_STATE);
 
-        if (
-          !migrated.resolvedMonthlyDb ||
-          migrated.resolvedMonthlyDb.length === 0 ||
-          !migrated.resolvedMonthlyDbMap
-        ) {
-          const dbResult = generateResolvedMonthlyDb(
-            migrated.profile,
-            migrated.incomeSchedule,
-            migrated.budgetSchedule,
-            migrated.expenseSchedule,
-            migrated.assets,
-            migrated.assumptions,
-            migrated.lifeStages
-          );
-          migrated.resolvedMonthlyDb = dbResult.list;
-          migrated.resolvedMonthlyDbMap = dbResult.map;
-        }
+        // Always regenerate the DB on load to ensure it's perfectly in sync
+        // with any migrations or source of truth changes in the schedules.
+        const dbResult = generateResolvedMonthlyDb(
+          migrated.profile,
+          migrated.incomeSchedule,
+          migrated.budgetSchedule,
+          migrated.expenseSchedule,
+          migrated.assets,
+          migrated.assumptions,
+          migrated.lifeStages
+        );
+        migrated.resolvedMonthlyDb = dbResult.list;
+        migrated.resolvedMonthlyDbMap = dbResult.map;
         return migrated;
       }
     } catch (e) {

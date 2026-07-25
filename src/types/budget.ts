@@ -1,13 +1,8 @@
 import type { LifecycleProps } from './ledger';
 
-export type BudgetMainGroupId =
-  | 'housing_basic'
-  | 'future_investing'
-  | 'safety_reserve'
-  | 'family_experience'
-  | 'health_growth';
+export type BudgetMainGroupId = string;
 
-export type BudgetGroup = BudgetMainGroupId | 'children' | 'parents';
+export type BudgetGroup = string;
 
 export type BudgetRuleType = 'percent' | 'fixed' | 'capped' | 'event_based';
 
@@ -51,6 +46,8 @@ export interface MonthlyBudgetOutput {
   warnings: string[];
 }
 
+import type { PillarId } from '../constants/pillars';
+
 export interface BudgetTreeNode {
   id: string;
   parentId: string | null;
@@ -66,7 +63,7 @@ export interface BudgetTreeNode {
   isActive: boolean;
   sortOrder: number;
 
-  classification?: 'expense' | 'investment' | 'savings' | 'debt_reserve'; // Dimension classification
+  classification?: PillarId; // Dimension classification
 
   children?: BudgetTreeNode[];
 }

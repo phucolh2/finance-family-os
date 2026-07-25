@@ -16,15 +16,15 @@ export const FUNDING_SOURCES: Record<FundingSourceId, FundingSourceDef> = {
   },
   saving: {
     id: 'saving',
-    label: 'Số dư Quỹ Tiết Kiệm & Nợ',
+    label: 'Số dư Quỹ Tiết Kiệm & Dự phòng',
     shortLabel: 'Quỹ Tiết Kiệm',
     description: 'Số dư tích luỹ từ ngân sách Tiết kiệm.'
   },
   debt_reserve: {
     id: 'debt_reserve',
-    label: 'Ngân sách Chuẩn bị trả nợ',
-    shortLabel: 'Ngân sách Trả nợ',
-    description: 'Ngân sách chuẩn bị trả nợ trích hàng tháng.'
+    label: 'Ngân sách Dự phòng',
+    shortLabel: 'Ngân sách Dự phòng',
+    description: 'Ngân sách Dự phòng trích hàng tháng.'
   },
   investment: {
     id: 'investment',

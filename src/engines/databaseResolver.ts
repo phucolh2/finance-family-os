@@ -68,57 +68,28 @@ export function generateResolvedMonthlyDb(
       childCost: childCostRes,
     });
 
-    const ratios = {
-      housing_basic: 0,
-      future_investing: 0,
-      safety_reserve: 0,
-      family_experience: 0,
-      health_growth: 0,
-      children: 0,
-      parents: 0,
-    };
-
-    const amounts = {
-      housing_basic: 0,
-      future_investing: 0,
-      safety_reserve: 0,
-      family_experience: 0,
-      health_growth: 0,
-      children: 0,
-      parents: 0,
-    };
+    const ratios: Record<string, number> = {};
+    const amounts: Record<string, number> = {};
+    const budgetAmountsByCategory: Record<string, number> = {};
 
     budgetRes.categories.forEach((r) => {
       const val = r.ratioPercent;
       const amt = r.amountMonthly;
-      if (r.group === 'housing_basic') {
-        ratios.housing_basic += val;
-        amounts.housing_basic += amt;
-      } else if (r.group === 'future_investing') {
-        ratios.future_investing += val;
-        amounts.future_investing += amt;
-      } else if (r.group === 'safety_reserve') {
-        ratios.safety_reserve += val;
-        amounts.safety_reserve += amt;
-      } else if (r.group === 'family_experience') {
-        ratios.family_experience += val;
-        amounts.family_experience += amt;
-      } else if (r.group === 'health_growth') {
-        ratios.health_growth += val;
-        amounts.health_growth += amt;
-      } else if (r.group === 'children') {
-        ratios.children += val;
-        amounts.children += amt;
-      } else if (r.group === 'parents') {
-        ratios.parents += val;
-        amounts.parents += amt;
-      }
+      
+      // Default initialization
+      if (ratios[r.group] === undefined) ratios[r.group] = 0;
+      if (amounts[r.group] === undefined) amounts[r.group] = 0;
+
+      ratios[r.group] += val;
+      amounts[r.group] += amt;
+      
+      budgetAmountsByCategory[r.categoryId] = amt;
     });
 
     // 4. Resolve Actual Expenses
     let totalActualExpenseMonthly = 0;
     let actualExpenseCategories: Record<string, number> = {};
-    
+    let actualExpenseByGroup: Record<string, number> = {};
     // Find the latest effective expense schedule for this month
     const applicableExpenseSchedules = expenseSchedule.filter(
       (s) => s.effectiveYear * 12 + s.effectiveMonth <= p.year * 12 + p.month
@@ -141,6 +112,8 @@ export function generateResolvedMonthlyDb(
         const tempCategories = { ...activeExpenseSchedule.categories };
         let calculatedTotal = 0;
         
+        const tempActualExpenseByGroup: Record<string, number> = {};
+
         Object.keys(tempCategories).forEach(catId => {
           let val = safeNumber(tempCategories[catId], 0);
           if (val === -1) {
@@ -153,11 +126,19 @@ export function generateResolvedMonthlyDb(
             }
             tempCategories[catId] = val;
           }
+          
           calculatedTotal += val;
+          
+          const matchedBudget = budgetRes.categories.find(c => c.categoryId === catId);
+          if (matchedBudget) {
+            const groupId = matchedBudget.group;
+            tempActualExpenseByGroup[groupId] = (tempActualExpenseByGroup[groupId] || 0) + val;
+          }
         });
         
         actualExpenseCategories = tempCategories;
         totalActualExpenseMonthly = calculatedTotal;
+        actualExpenseByGroup = tempActualExpenseByGroup;
       }
     }
 
@@ -169,24 +150,19 @@ export function generateResolvedMonthlyDb(
       expectedReturnAnnual: Math.round(weightedReturn * 100) / 100,
       totalActualExpenseMonthly: Math.round(totalActualExpenseMonthly * 100) / 100,
       actualExpenseCategories,
-      budgetRatios: {
-        housing_basic: Math.round(ratios.housing_basic * 100) / 100,
-        future_investing: Math.round(ratios.future_investing * 100) / 100,
-        safety_reserve: Math.round(ratios.safety_reserve * 100) / 100,
-        family_experience: Math.round(ratios.family_experience * 100) / 100,
-        health_growth: Math.round(ratios.health_growth * 100) / 100,
-        children: Math.round(ratios.children * 100) / 100,
-        parents: Math.round(ratios.parents * 100) / 100,
-      },
-      budgetAmounts: {
-        housing_basic: Math.round(amounts.housing_basic * 100) / 100,
-        future_investing: Math.round(amounts.future_investing * 100) / 100,
-        safety_reserve: Math.round(amounts.safety_reserve * 100) / 100,
-        family_experience: Math.round(amounts.family_experience * 100) / 100,
-        health_growth: Math.round(amounts.health_growth * 100) / 100,
-        children: Math.round(amounts.children * 100) / 100,
-        parents: Math.round(amounts.parents * 100) / 100,
-      },
+      actualExpenseByGroup,
+      budgetRatios: Object.keys(ratios).reduce((acc, key) => {
+        acc[key] = Math.round(ratios[key] * 100) / 100;
+        return acc;
+      }, {} as Record<string, number>),
+      budgetAmounts: Object.keys(amounts).reduce((acc, key) => {
+        acc[key] = Math.round(amounts[key] * 100) / 100;
+        return acc;
+      }, {} as Record<string, number>),
+      budgetAmountsByCategory: Object.keys(budgetAmountsByCategory).reduce((acc, key) => {
+        acc[key] = Math.round(budgetAmountsByCategory[key] * 100) / 100;
+        return acc;
+      }, {} as Record<string, number>),
     };
   });
 

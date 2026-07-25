@@ -165,9 +165,9 @@ export const Portfolio: React.FC = () => {
 
   const savBal = activeRow?.portfolio.savingsBalance || 0;
 
-  const totalEarmarkedCapital = state.assets.reduce((sum, asset) => {
-    return sum + (activeRow ? (activeRow.portfolio.assets[asset.type].earmarkedEndingBalance || 0) : 0);
-  }, 0);
+  const totalEarmarkedCapital = activeRow 
+    ? (Object.values(activeRow.portfolio.assets) as any[]).reduce((sum, asset) => sum + (asset.earmarkedEndingBalance || 0), 0)
+    : 0;
 
   state.assets.forEach((asset) => {
     const earmarkedBalance = activeRow ? (activeRow.portfolio.assets[asset.type].earmarkedEndingBalance || 0) : 0;
@@ -193,13 +193,7 @@ export const Portfolio: React.FC = () => {
     ? (genericUnallocatedBalance / totalObservedBalance) * 100
     : 100;
 
-  if (genericUnallocatedPercent > 0.01) {
-    chartData.push({
-      name: 'Tiền nhàn rỗi (Chung)',
-      value: Math.round(genericUnallocatedPercent * 10) / 10,
-      balance: genericUnallocatedBalance,
-    });
-  }
+  // Tiền mặt nhàn rỗi chung đã được loại bỏ khỏi biểu đồ theo yêu cầu
 
   // Calculate unallocated capital at the deal start date for validation
   const targetMonthRow = projection.monthlyRows.find(
@@ -379,6 +373,7 @@ export const Portfolio: React.FC = () => {
                   <p className="text-xl font-bold text-violet-800">{formatKpiMoneyVNDMillion(plannedCapital)}</p>
                   <p className="text-[10px] text-violet-600/70 mt-1.5">
                     {(state.sinkingFunds || []).filter(f => {
+                      if (f.fundType === 'debt_prep') return false;
                       const start = f.startYear * 12 + f.startMonth;
                       const end = f.status === 'disbursed' && f.disbursedYear && f.disbursedMonth
                         ? f.disbursedYear * 12 + f.disbursedMonth
@@ -584,6 +579,13 @@ export const Portfolio: React.FC = () => {
         );
       })()}
       </div>
+
+      {/* Gửi Tiết kiệm và Sinking Funds */}
+      <div className="flex flex-col gap-6 mt-6">
+        <SavingsDepositModule />
+        <SinkingFundModule filterFundType="investment" />
+      </div>
+
 
       {/* Deals Tracking Section */}
       <Card className="border-family-accent/20 mt-6">
@@ -1153,11 +1155,6 @@ export const Portfolio: React.FC = () => {
         </CardContent>
       </Card>
 
-      {/* Gửi Tiết kiệm và Sinking Funds */}
-      <div className="flex flex-col gap-6 mt-6">
-        <SavingsDepositModule />
-        <SinkingFundModule filterFundType="investment" />
-      </div>
     </div>
   );
 };

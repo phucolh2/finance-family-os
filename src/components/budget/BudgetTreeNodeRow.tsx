@@ -3,6 +3,7 @@ import { Plus, Trash2, Edit3, X, ChevronRight, ChevronDown, Check, GripVertical 
 import { useSortable } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
 import type { BudgetTreeNode } from '../../types/budget';
+import { BUDGET_PILLARS } from '../../constants/pillars';
 
 interface BudgetTreeNodeRowProps {
   node: BudgetTreeNode;
@@ -96,14 +97,15 @@ export const BudgetTreeNodeRow: React.FC<BudgetTreeNodeRowProps> = ({
               />
               {isGroup && (
                 <select
-                  value={editClassification || ''}
-                  onChange={(e) => { setEditClassification(e.target.value ? e.target.value as any : undefined); }}
+                  value={editClassification || BUDGET_PILLARS.debt_reserve.id}
+                  onChange={(e) => { setEditClassification(e.target.value as any); }}
                   className="text-xs bg-family-bgDeep border border-family-accent/20 rounded-xl px-2 py-1 text-family-text focus:ring-1 focus:ring-family-accent/40"
                 >
-                  <option value="">Không phân loại</option>
-                  <option value="expense">Chi phí</option>
-                  <option value="investment">Đầu tư</option>
-                  <option value="savings">Tiết kiệm</option>
+                  {node.level > 0 && <option value="">Kế thừa nhóm cha</option>}
+                  <option value={BUDGET_PILLARS.expense.id}>{BUDGET_PILLARS.expense.label}</option>
+                  <option value={BUDGET_PILLARS.investment.id}>{BUDGET_PILLARS.investment.label}</option>
+                  <option value={BUDGET_PILLARS.savings.id}>{BUDGET_PILLARS.savings.label}</option>
+                  <option value={BUDGET_PILLARS.debt_reserve.id}>{BUDGET_PILLARS.debt_reserve.label}</option>
                 </select>
               )}
             </div>
@@ -115,25 +117,24 @@ export const BudgetTreeNodeRow: React.FC<BudgetTreeNodeRowProps> = ({
                 </span>
                 {isGroup ? (
                   <select
-                    value={node.classification || ''}
-                    onChange={(e) => { onUpdate(node.id, { classification: e.target.value ? e.target.value as any : undefined }); }}
+                    value={node.classification || BUDGET_PILLARS.debt_reserve.id}
+                    onChange={(e) => { onUpdate(node.id, { classification: e.target.value as any }); }}
                     className="text-[10px] uppercase font-bold bg-family-bgDeep border border-family-accent/20 rounded-xl px-2.5 py-1 text-family-text focus:outline-none focus:ring-1 focus:ring-family-accent transition-all cursor-pointer"
                   >
-                    <option value="">Không phân loại</option>
-                    <option value="expense">Chi phí</option>
-                    <option value="investment">Đầu tư</option>
-                    <option value="savings">Tiết kiệm</option>
+                    {node.level > 0 && <option value="">Kế thừa nhóm cha</option>}
+                    <option value={BUDGET_PILLARS.expense.id}>{BUDGET_PILLARS.expense.label}</option>
+                    <option value={BUDGET_PILLARS.investment.id}>{BUDGET_PILLARS.investment.label}</option>
+                    <option value={BUDGET_PILLARS.savings.id}>{BUDGET_PILLARS.savings.label}</option>
+                    <option value={BUDGET_PILLARS.debt_reserve.id}>{BUDGET_PILLARS.debt_reserve.label}</option>
                   </select>
-                ) : node.classification && (
+                ) : node.classification || node.level === 0 ? (
                   <span className={`text-[9px] uppercase px-1.5 py-0.5 rounded font-bold tracking-wider ${
-                    node.classification === 'expense' ? 'bg-red-500/10 text-red-600 border border-red-500/20' :
-                    node.classification === 'investment' ? 'bg-emerald-500/10 text-emerald-600 border border-emerald-500/20' :
-                    'bg-purple-500/10 text-purple-600 border border-purple-500/20'
+                    node.classification ? `${BUDGET_PILLARS[node.classification].bgClass} ${BUDGET_PILLARS[node.classification].colorClassDark} border ${BUDGET_PILLARS[node.classification].borderClass}` :
+                    `${BUDGET_PILLARS.debt_reserve.bgClass} ${BUDGET_PILLARS.debt_reserve.colorClassDark} border ${BUDGET_PILLARS.debt_reserve.borderClass}`
                   }`}>
-                    {node.classification === 'expense' ? 'Chi phí' :
-                     node.classification === 'investment' ? 'Đầu tư' : 'Tiết kiệm'}
+                    {node.classification ? BUDGET_PILLARS[node.classification].label : BUDGET_PILLARS.debt_reserve.label}
                   </span>
-                )}
+                ) : null}
                 {!node.isActive && (
                   <span className="text-[9px] bg-family-bgDeep px-2 py-0.5 rounded-full text-family-textMuted font-bold border border-family-accent/5">
                     Tắt

@@ -58,6 +58,38 @@ export function migrateState(stored: unknown, defaultState: AppState): AppState 
           if (!item || typeof item !== 'object') return item as BudgetRatioScheduleItem;
           const objItem = item as Record<string, unknown>;
           let rootGroups = objItem.rootGroups as BudgetTreeNode[];
+          
+          if (Array.isArray(rootGroups)) {
+            const seenGroupIds = new Set<string>();
+            rootGroups = rootGroups.map(group => {
+              if (group.nodeType === 'group' && group.level === 0) {
+                let currentGroupId = group.groupId;
+                // If it's a known fixed group, we expect it. But if there are MULTIPLE with the same id,
+                // or if it's family_experience and we already saw one, we must give it a unique ID!
+                if (seenGroupIds.has(currentGroupId)) {
+                  currentGroupId = `custom_${Date.now()}_${Math.random().toString(36).substr(2, 5)}`;
+                }
+                seenGroupIds.add(currentGroupId);
+                
+                // Recursively update children to match the new groupId
+                const updateChildrenGroupId = (nodes: BudgetTreeNode[]): BudgetTreeNode[] => {
+                  if (!nodes) return [];
+                  return nodes.map(child => ({
+                    ...child,
+                    groupId: currentGroupId,
+                    children: updateChildrenGroupId(child.children || [])
+                  }));
+                };
+                
+                return {
+                  ...group,
+                  groupId: currentGroupId,
+                  children: updateChildrenGroupId(group.children || [])
+                };
+              }
+              return group;
+            });
+          }
           if (!Array.isArray(rootGroups) || rootGroups.length === 0) {
             const flatRatios = Array.isArray(objItem.ratios) ? objItem.ratios : [];
             const newTree = JSON.parse(JSON.stringify(defaultState.budgetSchedule[0].rootGroups)) as BudgetTreeNode[];

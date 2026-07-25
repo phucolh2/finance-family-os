@@ -69,7 +69,8 @@ export function collectLeafNodes(node: BudgetTreeNode, inheritedClassification?:
   const isActive = node.isActive;
   if (!isActive) return [];
 
-  const currentClassification = node.classification || inheritedClassification;
+  // IF no classification on node AND no inherited classification (i.e. Root node), default to 'debt_reserve' (Dự phòng)
+  const currentClassification = node.classification || inheritedClassification || 'debt_reserve';
   const nodeWithClassification = { ...node, classification: currentClassification };
 
   if (!node.children || node.children.length === 0) {

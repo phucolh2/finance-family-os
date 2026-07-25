@@ -15,11 +15,13 @@ const ScenarioBase = lazy(() => import('./pages/ScenarioBase').then(m => ({ defa
 const ScenarioChild2031 = lazy(() => import('./pages/ScenarioChild2031').then(m => ({ default: m.ScenarioChild2031 })));
 const ScenarioManagement = lazy(() => import('./pages/ScenarioManagement').then(m => ({ default: m.ScenarioManagement })));
 const Portfolio = lazy(() => import('./pages/Portfolio').then(m => ({ default: m.Portfolio })));
-const SavingsAndDebt = lazy(() => import('./pages/SavingsAndDebt').then(m => ({ default: m.SavingsAndDebt })));
+const Savings = lazy(() => import('./pages/Savings').then(m => ({ default: m.Savings })));
+const Reserves = lazy(() => import('./pages/Reserves').then(m => ({ default: m.Reserves })));
 const FireCenter = lazy(() => import('./pages/FireCenter').then(m => ({ default: m.FireCenter })));
 const HealthAndFinalRest = lazy(() => import('./pages/HealthAndFinalRest').then(m => ({ default: m.HealthAndFinalRest })));
 const KnowledgeCenter = lazy(() => import('./pages/KnowledgeCenter').then(m => ({ default: m.KnowledgeCenter })));
 const Settings = lazy(() => import('./pages/Settings').then(m => ({ default: m.Settings })));
+const DebtManagement = lazy(() => import('./pages/DebtManagement').then(m => ({ default: m.DebtManagement })));
 
 function AppContent() {
   const [activeTab, setActiveTab] = useState<string>('dashboard');
@@ -32,6 +34,8 @@ function AppContent() {
         return <CashflowQuadrant />;
       case 'fund_transfers':
         return <FundTransfers />;
+      case 'debt_management':
+        return <DebtManagement />;
       case 'event_ledger':
         return <EventLedger />;
       case 'income':
@@ -48,8 +52,10 @@ function AppContent() {
         return <ScenarioManagement />;
       case 'portfolio':
         return <Portfolio />;
-      case 'savings_debt':
-        return <SavingsAndDebt />;
+      case 'savings':
+        return <Savings />;
+      case 'reserves':
+        return <Reserves />;
       case 'fire_center':
         return <FireCenter />;
       case 'health_rest':

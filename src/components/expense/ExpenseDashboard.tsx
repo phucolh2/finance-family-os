@@ -1,11 +1,11 @@
-import React, { useMemo } from 'react';
+import React, { useMemo, useState } from 'react';
 import { useAppContext } from '../../context/AppContext';
 import { analyzeExpense } from '../../engines/expenseEngine';
 import { Card, CardHeader, CardTitle, CardContent } from '../ui/Card';
 import { HelpTooltip } from '../ui/HelpTooltip';
 import { formatTableMoneyVNDMillion } from '../../utils/format';
-import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip as RechartsTooltip, Legend, Bar, Line, XAxis, YAxis, CartesianGrid, ComposedChart, BarChart, LabelList } from 'recharts';
-import { PieChart as PieChartIcon } from 'lucide-react';
+import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip as RechartsTooltip, Legend, Bar, Line, XAxis, YAxis, CartesianGrid, ComposedChart } from 'recharts';
+import { PieChart as PieChartIcon, ChevronRight, ChevronDown } from 'lucide-react';
 import type { BudgetGroup } from '../../types/budget';
 
 export interface ExpenseDashboardProps {
@@ -14,26 +14,39 @@ export interface ExpenseDashboardProps {
 }
 
 export const ExpenseDashboard: React.FC<ExpenseDashboardProps> = ({ filter, setFilter }) => {
+  const [expandedNodes, setExpandedNodes] = useState<Record<string, boolean>>({});
+
+  const toggleExpand = (id: string) => {
+    setExpandedNodes(prev => ({
+      ...prev,
+      [id]: !prev[id]
+    }));
+  };
   const { state, selectedPeriodKey } = useAppContext();
 
+  const activeBudget = useMemo(() => {
+    let budget = state.budgetSchedule.length > 0 ? state.budgetSchedule[state.budgetSchedule.length - 1] : null;
+    if (selectedPeriodKey && state.budgetSchedule.length > 0) {
+      const [y, m] = selectedPeriodKey.split('-').map(Number);
+      const pastOrActive = state.budgetSchedule.filter(b => b.effectiveYear < y || (b.effectiveYear === y && b.effectiveMonth <= m));
+      if (pastOrActive.length > 0) {
+        pastOrActive.sort((a,b) => (a.effectiveYear * 12 + a.effectiveMonth) - (b.effectiveYear * 12 + b.effectiveMonth));
+        budget = pastOrActive[pastOrActive.length - 1];
+      }
+    }
+    return budget;
+  }, [state.budgetSchedule, selectedPeriodKey]);
+
   const FILTER_GROUPS = useMemo(() => {
-    const activeBudget = state.budgetSchedule.length > 0 ? state.budgetSchedule[state.budgetSchedule.length - 1] : null;
     const budgetTree = activeBudget ? activeBudget.rootGroups : [];
     const expenseTree = budgetTree.filter(g => g.classification === 'expense');
     
-    const groups: { value: BudgetGroup | 'all'; label: string }[] = [
-      { value: 'all', label: 'Tất cả' }
-    ];
-    
+    const groups: { value: BudgetGroup | 'all'; label: string }[] = [{ value: 'all', label: 'Tất cả' }];
     expenseTree.forEach(g => {
-      groups.push({
-        value: g.groupId,
-        label: `TỔNG ${g.name}`
-      });
+      groups.push({ value: g.groupId as BudgetGroup, label: `TỔNG ${g.name}` });
     });
-    
     return groups;
-  }, [state.budgetSchedule]);
+  }, [activeBudget]);
 
   const expenseGroupIds = useMemo(() => {
     return FILTER_GROUPS.filter(f => f.value !== 'all').map(f => f.value as string);
@@ -63,21 +76,6 @@ export const ExpenseDashboard: React.FC<ExpenseDashboardProps> = ({ filter, setF
   }));
 
   const remainingTotal = Math.max(0, currentSummary.totalBudget - currentSummary.totalActual);
-
-  const liquidityBreakdownData = useMemo(() => {
-    const activeBudget = state.budgetSchedule.length > 0 ? state.budgetSchedule[state.budgetSchedule.length - 1] : null;
-    const budgetTree = activeBudget ? activeBudget.rootGroups : [];
-    const expenseTree = budgetTree.filter(g => g.classification === 'expense');
-
-    return expenseTree.map(g => {
-      const sum = expenseData.summaryByGroup[g.groupId] || { totalBudget: 0, totalActual: 0 };
-      const remaining = Math.max(0, sum.totalBudget - sum.totalActual);
-      return {
-        name: g.name,
-        value: remaining
-      };
-    }).filter(d => d.value > 0).sort((a, b) => b.value - a.value);
-  }, [state.budgetSchedule, expenseData.summaryByGroup]);
 
   // A nice color palette for the breakdown bars
   const BREAKDOWN_COLORS = ['#10b981', '#3b82f6', '#f59e0b', '#8b5cf6', '#ec4899', '#06b6d4', '#84cc16'];
@@ -197,46 +195,6 @@ export const ExpenseDashboard: React.FC<ExpenseDashboardProps> = ({ filter, setF
           </CardContent>
         </Card>
       </div>
-
-      {filter === 'all' && liquidityBreakdownData.length > 0 && (
-        <div className="grid grid-cols-1 gap-4 mt-4">
-          <Card className="bg-white/80 border-family-accent/10">
-            <CardHeader className="pb-2">
-              <CardTitle className="text-sm font-semibold text-family-textMuted uppercase flex items-center gap-1.5">
-                Cấu trúc Quỹ thanh khoản sinh hoạt (Tiền dư)
-                <HelpTooltip text="Phân tách số tiền chưa chi tiêu hết đến từ những hạng mục ngân sách nào." />
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="h-56">
-                <ResponsiveContainer width="100%" height="100%">
-                  <BarChart data={liquidityBreakdownData} layout="vertical" margin={{ top: 10, right: 30, left: 20, bottom: 0 }}>
-                    <CartesianGrid strokeDasharray="3 3" horizontal={true} vertical={false} stroke="#e5e7eb" />
-                    <XAxis type="number" hide />
-                    <YAxis dataKey="name" type="category" width={180} tick={{ fontSize: 11, fill: '#64748b', fontWeight: 600 }} axisLine={false} tickLine={false} />
-                    <RechartsTooltip 
-                      formatter={(value: any) => formatTableMoneyVNDMillion(value as number)}
-                      labelStyle={{ color: '#374151', fontWeight: 'bold' }}
-                      cursor={{fill: 'transparent'}}
-                    />
-                    <Bar dataKey="value" name="Tiền dư" radius={[0, 4, 4, 0]} maxBarSize={30}>
-                      <LabelList 
-                        dataKey="value" 
-                        position="right" 
-                        formatter={(val: any) => `${formatTableMoneyVNDMillion(val as number)} Tr`} 
-                        style={{ fontSize: 11, fill: '#64748b', fontWeight: 600 }} 
-                      />
-                      {liquidityBreakdownData.map((entry, index) => (
-                        <Cell key={`cell-${index}`} fill={BREAKDOWN_COLORS[index % BREAKDOWN_COLORS.length]} />
-                      ))}
-                    </Bar>
-                  </BarChart>
-                </ResponsiveContainer>
-              </div>
-            </CardContent>
-          </Card>
-        </div>
-      )}
     </div>
   );
 };

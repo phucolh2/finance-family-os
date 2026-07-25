@@ -149,16 +149,16 @@ export const FundTransfers: React.FC = () => {
                   <span className="text-xs font-bold text-amber-800">Kịch bản 4: Trả nợ sớm</span>
                 </div>
                 <p className="text-[11px] text-slate-600 leading-relaxed">
-                  Quỹ chuẩn bị trả nợ đã đủ <strong>300 Tr</strong>, bạn quyết định tất toán sớm khoản vay mua xe.
+                  Quỹ dự phòng đã đủ <strong>300 Tr</strong>, bạn quyết định tất toán sớm khoản vay mua xe.
                 </p>
                 <div className="bg-amber-50 rounded-lg px-2.5 py-1.5 text-[10px] font-mono text-amber-900">
-                  <span className="text-red-500 font-bold">TỪ:</span> Số dư Quỹ Chuẩn bị Trả nợ<br/>
+                  <span className="text-red-500 font-bold">TỪ:</span> Số dư Quỹ Dự phòng<br/>
                   <span className="text-emerald-600 font-bold">ĐẾN:</span> Trả nợ sớm: Vay mua xe<br/>
                   <span className="text-blue-600 font-bold">SỐ TIỀN:</span> 300 Tr
                 </div>
                 <div className="bg-sky-50 rounded-lg px-2.5 py-1.5 text-[10px] text-sky-800 border border-sky-100">
                   <span className="font-bold">📍 Nguồn tiền lấy ở đâu?</span><br/>
-                  Tiền đến từ <strong>Quỹ Chuẩn bị Trả nợ trên màn hình Tiết kiệm &amp; Nợ</strong>. Quỹ này được nuôi hàng tháng bằng phần "Ngân sách Trả nợ" mà bạn đã thiết lập trên màn hình <em>Kế hoạch Thu nhập</em>. Sau khi chuyển, Quỹ bị trừ 300 Tr, và Dư nợ gốc khoản vay mua xe cũng giảm 300 Tr. <em>Hệ thống chặn cứng nếu số trả vượt dư nợ gốc.</em>
+                  Tiền đến từ <strong>Quỹ Dự phòng trên màn hình Tiết kiệm &amp; Dự phòng</strong>. Quỹ này được nuôi hàng tháng bằng phần "Ngân sách Dự phòng" mà bạn đã thiết lập trên màn hình <em>Kế hoạch Thu nhập</em>. Sau khi chuyển, Quỹ bị trừ 300 Tr, và Dư nợ gốc khoản vay mua xe cũng giảm 300 Tr. <em>Hệ thống chặn cứng nếu số trả vượt dư nợ gốc.</em>
                 </div>
               </div>
 
@@ -178,7 +178,7 @@ export const FundTransfers: React.FC = () => {
                 </div>
                 <div className="bg-sky-50 rounded-lg px-2.5 py-1.5 text-[10px] text-sky-800 border border-sky-100">
                   <span className="font-bold">📍 Nguồn tiền lấy ở đâu?</span><br/>
-                  Tiền đến từ <strong>một Sổ tiết kiệm đang hoạt động trên màn hình Tiết kiệm &amp; Nợ</strong> (hoặc trên Danh mục Đầu tư nếu là sổ "idle"). Khi rút, số gốc của Sổ cũ bị trừ 200 Tr. Tiền này chảy sang tăng vốn cho thương vụ BĐS Quận 9 trên màn hình Danh mục Đầu tư.
+                  Tiền đến từ <strong>một Sổ tiết kiệm đang hoạt động trên màn hình Tiết kiệm &amp; Dự phòng</strong> (hoặc trên Danh mục Đầu tư nếu là sổ "idle"). Khi rút, số gốc của Sổ cũ bị trừ 200 Tr. Tiền này chảy sang tăng vốn cho thương vụ BĐS Quận 9 trên màn hình Danh mục Đầu tư.
                 </div>
               </div>
 

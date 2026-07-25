@@ -7,7 +7,7 @@ import { WarningBox } from '../../components/ui/WarningBox';
 import { Plus, Save, Trash2, Calendar, ChevronDown, ChevronRight, CheckCircle2, Wallet, PiggyBank, CircleDollarSign } from 'lucide-react';
 import { safeNumber } from '../../utils/math';
 import { formatTableMoneyVNDMillion } from '../../utils/format';
-import { rebuildTreeFromFlatRatios } from '../../engines/budgetEngine';
+import { rebuildTreeFromFlatRatios, collectLeafNodes } from '../../engines/budgetEngine';
 import { SavingsDepositModule } from '../portfolio/SavingsDepositModule';
 
 export const ExpenseScheduleView: React.FC = () => {
@@ -35,9 +35,21 @@ export const ExpenseScheduleView: React.FC = () => {
   const activeDbItem = state.resolvedMonthlyDb?.find(db => db.periodKey === activeBudgetPeriod);
   
   // Extract categories from active budget schedule
-  const activeBudgetSchedule = state.budgetSchedule.find(s => 
-    s.effectiveYear * 12 + s.effectiveMonth <= (activeVersion ? activeVersion.effectiveYear * 12 + activeVersion.effectiveMonth : new Date().getFullYear() * 12 + new Date().getMonth() + 1)
-  ) || state.budgetSchedule[0];
+  const activeBudgetSchedule = React.useMemo(() => {
+    let budget = state.budgetSchedule.length > 0 ? state.budgetSchedule[state.budgetSchedule.length - 1] : null;
+    const targetMonthValue = activeVersion 
+      ? activeVersion.effectiveYear * 12 + activeVersion.effectiveMonth 
+      : (selectedPeriodKey ? parseInt(selectedPeriodKey.split('-')[0], 10) * 12 + parseInt(selectedPeriodKey.split('-')[1], 10) : new Date().getFullYear() * 12 + new Date().getMonth() + 1);
+
+    if (state.budgetSchedule.length > 0) {
+      const pastOrActive = state.budgetSchedule.filter(b => b.effectiveYear * 12 + b.effectiveMonth <= targetMonthValue);
+      if (pastOrActive.length > 0) {
+        pastOrActive.sort((a,b) => (a.effectiveYear * 12 + a.effectiveMonth) - (b.effectiveYear * 12 + b.effectiveMonth));
+        budget = pastOrActive[pastOrActive.length - 1];
+      }
+    }
+    return budget;
+  }, [state.budgetSchedule, selectedPeriodKey, activeVersion]);
 
   const budgetTree = activeBudgetSchedule 
     ? (activeBudgetSchedule.rootGroups || rebuildTreeFromFlatRatios(activeBudgetSchedule.ratios || []))
@@ -113,7 +125,8 @@ export const ExpenseScheduleView: React.FC = () => {
 
   const handleSave = () => {
     if (activeVersion) {
-      const allCatIds = flattenTree(expenseTree).filter(n => n.nodeType === 'item' || n.nodeType === 'subitem' || (n.nodeType === 'group' && (!n.children || n.children.length === 0))).map(c => c.id);
+      const expenseTreeTemp = budgetTree.filter((g: any) => g.classification === 'expense');
+      const allCatIds = expenseTreeTemp.flatMap((g: any) => collectLeafNodes(g)).map((c: any) => c.id);
       const categoriesToSave = { ...categories };
       allCatIds.forEach(id => {
         if (categoriesToSave[id] === undefined) {
@@ -141,6 +154,10 @@ export const ExpenseScheduleView: React.FC = () => {
       ...prev,
       [id]: isNaN(numValue) ? 0 : numValue
     }));
+    // If user manually edits, it's no longer 'settled'
+    if (isSettled) {
+      setIsSettled(false);
+    }
   };
 
 
@@ -159,22 +176,8 @@ export const ExpenseScheduleView: React.FC = () => {
     }
   }
   
-  // Flatten budget tree to get all leaf items
-  const flattenTree = (nodes: any[]): any[] => {
-    let result: any[] = [];
-    nodes.forEach(node => {
-      if (node.children && node.children.length > 0) {
-        result.push(node);
-        result = result.concat(flattenTree(node.children));
-      } else {
-        result.push(node);
-      }
-    });
-    return result;
-  };
-
-  const expenseTree = budgetTree.filter(g => g.classification === 'expense');
-  const allCategories = flattenTree(expenseTree).filter(n => n.nodeType === 'item' || n.nodeType === 'subitem' || (n.nodeType === 'group' && (!n.children || n.children.length === 0)));
+  const expenseTree = budgetTree.filter((g: any) => g.classification === 'expense');
+  const allCategories = expenseTree.flatMap((g: any) => collectLeafNodes(g));
 
   // Calculate strict total budget from the ratios
   const totalBudget = allCategories.reduce((sum, cat) => sum + (activeIncome * cat.ratioPercent) / 100, 0);
@@ -316,7 +319,21 @@ export const ExpenseScheduleView: React.FC = () => {
                     </span>
                     <button
                       type="button"
-                      onClick={() => { setIsSettled(!isSettled); }}
+                      onClick={() => {
+                        const nextSettled = !isSettled;
+                        setIsSettled(nextSettled);
+                        if (nextSettled) {
+                          // When turning ON, fill ALL categories unconditionally with -1 (full budget)
+                          const newCats = { ...categories };
+                          const expenseTreeTemp = budgetTree.filter((g: any) => g.classification === 'expense');
+                          const allCatIds = expenseTreeTemp.flatMap((g: any) => collectLeafNodes(g)).map((c: any) => c.id);
+                          allCatIds.forEach(id => {
+                            newCats[id] = -1;
+                          });
+                          setCategories(newCats);
+                        }
+                      }}
+                      title="Chốt tháng và tự động điền TOÀN BỘ các hạng mục bằng mức ngân sách phân bổ"
                       className={`w-10 h-5 flex items-center rounded-full p-0.5 transition-colors duration-200 focus:outline-none shrink-0 ${
                         isSettled ? 'bg-emerald-500' : 'bg-gray-300'
                       }`}
@@ -374,7 +391,7 @@ export const ExpenseScheduleView: React.FC = () => {
 
               <div className="space-y-4">
                 {expenseTree.map(group => {
-                  const leaves = flattenTree([group]).filter(n => n.nodeType === 'item' || n.nodeType === 'subitem' || (n.nodeType === 'group' && (!n.children || n.children.length === 0)));
+                  const leaves = collectLeafNodes(group);
                   if (leaves.length === 0) return null;
                   
                   const isExpanded = expandedGroups[group.id];

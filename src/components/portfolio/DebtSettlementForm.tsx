@@ -48,7 +48,7 @@ export const DebtSettlementForm: React.FC<DebtSettlementFormProps> = ({ debt, on
                 value={settleForm.fundId}
                 onChange={e => setSettleForm({...settleForm, fundId: e.target.value})}
                 options={[
-                   { value: '', label: '-- Chọn Quỹ chuẩn bị trả nợ --' },
+                   { value: '', label: '-- Chọn Quỹ Dự phòng --' },
                    ...debtPrepFunds.map(f => ({ value: f.id, label: `${f.name}` }))
                 ]}
                 className="bg-family-bgDark border-emerald-500/20"

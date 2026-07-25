@@ -77,7 +77,7 @@ export interface LifeEvent extends Partial<LifecycleProps> {
     | 'travel'
     | 'other';
   amount: number;
-  source: 'housing_basic' | 'future_investing' | 'safety_reserve' | 'family_experience' | 'health_growth' | 'children' | 'parents' | 'saving' | 'investment' | 'debt' | 'external';
+  source: string; // Used to be strict literal, now dynamic string
   targetAssetId?: string;
   recurringMonthlyImpact?: number;
   affectsNetWorth: boolean;
@@ -107,24 +107,9 @@ export interface ResolvedMonthlyDbItem {
   year: number;
   income: number; // resolved income in Tr VND
   expectedReturnAnnual: number; // portfolio weighted average expected return rate, e.g. 8.0
-  budgetRatios: {
-    housing_basic: number;
-    future_investing: number;
-    safety_reserve: number;
-    family_experience: number;
-    health_growth: number;
-    children: number;
-    parents: number;
-  };
-  budgetAmounts: {
-    housing_basic: number;
-    future_investing: number;
-    safety_reserve: number;
-    family_experience: number;
-    health_growth: number;
-    children: number;
-    parents: number;
-  };
+  budgetRatios: Record<string, number>;
+  budgetAmounts: Record<string, number>;
+  budgetAmountsByCategory?: Record<string, number>;
   investmentFlow?: {
     beginningBalance: number;
     contribution: number;
@@ -136,6 +121,7 @@ export interface ResolvedMonthlyDbItem {
   };
   totalActualExpenseMonthly?: number;
   actualExpenseCategories?: Record<string, number>;
+  actualExpenseByGroup?: Record<string, number>;
 }
 
 export interface InvestmentDeal {

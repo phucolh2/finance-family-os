@@ -166,7 +166,7 @@ export const DEFAULT_BUDGET_TREE: BudgetTreeNode[] = [
     children: [
       { id: 'item_parents_support', parentId: 'group_safety_reserve', level: 1, nodeType: 'item', groupId: 'safety_reserve', name: 'Cha mẹ hàng tháng', ratioPercent: 5, isActive: true, sortOrder: 1 },
       { id: 'item_emergency', parentId: 'group_safety_reserve', level: 1, nodeType: 'item', groupId: 'safety_reserve', name: 'Tiết kiệm / Khẩn cấp', ratioPercent: 5, isActive: true, sortOrder: 2 },
-      { id: 'item_debt_reserve', parentId: 'group_safety_reserve', level: 1, nodeType: 'item', groupId: 'safety_reserve', name: 'Quỹ chuẩn bị trả nợ', ratioPercent: 0, isActive: true, sortOrder: 3, classification: 'debt_reserve' },
+      { id: 'item_debt_reserve', parentId: 'group_safety_reserve', level: 1, nodeType: 'item', groupId: 'safety_reserve', name: 'Quỹ dự phòng', ratioPercent: 0, isActive: true, sortOrder: 3, classification: 'debt_reserve' },
     ]
   },
   {

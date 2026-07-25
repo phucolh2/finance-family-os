@@ -138,7 +138,7 @@ export const BudgetHistory: React.FC = () => {
       parentId: null,
       level: 0,
       nodeType: 'group',
-      groupId: 'family_experience', // Default placeholder
+      groupId: `custom_${Date.now()}_${Math.random().toString(36).substr(2, 5)}`,
       name: 'Nhóm phân bổ mới',
       ratioPercent: 0,
       isActive: true,
@@ -545,6 +545,10 @@ export const BudgetHistory: React.FC = () => {
           .filter(g => g.isActive && g.classification === 'savings')
           .reduce((sum, g) => sum + (g.ratioPercent / 100) * allocationBase, 0);
 
+        const reserveAmt = rootGroups
+          .filter(g => g.isActive && (g.classification === 'debt_reserve' || !g.classification))
+          .reduce((sum, g) => sum + (g.ratioPercent / 100) * allocationBase, 0);
+
         return (
           <div className="space-y-6">
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-family-bgDark/35 p-4 rounded-2xl border border-family-accent/10 shadow-sm">
@@ -585,7 +589,7 @@ export const BudgetHistory: React.FC = () => {
             </div>
 
             {/* KPI CARDS ROW */}
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
+            <div className="grid grid-cols-2 md:grid-cols-5 gap-4 mb-6">
               <Card className="bg-family-bgDark/20 border border-family-accent/10">
                 <CardContent className="p-4 flex flex-col items-center justify-center text-center">
                   <span className="text-[10px] uppercase text-family-textMuted font-bold mb-1">
@@ -610,6 +614,12 @@ export const BudgetHistory: React.FC = () => {
                 <CardContent className="p-4 flex flex-col items-center justify-center text-center">
                   <span className="text-[10px] uppercase text-emerald-500/80 font-bold mb-1">Tổng Tiết Kiệm</span>
                   <span className="text-xl font-bold text-emerald-500">{savingsAmt.toFixed(1)} Tr</span>
+                </CardContent>
+              </Card>
+              <Card className="bg-amber-500/10 border border-amber-500/20">
+                <CardContent className="p-4 flex flex-col items-center justify-center text-center">
+                  <span className="text-[10px] uppercase text-amber-500/80 font-bold mb-1">Tổng Dự Phòng</span>
+                  <span className="text-xl font-bold text-amber-500">{reserveAmt.toFixed(1)} Tr</span>
                 </CardContent>
               </Card>
             </div>
