@@ -381,7 +381,7 @@ export const LifeStages: React.FC = () => {
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div className="relative">
                     <Input
-                      label="Số tiền tác động một lần (Tr VND) - CHI PHÍ"
+                      label="Số tiền tác động một lần (triệu VND) - CHI PHÍ"
                       type="number"
                       placeholder="Ví dụ: 800 (Mua xe ô tô)"
                       value={Math.abs(safeNumber(formData.amount)) || ''}
@@ -406,7 +406,7 @@ export const LifeStages: React.FC = () => {
                 </div>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <Input
-                    label="Tác động dòng tiền tháng (Tr/tháng) - TĂNG CHI"
+                    label="Tác động dòng tiền tháng (triệu/tháng) - TĂNG CHI"
                     type="number"
                     placeholder="Ví dụ: 4 (Chi phí vận hành nuôi xe)"
                     value={Math.abs(safeNumber(formData.recurringMonthlyImpact)) || ''}

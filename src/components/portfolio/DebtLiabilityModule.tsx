@@ -107,7 +107,7 @@ export const DebtLiabilityModule: React.FC = () => {
               />
             </div>
             <div className="space-y-2">
-              <label className="text-xs text-family-textMuted uppercase">Dư nợ Gốc (Tr VNĐ)</label>
+              <label className="text-xs text-family-textMuted uppercase">Dư nợ Gốc (triệu VNĐ)</label>
               <Input
                 type="number"
                 value={newDebt.principal}

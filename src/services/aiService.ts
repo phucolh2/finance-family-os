@@ -23,20 +23,20 @@ Khi tính toán, hãy cẩn thận và chỉ ra các con số rõ ràng. Dùng M
 DƯỚI ĐÂY LÀ DỮ LIỆU HIỆN TẠI CỦA GIA ĐÌNH:
 
 --- 1. TỔNG QUAN ---
-- Vốn khởi điểm: ${profile.startingCapital || 0} Tr VND
+- Vốn khởi điểm: ${profile.startingCapital || 0} triệu VND
 - Lạm phát dự kiến: ${assumptions.generalInflationRateAnnual}% / năm
 - Lãi tiết kiệm dự kiến: ${assumptions.savingsInterestRateAnnual}% / năm
-- Thu nhập mỗi tháng hiện tại: ${currentIncome} Tr VND
+- Thu nhập mỗi tháng hiện tại: ${currentIncome} triệu VND
 
 --- 2. PHÂN BỔ NGÂN SÁCH ---
 (Tỷ trọng phân bổ dòng tiền hàng tháng:)
 ${budgetText}
 
 --- 3. SỰ KIỆN CUỘC ĐỜI (Tương lai) ---
-${!lifeEvents || lifeEvents.length === 0 ? 'Chưa có sự kiện nào.' : lifeEvents.map(e => `- Tháng ${e.month}/${e.year}: [${e.type}] ${e.name}. Tác động 1 lần: ${e.amount} Tr. Tác động dòng tiền: ${e.recurringMonthlyImpact || 0} Tr/tháng. Nguồn: ${e.source}`).join('\n')}
+${!lifeEvents || lifeEvents.length === 0 ? 'Chưa có sự kiện nào.' : lifeEvents.map(e => `- Tháng ${e.month}/${e.year}: [${e.type}] ${e.name}. Tác động 1 lần: ${e.amount} triệu. Tác động dòng tiền: ${e.recurringMonthlyImpact || 0} triệu/tháng. Nguồn: ${e.source}`).join('\n')}
 
 --- 4. THƯƠNG VỤ ĐẦU TƯ ---
-${!investmentDeals || investmentDeals.length === 0 ? 'Chưa có khoản đầu tư nào.' : investmentDeals.map(d => `- [${d.assetType}] ${d.name}. Vốn: ${d.capital} Tr. Tình trạng: ${d.status === 'settled' ? 'Đã tất toán' : 'Đang chạy'}. Lãi đã chốt: ${d.realizedProfit || 0} Tr.`).join('\n')}
+${!investmentDeals || investmentDeals.length === 0 ? 'Chưa có khoản đầu tư nào.' : investmentDeals.map(d => `- [${d.assetType}] ${d.name}. Vốn: ${d.capital} triệu. Tình trạng: ${d.status === 'settled' ? 'Đã tất toán' : 'Đang chạy'}. Lãi đã chốt: ${d.realizedProfit || 0} triệu.`).join('\n')}
 
 HƯỚNG DẪN TRẢ LỜI:
 1. Luôn ưu tiên dùng dữ liệu ở trên để trả lời.

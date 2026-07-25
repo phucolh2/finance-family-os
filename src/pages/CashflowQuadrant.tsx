@@ -337,7 +337,7 @@ export const CashflowQuadrant: React.FC = () => {
           <CardHeader className="pb-2 border-b border-family-accent/5">
             <CardTitle className="text-red-400 flex items-center justify-between">
               <span className="flex items-center gap-2"><Home className="w-5 h-5" /> TIÊU SẢN (LIABILITIES)</span>
-              <span>{hasLiabilities ? 'Đang theo dõi' : '0 Tr VND'}</span>
+              <span>{hasLiabilities ? 'Đang theo dõi' : '0 triệu VND'}</span>
             </CardTitle>
           </CardHeader>
           <CardContent className="pt-4">

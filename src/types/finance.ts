@@ -105,7 +105,7 @@ export interface ResolvedMonthlyDbItem {
   periodKey: string; // YYYY-MM
   month: number;
   year: number;
-  income: number; // resolved income in Tr VND
+  income: number; // resolved income in triệu VND
   expectedReturnAnnual: number; // portfolio weighted average expected return rate, e.g. 8.0
   budgetRatios: Record<string, number>;
   budgetAmounts: Record<string, number>;
@@ -164,8 +164,8 @@ export interface WithdrawalEvent {
 export interface SavingsDeposit {
   id: string;
   name: string;                          // VD: "Tiết kiệm Vietcombank 12T"
-  principal: number;                     // Số tiền gốc (Tr VND)
-  monthlyContribution?: number;          // Góp thêm định kỳ (Tr VND)
+  principal: number;                     // Số tiền gốc (triệu VND)
+  monthlyContribution?: number;          // Góp thêm định kỳ (triệu VND)
   interestRateAnnual: number;            // Lãi suất %/năm
   termMonths: number;                    // Kì hạn (3, 6, 12, 24...)
   startMonth: number;
@@ -188,10 +188,10 @@ export interface SinkingFund {
   depositBank?: string; // Ngân hàng gửi tiền
   sourceOfFund?: FundingSourceId | string;
   targetAssetType: 'fx_reserve_usd' | 'gold' | 'real_estate' | 'stocks' | 'crypto';
-  targetAmount: number; // Mục tiêu cần đạt (VD: 2000 Tr VND)
+  targetAmount: number; // Mục tiêu cần đạt (VD: 2000 triệu VND)
   
   initialDeposit: number; // Nộp gốc ban đầu (nếu có sẵn 1 ít)
-  monthlyContribution: number; // Nộp định kỳ hàng tháng từ dòng tiền dư (VD: 20 Tr/tháng)
+  monthlyContribution: number; // Nộp định kỳ hàng tháng từ dòng tiền dư (VD: 20 triệu/tháng)
   interestRateAnnual: number; // Lãi suất tiết kiệm (VD: 5.5%/năm)
   termMonths?: number; // Kỳ hạn gửi (VD: 1, 3, 6, 12 tháng)
   
@@ -225,7 +225,7 @@ export interface FundTransfer {
   id: string;
   month: number;
   year: number;
-  amount: number; // Số tiền (Tr VND)
+  amount: number; // Số tiền (triệu VND)
   sourceType: 'cashflow' | 'savings' | 'sinking_fund' | 'investment' | 'life_event' | 'pool';
   sourceId?: string; // ID của nguồn nếu có (ví dụ ID sổ tiết kiệm)
   destinationType: 'cashflow' | 'savings' | 'sinking_fund' | 'investment' | 'debt';

@@ -89,16 +89,16 @@ export const FundTransfers: React.FC = () => {
                   <span className="text-xs font-bold text-amber-800">Kịch bản 1: Rót vốn vào Thương vụ</span>
                 </div>
                 <p className="text-[11px] text-slate-600 leading-relaxed">
-                  Bạn có <strong>100 Tr</strong> tiền nhàn rỗi trên Danh mục Đầu tư, muốn rót vào thương vụ chứng khoán VIX.
+                  Bạn có <strong>100 triệu</strong> tiền nhàn rỗi trên Danh mục Đầu tư, muốn rót vào thương vụ chứng khoán VIX.
                 </p>
                 <div className="bg-amber-50 rounded-lg px-2.5 py-1.5 text-[10px] font-mono text-amber-900">
                   <span className="text-red-500 font-bold">TỪ:</span> Dòng tiền Nhàn rỗi (Chưa phân bổ + Sinh hoạt dư)<br/>
                   <span className="text-emerald-600 font-bold">ĐẾN:</span> Bơm vốn Thương vụ: VIX<br/>
-                  <span className="text-blue-600 font-bold">SỐ TIỀN:</span> 100 Tr
+                  <span className="text-blue-600 font-bold">SỐ TIỀN:</span> 100 triệu
                 </div>
                 <div className="bg-sky-50 rounded-lg px-2.5 py-1.5 text-[10px] text-sky-800 border border-sky-100">
                   <span className="font-bold">📍 Nguồn tiền lấy ở đâu?</span><br/>
-                  Số tiền này chính là <strong>Dòng tiền nhàn rỗi</strong> chưa có kế hoạch cụ thể, cộng dồn từ phần Thu nhập chưa phân bổ hết và các khoản Ngân sách (như Sinh hoạt phí) còn dư trong tháng. Sau khi chuyển, dòng tiền nhàn rỗi sẽ giảm đi, và vốn thương vụ VIX tăng thêm 100 Tr.
+                  Số tiền này chính là <strong>Dòng tiền nhàn rỗi</strong> chưa có kế hoạch cụ thể, cộng dồn từ phần Thu nhập chưa phân bổ hết và các khoản Ngân sách (như Sinh hoạt phí) còn dư trong tháng. Sau khi chuyển, dòng tiền nhàn rỗi sẽ giảm đi, và vốn thương vụ VIX tăng thêm 100 triệu.
                 </div>
               </div>
 
@@ -109,16 +109,16 @@ export const FundTransfers: React.FC = () => {
                   <span className="text-xs font-bold text-amber-800">Kịch bản 2: Gửi Tiết kiệm Ngân hàng</span>
                 </div>
                 <p className="text-[11px] text-slate-600 leading-relaxed">
-                  Bạn nhận <strong>thưởng Tết 50 Tr</strong> (Sự kiện cuộc đời), muốn gửi tiết kiệm ngân hàng để an toàn.
+                  Bạn nhận <strong>thưởng Tết 50 triệu</strong> (Sự kiện cuộc đời), muốn gửi tiết kiệm ngân hàng để an toàn.
                 </p>
                 <div className="bg-amber-50 rounded-lg px-2.5 py-1.5 text-[10px] font-mono text-amber-900">
                   <span className="text-red-500 font-bold">TỪ:</span> Tiền dôi dư: Thưởng Tết 2026<br/>
                   <span className="text-emerald-600 font-bold">ĐẾN:</span> Mở Sổ tiết kiệm mới<br/>
-                  <span className="text-blue-600 font-bold">SỐ TIỀN:</span> 50 Tr
+                  <span className="text-blue-600 font-bold">SỐ TIỀN:</span> 50 triệu
                 </div>
                 <div className="bg-sky-50 rounded-lg px-2.5 py-1.5 text-[10px] text-sky-800 border border-sky-100">
                   <span className="font-bold">📍 Nguồn tiền lấy ở đâu?</span><br/>
-                  Tiền này đến từ <strong>màn hình Sự kiện Cuộc đời</strong> — một khoản thu nhập đột xuất (thưởng, quà tặng, bán tài sản cũ...). Sau khi chuyển, số tiền Sự kiện bị trừ 50 Tr và hệ thống <em>tự tạo một Sổ tiết kiệm mới</em> với DNA nguồn = "idle" (vì nguồn gốc không phải Quỹ phòng thủ).
+                  Tiền này đến từ <strong>màn hình Sự kiện Cuộc đời</strong> — một khoản thu nhập đột xuất (thưởng, quà tặng, bán tài sản cũ...). Sau khi chuyển, số tiền Sự kiện bị trừ 50 triệu và hệ thống <em>tự tạo một Sổ tiết kiệm mới</em> với DNA nguồn = "idle" (vì nguồn gốc không phải Quỹ phòng thủ).
                 </div>
               </div>
 
@@ -129,16 +129,16 @@ export const FundTransfers: React.FC = () => {
                   <span className="text-xs font-bold text-amber-800">Kịch bản 3: Bơm tiền Quỹ tích lũy</span>
                 </div>
                 <p className="text-[11px] text-slate-600 leading-relaxed">
-                  Bạn chốt lời thương vụ Vàng được <strong>200 Tr</strong>, muốn dội thẳng vào Quỹ mua nhà để rút ngắn thời gian đạt mục tiêu.
+                  Bạn chốt lời thương vụ Vàng được <strong>200 triệu</strong>, muốn dội thẳng vào Quỹ mua nhà để rút ngắn thời gian đạt mục tiêu.
                 </p>
                 <div className="bg-amber-50 rounded-lg px-2.5 py-1.5 text-[10px] font-mono text-amber-900">
                   <span className="text-red-500 font-bold">TỪ:</span> Rút vốn Thương vụ: Vàng SJC<br/>
                   <span className="text-emerald-600 font-bold">ĐẾN:</span> Bơm tiền Quỹ: Mua nhà 2028<br/>
-                  <span className="text-blue-600 font-bold">SỐ TIỀN:</span> 200 Tr
+                  <span className="text-blue-600 font-bold">SỐ TIỀN:</span> 200 triệu
                 </div>
                 <div className="bg-sky-50 rounded-lg px-2.5 py-1.5 text-[10px] text-sky-800 border border-sky-100">
                   <span className="font-bold">📍 Nguồn tiền lấy ở đâu?</span><br/>
-                  Tiền đến từ <strong>một Thương vụ đang hoạt động trên màn hình Danh mục Đầu tư</strong>. Cụ thể là bạn rút bớt vốn gốc từ thương vụ Vàng SJC (200 Tr). Sau khi chuyển, vốn thương vụ Vàng giảm 200 Tr, và Quỹ mua nhà tăng thêm 200 Tr tiền mặt — giúp đạt mục tiêu nhanh hơn.
+                  Tiền đến từ <strong>một Thương vụ đang hoạt động trên màn hình Danh mục Đầu tư</strong>. Cụ thể là bạn rút bớt vốn gốc từ thương vụ Vàng SJC (200 triệu). Sau khi chuyển, vốn thương vụ Vàng giảm 200 triệu, và Quỹ mua nhà tăng thêm 200 triệu tiền mặt — giúp đạt mục tiêu nhanh hơn.
                 </div>
               </div>
 
@@ -149,16 +149,16 @@ export const FundTransfers: React.FC = () => {
                   <span className="text-xs font-bold text-amber-800">Kịch bản 4: Trả nợ sớm</span>
                 </div>
                 <p className="text-[11px] text-slate-600 leading-relaxed">
-                  Quỹ dự phòng đã đủ <strong>300 Tr</strong>, bạn quyết định tất toán sớm khoản vay mua xe.
+                  Quỹ dự phòng đã đủ <strong>300 triệu</strong>, bạn quyết định tất toán sớm khoản vay mua xe.
                 </p>
                 <div className="bg-amber-50 rounded-lg px-2.5 py-1.5 text-[10px] font-mono text-amber-900">
                   <span className="text-red-500 font-bold">TỪ:</span> Số dư Quỹ Dự phòng<br/>
                   <span className="text-emerald-600 font-bold">ĐẾN:</span> Trả nợ sớm: Vay mua xe<br/>
-                  <span className="text-blue-600 font-bold">SỐ TIỀN:</span> 300 Tr
+                  <span className="text-blue-600 font-bold">SỐ TIỀN:</span> 300 triệu
                 </div>
                 <div className="bg-sky-50 rounded-lg px-2.5 py-1.5 text-[10px] text-sky-800 border border-sky-100">
                   <span className="font-bold">📍 Nguồn tiền lấy ở đâu?</span><br/>
-                  Tiền đến từ <strong>Quỹ Dự phòng trên màn hình Tiết kiệm &amp; Dự phòng</strong>. Quỹ này được nuôi hàng tháng bằng phần "Ngân sách Dự phòng" mà bạn đã thiết lập trên màn hình <em>Kế hoạch Thu nhập</em>. Sau khi chuyển, Quỹ bị trừ 300 Tr, và Dư nợ gốc khoản vay mua xe cũng giảm 300 Tr. <em>Hệ thống chặn cứng nếu số trả vượt dư nợ gốc.</em>
+                  Tiền đến từ <strong>Quỹ Dự phòng trên màn hình Tiết kiệm &amp; Dự phòng</strong>. Quỹ này được nuôi hàng tháng bằng phần "Ngân sách Dự phòng" mà bạn đã thiết lập trên màn hình <em>Kế hoạch Thu nhập</em>. Sau khi chuyển, Quỹ bị trừ 300 triệu, và Dư nợ gốc khoản vay mua xe cũng giảm 300 triệu. <em>Hệ thống chặn cứng nếu số trả vượt dư nợ gốc.</em>
                 </div>
               </div>
 
@@ -169,16 +169,16 @@ export const FundTransfers: React.FC = () => {
                   <span className="text-xs font-bold text-amber-800">Kịch bản 5: Tái đầu tư Tiết kiệm đáo hạn</span>
                 </div>
                 <p className="text-[11px] text-slate-600 leading-relaxed">
-                  Sổ tiết kiệm <strong>12 tháng đáo hạn</strong> (Gốc 200 Tr), bạn muốn rót vào thương vụ Bất động sản.
+                  Sổ tiết kiệm <strong>12 tháng đáo hạn</strong> (Gốc 200 triệu), bạn muốn rót vào thương vụ Bất động sản.
                 </p>
                 <div className="bg-amber-50 rounded-lg px-2.5 py-1.5 text-[10px] font-mono text-amber-900">
                   <span className="text-red-500 font-bold">TỪ:</span> Tất toán Sổ tiết kiệm: BIDV 12T<br/>
                   <span className="text-emerald-600 font-bold">ĐẾN:</span> Bơm vốn Thương vụ: BĐS Quận 9<br/>
-                  <span className="text-blue-600 font-bold">SỐ TIỀN:</span> 200 Tr
+                  <span className="text-blue-600 font-bold">SỐ TIỀN:</span> 200 triệu
                 </div>
                 <div className="bg-sky-50 rounded-lg px-2.5 py-1.5 text-[10px] text-sky-800 border border-sky-100">
                   <span className="font-bold">📍 Nguồn tiền lấy ở đâu?</span><br/>
-                  Tiền đến từ <strong>một Sổ tiết kiệm đang hoạt động trên màn hình Tiết kiệm &amp; Dự phòng</strong> (hoặc trên Danh mục Đầu tư nếu là sổ "idle"). Khi rút, số gốc của Sổ cũ bị trừ 200 Tr. Tiền này chảy sang tăng vốn cho thương vụ BĐS Quận 9 trên màn hình Danh mục Đầu tư.
+                  Tiền đến từ <strong>một Sổ tiết kiệm đang hoạt động trên màn hình Tiết kiệm &amp; Dự phòng</strong> (hoặc trên Danh mục Đầu tư nếu là sổ "idle"). Khi rút, số gốc của Sổ cũ bị trừ 200 triệu. Tiền này chảy sang tăng vốn cho thương vụ BĐS Quận 9 trên màn hình Danh mục Đầu tư.
                 </div>
               </div>
 
@@ -189,16 +189,16 @@ export const FundTransfers: React.FC = () => {
                   <span className="text-xs font-bold text-amber-800">Kịch bản 6: Giải ngân Quỹ → Thương vụ</span>
                 </div>
                 <p className="text-[11px] text-slate-600 leading-relaxed">
-                  Quỹ tích lũy mua nhà đã đạt mục tiêu <strong>500 Tr</strong>, bạn muốn giải ngân để tạo Thương vụ BĐS mới.
+                  Quỹ tích lũy mua nhà đã đạt mục tiêu <strong>500 triệu</strong>, bạn muốn giải ngân để tạo Thương vụ BĐS mới.
                 </p>
                 <div className="bg-amber-50 rounded-lg px-2.5 py-1.5 text-[10px] font-mono text-amber-900">
                   <span className="text-red-500 font-bold">TỪ:</span> Tất toán Quỹ: Mua nhà 2028<br/>
                   <span className="text-emerald-600 font-bold">ĐẾN:</span> Bơm vốn Thương vụ: Chung cư Q2<br/>
-                  <span className="text-blue-600 font-bold">SỐ TIỀN:</span> 500 Tr
+                  <span className="text-blue-600 font-bold">SỐ TIỀN:</span> 500 triệu
                 </div>
                 <div className="bg-sky-50 rounded-lg px-2.5 py-1.5 text-[10px] text-sky-800 border border-sky-100">
                   <span className="font-bold">📍 Nguồn tiền lấy ở đâu?</span><br/>
-                  Tiền đến từ <strong>Quỹ tích lũy mục tiêu trên màn hình Danh mục Đầu tư</strong>. Quỹ này được nuôi hàng tháng bằng phần "Ngân sách Đầu tư" mà bạn đã thiết lập trên màn hình <em>Kế hoạch Thu nhập</em>. Khi giải ngân, Quỹ bị trừ 500 Tr và vốn Thương vụ Chung cư Q2 tăng 500 Tr. <em>Lưu ý: Tạo Thương vụ trước ở màn hình Đầu tư, rồi quay lại đây chuyển tiền.</em>
+                  Tiền đến từ <strong>Quỹ tích lũy mục tiêu trên màn hình Danh mục Đầu tư</strong>. Quỹ này được nuôi hàng tháng bằng phần "Ngân sách Đầu tư" mà bạn đã thiết lập trên màn hình <em>Kế hoạch Thu nhập</em>. Khi giải ngân, Quỹ bị trừ 500 triệu và vốn Thương vụ Chung cư Q2 tăng 500 triệu. <em>Lưu ý: Tạo Thương vụ trước ở màn hình Đầu tư, rồi quay lại đây chuyển tiền.</em>
                 </div>
               </div>
 
@@ -221,7 +221,7 @@ export const FundTransfers: React.FC = () => {
                   <tr className="bg-family-bgDark/50 border-b border-family-accent/10 text-family-textMuted text-xs uppercase">
                     <th className="px-6 py-4 font-semibold whitespace-nowrap">Thời gian</th>
                     <th className="px-6 py-4 font-semibold">Giao dịch</th>
-                    <th className="px-6 py-4 font-semibold text-right whitespace-nowrap">Số tiền (Tr VND)</th>
+                    <th className="px-6 py-4 font-semibold text-right whitespace-nowrap">Số tiền (triệu VND)</th>
                     <th className="px-6 py-4 font-semibold text-right">Thao tác</th>
                   </tr>
                 </thead>

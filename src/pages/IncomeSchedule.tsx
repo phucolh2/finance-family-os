@@ -286,7 +286,7 @@ export const IncomeSchedule: React.FC = () => {
            <div className="flex items-start gap-3">
              <AlertTriangle className="w-5 h-5 text-orange-500 shrink-0 mt-0.5" />
              <div>
-               <h3 className="font-bold text-orange-400 text-sm">Tiền dư chưa phân bổ kỳ này: {formatTableMoneyVNDMillion(idleCashflow)} Tr VND</h3>
+               <h3 className="font-bold text-orange-400 text-sm">Tiền dư chưa phân bổ kỳ này: {formatTableMoneyVNDMillion(idleCashflow)} triệu VND</h3>
                <p className="text-family-textMuted text-xs mt-1">
                  Bạn đang có một khoản tiền nhàn rỗi trong kỳ quan sát này chưa được điều chuyển hay đầu tư sinh lời. 
                  Lời khuyên: Hãy vào màn hình <strong>Điều chuyển dòng tiền</strong> để đẩy số tiền này vào Sổ Tiết kiệm hoặc Thương vụ đầu tư.
@@ -379,7 +379,7 @@ export const IncomeSchedule: React.FC = () => {
                   label="Khoản thu tháng"
                   placeholder="VD: 25.5"
                   type="number"
-                  suffix="Tr VND"
+                  suffix="triệu VND"
                   value={newIncome}
                   onChange={(e) => { setNewIncome(Number(e.target.value)); }}
                   required
@@ -800,7 +800,7 @@ export const IncomeSchedule: React.FC = () => {
                       }
                       placeholder="VD: 25.5"
                       type="number"
-                      suffix="Tr VND"
+                      suffix="triệu VND"
                       value={editIncome}
                       onChange={(e) => { setEditIncome(Number(e.target.value)); }}
                       required

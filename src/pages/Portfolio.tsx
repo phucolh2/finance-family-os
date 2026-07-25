@@ -336,7 +336,7 @@ export const Portfolio: React.FC = () => {
                       className="w-24 text-lg font-bold text-amber-800 bg-white/80 rounded-lg border border-amber-200 px-2 py-1 focus:outline-none focus:ring-1 focus:ring-amber-400 placeholder-amber-800/50"
                       placeholder="VD: 500"
                     />
-                    <span className="text-xs font-semibold text-amber-600">Tr VND</span>
+                    <span className="text-xs font-semibold text-amber-600">triệu VND</span>
                   </div>
                   <p className="text-[10px] text-amber-600/70 mt-1.5">Tại mốc {state.profile.planningStartMonth}/{state.profile.planningStartYear}</p>
                 </CardContent>
@@ -692,7 +692,7 @@ export const Portfolio: React.FC = () => {
                   </select>
                 </div>
                 <div>
-                  <label className="block text-xs font-semibold text-family-text mb-1">Vốn đầu tư (Tr VND)</label>
+                  <label className="block text-xs font-semibold text-family-text mb-1">Vốn đầu tư (triệu VND)</label>
                   <input
                     type="number"
                     value={dealForm.capital || ''}
@@ -789,7 +789,7 @@ export const Portfolio: React.FC = () => {
               {isDealCapitalOverLimit && (
                 <WarningBox 
                   type="danger" 
-                  message={`Số vốn đầu tư vượt quá số dư của nguồn tiền đã chọn tại thời điểm tháng ${dealForm.startMonth}/${dealForm.startYear} (Số dư khả dụng: ${availableFunding.toFixed(1)} Tr VND).`} 
+                  message={`Số vốn đầu tư vượt quá số dư của nguồn tiền đã chọn tại thời điểm tháng ${dealForm.startMonth}/${dealForm.startYear} (Số dư khả dụng: ${availableFunding.toFixed(1)} triệu VND).`} 
                 />
               )}
 
@@ -852,7 +852,7 @@ export const Portfolio: React.FC = () => {
                                 <div className="font-semibold text-family-text">{deal.name}</div>
                                 {deal.withdrawals && deal.withdrawals.length > 0 && (
                                   <div className="text-[10px] text-family-textMuted mt-1">
-                                    Đã rút: {deal.withdrawals.length} lần ({deal.withdrawals.reduce((s, w) => s + w.amount, 0)} Tr)
+                                    Đã rút: {deal.withdrawals.length} lần ({deal.withdrawals.reduce((s, w) => s + w.amount, 0)} triệu)
                                   </div>
                                 )}
                               </td>
@@ -997,7 +997,7 @@ export const Portfolio: React.FC = () => {
                                             onChange={(e) => { setSettleForm({ ...settleForm, partialWithdrawType: e.target.value as 'amount' | 'percentage' }); }}
                                             className="bg-white rounded-lg border border-family-accent/15 p-1 font-semibold"
                                           >
-                                            <option value="amount">Số tiền rút (Tr VND)</option>
+                                            <option value="amount">Số tiền rút (triệu VND)</option>
                                             <option value="percentage">% gốc rút ra</option>
                                           </select>
                                           <input
@@ -1009,14 +1009,14 @@ export const Portfolio: React.FC = () => {
                                           />
                                           {settleForm.partialWithdrawType === 'percentage' && (
                                             <span className="text-family-textMuted font-medium italic">
-                                              ≈ {formatTableMoneyVNDMillion(deal.capital * (settleForm.partialWithdrawValue / 100))} Tr VND
+                                              ≈ {formatTableMoneyVNDMillion(deal.capital * (settleForm.partialWithdrawValue / 100))} triệu VND
                                             </span>
                                           )}
                                         </div>
                                       )}
 
                                       <div className="flex items-center gap-2">
-                                        <label className="font-semibold text-family-text">Lợi nhuận/Lỗ thực tế (Tr VND):</label>
+                                        <label className="font-semibold text-family-text">Lợi nhuận/Lỗ thực tế (triệu VND):</label>
                                         <input
                                           type="number"
                                           value={settleForm.realizedProfit}

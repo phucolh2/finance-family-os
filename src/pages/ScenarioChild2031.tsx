@@ -140,7 +140,7 @@ export const ScenarioChild2031: React.FC = () => {
         <CardHeader>
           <CardTitle>Chi tiết phân rã chi phí nuôi con hàng năm</CardTitle>
           <CardDescription>
-            Định mức chi tiêu hàng tháng cho từng cấu phần chi tiết (Đơn vị: Tr VND/tháng).
+            Định mức chi tiêu hàng tháng cho từng cấu phần chi tiết (Đơn vị: triệu VND/tháng).
           </CardDescription>
         </CardHeader>
         <CardContent className="overflow-x-auto">

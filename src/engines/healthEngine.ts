@@ -2,15 +2,15 @@ import { safeNumber } from '../utils/math';
 
 export interface HealthEngineInput {
   medicalInflationRate: number;        // e.g. 6 for 6%
-  healthFundCap: number;               // cap for medical fund, e.g. 300 Tr VND
-  liquidityFundCap: number;            // cap for liquid reserve, e.g. 100 Tr VND
-  criticalIllnessReserveTarget: number; // e.g. 500 Tr VND
-  finalRestCostToday: number;          // e.g. 150 Tr VND
+  healthFundCap: number;               // cap for medical fund, e.g. 300 triệu VND
+  liquidityFundCap: number;            // cap for liquid reserve, e.g. 100 triệu VND
+  criticalIllnessReserveTarget: number; // e.g. 500 triệu VND
+  finalRestCostToday: number;          // e.g. 150 triệu VND
   finalRestInflationRate: number;      // e.g. 5 for 5%
-  insuranceMonthly: number;            // e.g. 2 Tr VND
-  bhytMonthly: number;                 // e.g. 0.2 Tr VND
-  currentHealthFund: number;           // e.g. 150 Tr VND
-  monthlyContribution: number;         // contribution from savings, e.g. 5 Tr/month
+  insuranceMonthly: number;            // e.g. 2 triệu VND
+  bhytMonthly: number;                 // e.g. 0.2 triệu VND
+  currentHealthFund: number;           // e.g. 150 triệu VND
+  monthlyContribution: number;         // contribution from savings, e.g. 5 triệu/month
 }
 
 export interface HealthEngineOutput {

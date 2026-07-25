@@ -125,42 +125,42 @@ export const HealthAndFinalRest: React.FC = () => {
               <Input
                 label="Mục tiêu điều trị bệnh hiểm nghèo"
                 type="number"
-                suffix="Tr VND"
+                suffix="triệu VND"
                 value={criticalIllnessReserveTarget}
                 onChange={(e) => { setCriticalIllnessReserveTarget(safeNumber(Number(e.target.value))); }}
               />
               <Input
                 label="Hạn mức quỹ y tế (Cap)"
                 type="number"
-                suffix="Tr VND"
+                suffix="triệu VND"
                 value={healthFundCap}
                 onChange={(e) => { setHealthFundCap(safeNumber(Number(e.target.value))); }}
               />
               <Input
                 label="Hạn mức thanh khoản khẩn cấp (Cap)"
                 type="number"
-                suffix="Tr VND"
+                suffix="triệu VND"
                 value={liquidityFundCap}
                 onChange={(e) => { setLiquidityFundCap(safeNumber(Number(e.target.value))); }}
               />
               <Input
                 label="Số dư quỹ phòng vệ y tế hiện tại"
                 type="number"
-                suffix="Tr VND"
+                suffix="triệu VND"
                 value={currentHealthFund}
                 onChange={(e) => { setCurrentHealthFund(safeNumber(Number(e.target.value))); }}
               />
               <Input
                 label="Đóng góp tiết kiệm hàng tháng"
                 type="number"
-                suffix="Tr VND/tháng"
+                suffix="triệu VND/tháng"
                 value={monthlyContribution}
                 onChange={(e) => { setMonthlyContribution(safeNumber(Number(e.target.value))); }}
               />
               <Input
                 label="Chi phí hậu sự (Mức hôm nay)"
                 type="number"
-                suffix="Tr VND"
+                suffix="triệu VND"
                 value={finalRestCostToday}
                 onChange={(e) => { setFinalRestCostToday(safeNumber(Number(e.target.value))); }}
               />

@@ -178,7 +178,7 @@ export const ScenarioManagement: React.FC = () => {
         <CardHeader>
           <CardTitle>Biểu đồ so sánh tăng trưởng tài sản ròng</CardTitle>
           <CardDescription>
-            Tài sản ròng danh nghĩa lũy kế: Kịch bản gốc vs Kịch bản có con 2031 (Đơn vị: Tr VND).
+            Tài sản ròng danh nghĩa lũy kế: Kịch bản gốc vs Kịch bản có con 2031 (Đơn vị: triệu VND).
           </CardDescription>
         </CardHeader>
         <CardContent className="h-80">

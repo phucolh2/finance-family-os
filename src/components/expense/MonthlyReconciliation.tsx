@@ -137,10 +137,10 @@ export const MonthlyReconciliation: React.FC = () => {
             <thead className="bg-gray-50/50 text-gray-500 font-semibold border-b border-gray-100">
               <tr>
                 <th className="px-4 py-3 w-1/3">Danh mục</th>
-                <th className="px-4 py-3 text-right">Ngân sách (Tr)</th>
-                <th className="px-4 py-3 text-right">Đã chi (Tr)</th>
+                <th className="px-4 py-3 text-right">Ngân sách (triệu)</th>
+                <th className="px-4 py-3 text-right">Đã chi (triệu)</th>
                 <th className="px-4 py-3 text-right">Nhập Tổng Thực Tế</th>
-                <th className="px-4 py-3 text-right">Còn lại (Tr)</th>
+                <th className="px-4 py-3 text-right">Còn lại (triệu)</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-50">

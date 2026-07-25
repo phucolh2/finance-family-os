@@ -573,7 +573,7 @@ export const BudgetHistory: React.FC = () => {
                   <div>
                     <span className="text-xs text-orange-400 uppercase font-bold tracking-wider block">Gốc phân bổ</span>
                     <span className="text-xl font-extrabold text-orange-400">
-                      {allocationBase} Tr VND
+                      {allocationBase} triệu VND
                     </span>
                   </div>
                 )}
@@ -582,7 +582,7 @@ export const BudgetHistory: React.FC = () => {
                     {workspaceTab === 'charts' ? 'Thu nhập Tháng quan sát' : 'Thu nhập thực tế mốc'}
                   </span>
                   <span className="text-xl font-extrabold text-family-text">
-                    {actualIncome} Tr VND
+                    {actualIncome} triệu VND
                   </span>
                 </div>
               </div>
@@ -595,31 +595,31 @@ export const BudgetHistory: React.FC = () => {
                   <span className="text-[10px] uppercase text-family-textMuted font-bold mb-1">
                     {activeVersion?.allocationBaseAmount ? 'Gốc Phân Bổ' : 'Thu Nhập'}
                   </span>
-                  <span className="text-xl font-bold text-family-text">{allocationBase} Tr</span>
+                  <span className="text-xl font-bold text-family-text">{allocationBase} triệu</span>
                 </CardContent>
               </Card>
               <Card className="bg-red-500/10 border border-red-500/20">
                 <CardContent className="p-4 flex flex-col items-center justify-center text-center">
                   <span className="text-[10px] uppercase text-red-400/80 font-bold mb-1">Tổng Chi Phí</span>
-                  <span className="text-xl font-bold text-red-400">{expenseAmt.toFixed(1)} Tr</span>
+                  <span className="text-xl font-bold text-red-400">{expenseAmt.toFixed(1)} triệu</span>
                 </CardContent>
               </Card>
               <Card className="bg-blue-500/10 border border-blue-500/20">
                 <CardContent className="p-4 flex flex-col items-center justify-center text-center">
                   <span className="text-[10px] uppercase text-blue-400/80 font-bold mb-1">Tổng Đầu Tư</span>
-                  <span className="text-xl font-bold text-blue-400">{investmentAmt.toFixed(1)} Tr</span>
+                  <span className="text-xl font-bold text-blue-400">{investmentAmt.toFixed(1)} triệu</span>
                 </CardContent>
               </Card>
               <Card className="bg-emerald-500/10 border border-emerald-500/20">
                 <CardContent className="p-4 flex flex-col items-center justify-center text-center">
                   <span className="text-[10px] uppercase text-emerald-500/80 font-bold mb-1">Tổng Tiết Kiệm</span>
-                  <span className="text-xl font-bold text-emerald-500">{savingsAmt.toFixed(1)} Tr</span>
+                  <span className="text-xl font-bold text-emerald-500">{savingsAmt.toFixed(1)} triệu</span>
                 </CardContent>
               </Card>
               <Card className="bg-amber-500/10 border border-amber-500/20">
                 <CardContent className="p-4 flex flex-col items-center justify-center text-center">
                   <span className="text-[10px] uppercase text-amber-500/80 font-bold mb-1">Tổng Dự Phòng</span>
-                  <span className="text-xl font-bold text-amber-500">{reserveAmt.toFixed(1)} Tr</span>
+                  <span className="text-xl font-bold text-amber-500">{reserveAmt.toFixed(1)} triệu</span>
                 </CardContent>
               </Card>
             </div>
