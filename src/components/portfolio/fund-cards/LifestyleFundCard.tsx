@@ -24,7 +24,7 @@ export const LifestyleFundCard: React.FC<FundCardProps> = ({
                 </span>
               )}
             </h4>
-            {filterFundType !== 'debt_prep' && (
+            {filterFundType === 'investment' && (
               <p className="text-[11px] font-medium text-orange-600/80 uppercase tracking-wider mt-1">Mục tiêu: {fund.targetAssetType}</p>
             )}
           </div>
@@ -74,7 +74,7 @@ export const LifestyleFundCard: React.FC<FundCardProps> = ({
             
             {balance > 0 && filterFundType !== 'debt_prep' && (
               <Button size="sm" onClick={onDisburse} className="bg-orange-100 text-orange-700 hover:bg-orange-200 border-0 shadow-none font-semibold rounded-lg px-4">
-                Giải ngân
+                Sử dụng
               </Button>
             )}
           </div>
@@ -118,7 +118,7 @@ export const LifestyleFundCard: React.FC<FundCardProps> = ({
           <div className="mt-3">
             {fund.withdrawals && fund.withdrawals.length > 0 && (
               <p className="text-[10px] text-orange-800/70 mt-0.5">
-                Đã giải ngân: <span className="font-semibold text-red-500">{formatMoney(fund.withdrawals.reduce((sum, w) => sum + w.amount, 0))} Tr</span>
+                Đã sử dụng: <span className="font-semibold text-red-500">{formatMoney(fund.withdrawals.reduce((sum, w) => sum + w.amount, 0))} Tr</span>
               </p>
             )}
           </div>
@@ -136,7 +136,7 @@ export const LifestyleFundCard: React.FC<FundCardProps> = ({
              onClick={() => setExpandedFundId(expandedFundId === fund.id ? null : fund.id)}
              className="text-[11px] text-green-600 hover:text-green-700 font-semibold flex items-center justify-center gap-1 w-full bg-white/60 border border-green-200/50 py-1.5 rounded-lg transition-colors"
            >
-             {expandedFundId === fund.id ? 'Thu gọn chi tiết' : '⊕ Giải ngân đầu tư / Chi tiết dòng tiền'}
+             {expandedFundId === fund.id ? 'Thu gọn chi tiết' : '⊕ Sử dụng quỹ / Chi tiết dòng tiền'}
            </button>
            
            {expandedFundId === fund.id && renderCashflowDetails(fund)}

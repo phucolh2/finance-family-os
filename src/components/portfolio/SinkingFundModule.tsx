@@ -686,7 +686,7 @@ export const SinkingFundModule: React.FC<SinkingFundModuleProps> = ({
                   <div className="p-3 bg-green-50 rounded-lg border border-green-200">
                     <div className="flex items-center justify-between mb-2">
                       <h5 className="text-xs font-bold text-green-800">
-                        {filterFundType === 'debt_prep' ? 'Quản lý Tất toán & Rút gốc' : 'Giải ngân thành Thương vụ mới'}
+                        {filterFundType === 'debt_prep' ? 'Quản lý Tất toán & Rút gốc' : (filterFundType === 'investment' ? 'Giải ngân thành Thương vụ mới' : 'Sử dụng / Rút quỹ')}
                       </h5>
                       <div className="flex gap-4">
                         <label className="flex items-center gap-1 cursor-pointer">
@@ -707,10 +707,10 @@ export const SinkingFundModule: React.FC<SinkingFundModuleProps> = ({
                     <div className="space-y-2 border-t border-green-200 pt-2">
                       {filterFundType !== 'debt_prep' && (
                         <Input
-                          label="Tên thương vụ đầu tư"
+                          label={filterFundType === 'investment' ? "Tên thương vụ đầu tư" : "Mục đích sử dụng quỹ"}
                           value={disburseForm.dealName}
                           onChange={(e) => { setDisburseForm({ ...disburseForm, dealName: e.target.value }); }}
-                          placeholder={`VD: Mua ${fund.name}`}
+                          placeholder={filterFundType === 'investment' ? `VD: Mua ${fund.name}` : `VD: Chi tiêu cho ${fund.name}`}
                         />
                       )}
                       

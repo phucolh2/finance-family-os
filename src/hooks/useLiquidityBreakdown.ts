@@ -31,13 +31,41 @@ export const useLiquidityBreakdown = () => {
     return analyzeExpense(state.resolvedMonthlyDb || [], state.lifeEvents, selectedPeriodKey, expenseGroupIds);
   }, [state.resolvedMonthlyDb, state.lifeEvents, selectedPeriodKey, activeBudget]);
 
+
   const liquidityBreakdownData = useMemo(() => {
     const budgetTree = activeBudget ? activeBudget.rootGroups : [];
     const expenseTree = budgetTree.filter((g: any) => g.classification === 'expense');
 
+    const [selYearStr, selMonthStr] = selectedPeriodKey ? selectedPeriodKey.split('-') : [new Date().getFullYear().toString(), (new Date().getMonth() + 1).toString()];
+    const selYear = parseInt(selYearStr, 10);
+    const selMonth = parseInt(selMonthStr, 10);
+    const selMonthValue = selYear * 12 + selMonth;
+    const pKey = `${selYearStr}-${String(selMonth).padStart(2, '0')}`;
+
+    const deductedByGroup: Record<string, number> = {};
+    (state.sinkingFunds || []).forEach(fund => {
+       if (fund.status !== 'active') return;
+       if (!fund.sourceOfFund?.startsWith('expense_surplus_')) return;
+       const groupId = fund.sourceOfFund.replace('expense_surplus_', '');
+       
+       const startMonthValue = fund.startYear * 12 + fund.startMonth;
+       if (selMonthValue >= startMonthValue) {
+          let deduction = 0;
+          if (selMonthValue === startMonthValue) {
+             deduction += fund.initialDeposit || 0;
+          }
+          const contrib = fund.periodConfigs?.[pKey]?.contribution !== undefined ? fund.periodConfigs[pKey].contribution : fund.monthlyContribution;
+          deduction += contrib || 0;
+          
+          deductedByGroup[groupId] = (deductedByGroup[groupId] || 0) + deduction;
+       }
+    });
+
     return expenseTree.map((g: any) => {
       const sum = expenseData.summaryByGroup[g.groupId] || { totalBudget: 0, totalActual: 0 };
-      const remaining = Math.max(0, sum.totalBudget - sum.totalActual);
+      const rawRemaining = Math.max(0, sum.totalBudget - sum.totalActual);
+      const deducted = deductedByGroup[g.id] || 0;
+      const remaining = Math.max(0, rawRemaining - deducted);
       
       const children = (g.children || []).map((child: any) => {
         const catSum = expenseData.summaryByCategory?.[child.id] || { totalBudget: 0, totalActual: 0 };
@@ -45,9 +73,10 @@ export const useLiquidityBreakdown = () => {
         return {
           id: child.id,
           name: child.name,
-          remaining: childRemaining,
+          remaining: childRemaining, // Children don't have sinking funds directly
           totalBudget: catSum.totalBudget,
           totalActual: catSum.totalActual,
+          deducted: 0,
           sortOrder: child.sortOrder || 0
         };
       }).sort((a: any, b: any) => a.sortOrder - b.sortOrder);
@@ -56,22 +85,25 @@ export const useLiquidityBreakdown = () => {
         id: g.id,
         name: g.name,
         remaining,
+        deducted,
         totalBudget: sum.totalBudget,
         totalActual: sum.totalActual,
         sortOrder: g.sortOrder || 0,
         children
       };
     }).sort((a: any, b: any) => a.sortOrder - b.sortOrder);
-  }, [activeBudget, expenseData.summaryByGroup, expenseData.summaryByCategory]);
+  }, [activeBudget, expenseData.summaryByGroup, expenseData.summaryByCategory, state.sinkingFunds, selectedPeriodKey]);
 
   const totalBudgetSum = useMemo(() => liquidityBreakdownData.reduce((sum, g) => sum + g.totalBudget, 0), [liquidityBreakdownData]);
   const totalActualSum = useMemo(() => liquidityBreakdownData.reduce((sum, g) => sum + g.totalActual, 0), [liquidityBreakdownData]);
+  const totalDeductedSum = useMemo(() => liquidityBreakdownData.reduce((sum, g) => sum + g.deducted, 0), [liquidityBreakdownData]);
   const totalRemainingSum = useMemo(() => liquidityBreakdownData.reduce((sum, g) => sum + g.remaining, 0), [liquidityBreakdownData]);
 
   return {
     liquidityBreakdownData,
     totalBudgetSum,
     totalActualSum,
+    totalDeductedSum,
     totalRemainingSum,
     selectedPeriodKey
   };
