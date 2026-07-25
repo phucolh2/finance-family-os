@@ -29,15 +29,6 @@ export const LifeStages: React.FC = () => {
   const [dashboardFilter, setDashboardFilter] = useState<BudgetGroup | 'all'>('all');
   const [activeTab, setActiveTab] = useState<'timeline' | 'monthly_reconciliation' | 'savings_liquidity'>('monthly_reconciliation');
 
-  // Generate spending category options from the latest budget schedule
-  const activeBudget = state.budgetSchedule.length > 0 ? state.budgetSchedule[state.budgetSchedule.length - 1] : null;
-  const spendingCategoryOptions = activeBudget?.rootGroups.flatMap(group => 
-    (group.children || []).map(child => ({
-      value: `${group.groupId}/${child.id}`,
-      label: `${group.name} - ${child.name}`
-    }))
-  ) || [];
-
   // Local state for event form editing
   const [editingId, setEditingId] = useState<string | null>(null);
   const [isAdding, setIsAdding] = useState(false);
@@ -49,13 +40,31 @@ export const LifeStages: React.FC = () => {
     month: 1,
     year: 2030,
     amount: 0,
-    source: activeBudget?.rootGroups.find(g => g.classification === 'expense')?.groupId || 'debt',
+    source: 'debt',
     recurringMonthlyImpact: 0,
     affectsNetWorth: true,
     note: '',
     isMilestone: false,
     spendingCategory: '',
   });
+
+  // Generate spending category options dynamically based on the event's month and year
+  const eventTime = formData.year * 12 + formData.month;
+  const sortedSchedules = [...state.budgetSchedule].sort((a, b) => (a.effectiveYear * 12 + a.effectiveMonth) - (b.effectiveYear * 12 + b.effectiveMonth));
+  
+  let activeBudget = sortedSchedules.length > 0 ? sortedSchedules[0] : null;
+  for (const b of sortedSchedules) {
+    if (b.effectiveYear * 12 + b.effectiveMonth <= eventTime) {
+      activeBudget = b;
+    }
+  }
+
+  const spendingCategoryOptions = activeBudget?.rootGroups.flatMap(group => 
+    (group.children || []).map(child => ({
+      value: `${group.groupId}/${child.id}`,
+      label: `${group.name} - ${child.name}`
+    }))
+  ) || [];
 
   const handleEditClick = (event: LifeEvent) => {
     setEditingId(event.id);
