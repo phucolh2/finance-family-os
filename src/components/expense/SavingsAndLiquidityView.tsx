@@ -128,7 +128,7 @@ export const SavingsAndLiquidityView: React.FC = () => {
                 <Wallet className="w-7 h-7" />
               </div>
               <p className="text-xs font-bold text-emerald-600/80 uppercase tracking-wider mb-1">
-                Tổng Quỹ sinh hoạt dư (Tháng {selectedPeriodKey ? selectedPeriodKey.split('-')[1] : 'hiện tại'})
+                Tổng Quỹ sinh hoạt dư (Tháng {selectedPeriodKey ? `${selectedPeriodKey.split('-')[1]}/${selectedPeriodKey.split('-')[0]}` : 'hiện tại'})
               </p>
               <div className="text-4xl font-black text-emerald-600 drop-shadow-sm">
                 +{formatTableMoneyVNDMillion(totalRemainingSum)}
@@ -162,7 +162,7 @@ export const SavingsAndLiquidityView: React.FC = () => {
           <Card className="bg-white/80 border-family-accent/10">
           <CardHeader className="pb-2">
             <CardTitle className="text-sm font-semibold text-family-textMuted uppercase flex items-center gap-1.5">
-              Cấu trúc Tiền dư sinh hoạt tính đến (Tháng {selectedPeriodKey ? selectedPeriodKey.split('-')[1] : 'hiện tại'})
+              Cấu trúc Tiền dư sinh hoạt tính đến (Tháng {selectedPeriodKey ? `${selectedPeriodKey.split('-')[1]}/${selectedPeriodKey.split('-')[0]}` : 'hiện tại'})
               <HelpTooltip text="Bảng này chỉ phân tách số tiền dư của THÁNG ĐANG CHỌN. (Khác với con số 45 triệu ở trên là TỔNG tiền dư tích lũy của TẤT CẢ các tháng cộng lại)." />
             </CardTitle>
           </CardHeader>
