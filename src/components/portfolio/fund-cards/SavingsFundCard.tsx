@@ -6,6 +6,7 @@ import type { FundingSourceId } from '../../../constants/fundingSources';
 
 export const SavingsFundCard: React.FC<FundCardProps> = ({
   fund, balance, progress, totalDisbursed, isDisbursing,
+  currentObservedMonth, currentObservedYear,
   expandedFundId, setExpandedFundId, onEdit, onDelete, onDisburse,
   renderDisburseForm, renderCashflowDetails,
   dynamicSources, FUNDING_SOURCES, formatMoney
@@ -93,8 +94,8 @@ export const SavingsFundCard: React.FC<FundCardProps> = ({
                   const remaining = fund.targetAmount - balance;
                   if (remaining > 0 && fund.monthlyContribution > 0) {
                     const monthsRemaining = Math.ceil(remaining / fund.monthlyContribution);
-                    const currentM = new Date().getMonth() + 1;
-                    const currentY = new Date().getFullYear();
+                    const currentM = currentObservedMonth;
+                    const currentY = currentObservedYear;
                     const estMonth = ((currentM - 1 + monthsRemaining) % 12) + 1;
                     const estYear = currentY + Math.floor((currentM - 1 + monthsRemaining) / 12);
                     return (

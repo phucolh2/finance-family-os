@@ -15,6 +15,8 @@ export interface FundCardProps {
   totalDisbursed: number;
   totalDeposited: number;
   isDisbursing: boolean;
+  currentObservedMonth: number;
+  currentObservedYear: number;
   expandedFundId: string | null;
   setExpandedFundId: (id: string | null) => void;
   onEdit: () => void;

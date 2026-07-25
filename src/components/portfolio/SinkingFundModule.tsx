@@ -158,17 +158,15 @@ export const SinkingFundModule: React.FC<SinkingFundModuleProps> = ({
       return `${prefix} (Còn: ${formatTableMoneyVNDMillion(balance)})`;
   };
 
+  const nowKey = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
+  const activeRow = (projection.monthlyRows.length > 0 && selectedPeriodKey)
+    ? (projection.monthlyRows.find(r => r.period.key === selectedPeriodKey) || projection.monthlyRows[0])
+    : (projection.monthlyRows.find(r => r.period.key === nowKey) || projection.monthlyRows[0]);
+  const currentObservedMonth = activeRow ? activeRow.period.month : initMonth;
+  const currentObservedYear = activeRow ? activeRow.period.year : initYear;
+
   // Helper to find latest state of a fund from projection
   const getFundBalance = (fundId: string) => {
-    const now = new Date();
-    const nowKey = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
-
-    const activeRow = (projection.monthlyRows.length > 0 && selectedPeriodKey)
-      ? (projection.monthlyRows.find(r => r.period.key === selectedPeriodKey) || projection.monthlyRows[0])
-      : (projection.monthlyRows.find(r => r.period.key === nowKey) || projection.monthlyRows[0]);
-
-    const currentObservedMonth = activeRow ? activeRow.period.month : initMonth;
-    const currentObservedYear = activeRow ? activeRow.period.year : initYear;
 
     const fund = activeFunds.find(f => f.id === fundId);
     if (!fund) return { balance: 0, progress: 0, buckets: [], nonTermCash: 0, totalDisbursed: 0, autoRefundsByMonth: {}, totalDeposited: 0 };
@@ -890,6 +888,7 @@ export const SinkingFundModule: React.FC<SinkingFundModuleProps> = ({
             const cardProps = {
                fund: fund as any,
                balance, progress, totalDisbursed: totalDisbursed ?? 0, totalDeposited: totalDeposited ?? 0, isDisbursing,
+               currentObservedMonth, currentObservedYear,
                expandedFundId, setExpandedFundId, 
                onEdit: () => {
                    setEditingFundId(fund.id);
