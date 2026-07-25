@@ -96,11 +96,11 @@ export const TransferForm: React.FC<TransferFormProps> = ({ onSuccess, onCancel 
       return;
     }
     if (numAmount > availableBalance) {
-      setFormError(`Số tiền điều chuyển (${numAmount} triệu) vượt quá số dư khả dụng của nguồn (${formatMoneyVNDMillion(availableBalance)} triệu).`);
+      setFormError(`Số tiền điều chuyển (${numAmount} triệu) vượt quá số dư khả dụng của nguồn (${formatMoneyVNDMillion(availableBalance)}).`);
       return;
     }
     if (destType === 'debt' && numAmount > maxDebtPayment) {
-      setFormError(`Số tiền trả nợ (${numAmount} triệu) vượt quá dư nợ gốc hiện tại (${formatMoneyVNDMillion(maxDebtPayment)} triệu).`);
+      setFormError(`Số tiền trả nợ (${numAmount} triệu) vượt quá dư nợ gốc hiện tại (${formatMoneyVNDMillion(maxDebtPayment)}).`);
       return;
     }
 

@@ -1009,7 +1009,7 @@ export const Portfolio: React.FC = () => {
                                           />
                                           {settleForm.partialWithdrawType === 'percentage' && (
                                             <span className="text-family-textMuted font-medium italic">
-                                              ≈ {formatTableMoneyVNDMillion(deal.capital * (settleForm.partialWithdrawValue / 100))} triệu VND
+                                              ≈ {formatTableMoneyVNDMillion(deal.capital * (settleForm.partialWithdrawValue / 100))} VND
                                             </span>
                                           )}
                                         </div>

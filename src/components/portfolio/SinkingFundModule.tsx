@@ -565,16 +565,16 @@ export const SinkingFundModule: React.FC<SinkingFundModuleProps> = ({
                          )}
                                                   <div className="flex justify-between border-b border-gray-100 pb-1">
                             <span className="text-family-textMuted">Tổng vốn đã nộp:</span>
-                            <span className="font-semibold">{formatTableMoneyVNDMillion(totalDeposited || 0)} triệu</span>
+                            <span className="font-semibold">{formatTableMoneyVNDMillion(totalDeposited || 0)}</span>
                          </div>
                          <div className="flex justify-between border-b border-gray-100 pb-1">
                             <span className="text-family-textMuted">Lãi cộng dồn:</span>
-                            <span className="font-semibold text-emerald-600">+{formatTableMoneyVNDMillion(balance - (totalDeposited || 0))} triệu</span>
+                            <span className="font-semibold text-emerald-600">+{formatTableMoneyVNDMillion(balance - (totalDeposited || 0))}</span>
                          </div>
                          {nonTermCash > 0 && (
                             <div className="flex justify-between border-b border-gray-100 pb-1 bg-yellow-50 px-1 rounded">
                                <span className="text-family-textMuted">Tiền chờ phân bổ (Không kỳ hạn):</span>
-                               <span className="font-semibold text-amber-600">{formatTableMoneyVNDMillion(nonTermCash)} triệu</span>
+                               <span className="font-semibold text-amber-600">{formatTableMoneyVNDMillion(nonTermCash)}</span>
                             </div>
                          )}
                          <div className="pt-1">
@@ -596,14 +596,12 @@ export const SinkingFundModule: React.FC<SinkingFundModuleProps> = ({
                                              {b.parentId && !b.breakdown ? (
                                                 <div className="flex items-center">
                                                    <span className="font-bold text-family-accent text-[12px]">{formatTableMoneyVNDMillion(b.principal)}</span>
-                                                   <span className="font-bold text-family-accent text-[11px] ml-1">triệu</span>
                                                 </div>
                                              ) : (
                                                 <div className="flex items-center flex-wrap gap-1">
                                                    {b.breakdown && (
                                                       <div className="flex items-center">
                                                          <span className="font-bold text-family-accent text-[12px]">{formatTableMoneyVNDMillion(b.principal)}</span>
-                                                         <span className="font-bold text-family-accent text-[11px] ml-1">triệu</span>
                                                       </div>
                                                    )}
                                                    <div className="flex items-center">
@@ -707,7 +705,7 @@ export const SinkingFundModule: React.FC<SinkingFundModuleProps> = ({
                                               <span className="text-[10px] text-family-textMuted">%/năm</span>
                                               {b.termMonths > 0 && b.interestRateAnnual > 0 && (
                                                  <span className="text-[10px] text-emerald-600 font-semibold ml-2">
-                                                    (Dự kiến lãi: +{formatTableMoneyVNDMillion(b.principal * (b.interestRateAnnual / 100 / 12) * b.termMonths)} triệu)
+                                                    (Dự kiến lãi: +{formatTableMoneyVNDMillion(b.principal * (b.interestRateAnnual / 100 / 12) * b.termMonths)})
                                                  </span>
                                               )}
                                            </div>
@@ -829,9 +827,9 @@ export const SinkingFundModule: React.FC<SinkingFundModuleProps> = ({
                                <div className="w-full mt-3 p-2 bg-yellow-50 border border-yellow-200 rounded-md">
                                   <p className="text-[11px] font-bold text-yellow-800 mb-1">Cơ chế tất toán thông minh sẽ tự động ưu tiên rút:</p>
                                   <ul className="list-disc pl-4 text-[10px] text-yellow-800 space-y-0.5">
-                                     {breakdownNonTerm > 0 && <li>Từ phần không kỳ hạn: <strong>{formatTableMoneyVNDMillion(breakdownNonTerm)} triệu</strong></li>}
+                                     {breakdownNonTerm > 0 && <li>Từ phần không kỳ hạn: <strong>{formatTableMoneyVNDMillion(breakdownNonTerm)}</strong></li>}
                                      {breakdownBuckets.map((b: any, i: number) => (
-                                        <li key={i}>Tất toán từ kỳ hạn T{b.periodKey.split('-')[1]}/{b.periodKey.split('-')[0]}: <strong>{formatTableMoneyVNDMillion(b.deduct)} triệu</strong></li>
+                                        <li key={i}>Tất toán từ kỳ hạn T{b.periodKey.split('-')[1]}/{b.periodKey.split('-')[0]}: <strong>{formatTableMoneyVNDMillion(b.deduct)}</strong></li>
                                      ))}
                                      {breakdownBuckets.length > 0 && <li>Phần dôi ra của các kỳ hạn trên (nếu có) vẫn tiếp tục duy trì kỳ hạn cũ.</li>}
                                   </ul>
