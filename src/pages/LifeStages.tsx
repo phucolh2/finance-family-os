@@ -59,11 +59,25 @@ export const LifeStages: React.FC = () => {
     }
   }
 
+  // Find the active expense schedule for this event's time
+  const sortedExpenseSchedules = [...(state.expenseSchedule || [])].sort((a, b) => (a.effectiveYear * 12 + a.effectiveMonth) - (b.effectiveYear * 12 + b.effectiveMonth));
+  let activeExpenseSchedule = sortedExpenseSchedules.length > 0 ? sortedExpenseSchedules[0] : null;
+  for (const s of sortedExpenseSchedules) {
+    if (s.effectiveYear * 12 + s.effectiveMonth <= eventTime) {
+      activeExpenseSchedule = s;
+    }
+  }
+
   const spendingCategoryOptions = activeBudget?.rootGroups.flatMap(group => 
-    (group.children || []).map(child => ({
-      value: `${group.groupId}/${child.id}`,
-      label: `${group.name} - ${child.name}`
-    }))
+    (group.children || []).map(child => {
+      const catKey = `${group.groupId}/${child.id}`;
+      const currentAlloc = activeExpenseSchedule?.categories?.[catKey] || 0;
+      const allocText = currentAlloc > 0 ? ` (Đang PB: ${currentAlloc}tr)` : '';
+      return {
+        value: catKey,
+        label: `${group.name} - ${child.name}${allocText}`
+      };
+    })
   ) || [];
 
   const handleEditClick = (event: LifeEvent) => {

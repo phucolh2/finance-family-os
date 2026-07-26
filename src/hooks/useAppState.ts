@@ -391,21 +391,71 @@ export function useAppState() {
   };
 
   // Life Event Actions
+  const ensureExpenseScheduleForEvent = (event: LifeEvent, currentSchedules: import('../types/budget').ExpenseScheduleItem[]): import('../types/budget').ExpenseScheduleItem[] => {
+    if (!event.recurringMonthlyImpact || event.recurringMonthlyImpact <= 0 || !event.spendingCategory) {
+      return currentSchedules;
+    }
+
+    const pastOrActive = currentSchedules.filter(
+      (b) => b.effectiveYear * 12 + b.effectiveMonth <= event.year * 12 + event.month
+    );
+    let priorSchedule: import('../types/budget').ExpenseScheduleItem | null = null;
+    if (pastOrActive.length > 0) {
+      const sorted = [...pastOrActive].sort((a, b) => (a.effectiveYear * 12 + a.effectiveMonth) - (b.effectiveYear * 12 + b.effectiveMonth));
+      priorSchedule = sorted[sorted.length - 1];
+    }
+
+    // Clone categories from prior schedule or start empty
+    const updatedCategories = priorSchedule ? { ...priorSchedule.categories } : {};
+    
+    // Add the recurring impact to the specified spending category
+    updatedCategories[event.spendingCategory] = (updatedCategories[event.spendingCategory] || 0) + event.recurringMonthlyImpact;
+
+    const existsIndex = currentSchedules.findIndex(
+      (s) => s.effectiveMonth === event.month && s.effectiveYear === event.year
+    );
+
+    if (existsIndex >= 0) {
+      // If a schedule already exists for this month, update it directly
+      const newSchedules = [...currentSchedules];
+      newSchedules[existsIndex] = {
+        ...newSchedules[existsIndex],
+        categories: updatedCategories,
+        note: newSchedules[existsIndex].note ? `${newSchedules[existsIndex].note}, updated for event: ${event.name}` : `Auto-updated for event: ${event.name}`
+      };
+      return newSchedules;
+    }
+
+    const newSchedule: import('../types/budget').ExpenseScheduleItem = {
+      id: `exp_${Date.now()}_${Math.random().toString(36).substring(2, 9)}`,
+      effectiveMonth: event.month,
+      effectiveYear: event.year,
+      categories: updatedCategories,
+      status: 'active',
+      note: `Auto-generated for event: ${event.name}`,
+    };
+    return [...currentSchedules, newSchedule];
+  };
+
   const addLifeEvent = (item: Omit<LifeEvent, 'id'>) => {
     const newItem: LifeEvent = {
       ...item,
       id: `event_${Date.now()}_${Math.random().toString(36).substring(2, 9)}`,
     };
+    const newExpenseSchedules = ensureExpenseScheduleForEvent(newItem, state.expenseSchedule || []);
     saveState({
       ...state,
       lifeEvents: [...state.lifeEvents, newItem],
+      expenseSchedule: newExpenseSchedules,
     });
   };
 
   const updateLifeEvent = (updated: LifeEvent) => {
+    const newExpenseSchedules = ensureExpenseScheduleForEvent(updated, state.expenseSchedule || []);
     saveState({
       ...state,
       lifeEvents: state.lifeEvents.map((item) => (item.id === updated.id ? updated : item)),
+      expenseSchedule: newExpenseSchedules,
     });
   };
 
@@ -560,11 +610,12 @@ export function useAppState() {
   const importState = (imported: unknown): { success: boolean; error?: string } => {
     try {
       const migrated = migrateState(imported, INITIAL_APP_STATE);
-      if (validateAppState(migrated)) {
+      const validation = validateAppState(migrated);
+      if (validation.success) {
         saveState(migrated);
         return { success: true };
       }
-      return { success: false, error: 'Định dạng dữ liệu JSON không đúng chuẩn AppState.' };
+      return { success: false, error: validation.error || 'Định dạng dữ liệu JSON không đúng chuẩn AppState.' };
     } catch (err: unknown) {
       return { success: false, error: err instanceof Error ? err.message : 'Lỗi đọc tệp dữ liệu nhập khẩu.' };
     }
@@ -663,7 +714,7 @@ export function useAppState() {
     addIncomeCategory: (item: Omit<import('../types/finance').IncomeCategory, 'id'>) => {
       saveState({
         ...state,
-        incomeCategories: [...(state.incomeCategories ?? []), { ...item, id: `inc_cat_${Date.now()}` }],
+        incomeCategories: [...(state.incomeCategories ?? []), { ...item, id: `inc_cat_${Date.now()}_${Math.random().toString(36).substring(2, 9)}` }],
       });
     },
     updateIncomeCategory: (updated: import('../types/finance').IncomeCategory) => {
@@ -752,45 +803,45 @@ export function useAppState() {
       // Auto-handle source logic
       if (transfer.sourceType === 'savings' && transfer.sourceId) {
          nextState.savingsDeposits = (nextState.savingsDeposits ?? []).map(sav => {
-             if (sav.id === transfer.sourceId) {
-                 const newWithdrawal: import('../types/finance').WithdrawalEvent = {
-                     id: `wd_${Date.now()}`,
-                     month: transfer.month,
-                     year: transfer.year,
-                     amount: transfer.amount,
-                     note: 'Điều chuyển nội bộ'
-                 };
-                 return { ...sav, withdrawals: [...(sav.withdrawals ?? []), newWithdrawal] };
-             }
+              if (sav.id === transfer.sourceId) {
+                  const newWithdrawal: import('../types/finance').WithdrawalEvent = {
+                      id: `wd_${Date.now()}_${Math.random().toString(36).substring(2, 9)}`,
+                      month: transfer.month,
+                      year: transfer.year,
+                      amount: transfer.amount,
+                      note: 'Điều chuyển nội bộ'
+                  };
+                  return { ...sav, withdrawals: [...(sav.withdrawals ?? []), newWithdrawal] };
+              }
              return sav;
          });
       } else if (transfer.sourceType === 'investment' && transfer.sourceId) {
          nextState.investmentDeals = (nextState.investmentDeals ?? []).map(deal => {
-             if (deal.id === transfer.sourceId) {
-                 const newWithdrawal: import('../types/finance').WithdrawalEvent = {
-                     id: `wd_${Date.now()}`,
-                     month: transfer.month,
-                     year: transfer.year,
-                     amount: transfer.amount,
-                     realizedProfit: 0,
-                     note: 'Điều chuyển nội bộ'
-                 };
-                 return { ...deal, withdrawals: [...(deal.withdrawals ?? []), newWithdrawal] };
-             }
+              if (deal.id === transfer.sourceId) {
+                  const newWithdrawal: import('../types/finance').WithdrawalEvent = {
+                      id: `wd_${Date.now()}_${Math.random().toString(36).substring(2, 9)}`,
+                      month: transfer.month,
+                      year: transfer.year,
+                      amount: transfer.amount,
+                      realizedProfit: 0,
+                      note: 'Điều chuyển nội bộ'
+                  };
+                  return { ...deal, withdrawals: [...(deal.withdrawals ?? []), newWithdrawal] };
+              }
              return deal;
          });
       } else if (transfer.sourceType === 'sinking_fund' && transfer.sourceId) {
          nextState.sinkingFunds = (nextState.sinkingFunds ?? []).map(fund => {
-             if (fund.id === transfer.sourceId) {
-                 const newWithdrawal: import('../types/finance').WithdrawalEvent = {
-                     id: `wd_${Date.now()}`,
-                     month: transfer.month,
-                     year: transfer.year,
-                     amount: transfer.amount,
-                     note: 'Điều chuyển nội bộ'
-                 };
-                 return { ...fund, withdrawals: [...(fund.withdrawals ?? []), newWithdrawal] };
-             }
+              if (fund.id === transfer.sourceId) {
+                  const newWithdrawal: import('../types/finance').WithdrawalEvent = {
+                      id: `wd_${Date.now()}_${Math.random().toString(36).substring(2, 9)}`,
+                      month: transfer.month,
+                      year: transfer.year,
+                      amount: transfer.amount,
+                      note: 'Điều chuyển nội bộ'
+                  };
+                  return { ...fund, withdrawals: [...(fund.withdrawals ?? []), newWithdrawal] };
+              }
              return fund;
          });
       }

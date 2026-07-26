@@ -101,6 +101,31 @@ export const ExpenseScheduleView: React.FC = () => {
     }));
   };
 
+  // Calculate aggregated life event impacts for the currently viewed month
+  const eventImpacts = React.useMemo(() => {
+    const impacts: Record<string, { total: number, names: string[] }> = {};
+    if (!activeVersion) return impacts;
+    
+    const targetMonthValue = activeVersion.effectiveYear * 12 + activeVersion.effectiveMonth;
+    
+    (state.lifeEvents || []).forEach(event => {
+      const eventMonthValue = event.year * 12 + event.month;
+      // if event is active in or before this month
+      if (eventMonthValue <= targetMonthValue && event.recurringMonthlyImpact && event.recurringMonthlyImpact > 0 && event.spendingCategory) {
+        // spendingCategory format is usually "groupId/childId", we need just "childId" for ExpenseSchedule matching
+        const parts = event.spendingCategory.split('/');
+        const categoryId = parts.length > 1 ? parts[1] : parts[0];
+        
+        if (!impacts[categoryId]) {
+          impacts[categoryId] = { total: 0, names: [] };
+        }
+        impacts[categoryId].total += event.recurringMonthlyImpact;
+        impacts[categoryId].names.push(event.name);
+      }
+    });
+    return impacts;
+  }, [state.lifeEvents, activeVersion]);
+
   // Update categories when version changes
   React.useEffect(() => {
     if (activeVersion) {
@@ -197,7 +222,8 @@ export const ExpenseScheduleView: React.FC = () => {
         val = 0;
       }
     }
-    return sum + val;
+    const eventImpact = eventImpacts[catId]?.total || 0;
+    return sum + val + eventImpact;
   }, 0);
 
   // Collect validation warnings
@@ -216,8 +242,11 @@ export const ExpenseScheduleView: React.FC = () => {
       
       if (actual === -1) actual = budget; // dynamically mapped
 
-      if (!isSettled && actual > budget) {
-        validationWarnings.push(`"${cat.name}" vượt ngân sách (lố ${formatTableMoneyVNDMillion(actual - budget)}).`);
+      const eventImpact = eventImpacts[cat.id]?.total || 0;
+      const totalCatActual = actual + eventImpact;
+
+      if (!isSettled && totalCatActual > budget) {
+        validationWarnings.push(`"${cat.name}" vượt ngân sách (lố ${formatTableMoneyVNDMillion(totalCatActual - budget)}).`);
       }
     });
   }
@@ -562,7 +591,9 @@ export const ExpenseScheduleView: React.FC = () => {
                             const actualRaw = safeNumber(categories[cat.id], 0);
                             const actual = isCatFilled ? budget : actualRaw;
                             
-                            const isOver = !isSettled && actual > budget;
+                            const eventImpact = eventImpacts[cat.id];
+                            const totalCatActual = actual + (eventImpact?.total || 0);
+                            const isOver = !isSettled && totalCatActual > budget;
                             
                             const handleToggleCatFilled = () => {
                               if (isCatFilled) {
@@ -579,6 +610,11 @@ export const ExpenseScheduleView: React.FC = () => {
                                 <div className="flex-1">
                                   <div className="text-sm font-semibold text-family-text">{cat.name}</div>
                                   {cat.note && <div className="text-[11px] text-family-textMuted mt-0.5">{cat.note}</div>}
+                                  {eventImpact && (
+                                    <div className="text-[11px] text-orange-600/80 font-medium mt-0.5 flex items-center gap-1">
+                                      <WarningBox message={`Cộng ${eventImpact.total}tr từ sự kiện: ${eventImpact.names.join(', ')}`} type="warning" />
+                                    </div>
+                                  )}
                                 </div>
                                 <div className="flex items-center gap-5 shrink-0">
                                   <div className="flex flex-col items-end justify-center h-full">
@@ -586,29 +622,39 @@ export const ExpenseScheduleView: React.FC = () => {
                                     <span className="text-sm font-bold text-family-textMuted">{formatTableMoneyVNDMillion(budget)}</span>
                                   </div>
                                   <div className="w-[120px] flex flex-col items-end">
-                                    <span className="text-[9px] uppercase font-bold text-family-textMuted mb-1">Thực tế (tr)</span>
-                                    <div className="relative w-full flex items-center gap-1.5">
-                                      <button 
-                                        type="button" 
-                                        onClick={handleToggleCatFilled}
-                                        title={isCatFilled ? "Bỏ dùng hết" : "Dùng hết mức phân bổ (tự động khớp khi cập nhật NS)"}
-                                        className={`p-1 transition-colors ${isCatFilled ? 'text-emerald-500' : 'text-gray-300 hover:text-emerald-400'}`}
-                                      >
-                                        <CheckCircle2 className="w-4 h-4" />
-                                      </button>
-                                      <div className="relative flex-1">
-                                        <Input 
-                                          type="number"
-                                          min="0"
-                                          step="0.1"
-                                          value={isCatFilled ? roundedBudget : (categories[cat.id] === undefined ? '' : categories[cat.id])}
-                                          onChange={(e) => { handleCategoryChange(cat.id, e.target.value); }}
-                                          placeholder="0"
-                                          className={`text-right font-bold w-full h-8 px-2 text-sm ${isOver ? 'border-red-500 text-red-600 focus-visible:ring-red-500' : (isCatFilled ? 'text-emerald-600 bg-emerald-50/50' : 'text-family-accent')}`}
-                                          disabled={isSettled || isCatFilled}
-                                        />
-                                        {isOver && <span className="absolute -bottom-4 right-0 text-[9px] text-red-500 font-bold whitespace-nowrap">Vượt mức!</span>}
+                                    <span className="text-[9px] uppercase font-bold text-family-textMuted mb-1">
+                                      Thực tế (tr)
+                                    </span>
+                                    <div className="relative w-full flex flex-col gap-1 items-end">
+                                      <div className="flex items-center gap-1.5 w-full">
+                                        <button 
+                                          type="button" 
+                                          onClick={handleToggleCatFilled}
+                                          title={isCatFilled ? "Bỏ dùng hết" : "Dùng hết mức phân bổ (tự động khớp khi cập nhật NS)"}
+                                          className={`p-1 transition-colors ${isCatFilled ? 'text-emerald-500' : 'text-gray-300 hover:text-emerald-400'}`}
+                                        >
+                                          <CheckCircle2 className="w-4 h-4" />
+                                        </button>
+                                        <div className="relative flex-1">
+                                          <Input 
+                                            type="number"
+                                            min="0"
+                                            step="0.1"
+                                            value={isCatFilled ? roundedBudget : (categories[cat.id] === undefined ? '' : categories[cat.id])}
+                                            onChange={(e) => { handleCategoryChange(cat.id, e.target.value); }}
+                                            placeholder="0"
+                                            className={`text-right font-bold w-full h-8 px-2 text-sm ${isOver ? 'border-red-500 text-red-600 focus-visible:ring-red-500' : (isCatFilled ? 'text-emerald-600 bg-emerald-50/50' : 'text-family-accent')}`}
+                                            disabled={isSettled || isCatFilled}
+                                            title={eventImpact ? `Gồm số nhập tay + ${eventImpact.total}tr sự kiện` : undefined}
+                                          />
+                                          {isOver && <span className="absolute -bottom-4 right-0 text-[9px] text-red-500 font-bold whitespace-nowrap">Vượt mức!</span>}
+                                        </div>
                                       </div>
+                                      {eventImpact && (
+                                        <div className="text-[10px] text-orange-500 font-bold mr-1">
+                                          TỔNG: {formatTableMoneyVNDMillion(totalCatActual)}
+                                        </div>
+                                      )}
                                     </div>
                                   </div>
                                 </div>

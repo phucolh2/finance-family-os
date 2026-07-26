@@ -177,6 +177,9 @@ export const SinkingFundModule: React.FC<SinkingFundModuleProps> = ({
     const start = fund.startYear * 12 + fund.startMonth;
     const current = currentObservedYear * 12 + currentObservedMonth;
     
+    let totalDeposited = current >= start ? 0 : fund.initialDeposit;
+    let totalDisbursed = current >= start ? 0 : (fund.withdrawals || []).reduce((sum, w) => sum + w.amount, 0);
+    
     if (current >= start) {
        for (let m = start; m <= current; m++) {
           let maturingBuckets: { principal: number; parentId: string; rolledOverPrincipal?: number; rolledOverInterest?: number }[] = [];
@@ -192,12 +195,44 @@ export const SinkingFundModule: React.FC<SinkingFundModuleProps> = ({
             .find(s => (s.startYear * 12 + s.startMonth) <= (yr * 12 + mo))?.rateAnnual || 0.1;
           nonTermCash += nonTermCash * (monthlyNonTermRate / 100 / 12);
 
+          let maturedCashPool: { 
+             id: string; 
+             principal: number; 
+             interestAccrued: number; 
+             maturedTotal: number; 
+             termStart: number; 
+             termMonths: number; 
+             interestRateAnnual: number; 
+             periodKey: string;
+          }[] = [];
+
+          // 1. Kiểm tra đáo hạn trước khi rút tiền
+          buckets = buckets.filter(b => {
+             if (m - b.termStart === b.termMonths && m > b.termStart) {
+                const interest = b.principal * (b.interestRateAnnual / 100 / 12) * b.termMonths;
+                maturedCashPool.push({
+                   id: b.id,
+                   principal: b.principal,
+                   interestAccrued: interest,
+                   maturedTotal: b.principal + interest,
+                   termStart: b.termStart,
+                   termMonths: b.termMonths,
+                   interestRateAnnual: b.interestRateAnnual,
+                   periodKey: b.periodKey
+                });
+                return false;
+             }
+             return true;
+          });
+
+          // 2. Xử lý rút tiền
           const currentWithdrawals = (fund.withdrawals || []).filter(w => w.month === mo && w.year === yr);
           if (currentWithdrawals.length > 0) {
              currentWithdrawals.forEach(w => {
+                totalDisbursed += w.amount;
                 let amountToDeduct = w.amount;
                 
-                // 1. Ưu tiên rút tiền từ nonTermCash trước
+                // 2.1 Rút từ nonTermCash trước
                 if (nonTermCash >= amountToDeduct) {
                    nonTermCash -= amountToDeduct;
                    amountToDeduct = 0;
@@ -206,26 +241,38 @@ export const SinkingFundModule: React.FC<SinkingFundModuleProps> = ({
                    nonTermCash = 0;
                 }
                 
-                // 2. Nếu chưa đủ, rút từ các bucket, ưu tiên bucket sắp đáo hạn nhất
-                let newResidualBuckets: typeof buckets = [];
+                // 2.2 Rút từ maturedCashPool (sổ đã đáo hạn hưởng trọn lãi suất)
+                if (amountToDeduct > 0 && maturedCashPool.length > 0) {
+                   for (let i = 0; i < maturedCashPool.length && amountToDeduct > 0; i++) {
+                      const item = maturedCashPool[i];
+                      if (item.maturedTotal >= amountToDeduct) {
+                         item.maturedTotal -= amountToDeduct;
+                         amountToDeduct = 0;
+                      } else {
+                         amountToDeduct -= item.maturedTotal;
+                         item.maturedTotal = 0;
+                      }
+                   }
+                }
+                
+                // 2.3 Rút từ các sổ đang gửi chưa đáo hạn, ưu tiên sổ mới gửi nhất (termStart lớn nhất)
                 if (amountToDeduct > 0) {
-                   // Sắp xếp các bucket theo thời gian đáo hạn tăng dần (gần tới hạn nhất lên đầu)
-                   buckets.sort((a, b) => (a.termStart + a.termMonths) - (b.termStart + b.termMonths));
-                   
+                   buckets.sort((a, b) => b.termStart - a.termStart);
+                   let newResidualBuckets: typeof buckets = [];
                    for (let i = 0; i < buckets.length && amountToDeduct > 0; i++) {
                       if (buckets[i].principal >= amountToDeduct) {
                          const residual = buckets[i].principal - amountToDeduct;
-                         buckets[i].principal = 0; // Bucket này bị tất toán toàn bộ/phần
+                         buckets[i].principal = 0;
                          amountToDeduct = 0;
                          if (residual > 0) {
                             newResidualBuckets.push({
                                id: `residual_${buckets[i].id}_${m}`,
                                parentId: `Dôi dư từ kỳ T${((buckets[i].termStart-1)%12)+1}/${Math.floor((buckets[i].termStart-1)/12)}`,
                                principal: residual,
-                               termStart: m, // Kỳ hạn bắt đầu tính lại từ tháng tất toán
-                               termMonths: buckets[i].termMonths, // Giữ nguyên thời gian kỳ hạn
+                               termStart: m,
+                               termMonths: buckets[i].termMonths,
                                interestRateAnnual: buckets[i].interestRateAnnual,
-                               periodKey, // Theo period config hiện tại
+                               periodKey,
                                contribAmount: 0
                             });
                          }
@@ -234,44 +281,49 @@ export const SinkingFundModule: React.FC<SinkingFundModuleProps> = ({
                          buckets[i].principal = 0;
                       }
                    }
+                   buckets.push(...newResidualBuckets);
+                   buckets = buckets.filter(b => b.principal > 0);
                 }
-                buckets.push(...newResidualBuckets);
              });
-             buckets = buckets.filter(b => b.principal > 0);
           }
-          
-          buckets = buckets.filter(b => {
-             if (m - b.termStart === b.termMonths && m > b.termStart) {
-                const interest = b.principal * (b.interestRateAnnual / 100 / 12) * b.termMonths;
+
+          // 3. Xử lý tái tục cho phần dư còn lại của các sổ đáo hạn
+          maturedCashPool.forEach(item => {
+             if (item.maturedTotal > 0) {
                 let rolloverPrincipal = 0;
-                if (fund.rolloverStrategy === 'none') {
-                   nonTermCash += b.principal + interest;
-                } else if (fund.rolloverStrategy === 'principal_only') {
-                   rolloverPrincipal = b.principal;
-                   nonTermCash += interest;
+                const strat = fund.rolloverStrategy;
+                
+                const totalMaturedBeforeWithdrawal = item.principal + item.interestAccrued;
+                const principalRatio = totalMaturedBeforeWithdrawal > 0 ? (item.principal / totalMaturedBeforeWithdrawal) : 1;
+                const remainingPrincipal = item.maturedTotal * principalRatio;
+                const remainingInterest = item.maturedTotal - remainingPrincipal;
+
+                if (strat === 'none') {
+                   nonTermCash += item.maturedTotal;
+                } else if (strat === 'principal_only') {
+                   rolloverPrincipal = remainingPrincipal;
+                   nonTermCash += remainingInterest;
                 } else { // default or principal_and_interest
-                   rolloverPrincipal = b.principal + interest;
+                   rolloverPrincipal = item.maturedTotal;
                 }
                 
-                 if (rolloverPrincipal > 0) {
-                    const pId = `Tái tục từ kỳ T${((b.termStart-1)%12)+1}/${Math.floor((b.termStart-1)/12)}`;
-                    const existing = maturingBuckets.find(x => x.parentId === pId);
-                    if (existing) {
-                       existing.principal += rolloverPrincipal;
-                       existing.rolledOverPrincipal = (existing.rolledOverPrincipal || 0) + b.principal;
-                       existing.rolledOverInterest = (existing.rolledOverInterest || 0) + interest;
-                    } else {
-                       maturingBuckets.push({
-                          principal: rolloverPrincipal,
-                          parentId: pId,
-                          rolledOverPrincipal: b.principal,
-                          rolledOverInterest: interest
-                       });
-                    }
-                 }
-                return false;
+                if (rolloverPrincipal > 0) {
+                   const pId = `Tái tục từ kỳ T${((item.termStart-1)%12)+1}/${Math.floor((item.termStart-1)/12)}`;
+                   const existing = maturingBuckets.find(x => x.parentId === pId);
+                   if (existing) {
+                      existing.principal += rolloverPrincipal;
+                      existing.rolledOverPrincipal = (existing.rolledOverPrincipal || 0) + remainingPrincipal;
+                      existing.rolledOverInterest = (existing.rolledOverInterest || 0) + remainingInterest;
+                   } else {
+                      maturingBuckets.push({
+                         principal: rolloverPrincipal,
+                         parentId: pId,
+                         rolledOverPrincipal: remainingPrincipal,
+                         rolledOverInterest: remainingInterest
+                      });
+                   }
+                }
              }
-             return true;
           });
           
           let newContrib = 0;
@@ -283,46 +335,54 @@ export const SinkingFundModule: React.FC<SinkingFundModuleProps> = ({
 
           if (m >= start) {
              const lastNewBucket = [...buckets].reverse().find(b => !b.parentId && b.contribAmount !== undefined);
-             const defaultContrib = lastNewBucket ? lastNewBucket.contribAmount : fund.monthlyContribution;
+             const defaultContrib = (lastNewBucket?.contribAmount) ?? fund.monthlyContribution;
              periodContrib = periodCfg?.contribution !== undefined ? periodCfg.contribution : defaultContrib;
              newContrib += periodContrib;
 
-             const defaultTerm = lastBucket ? lastBucket.termMonths : (fund.termMonths || 1);
-             const defaultRate = lastBucket ? lastBucket.interestRateAnnual : (fund.interestRateAnnual || 5.5);
+             const defaultTerm = lastNewBucket ? (lastNewBucket.termMonths || fund.termMonths || 1) : (fund.termMonths || 1);
+             const defaultRate = lastNewBucket ? (lastNewBucket.interestRateAnnual || fund.interestRateAnnual || 5.5) : (fund.interestRateAnnual || 5.5);
              bTerm = periodCfg?.termMonths !== undefined ? periodCfg.termMonths : defaultTerm;
              bRate = periodCfg?.interestRateAnnual !== undefined ? periodCfg.interestRateAnnual : defaultRate;
           }
           
           if (bTerm > 0) {
-             if (newContrib > 0) {
-                buckets.push({ 
-                   id: `T${mo}-${yr}_new`,
-                   principal: newContrib, 
-                   termStart: m, 
-                   termMonths: bTerm, 
-                   interestRateAnnual: bRate, 
-                   periodKey, 
-                   contribAmount: periodContrib 
-                });
-             }
-             maturingBuckets.forEach((mb, idx) => {
-                buckets.push({
-                   id: `T${mo}-${yr}_rollover_${idx}`,
-                   parentId: mb.parentId,
-                   principal: mb.principal,
-                   termStart: m,
-                   termMonths: bTerm,
-                   interestRateAnnual: bRate,
-                   periodKey,
-                   contribAmount: 0,
-                   rolledOverPrincipal: mb.rolledOverPrincipal,
-                   rolledOverInterest: mb.rolledOverInterest
-                });
+             let combinedPrincipal = newContrib;
+             let totalRolledOverPrincipal = 0;
+             let totalRolledOverInterest = 0;
+             let hasRollover = false;
+             let parentIds: string[] = [];
+
+             maturingBuckets.forEach((mb) => {
+                 combinedPrincipal += mb.principal;
+                 totalRolledOverPrincipal += (mb.rolledOverPrincipal || 0);
+                 totalRolledOverInterest += (mb.rolledOverInterest || 0);
+                 if (mb.parentId && !parentIds.includes(mb.parentId)) {
+                     parentIds.push(mb.parentId);
+                 }
+                 hasRollover = true;
              });
+
+             if (combinedPrincipal > 0) {
+                 buckets.push({
+                     id: `T${mo}-${yr}_combined`,
+                     parentId: hasRollover ? (parentIds.length > 0 ? parentIds.join(', ') : `Tái tục kỳ trước`) : undefined,
+                     principal: combinedPrincipal,
+                     termStart: m,
+                     termMonths: bTerm,
+                     interestRateAnnual: bRate,
+                     periodKey,
+                     contribAmount: periodContrib,
+                     rolledOverPrincipal: hasRollover ? totalRolledOverPrincipal : undefined,
+                     rolledOverInterest: hasRollover ? totalRolledOverInterest : undefined
+                 });
+             }
           } else if (bTerm === 0) {
-             nonTermCash += newContrib + maturingBuckets.reduce((sum, b) => sum + b.principal, 0);
-          }
-       }
+              let maturingSum = 0;
+              maturingBuckets.forEach(mb => maturingSum += mb.principal);
+              nonTermCash += newContrib + maturingSum;
+           }
+           totalDeposited += newContrib;
+        }
     }
     
     let totalNonTermInterestForActiveBuckets = 0;
@@ -336,17 +396,7 @@ export const SinkingFundModule: React.FC<SinkingFundModuleProps> = ({
     });
 
     const bal = buckets.reduce((sum, b) => sum + b.principal, 0) + nonTermCash + totalNonTermInterestForActiveBuckets;
-    let totalDeposited = fund.initialDeposit;
-    buckets.forEach(b => {
-      if (b.contribAmount && b.contribAmount > 0) {
-        totalDeposited += b.contribAmount;
-      }
-    });
-
-    let totalDisbursed = 0;
-    if (fund.withdrawals && fund.withdrawals.length > 0) {
-      totalDisbursed = fund.withdrawals.reduce((sum, w) => sum + w.amount, 0);
-    }
+     // totalDeposited and totalDisbursed are accumulated accurately during the simulation loop.
 
     return { 
        balance: bal, 
@@ -581,7 +631,7 @@ export const SinkingFundModule: React.FC<SinkingFundModuleProps> = ({
                          </div>
                          <div className="flex justify-between border-b border-gray-100 pb-1">
                             <span className="text-family-textMuted">Lãi cộng dồn:</span>
-                            <span className="font-semibold text-emerald-600">+{formatTableMoneyVNDMillion(balance - (totalDeposited || 0))}</span>
+                             <span className="font-semibold text-emerald-600">{(balance - (totalDeposited || 0)) >= 0 ? '+' : ''}{formatTableMoneyVNDMillion(balance - (totalDeposited || 0))}</span>
                          </div>
                          {nonTermCash > 0 && (
                             <div className="flex justify-between border-b border-gray-100 pb-1 bg-yellow-50 px-1 rounded">
@@ -606,56 +656,87 @@ export const SinkingFundModule: React.FC<SinkingFundModuleProps> = ({
                                                {b.parentId && <span className="text-[9px] text-blue-600 bg-blue-50 px-1 py-0.5 rounded-sm mt-0.5">{b.parentId}</span>}
                                              </div>
                                              {b.parentId && b.rolledOverPrincipal === undefined ? (
-                                                <div className="flex items-center">
-                                                   <span className="font-bold text-family-accent text-[12px]">{formatTableMoneyVNDMillion(b.principal)}</span>
-                                                </div>
-                                             ) : (
-                                                <div className="flex items-center flex-wrap gap-1">
-                                                   {b.rolledOverPrincipal !== undefined && (
-                                                      <div className="flex items-center">
-                                                         <span className="font-bold text-family-accent text-[12px]">{formatTableMoneyVNDMillion(b.principal)}</span>
-                                                      </div>
-                                                   )}
-                                                   <div className="flex items-center">
-                                                      {b.rolledOverPrincipal !== undefined && (
-                                                         <span className="text-[10px] text-family-textMuted mr-1 ml-1 whitespace-nowrap">
-                                                            (Gồm {formatTableMoneyVNDMillion(b.rolledOverPrincipal)} gốc cũ + {formatTableMoneyVNDMillion(b.rolledOverInterest)} lãi +
-                                                         </span>
-                                                      )}
-                                                      <input
-                                                         type="number"
-                                                         step="0.1"
-                                                         min="0"
-                                                       value={fund.periodConfigs?.[pKey]?.contribution !== undefined ? fund.periodConfigs[pKey].contribution : fund.monthlyContribution}
-                                                       onChange={(e) => {
-                                                          const newContrib = safeNumber(Number(e.target.value), 0);
-                                                          const updatedConfigs = {
-                                                             ...(fund.periodConfigs || {}),
-                                                             [pKey]: {
-                                                                ...(fund.periodConfigs?.[pKey] || {}),
-                                                                contribution: newContrib,
-                                                             }
-                                                          };
-                                                          updateSinkingFund({
-                                                             ...fund,
-                                                             periodConfigs: updatedConfigs,
-                                                          });
-                                                       }}
-                                                       className="w-14 text-right text-[11px] bg-white border border-family-accent/30 rounded px-1 py-0.5 font-bold text-family-accent focus:outline-none focus:ring-1 focus:ring-family-accent"
-                                                    />
-                                                    <span className="font-bold text-family-accent text-[11px] ml-1">triệu</span>
-                                                    {b.rolledOverPrincipal !== undefined ? (
-                                                       <span className="text-[10px] text-family-textMuted ml-1 whitespace-nowrap">định kỳ)</span>
-                                                    ) : (
-                                                       b.principal > (fund.periodConfigs?.[pKey]?.contribution ?? fund.monthlyContribution) + 0.01 && (
-                                                          <span className="text-[9px] text-family-textMuted ml-0.5 whitespace-nowrap">
-                                                             (Gồm {formatTableMoneyVNDMillion(fund.initialDeposit)} gốc ban đầu + {formatTableMoneyVNDMillion(fund.periodConfigs?.[pKey]?.contribution ?? fund.monthlyContribution)} định kỳ)
-                                                          </span>
-                                                       )
+                                                 <div className="flex items-center">
+                                                    <span className="font-bold text-family-accent text-[12px] bg-orange-50/50 px-2 py-0.5 rounded border border-orange-100">{formatTableMoneyVNDMillion(b.principal)}</span>
+                                                 </div>
+                                              ) : (
+                                                 <div className="flex items-center flex-wrap gap-1.5">
+                                                    {(b.rolledOverPrincipal !== undefined || b.principal > (fund.periodConfigs?.[pKey]?.contribution ?? fund.monthlyContribution) + 0.01) && (
+                                                       <div className="flex items-center mr-1">
+                                                          <span className="font-bold text-family-accent text-[12px] bg-orange-50 px-2 py-0.5 rounded border border-orange-100">{formatTableMoneyVNDMillion(b.principal)}</span>
+                                                       </div>
                                                     )}
-                                                   </div>
-                                                </div>
-                                             )}
+                                                    {(b.rolledOverPrincipal !== undefined || b.principal > (fund.periodConfigs?.[pKey]?.contribution ?? fund.monthlyContribution) + 0.01) ? (
+                                                       <div className="text-[11px] text-slate-600 bg-slate-50 px-2 py-1 rounded-md border border-slate-100 flex items-center gap-1 flex-wrap">
+                                                          <span className="text-gray-400">Cấu phần:</span>
+                                                          {b.rolledOverPrincipal !== undefined ? (
+                                                             <>
+                                                                <span className="font-bold text-slate-700">{formatTableMoneyVNDMillion(b.rolledOverPrincipal)}</span>
+                                                                <span className="text-gray-400">gốc cũ</span>
+                                                                <span className="text-gray-300 font-light">+</span>
+                                                                <span className="font-bold text-emerald-600">{formatTableMoneyVNDMillion(b.rolledOverInterest)}</span>
+                                                                <span className="text-emerald-500 font-medium">lãi</span>
+                                                             </>
+                                                          ) : (
+                                                             <>
+                                                                <span className="font-bold text-slate-700">{formatTableMoneyVNDMillion(fund.initialDeposit)}</span>
+                                                                <span className="text-gray-400">gốc ban đầu</span>
+                                                             </>
+                                                          )}
+                                                          <span className="text-gray-300 font-light">+</span>
+                                                          <div className="flex items-center gap-1 bg-white px-1.5 py-0.5 rounded border border-slate-200 shadow-sm">
+                                                             <input
+                                                                type="number"
+                                                                step="0.1"
+                                                                min="0"
+                                                                value={fund.periodConfigs?.[pKey]?.contribution !== undefined ? fund.periodConfigs[pKey].contribution : fund.monthlyContribution}
+                                                                onChange={(e) => {
+                                                                   const newContrib = safeNumber(Number(e.target.value), 0);
+                                                                   const updatedConfigs = {
+                                                                      ...(fund.periodConfigs || {}),
+                                                                      [pKey]: {
+                                                                         ...(fund.periodConfigs?.[pKey] || {}),
+                                                                         contribution: newContrib,
+                                                                      }
+                                                                   };
+                                                                   updateSinkingFund({
+                                                                      ...fund,
+                                                                      periodConfigs: updatedConfigs,
+                                                                   });
+                                                                }}
+                                                                className="w-10 text-right text-[11px] font-bold text-family-accent bg-transparent focus:outline-none"
+                                                             />
+                                                             <span className="text-family-accent font-bold text-[10px]">tr định kỳ</span>
+                                                          </div>
+                                                       </div>
+                                                    ) : (
+                                                       <div className="flex items-center gap-1.5 bg-slate-50 px-2 py-1 rounded-md border border-slate-100">
+                                                          <input
+                                                             type="number"
+                                                             step="0.1"
+                                                             min="0"
+                                                             value={fund.periodConfigs?.[pKey]?.contribution !== undefined ? fund.periodConfigs[pKey].contribution : fund.monthlyContribution}
+                                                             onChange={(e) => {
+                                                                const newContrib = safeNumber(Number(e.target.value), 0);
+                                                                const updatedConfigs = {
+                                                                   ...(fund.periodConfigs || {}),
+                                                                   [pKey]: {
+                                                                      ...(fund.periodConfigs?.[pKey] || {}),
+                                                                      contribution: newContrib,
+                                                                   }
+                                                                };
+                                                                updateSinkingFund({
+                                                                   ...fund,
+                                                                   periodConfigs: updatedConfigs,
+                                                                });
+                                                             }}
+                                                             className="w-14 text-right text-[11px] bg-white border border-family-accent/30 rounded px-1.5 py-0.5 font-bold text-family-accent focus:outline-none focus:ring-1 focus:ring-family-accent"
+                                                          />
+                                                          <span className="font-bold text-family-accent text-[11px]">triệu định kỳ</span>
+                                                       </div>
+                                                    )}
+                                                 </div>
+                                              )}
                                         </div>
                                         
                                         <div className="flex items-center gap-3 text-xs">
@@ -807,47 +888,109 @@ export const SinkingFundModule: React.FC<SinkingFundModuleProps> = ({
                       {(() => {
                         if (settleMode === 'partial') {
                           const wAmt = partialWithdrawType === 'amount' ? partialWithdrawValue : (balance * partialWithdrawValue / 100);
-                          if (wAmt > 0 && wAmt <= balance) {
-                            let breakdownNonTerm = 0;
-                            const breakdownBuckets: any[] = [];
-                            let rem = wAmt;
-                            
-                            const sim = getFundBalance(fund.id);
-                            let simNonTerm = sim.nonTermCash || 0;
-                            if (simNonTerm >= rem) {
-                               breakdownNonTerm = rem;
-                               rem = 0;
-                            } else {
-                               breakdownNonTerm = simNonTerm;
-                               rem -= simNonTerm;
-                            }
-                            
-                            if (rem > 0) {
-                               const sorted = [...sim.buckets].sort((a: any, b: any) => (a.termStart + a.termMonths) - (b.termStart + b.termMonths));
-                               for (const b of sorted) {
-                                  if (rem <= 0) break;
-                                  const deduct = Math.min(b.principal, rem);
-                                  breakdownBuckets.push({
-                                     periodKey: b.periodKey || `${Math.floor((b.termStart-1)/12)}-${String(((b.termStart-1)%12)+1).padStart(2,'0')}`,
-                                     deduct
-                                  });
-                                  rem -= deduct;
-                               }
-                            }
-                            
-                            return (
-                               <div className="w-full mt-3 p-2 bg-yellow-50 border border-yellow-200 rounded-md">
-                                  <p className="text-[11px] font-bold text-yellow-800 mb-1">Cơ chế tất toán thông minh sẽ tự động ưu tiên rút:</p>
-                                  <ul className="list-disc pl-4 text-[10px] text-yellow-800 space-y-0.5">
-                                     {breakdownNonTerm > 0 && <li>Từ phần không kỳ hạn: <strong>{formatTableMoneyVNDMillion(breakdownNonTerm)}</strong></li>}
-                                     {breakdownBuckets.map((b: any, i: number) => (
-                                        <li key={i}>Tất toán từ kỳ hạn T{b.periodKey.split('-')[1]}/{b.periodKey.split('-')[0]}: <strong>{formatTableMoneyVNDMillion(b.deduct)}</strong></li>
-                                     ))}
-                                     {breakdownBuckets.length > 0 && <li>Phần dôi ra của các kỳ hạn trên (nếu có) vẫn tiếp tục duy trì kỳ hạn cũ.</li>}
-                                  </ul>
-                               </div>
-                            );
-                          }
+                           if (wAmt > 0 && wAmt <= balance) {
+                             const sim = getFundBalance(fund.id);
+                             const targetM = disburseForm.disbursedYear * 12 + disburseForm.disbursedMonth;
+
+                             let simNonTerm = sim.nonTermCash || 0;
+                             
+                             // 1. Phân loại các bucket tại tháng chốt
+                             const maturedBuckets: any[] = [];
+                             const unmaturedBuckets: any[] = [];
+                             
+                             sim.buckets.forEach((b: any) => {
+                                const bEnd = b.termStart + b.termMonths;
+                                if (targetM === bEnd) {
+                                   maturedBuckets.push(b);
+                                } else {
+                                   unmaturedBuckets.push(b);
+                                }
+                             });
+
+                             let breakdownNonTerm = 0;
+                             const breakdownMaturedBuckets: any[] = [];
+                             const breakdownUnmaturedBuckets: any[] = [];
+                             let rem = wAmt;
+
+                             // 2.1 Rút từ nonTermCash trước
+                             if (simNonTerm >= rem) {
+                                breakdownNonTerm = rem;
+                                rem = 0;
+                             } else {
+                                breakdownNonTerm = simNonTerm;
+                                rem -= simNonTerm;
+                             }
+
+                             // 2.2 Rút từ các sổ đã đáo hạn (maturedBuckets) - được nhận trọn lãi
+                             if (rem > 0 && maturedBuckets.length > 0) {
+                                for (const b of maturedBuckets) {
+                                   if (rem <= 0) break;
+                                   const interest = b.principal * (b.interestRateAnnual / 100 / 12) * b.termMonths;
+                                   const maturedTotal = b.principal + interest;
+                                   const deduct = Math.min(maturedTotal, rem);
+                                   
+                                   breakdownMaturedBuckets.push({
+                                      periodKey: b.periodKey || `${Math.floor((b.termStart-1)/12)}-${String(((b.termStart-1)%12)+1).padStart(2,'0')}`,
+                                      deduct
+                                   });
+                                   rem -= deduct;
+                                }
+                             }
+
+                             // 2.3 Rút từ các sổ chưa đáo hạn (unmaturedBuckets) - ưu tiên sổ mới gửi nhất (termStart lớn nhất)
+                             if (rem > 0 && unmaturedBuckets.length > 0) {
+                                // Sắp xếp sổ mới gửi nhất lên đầu
+                                const sortedUnmatured = [...unmaturedBuckets].sort((a: any, b: any) => b.termStart - a.termStart);
+                                for (const b of sortedUnmatured) {
+                                   if (rem <= 0) break;
+                                   const deduct = Math.min(b.principal, rem);
+                                   
+                                   breakdownUnmaturedBuckets.push({
+                                      periodKey: b.periodKey || `${Math.floor((b.termStart-1)/12)}-${String(((b.termStart-1)%12)+1).padStart(2,'0')}`,
+                                      deduct
+                                   });
+                                   rem -= deduct;
+                                }
+                             }
+                             
+                             return (
+                                <div className="w-full mt-3 p-3 bg-yellow-50/70 border border-yellow-200/50 rounded-xl text-xs space-y-2">
+                                   <div className="flex items-center gap-1 text-yellow-800 font-bold text-[11px] mb-1">
+                                      <span>💡</span>
+                                      <span>Cơ chế tất toán thông minh sẽ tự động ưu tiên rút theo thứ tự:</span>
+                                   </div>
+                                   
+                                   <ul className="list-none pl-1 text-[11px] text-yellow-900 space-y-1">
+                                      {breakdownNonTerm > 0 && (
+                                         <li className="flex items-center gap-1.5">
+                                            <span className="text-yellow-600">✔</span>
+                                            <span>Rút từ tiền không kỳ hạn: <strong>{formatTableMoneyVNDMillion(breakdownNonTerm)}</strong></span>
+                                            <span className="text-[10px] text-gray-500 font-normal bg-gray-100 px-1 py-0.5 rounded">(Không ảnh hưởng đến lãi các sổ khác)</span>
+                                         </li>
+                                      )}
+                                      {breakdownMaturedBuckets.map((b: any, i: number) => (
+                                         <li key={i} className="flex items-center gap-1.5">
+                                            <span className="text-emerald-600">✔</span>
+                                            <span>Tất toán từ kỳ hạn T{b.periodKey.split('-')[1]}/{b.periodKey.split('-')[0]}: <strong>{formatTableMoneyVNDMillion(b.deduct)}</strong></span>
+                                            <span className="text-[10px] text-emerald-700 font-semibold bg-emerald-50 px-1 py-0.5 rounded border border-emerald-100">Đã đáo hạn - Nhận trọn lãi</span>
+                                         </li>
+                                      ))}
+                                      {breakdownUnmaturedBuckets.map((b: any, i: number) => (
+                                         <li key={i} className="flex items-center gap-1.5 flex-wrap">
+                                            <span className="text-amber-600">⚠</span>
+                                            <span>Tất toán trước hạn kỳ T{b.periodKey.split('-')[1]}/{b.periodKey.split('-')[0]}: <strong>{formatTableMoneyVNDMillion(b.deduct)}</strong></span>
+                                            <span className="text-[10px] text-amber-700 font-medium bg-amber-50 px-1 py-0.5 rounded border border-amber-100">Mới gửi nhất - Rút trước để giảm thiểu mất lãi tích lũy</span>
+                                         </li>
+                                      ))}
+                                      {(breakdownMaturedBuckets.length > 0 || breakdownUnmaturedBuckets.length > 0) && (
+                                         <li className="text-[10px] text-slate-500 font-normal italic pt-1 border-t border-yellow-200/40">
+                                            * Phần dôi ra của các kỳ hạn trên (nếu có) vẫn tiếp tục được tái tục và duy trì kỳ hạn gửi ban đầu.
+                                         </li>
+                                      )}
+                                   </ul>
+                                </div>
+                             );
+                           }
                         }
                         return null;
                       })()}

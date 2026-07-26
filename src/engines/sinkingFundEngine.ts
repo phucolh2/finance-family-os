@@ -25,12 +25,30 @@ export function simulateSinkingFund(fund: SinkingFund, targetMonth?: number, tar
      const periodKey = `${yr}-${String(mo).padStart(2, '0')}`;
      const periodCfg = fund.periodConfigs?.[periodKey];
      let maturingBuckets: any[] = [];
+     let maturedCashPool: any[] = [];
 
+     // 1. Kiểm tra đáo hạn trước khi rút tiền
+     buckets = buckets.filter(b => {
+        if (m - b.termStart === b.termMonths && m > b.termStart) {
+           const interest = b.principal * ((b.interestRateAnnual || 0) / 100 / 12) * b.termMonths;
+           maturedCashPool.push({
+              ...b,
+              maturedTotal: b.principal + interest,
+              interestAccrued: interest
+           });
+           return false;
+        }
+        return true;
+     });
+
+     // 2. Xử lý rút tiền
      const withdrawalsThisMonth = (fund.withdrawals || []).filter(w => w.month === mo && w.year === yr);
      if (withdrawalsThisMonth.length > 0) {
         withdrawalsThisMonth.forEach(w => {
            let amountToDeduct = w.amount;
            totalDeposited -= w.amount;
+           
+           // 2.1 Rút từ nonTermCash trước
            if (nonTermCash >= amountToDeduct) {
               nonTermCash -= amountToDeduct;
               amountToDeduct = 0;
@@ -38,9 +56,25 @@ export function simulateSinkingFund(fund: SinkingFund, targetMonth?: number, tar
               amountToDeduct -= nonTermCash;
               nonTermCash = 0;
            }
-           let newResidualBuckets: any[] = [];
+           
+           // 2.2 Rút từ maturedCashPool (sổ đã đáo hạn hưởng trọn lãi suất)
+           if (amountToDeduct > 0 && maturedCashPool.length > 0) {
+              for (let i = 0; i < maturedCashPool.length && amountToDeduct > 0; i++) {
+                 const item = maturedCashPool[i];
+                 if (item.maturedTotal >= amountToDeduct) {
+                    item.maturedTotal -= amountToDeduct;
+                    amountToDeduct = 0;
+                 } else {
+                    amountToDeduct -= item.maturedTotal;
+                    item.maturedTotal = 0;
+                 }
+              }
+           }
+           
+           // 2.3 Rút từ các sổ đang gửi chưa đáo hạn, ưu tiên sổ mới gửi nhất (termStart lớn nhất)
            if (amountToDeduct > 0) {
-              buckets.sort((a, b) => (a.termStart + a.termMonths) - (b.termStart + b.termMonths));
+              buckets.sort((a, b) => b.termStart - a.termStart);
+              let newResidualBuckets: any[] = [];
               for (let i = 0; i < buckets.length && amountToDeduct > 0; i++) {
                  if (buckets[i].principal >= amountToDeduct) {
                     const residual = buckets[i].principal - amountToDeduct;
@@ -53,9 +87,7 @@ export function simulateSinkingFund(fund: SinkingFund, targetMonth?: number, tar
                           parentId: `Dôi dư từ kỳ T${((buckets[i].termStart-1)%12)+1}/${Math.floor((buckets[i].termStart-1)/12)}`,
                           principal: residual,
                           termStart: m,
-                          contribAmount: 0,
-                          depositBank: buckets[i].depositBank,
-                          rolloverStrategy: buckets[i].rolloverStrategy
+                          contribAmount: 0
                        });
                     }
                  } else {
@@ -63,39 +95,45 @@ export function simulateSinkingFund(fund: SinkingFund, targetMonth?: number, tar
                     buckets[i].principal = 0;
                  }
               }
+              buckets.push(...newResidualBuckets);
+              buckets = buckets.filter(b => b.principal > 0);
            }
-           buckets.push(...newResidualBuckets);
         });
-        buckets = buckets.filter(b => b.principal > 0);
      }
 
-     buckets = buckets.filter(b => {
-        if (m - b.termStart === b.termMonths && m > b.termStart) {
-           const interest = b.principal * ((b.interestRateAnnual || 0) / 100 / 12) * b.termMonths;
+     // 3. Xử lý tái tục cho phần dư còn lại của các sổ đáo hạn
+     maturedCashPool.forEach(item => {
+        if (item.maturedTotal > 0) {
            let rolloverPrincipal = 0;
-           const strat = b.rolloverStrategy || fund.rolloverStrategy;
+           const strat = item.rolloverStrategy || fund.rolloverStrategy;
+           
+           const totalMaturedBeforeWithdrawal = item.principal + item.interestAccrued;
+           const principalRatio = totalMaturedBeforeWithdrawal > 0 ? (item.principal / totalMaturedBeforeWithdrawal) : 1;
+           const remainingPrincipal = item.maturedTotal * principalRatio;
+           const remainingInterest = item.maturedTotal - remainingPrincipal;
+
            if (strat === 'none') {
-              nonTermCash += b.principal + interest;
+              nonTermCash += item.maturedTotal;
            } else if (strat === 'principal_only') {
-              rolloverPrincipal = b.principal;
-              nonTermCash += interest;
+              rolloverPrincipal = remainingPrincipal;
+              nonTermCash += remainingInterest;
            } else if (strat === 'return_to_source') {
-              autoRefundsByMonth[m] = (autoRefundsByMonth[m] || 0) + b.principal + interest;
-           } else {
-              rolloverPrincipal = b.principal + interest;
+              autoRefundsByMonth[m] = (autoRefundsByMonth[m] || 0) + item.maturedTotal;
+           } else { // principal_and_interest
+              rolloverPrincipal = item.maturedTotal;
            }
 
            if (rolloverPrincipal > 0) {
               maturingBuckets.push({
                  principal: rolloverPrincipal,
-                 parentId: `Tái tục từ kỳ T${((b.termStart-1)%12)+1}/${Math.floor((b.termStart-1)/12)}`,
-                 depositBank: b.depositBank,
-                 rolloverStrategy: b.rolloverStrategy
+                 parentId: `Tái tục từ kỳ T${((item.termStart-1)%12)+1}/${Math.floor((item.termStart-1)/12)}`,
+                 depositBank: item.depositBank,
+                 rolloverStrategy: item.rolloverStrategy,
+                 rolledOverPrincipal: remainingPrincipal,
+                 rolledOverInterest: remainingInterest
               });
            }
-           return false;
         }
-        return true;
      });
 
      let newContrib = 0;
