@@ -6,7 +6,7 @@ import { HelpTooltip } from '../ui/HelpTooltip';
 import { useLiquidityBreakdown } from '../../hooks/useLiquidityBreakdown';
 
 export const LiquidityBreakdownTable: React.FC = () => {
-  const { liquidityBreakdownData, totalBudgetSum, totalActualSum, totalDeductedSum, totalRemainingSum, selectedPeriodKey } = useLiquidityBreakdown();
+  const { liquidityBreakdownData, totalBudgetSum, totalActualSum, totalDeductedSum, totalFlexibleSum, totalRemainingSum, selectedPeriodKey } = useLiquidityBreakdown();
   const [expandedNodes, setExpandedNodes] = useState<Record<string, boolean>>({});
 
   const toggleExpand = (id: string) => {
@@ -31,11 +31,12 @@ export const LiquidityBreakdownTable: React.FC = () => {
           <table className="w-full text-left text-sm border-collapse">
             <thead>
               <tr className="border-b border-family-accent/15 text-family-textMuted font-bold bg-family-bgDark/40">
-                <th className="p-3 w-[50%]">Nhóm / Hạng mục</th>
+                <th className="p-3 w-[45%]">Nhóm / Hạng mục</th>
                 <th className="p-3 text-right">Ngân sách (tr)</th>
                 <th className="p-3 text-right">Đã chi (tr)</th>
                 <th className="p-3 text-right text-orange-500" title="Chuyển vào Quỹ tích lũy">Trích quỹ (tr)</th>
-                <th className="p-3 text-right text-emerald-600">Thực dư (tr)</th>
+                <th className="p-3 text-right text-red-500" title="Khoản chi linh hoạt">Chi linh hoạt (tr)</th>
+                <th className="p-3 text-right text-emerald-600">Còn lại (tr)</th>
               </tr>
             </thead>
             <tbody>
@@ -66,8 +67,11 @@ export const LiquidityBreakdownTable: React.FC = () => {
                       <td className="p-3 text-right text-orange-500 font-semibold bg-orange-50/30">
                         {group.deducted > 0 ? `-${formatTableMoneyVNDMillion(group.deducted)}` : '-'}
                       </td>
-                      <td className="p-3 text-right font-bold text-emerald-600 bg-emerald-50/30">
-                        +{formatTableMoneyVNDMillion(group.remaining)}
+                      <td className="p-3 text-right text-red-500 font-semibold bg-red-50/20">
+                        {group.flexible > 0 ? `-${formatTableMoneyVNDMillion(group.flexible)}` : '-'}
+                      </td>
+                      <td className={`p-3 text-right font-bold ${group.remaining >= 0 ? 'text-emerald-600 bg-emerald-50/30' : 'text-red-600 bg-red-50/30'}`}>
+                        {group.remaining > 0 ? '+' : ''}{formatTableMoneyVNDMillion(group.remaining)}
                       </td>
                     </tr>
                     
@@ -86,8 +90,11 @@ export const LiquidityBreakdownTable: React.FC = () => {
                         <td className="p-2 text-right text-orange-400">
                           -
                         </td>
-                        <td className="p-2 text-right font-semibold text-emerald-600">
-                          +{formatTableMoneyVNDMillion(child.remaining)}
+                        <td className="p-2 text-right text-red-400">
+                          -
+                        </td>
+                        <td className={`p-2 text-right font-semibold ${child.remaining >= 0 ? 'text-emerald-600' : 'text-red-500'}`}>
+                          {child.remaining > 0 ? '+' : ''}{formatTableMoneyVNDMillion(child.remaining)}
                         </td>
                       </tr>
                     ))}
@@ -109,8 +116,11 @@ export const LiquidityBreakdownTable: React.FC = () => {
                 <td className="px-3 py-4 text-right text-sm font-bold text-orange-500">
                   -{formatTableMoneyVNDMillion(totalDeductedSum)}
                 </td>
-                <td className="px-3 py-4 text-right text-sm font-bold text-emerald-600">
-                  +{formatTableMoneyVNDMillion(totalRemainingSum)}
+                <td className="px-3 py-4 text-right text-sm font-bold text-red-500">
+                  -{formatTableMoneyVNDMillion(totalFlexibleSum)}
+                </td>
+                <td className={`px-3 py-4 text-right text-sm font-bold ${totalRemainingSum >= 0 ? 'text-emerald-600' : 'text-red-600'}`}>
+                  {totalRemainingSum > 0 ? '+' : ''}{formatTableMoneyVNDMillion(totalRemainingSum)}
                 </td>
               </tr>
             </tbody>

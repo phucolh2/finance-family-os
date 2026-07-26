@@ -75,11 +75,20 @@ export const useLiquidityBreakdown = () => {
        }
     });
 
+    const flexibleByGroup: Record<string, number> = {};
+    (state.lifeEvents || []).forEach(event => {
+      if (event.month === selMonth && event.year === selYear) {
+        // flexible expense source matches the groupId
+        flexibleByGroup[event.source] = (flexibleByGroup[event.source] || 0) + event.amount;
+      }
+    });
+
     return expenseTree.map((g: any) => {
       const sum = expenseData.summaryByGroup[g.groupId] || { totalBudget: 0, totalActual: 0 };
       const rawRemaining = Math.max(0, sum.totalBudget - sum.totalActual);
-      const deducted = deductedByGroup[g.id] || 0;
-      const remaining = Math.max(0, rawRemaining - deducted);
+      const deducted = deductedByGroup[g.groupId] || 0;
+      const flexible = flexibleByGroup[g.groupId] || 0;
+      const remaining = rawRemaining - deducted - flexible;
       
       const children = (g.children || []).map((child: any) => {
         const catSum = expenseData.summaryByCategory?.[child.id] || { totalBudget: 0, totalActual: 0 };
@@ -87,10 +96,11 @@ export const useLiquidityBreakdown = () => {
         return {
           id: child.id,
           name: child.name,
-          remaining: childRemaining, // Children don't have sinking funds directly
+        remaining: childRemaining, // Children don't have sinking funds directly
           totalBudget: catSum.totalBudget,
           totalActual: catSum.totalActual,
           deducted: 0,
+          flexible: 0,
           sortOrder: child.sortOrder || 0
         };
       }).sort((a: any, b: any) => a.sortOrder - b.sortOrder);
@@ -100,17 +110,19 @@ export const useLiquidityBreakdown = () => {
         name: g.name,
         remaining,
         deducted,
+        flexible,
         totalBudget: sum.totalBudget,
         totalActual: sum.totalActual,
         sortOrder: g.sortOrder || 0,
         children
       };
     }).sort((a: any, b: any) => a.sortOrder - b.sortOrder);
-  }, [activeBudget, expenseData.summaryByGroup, expenseData.summaryByCategory, state.sinkingFunds, activePeriodKey]);
+  }, [activeBudget, expenseData.summaryByGroup, expenseData.summaryByCategory, state.sinkingFunds, state.lifeEvents, activePeriodKey]);
 
   const totalBudgetSum = useMemo(() => liquidityBreakdownData.reduce((sum, g) => sum + g.totalBudget, 0), [liquidityBreakdownData]);
   const totalActualSum = useMemo(() => liquidityBreakdownData.reduce((sum, g) => sum + g.totalActual, 0), [liquidityBreakdownData]);
   const totalDeductedSum = useMemo(() => liquidityBreakdownData.reduce((sum, g) => sum + g.deducted, 0), [liquidityBreakdownData]);
+  const totalFlexibleSum = useMemo(() => liquidityBreakdownData.reduce((sum, g) => sum + g.flexible, 0), [liquidityBreakdownData]);
   const totalRemainingSum = useMemo(() => liquidityBreakdownData.reduce((sum, g) => sum + g.remaining, 0), [liquidityBreakdownData]);
 
   return {
@@ -118,6 +130,7 @@ export const useLiquidityBreakdown = () => {
     totalBudgetSum,
     totalActualSum,
     totalDeductedSum,
+    totalFlexibleSum,
     totalRemainingSum,
     selectedPeriodKey: activePeriodKey
   };
