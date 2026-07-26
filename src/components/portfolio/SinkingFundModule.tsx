@@ -671,15 +671,22 @@ export const SinkingFundModule: React.FC<SinkingFundModuleProps> = ({
                                             if (parts.length === 2) {
                                                const y = Number(parts[0]);
                                                const m = Number(parts[1]);
-                                               displayBuckets.push({
-                                                  id: `dummy_${pKey}`,
-                                                  principal: 0,
-                                                  termStart: y * 12 + m,
-                                                  termMonths: fund.periodConfigs[pKey].termMonths ?? 6,
-                                                  interestRateAnnual: fund.periodConfigs[pKey].interestRateAnnual ?? fund.interestRateAnnual ?? 0,
-                                                  periodKey: pKey,
-                                                  contribAmount: fund.periodConfigs[pKey].contribution ?? 0
-                                               });
+                                               const termStart = y * 12 + m;
+                                               const termMonths = fund.periodConfigs[pKey].termMonths ?? 6;
+                                               const obsIdx = currentObservedYear * 12 + currentObservedMonth;
+                                               
+                                               // Only show dummy bucket if it hasn't matured yet relative to the observed month
+                                               if (obsIdx < termStart + termMonths) {
+                                                   displayBuckets.push({
+                                                      id: `dummy_${pKey}`,
+                                                      principal: 0,
+                                                      termStart: termStart,
+                                                      termMonths: termMonths,
+                                                      interestRateAnnual: fund.periodConfigs[pKey].interestRateAnnual ?? fund.interestRateAnnual ?? 0,
+                                                      periodKey: pKey,
+                                                      contribAmount: fund.periodConfigs[pKey].contribution ?? 0
+                                                   });
+                                               }
                                             }
                                          }
                                       });
