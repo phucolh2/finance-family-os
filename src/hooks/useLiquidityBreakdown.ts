@@ -122,7 +122,7 @@ export const useLiquidityBreakdown = (mode: 'monthly' | 'cumulative' = 'monthly'
 
 
       const rawRemaining = Math.max(0, totalBudget - totalActual);
-      const deducted = deductedByGroup[g.groupId] || 0;
+      const deducted = deductedByGroup[g.id] || 0;
       const remaining = rawRemaining - deducted - flexible;
       
       const children = (g.children || []).map((child: any) => {
