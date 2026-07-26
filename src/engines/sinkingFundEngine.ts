@@ -13,11 +13,8 @@ export function simulateSinkingFund(fund: SinkingFund, targetMonth?: number, tar
   const autoRefundsByMonth: Record<number, number> = {};
   let totalDeposited = 0;
 
-  let currentMonthlyContrib = fund.monthlyContribution || 0;
-  let currentTerm = fund.termMonths || 1;
   let currentBank = fund.depositBank;
   let currentStrategy = fund.rolloverStrategy;
-  let currentRate = fund.interestRateAnnual || 5.5;
 
   for (let m = start; m <= end; m++) {
      const yr = Math.floor((m - 1) / 12);
@@ -139,27 +136,15 @@ export function simulateSinkingFund(fund: SinkingFund, targetMonth?: number, tar
      let newContrib = 0;
      if (m === start) newContrib += (fund.initialDeposit || 0);
 
-     let periodContrib = 0;
-     let bTerm = currentTerm;
-     let bBank = currentBank;
-     let bStrategy = currentStrategy;
-     let bRate = currentRate;
-
+     let periodContrib = periodCfg?.contribution !== undefined ? periodCfg.contribution : (fund.monthlyContribution || 0);
      if (m >= start) {
-        if (periodCfg?.contribution !== undefined) currentMonthlyContrib = periodCfg.contribution;
-        if (periodCfg?.termMonths !== undefined) currentTerm = periodCfg.termMonths;
-        if (periodCfg?.depositBank !== undefined) currentBank = periodCfg.depositBank;
-        if (periodCfg?.rolloverStrategy !== undefined) currentStrategy = periodCfg.rolloverStrategy;
-        if (periodCfg?.interestRateAnnual !== undefined) currentRate = periodCfg.interestRateAnnual;
-
-        periodContrib = currentMonthlyContrib;
         newContrib += periodContrib;
-
-        bTerm = currentTerm;
-        bBank = currentBank;
-        bStrategy = currentStrategy;
-        bRate = currentRate;
      }
+
+     const bTerm = periodCfg?.termMonths !== undefined ? periodCfg.termMonths : (fund.termMonths || 1);
+     const bBank = periodCfg?.depositBank !== undefined ? periodCfg.depositBank : (fund.depositBank);
+     const bStrategy = periodCfg?.rolloverStrategy !== undefined ? periodCfg.rolloverStrategy : (fund.rolloverStrategy);
+     const bRate = periodCfg?.interestRateAnnual !== undefined ? periodCfg.interestRateAnnual : (fund.interestRateAnnual || 5.5);
 
      totalDeposited += newContrib;
 

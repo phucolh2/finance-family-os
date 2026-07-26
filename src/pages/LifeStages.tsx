@@ -11,7 +11,7 @@ import { safeNumber } from '../utils/math';
 import { EmptyState } from '../components/ui/EmptyState';
 import { 
   Milestone, CalendarRange, Plus, Trash2, Edit3, 
-  Home, Car, Baby, HeartPulse, Gift, Briefcase, Plane, Wallet, TrendingUp, TrendingDown 
+  Home, Car, Baby, HeartPulse, Gift, Briefcase, Plane, Wallet, TrendingUp, TrendingDown, AlertTriangle 
 } from 'lucide-react';
 import { ExpenseDashboard } from '../components/expense/ExpenseDashboard';
 import { ExpenseScheduleView } from '../components/expense/ExpenseScheduleView';
@@ -33,6 +33,10 @@ export const LifeStages: React.FC = () => {
   const [editingId, setEditingId] = useState<string | null>(null);
   const [isAdding, setIsAdding] = useState(false);
   const [formError, setFormError] = useState<string | null>(null);
+
+  const [showWarningDialog, setShowWarningDialog] = useState(false);
+  const [pendingEventData, setPendingEventData] = useState<any>(null);
+  const [pendingWarningInfo, setPendingWarningInfo] = useState<{sourceName: string, overage: number, month: number, year: number} | null>(null);
 
   const [formData, setFormData] = useState<Omit<LifeEvent, 'id'>>({
     name: '',
@@ -121,6 +125,23 @@ export const LifeStages: React.FC = () => {
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
+  const executeSave = (formattedData: any) => {
+    if (isAdding) {
+      addLifeEvent(formattedData);
+      setIsAdding(false);
+    } else if (editingId) {
+      updateLifeEvent({
+        ...formattedData,
+        id: editingId,
+      });
+      setEditingId(null);
+    }
+    setFormError(null);
+    setShowWarningDialog(false);
+    setPendingEventData(null);
+    setPendingWarningInfo(null);
+  };
+
   const handleSave = (e: React.FormEvent) => {
     e.preventDefault();
     if (!formData.name.trim()) {
@@ -133,17 +154,40 @@ export const LifeStages: React.FC = () => {
       recurringMonthlyImpact: -Math.abs(safeNumber(formData.recurringMonthlyImpact))
     };
 
-    if (isAdding) {
-      addLifeEvent(formattedData);
-      setIsAdding(false);
-    } else if (editingId) {
-      updateLifeEvent({
-        ...formattedData,
-        id: editingId,
-      });
-      setEditingId(null);
+    // Virtual Check for overbudget
+    const targetDb = state.resolvedMonthlyDb?.find(db => db.month === formData.month && db.year === formData.year);
+    if (targetDb && formData.source && targetDb.budgetAmounts && targetDb.actualExpenseByGroup) {
+      const budget = targetDb.budgetAmounts[formData.source] || 0;
+      const actual = targetDb.actualExpenseByGroup[formData.source] || 0;
+      
+      let currentActualWithoutThisEvent = actual;
+      if (editingId) {
+        const oldEvent = state.lifeEvents.find(ev => ev.id === editingId);
+        if (oldEvent && oldEvent.month === formData.month && oldEvent.year === formData.year && oldEvent.source === formData.source) {
+          currentActualWithoutThisEvent -= (Math.abs(safeNumber(oldEvent.amount)) + Math.abs(safeNumber(oldEvent.recurringMonthlyImpact)));
+        }
+      }
+      
+      const newOneTimeImpact = Math.abs(safeNumber(formData.amount));
+      const newRecurringImpact = Math.abs(safeNumber(formData.recurringMonthlyImpact));
+      const newTotalActual = currentActualWithoutThisEvent + newOneTimeImpact + newRecurringImpact;
+      
+      if (newTotalActual > budget) {
+         setPendingEventData(formattedData);
+         const expenseGroups = activeBudget?.rootGroups.filter(g => g.classification === 'expense') || [];
+         const sourceName = expenseGroups.find(g => g.groupId === formData.source)?.name || formData.source;
+         setPendingWarningInfo({
+            sourceName: sourceName,
+            overage: newTotalActual - budget,
+            month: formData.month,
+            year: formData.year
+         });
+         setShowWarningDialog(true);
+         return; // Intercept save
+      }
     }
-    setFormError(null);
+
+    executeSave(formattedData);
   };
 
   const handleDelete = (id: string) => {
@@ -234,7 +278,39 @@ export const LifeStages: React.FC = () => {
   });
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 relative">
+      {/* Warning Dialog Modal */}
+      {showWarningDialog && pendingWarningInfo && (
+        <div className="fixed inset-0 z-[100] bg-black/60 flex items-center justify-center p-4 backdrop-blur-sm">
+          <div className="bg-white rounded-xl shadow-2xl max-w-md w-full p-6 animate-in fade-in zoom-in-95">
+            <div className="flex items-center gap-3 text-red-600 mb-4">
+              <AlertTriangle className="w-6 h-6" />
+              <h3 className="text-xl font-bold">Cảnh báo lạm chi</h3>
+            </div>
+            <p className="text-family-text mb-6">
+              Sự kiện <strong className="text-blue-600">"{pendingEventData?.name}"</strong> sẽ làm quỹ <strong>"{pendingWarningInfo.sourceName}"</strong> bị lạm chi <strong className="text-red-500">{formatTableMoneyVNDMillion(pendingWarningInfo.overage)}</strong> trong tháng {pendingWarningInfo.month}/{pendingWarningInfo.year}.
+              <br /><br />
+              Bạn có muốn điều chỉnh lại ngân sách trước khi lưu không?
+            </p>
+            <div className="flex justify-end gap-3">
+              <button 
+                onClick={() => setShowWarningDialog(false)}
+                className="px-4 py-2 rounded-lg text-sm font-semibold border border-family-accent/20 text-family-textMuted hover:bg-family-accent/5 transition-colors"
+              >
+                Hủy bỏ (Để sửa)
+              </button>
+              <button 
+                onClick={() => executeSave(pendingEventData)}
+                className="px-4 py-2 rounded-lg text-sm font-semibold bg-red-600 text-white hover:bg-red-700 shadow-md transition-all"
+              >
+                Vẫn tiếp tục lưu
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Header Area */}
       <div className="flex flex-col lg:flex-row lg:items-start justify-between gap-4">
         <div className="flex-1">
           <h1 className="text-3xl font-serif font-bold text-family-text flex items-center gap-3">

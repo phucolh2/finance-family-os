@@ -336,15 +336,11 @@ export const SinkingFundModule: React.FC<SinkingFundModuleProps> = ({
           let bRate = fund.interestRateAnnual || 5.5;
 
           if (m >= start) {
-             const lastNewBucket = [...buckets].reverse().find(b => !b.parentId && b.contribAmount !== undefined);
-             const defaultContrib = (lastNewBucket?.contribAmount) ?? fund.monthlyContribution;
-             periodContrib = periodCfg?.contribution !== undefined ? periodCfg.contribution : defaultContrib;
+             periodContrib = periodCfg?.contribution !== undefined ? periodCfg.contribution : (fund.monthlyContribution || 0);
              newContrib += periodContrib;
 
-             const defaultTerm = lastNewBucket ? (lastNewBucket.termMonths || fund.termMonths || 1) : (fund.termMonths || 1);
-             const defaultRate = lastNewBucket ? (lastNewBucket.interestRateAnnual || fund.interestRateAnnual || 5.5) : (fund.interestRateAnnual || 5.5);
-             bTerm = periodCfg?.termMonths !== undefined ? periodCfg.termMonths : defaultTerm;
-             bRate = periodCfg?.interestRateAnnual !== undefined ? periodCfg.interestRateAnnual : defaultRate;
+             bTerm = periodCfg?.termMonths !== undefined ? periodCfg.termMonths : (fund.termMonths || 1);
+             bRate = periodCfg?.interestRateAnnual !== undefined ? periodCfg.interestRateAnnual : (fund.interestRateAnnual || 5.5);
           }
           
           if (bTerm > 0) {
