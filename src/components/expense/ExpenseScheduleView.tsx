@@ -379,7 +379,17 @@ export const ExpenseScheduleView: React.FC = () => {
                     </button>
                   </div>
                   
-                  <Button variant="outline" size="sm" onClick={() => { setCategories({}); setIsSettled(false); }} className="gap-2 shrink-0 border-orange-200 text-orange-600 hover:bg-orange-50 hover:text-orange-700">
+                  <Button variant="outline" size="sm" onClick={() => { 
+                    setCategories({}); 
+                    setIsSettled(false); 
+                    if (activeVersion) {
+                      updateExpenseScheduleItem({
+                        ...activeVersion,
+                        categories: {},
+                        status: 'active'
+                      });
+                    }
+                  }} className="gap-2 shrink-0 border-orange-200 text-orange-600 hover:bg-orange-50 hover:text-orange-700">
                     <RefreshCw className="w-4 h-4" /> Đặt lại
                   </Button>
                   <Button variant="danger" size="sm" onClick={handleDelete} className="gap-2 shrink-0">
