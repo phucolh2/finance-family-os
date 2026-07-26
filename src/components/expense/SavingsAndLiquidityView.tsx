@@ -12,7 +12,7 @@ import { SinkingFundModule } from '../portfolio/SinkingFundModule';
 
 export const SavingsAndLiquidityView: React.FC = () => {
   const { state, selectedPeriodKey } = useAppContext();
-  const { liquidityBreakdownData, totalRemainingSum } = useLiquidityBreakdown();
+  const { liquidityBreakdownData, totalRemainingSum } = useLiquidityBreakdown('cumulative');
 
   const projection = runProjection({
     profile: state.profile,
@@ -60,7 +60,7 @@ export const SavingsAndLiquidityView: React.FC = () => {
                 <Wallet className="w-7 h-7" />
               </div>
               <p className="text-xs font-bold text-emerald-600/80 uppercase tracking-wider mb-1">
-                Tổng Quỹ sinh hoạt dư (Tháng {selectedPeriodKey ? `${selectedPeriodKey.split('-')[1]}/${selectedPeriodKey.split('-')[0]}` : 'hiện tại'})
+                Tổng Quỹ sinh hoạt dư lũy kế (Tính đến Tháng {selectedPeriodKey ? `${selectedPeriodKey.split('-')[1]}/${selectedPeriodKey.split('-')[0]}` : 'hiện tại'})
               </p>
               <div className="text-4xl font-black text-emerald-600 drop-shadow-sm">
                 +{formatTableMoneyVNDMillion(totalRemainingSum)}
