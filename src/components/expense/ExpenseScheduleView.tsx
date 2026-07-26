@@ -335,18 +335,21 @@ export const ExpenseScheduleView: React.FC = () => {
         {activeVersion ? (
           <Card className="flex-1 border border-family-accent/10 shadow-md">
             <CardHeader className="flex flex-col border-b border-family-accent/10 pb-4">
-              <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-                <div>
-                  <CardTitle className="text-xl font-serif flex items-center gap-2">
-                    Biên tập Chi tiêu thường xuyên: <span className="text-family-accent">Tháng {activeVersion.effectiveMonth}/{activeVersion.effectiveYear}</span>
-                  </CardTitle>
-                  <CardDescription>
-                    Nhập số tiền thực tế chi tiêu thường xuyên. Số tiền dư sẽ tự động chuyển vào phần Tiết kiệm/Đầu tư.
-                  </CardDescription>
+              <div className="flex flex-col gap-4">
+                <div className="flex flex-col md:flex-row md:items-start justify-between gap-4">
+                  <div className="flex-1">
+                    <CardTitle className="text-xl font-serif flex flex-wrap items-center gap-2">
+                      <span>Biên tập Chi tiêu thường xuyên:</span>
+                      <span className="text-family-accent whitespace-nowrap">Tháng {activeVersion.effectiveMonth}/{activeVersion.effectiveYear}</span>
+                    </CardTitle>
+                    <CardDescription className="mt-1">
+                      Nhập số tiền thực tế chi tiêu thường xuyên. Số tiền dư sẽ tự động chuyển vào phần Tiết kiệm/Đầu tư.
+                    </CardDescription>
+                  </div>
                 </div>
                 
-                <div className="flex items-center gap-4 self-start md:self-center">
-                  <div className="flex items-center gap-2 bg-gray-50 px-3 py-1.5 rounded-full border border-gray-200 shadow-sm">
+                <div className="flex flex-wrap items-center justify-between gap-4 bg-family-bgDark/5 p-2 rounded-xl border border-family-accent/10">
+                  <div className="flex items-center gap-2 bg-white px-3 py-1.5 rounded-full border border-gray-200 shadow-sm shrink-0">
                     <span className={`text-sm font-semibold ${isSettled ? 'text-emerald-600' : 'text-gray-500'}`}>
                       Đã sử dụng hết
                     </span>
@@ -379,30 +382,32 @@ export const ExpenseScheduleView: React.FC = () => {
                     </button>
                   </div>
                   
-                  <Button variant="outline" size="sm" onClick={() => { 
-                    setCategories({}); 
-                    setIsSettled(false); 
-                    if (activeVersion) {
-                      updateExpenseScheduleItem({
-                        ...activeVersion,
-                        categories: {},
-                        status: 'active'
-                      });
-                    }
-                  }} className="gap-2 shrink-0 border-orange-200 text-orange-600 hover:bg-orange-50 hover:text-orange-700">
-                    <RefreshCw className="w-4 h-4" /> Đặt lại
-                  </Button>
-                  <Button variant="danger" size="sm" onClick={handleDelete} className="gap-2 shrink-0">
-                    <Trash2 className="w-4 h-4" /> Xóa mốc
-                  </Button>
-                  <Button 
-                    size="sm" 
-                    onClick={handleSave} 
-                    className="gap-2 shrink-0"
-                    disabled={hasValidationError}
-                  >
-                    <Save className="w-4 h-4" /> Lưu mốc
-                  </Button>
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <Button variant="outline" size="sm" onClick={() => { 
+                      setCategories({}); 
+                      setIsSettled(false); 
+                      if (activeVersion) {
+                        updateExpenseScheduleItem({
+                          ...activeVersion,
+                          categories: {},
+                          status: 'active'
+                        });
+                      }
+                    }} className="gap-2 shrink-0 border-orange-200 text-orange-600 hover:bg-orange-50 hover:text-orange-700">
+                      <RefreshCw className="w-4 h-4" /> Đặt lại
+                    </Button>
+                    <Button variant="danger" size="sm" onClick={handleDelete} className="gap-2 shrink-0">
+                      <Trash2 className="w-4 h-4" /> Xóa mốc
+                    </Button>
+                    <Button 
+                      size="sm" 
+                      onClick={handleSave} 
+                      className="gap-2 shrink-0"
+                      disabled={hasValidationError}
+                    >
+                      <Save className="w-4 h-4" /> Lưu mốc
+                    </Button>
+                  </div>
                 </div>
               </div>
 
