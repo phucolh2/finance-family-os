@@ -273,7 +273,7 @@ export const ExpenseScheduleView: React.FC = () => {
               </Button>
             </div>
           </div>
-          <CardDescription className="text-[11px]">Chọn mốc để nhập chi tiêu thực tế</CardDescription>
+          <CardDescription className="text-[11px]">Chọn mốc để nhập chi tiêu thường xuyên</CardDescription>
         </CardHeader>
         <CardContent className="pt-4 max-h-[500px] overflow-y-auto pr-1">
           {isCreatingNew && (
@@ -338,10 +338,10 @@ export const ExpenseScheduleView: React.FC = () => {
               <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
                 <div>
                   <CardTitle className="text-xl font-serif flex items-center gap-2">
-                    Biên tập Thực tế chi tiêu: <span className="text-family-accent">Tháng {activeVersion.effectiveMonth}/{activeVersion.effectiveYear}</span>
+                    Biên tập Chi tiêu thường xuyên: <span className="text-family-accent">Tháng {activeVersion.effectiveMonth}/{activeVersion.effectiveYear}</span>
                   </CardTitle>
                   <CardDescription>
-                    Nhập số tiền thực tế chi tiêu. Số tiền dư sẽ tự động chuyển vào phần Tiết kiệm/Đầu tư.
+                    Nhập số tiền thực tế chi tiêu thường xuyên. Số tiền dư sẽ tự động chuyển vào phần Tiết kiệm/Đầu tư.
                   </CardDescription>
                 </div>
                 
@@ -560,7 +560,7 @@ export const ExpenseScheduleView: React.FC = () => {
                             <span className="px-2 py-0.5 bg-gray-100/80 rounded text-gray-500" title="Ngân sách phân bổ">
                               PB: {formatTableMoneyVNDMillion(groupBudget)}
                             </span>
-                            <span className="px-2 py-0.5 bg-gray-100/80 rounded text-gray-700 font-medium" title="Thực tế đã chi">
+                            <span className="px-2 py-0.5 bg-gray-100/80 rounded text-gray-700 font-medium" title="Thực tế đã chi thường xuyên">
                               TC: {formatTableMoneyVNDMillion(groupActual)}
                             </span>
                             <span className={`px-2 py-0.5 rounded font-bold ${groupRemaining >= 0 ? 'bg-emerald-50 text-emerald-600' : 'bg-red-50 text-red-500'}`} title="Tiền dư">
@@ -675,7 +675,7 @@ export const ExpenseScheduleView: React.FC = () => {
             <div className="flex flex-col items-center">
               <Calendar className="w-12 h-12 mb-4 opacity-20" />
               <h3 className="text-lg font-bold text-family-text mb-1">Chưa chọn mốc Kế toán</h3>
-              <p className="text-sm">Vui lòng chọn một mốc thời gian ở cột bên trái để bắt đầu nhập chi tiêu thực tế.</p>
+              <p className="text-sm">Vui lòng chọn một mốc thời gian ở cột bên trái để bắt đầu nhập chi tiêu thường xuyên.</p>
             </div>
           </Card>
         )}

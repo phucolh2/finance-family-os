@@ -239,10 +239,10 @@ export const LifeStages: React.FC = () => {
         <div className="flex-1">
           <h1 className="text-3xl font-serif font-bold text-family-text flex items-center gap-3">
             <Milestone className="w-8 h-8 text-family-accent shrink-0" /> Quản lý Chi tiêu
-            <HelpTooltip text="Ghi chép các sự kiện dòng tiền không thường xuyên (mua xe, đám cưới, sinh con) để đánh giá tác động lên dòng tiền và đối chiếu với ngân sách." />
+            <HelpTooltip text="Ghi chép các khoản chi tiêu linh hoạt phát sinh ngoài kế hoạch (mua sắm lớn, du lịch, mua xe...) và đối chiếu với ngân sách hàng tháng để kiểm soát dòng tiền." />
           </h1>
           <p className="text-sm text-family-textMuted mt-1">
-            Ghi chép các sự kiện dòng tiền và đối chiếu với ngân sách hàng tháng để kiểm soát tài chính chính xác.
+            Ghi chép các khoản chi tiêu và đối chiếu với ngân sách hàng tháng để kiểm soát tài chính chính xác.
           </p>
         </div>
         <div className="flex flex-wrap items-center gap-3 shrink-0">
@@ -260,7 +260,7 @@ export const LifeStages: React.FC = () => {
               : 'border-transparent text-gray-500 hover:text-gray-700'
           }`}
         >
-          Thực tế chi tiêu
+          Chi tiêu thường xuyên
         </button>
         <button
           onClick={() => { setActiveTab('timeline'); }}
@@ -270,7 +270,7 @@ export const LifeStages: React.FC = () => {
               : 'border-transparent text-gray-500 hover:text-gray-700'
           }`}
         >
-          Sự kiện cuộc đời
+          Chi tiêu linh hoạt
         </button>
         <button
           onClick={() => { setActiveTab('savings_liquidity'); }}
@@ -293,8 +293,8 @@ export const LifeStages: React.FC = () => {
                     <CardContent className="p-4 flex items-center justify-between">
                       <div>
                         <p className="text-xs font-semibold text-family-textMuted uppercase tracking-wider mb-1 flex items-center gap-1.5">
-                          Tổng sự kiện
-                          <HelpTooltip text="Tổng số sự kiện tài chính (cột mốc, biến cố) đã được ghi nhận." />
+                          Tổng khoản chi linh hoạt
+                          <HelpTooltip text="Tổng số các khoản chi tiêu linh hoạt, cột mốc đã ghi nhận." />
                         </p>
                         <h3 className="text-2xl font-bold text-family-text">{totalEvents}</h3>
                       </div>
@@ -308,7 +308,7 @@ export const LifeStages: React.FC = () => {
                       <div>
                         <p className="text-xs font-semibold text-family-textMuted uppercase tracking-wider mb-1 flex items-center gap-1.5">
                           Tác động 1 lần (Net)
-                          <HelpTooltip text="Tổng giá trị tác động tài chính ngay lập tức (thu nhập trừ đi chi phí) của tất cả các sự kiện." />
+                          <HelpTooltip text="Tổng giá trị tác động tài chính của tất cả các khoản chi linh hoạt này." />
                         </p>
                         <h3 className={`text-2xl font-bold ${netOneTime >= 0 ? 'text-green-600' : 'text-red-600'}`}>
                           {netOneTime > 0 ? '+' : ''}{formatTableMoneyVNDMillion(netOneTime)}
@@ -324,7 +324,7 @@ export const LifeStages: React.FC = () => {
                       <div>
                         <p className="text-xs font-semibold text-family-textMuted uppercase tracking-wider mb-1 flex items-center gap-1.5">
                           Tác động dòng tiền (Net)
-                          <HelpTooltip text="Tổng sự thay đổi ròng trên dòng tiền hàng tháng do các sự kiện mang lại." />
+                          <HelpTooltip text="Tổng sự thay đổi ròng trên dòng tiền hàng tháng do các khoản chi này mang lại." />
                         </p>
                         <h3 className={`text-2xl font-bold ${netRecurring >= 0 ? 'text-green-600' : 'text-red-600'}`}>
                           {netRecurring > 0 ? '+' : ''}{formatTableMoneyVNDMillion(netRecurring)}<span className="text-sm font-medium">/tháng</span>
@@ -347,9 +347,9 @@ export const LifeStages: React.FC = () => {
           {formError && <WarningBox type="danger" message={formError} />}
           <Card className="border-family-accent/30 bg-family-bgDark/20 shadow-md transform transition-all mt-6">
           <CardHeader>
-            <CardTitle>{isAdding ? 'Thêm sự kiện mới' : 'Chỉnh sửa sự kiện'}</CardTitle>
+            <CardTitle>{isAdding ? 'Thêm khoản chi linh hoạt mới' : 'Chỉnh sửa khoản chi linh hoạt'}</CardTitle>
             <CardDescription>
-              Sự kiện Đời sống là các khoản chi tiêu lớn một lần hoặc tạo ra dòng tiền dài hạn nằm ngoài ngân sách sinh hoạt cố định (Ví dụ: Mua đồ điện tử, mua xe, sinh con, đổi nhà...).
+              Chi tiêu linh hoạt là các khoản chi tiêu lớn một lần hoặc tạo ra dòng tiền dài hạn nằm ngoài ngân sách sinh hoạt cố định (Ví dụ: Mua đồ điện tử, du lịch, mua xe, sinh con...).
             </CardDescription>
           </CardHeader>
           <CardContent>
@@ -361,7 +361,7 @@ export const LifeStages: React.FC = () => {
                 </div>
                 <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
                   <Input
-                    label="Tên sự kiện"
+                    label="Tên khoản chi / sự kiện"
                     type="text"
                     placeholder="Ví dụ: Mua chung cư Vinhomes..."
                     value={formData.name}
@@ -369,7 +369,7 @@ export const LifeStages: React.FC = () => {
                     required
                   />
                   <Select
-                    label="Loại sự kiện"
+                    label="Phân loại"
                     value={formData.type}
                     onChange={(e) => { setFormData({ ...formData, type: e.target.value as any }); }}
                     options={eventTypes}
@@ -425,7 +425,7 @@ export const LifeStages: React.FC = () => {
               <div className="bg-family-bgDeep/10 border border-family-accent/10 rounded-xl p-4 shadow-sm space-y-4">
                 <div className="border-b border-family-accent/10 pb-2 mb-2">
                   <h3 className="text-sm font-bold text-family-text flex items-center gap-2">Tác động Dòng tiền Lâu dài & Báo cáo</h3>
-                  <p className="text-[11px] text-family-textMuted mt-1">Chi phí phát sinh <strong>đều đặn mỗi tháng</strong> sau sự kiện này. Khoản này sẽ trừ thẳng vào Dòng tiền ròng tổng của gia đình thay vì nằm trong hạn mức Thực tế chi tiêu hàng ngày.</p>
+                  <p className="text-[11px] text-family-textMuted mt-1">Chi phí phát sinh <strong>đều đặn mỗi tháng</strong> sau khoản chi này. Khoản này sẽ trừ thẳng vào Dòng tiền ròng tổng của gia đình thay vì nằm trong hạn mức Chi tiêu thường xuyên hàng ngày.</p>
                 </div>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <Input
@@ -442,7 +442,7 @@ export const LifeStages: React.FC = () => {
                       onChange={(e) => { setFormData({ ...formData, spendingCategory: e.target.value }); }}
                       options={[{value: '', label: '-- Dự phòng --'}, ...spendingCategoryOptions]}
                     />
-                    <p className="text-[10px] text-family-accent mt-1.5 ml-1 italic font-medium leading-tight">* Ánh xạ này chỉ dùng để gom nhóm trên Báo cáo vòng đời, hoàn toàn không tự động ghi đè vào bảng "Thực tế chi tiêu".</p>
+                    <p className="text-[10px] text-family-accent mt-1.5 ml-1 italic font-medium leading-tight">* Ánh xạ này chỉ dùng để gom nhóm trên Báo cáo vòng đời, hoàn toàn không tự động ghi đè vào bảng "Chi tiêu thường xuyên".</p>
                   </div>
                 </div>
               </div>
@@ -471,7 +471,7 @@ export const LifeStages: React.FC = () => {
                           Ảnh hưởng Tài sản ròng (Net Worth)
                         </label>
                       </div>
-                      <p className="text-[10px] text-family-textMuted mt-1 ml-6 leading-tight">Bật nếu sự kiện này làm thay đổi tổng giá trị tài sản ròng của gia đình (VD: mua nhà, bán đất). Tắt nếu chỉ là chi phí tiêu dùng (VD: du lịch, tiệc).</p>
+                      <p className="text-[10px] text-family-textMuted mt-1 ml-6 leading-tight">Bật nếu khoản chi này làm thay đổi tổng giá trị tài sản ròng của gia đình (VD: mua nhà, bán đất). Tắt nếu chỉ là chi phí tiêu dùng (VD: du lịch, tiệc).</p>
                     </div>
                     <div>
                       <div className="flex items-center">
@@ -483,10 +483,10 @@ export const LifeStages: React.FC = () => {
                           className="w-4 h-4 text-family-accent border-gray-300 rounded focus:ring-family-accent cursor-pointer"
                         />
                         <label htmlFor="isMilestone" className="ml-2 block text-sm font-bold text-family-text cursor-pointer">
-                          Đánh dấu là Cột mốc Sự kiện
+                          Đánh dấu là Cột mốc quan trọng
                         </label>
                       </div>
-                      <p className="text-[10px] text-family-textMuted mt-1 ml-6 leading-tight">Sự kiện này sẽ được đánh dấu nổi bật (highlight) trên Dòng thời gian sự kiện (Timeline).</p>
+                      <p className="text-[10px] text-family-textMuted mt-1 ml-6 leading-tight">Khoản chi này sẽ được đánh dấu nổi bật (highlight) trên Dòng thời gian sự kiện (Timeline).</p>
                     </div>
                   </div>
                 </div>
@@ -494,7 +494,7 @@ export const LifeStages: React.FC = () => {
 
               <div className="flex justify-end gap-3 pt-2">
                 <Button variant="outline" type="button" onClick={() => { setIsAdding(false); setEditingId(null); }} className="px-6">Hủy</Button>
-                <Button type="submit" className="px-6 font-bold">Lưu sự kiện</Button>
+                <Button type="submit" className="px-6 font-bold">Lưu khoản chi</Button>
               </div>
             </form>
           </CardContent>
@@ -521,15 +521,15 @@ export const LifeStages: React.FC = () => {
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
               <div>
                 <CardTitle className="flex items-center gap-2 mb-1.5">
-                  Dòng thời gian sự kiện (Timeline)
-                  <HelpTooltip text="Theo dõi và quản lý toàn bộ các biến cố, sự kiện tài chính được sắp xếp theo thời gian." />
+                  Dòng thời gian chi tiêu & sự kiện
+                  <HelpTooltip text="Theo dõi và quản lý toàn bộ các khoản chi tiêu linh hoạt được sắp xếp theo thời gian." />
                 </CardTitle>
                 <CardDescription>
-                  Bức tranh toàn cảnh về các biến cố và cột mốc tài chính được sắp xếp theo thời gian.
+                  Bức tranh toàn cảnh về các khoản chi tiêu linh hoạt được sắp xếp theo thời gian.
                 </CardDescription>
               </div>
               <Button onClick={handleAddClick} className="gap-2 text-xs h-9 shrink-0">
-                <Plus className="w-4 h-4 shrink-0" /> Thêm sự kiện
+                <Plus className="w-4 h-4 shrink-0" /> Thêm khoản chi linh hoạt
               </Button>
             </div>
           </CardHeader>
@@ -593,7 +593,7 @@ export const LifeStages: React.FC = () => {
                           type="button"
                           onClick={() => { handleDelete(event.id); }}
                           className="p-2 text-family-textLight hover:text-red-500 hover:bg-gray-50 transition-colors"
-                          title="Xóa sự kiện"
+                          title="Xóa khoản chi"
                         >
                           <Trash2 className="w-4 h-4" />
                         </button>
@@ -604,7 +604,7 @@ export const LifeStages: React.FC = () => {
               })}
             </div>
           ) : (
-            <EmptyState title="Chưa có sự kiện nào" description="Nhấn nút Thêm sự kiện mới ở trên để bắt đầu." />
+            <EmptyState title="Chưa có khoản chi linh hoạt nào" description="Nhấn nút Thêm khoản chi linh hoạt ở trên để bắt đầu." />
           )}
         </CardContent>
       </Card>
