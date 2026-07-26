@@ -723,7 +723,7 @@ export const SinkingFundModule: React.FC<SinkingFundModuleProps> = ({
                                                                 }}
                                                                 className="w-10 text-right text-[11px] font-bold text-family-accent bg-transparent focus:outline-none"
                                                              />
-                                                             <span className="text-family-accent font-bold text-[10px]">tr định kỳ</span>
+                                                             <span className="text-family-accent font-bold text-[11px]">triệu định kỳ</span>
                                                           </div>
                                                        </div>
                                                     ) : (
