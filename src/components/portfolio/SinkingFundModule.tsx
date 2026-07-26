@@ -685,24 +685,20 @@ export const SinkingFundModule: React.FC<SinkingFundModuleProps> = ({
                                       });
                                    }
 
-                                   if (selectedPeriodKey && !bucketPeriods.has(selectedPeriodKey) && !fund.periodConfigs?.[selectedPeriodKey]) {
-                                       const partsObs = selectedPeriodKey.split('-');
-                                       if (partsObs.length === 2) {
-                                           const y = Number(partsObs[0]);
-                                           const m = Number(partsObs[1]);
-                                           const obsIdx = y * 12 + m;
-                                           const startIdx = fund.startYear * 12 + fund.startMonth;
-                                           if (obsIdx >= startIdx) {
-                                               displayBuckets.push({
-                                                  id: `dummy_current_${selectedPeriodKey}`,
-                                                  principal: 0,
-                                                  termStart: obsIdx,
-                                                  termMonths: 6,
-                                                  interestRateAnnual: fund.interestRateAnnual ?? 0,
-                                                  periodKey: selectedPeriodKey,
-                                                  contribAmount: fund.monthlyContribution ?? 0
-                                               });
-                                           }
+                                   const obsPeriodKey = `${currentObservedYear}-${String(currentObservedMonth).padStart(2, '0')}`;
+                                   if (!bucketPeriods.has(obsPeriodKey) && !fund.periodConfigs?.[obsPeriodKey]) {
+                                       const obsIdx = currentObservedYear * 12 + currentObservedMonth;
+                                       const startIdx = fund.startYear * 12 + fund.startMonth;
+                                       if (obsIdx >= startIdx) {
+                                           displayBuckets.push({
+                                              id: `dummy_current_${obsPeriodKey}`,
+                                              principal: 0,
+                                              termStart: obsIdx,
+                                              termMonths: 6,
+                                              interestRateAnnual: fund.interestRateAnnual ?? 0,
+                                              periodKey: obsPeriodKey,
+                                              contribAmount: fund.monthlyContribution ?? 0
+                                           });
                                        }
                                    }
 
