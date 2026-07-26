@@ -27,7 +27,7 @@ export const LifeStages: React.FC = () => {
   
   // Dashboard filter state
   const [dashboardFilter, setDashboardFilter] = useState<BudgetGroup | 'all'>('all');
-  const [activeTab, setActiveTab] = useState<'timeline' | 'monthly_reconciliation' | 'savings_liquidity'>('monthly_reconciliation');
+  const [activeTab, setActiveTab] = useState<'timeline' | 'monthly_reconciliation' | 'savings_liquidity' | 'expense_overview'>('expense_overview');
 
   // Local state for event form editing
   const [editingId, setEditingId] = useState<string | null>(null);
@@ -252,6 +252,16 @@ export const LifeStages: React.FC = () => {
 
       {/* Tabs */}
       <div className="flex space-x-2 border-b border-gray-200">
+        <button
+          onClick={() => { setActiveTab('expense_overview'); }}
+          className={`py-2 px-4 text-sm font-semibold transition-colors border-b-2 ${
+            activeTab === 'expense_overview' 
+              ? 'border-family-accent text-family-accent' 
+              : 'border-transparent text-gray-500 hover:text-gray-700'
+          }`}
+        >
+          Tổng quan
+        </button>
         <button
           onClick={() => { setActiveTab('monthly_reconciliation'); }}
           className={`py-2 px-4 text-sm font-semibold transition-colors border-b-2 ${
@@ -503,10 +513,15 @@ export const LifeStages: React.FC = () => {
       )}
 
 
-      {activeTab === 'monthly_reconciliation' && (
+      {activeTab === 'expense_overview' && (
         <div className="space-y-6">
           <ExpenseDashboard filter={dashboardFilter} setFilter={setDashboardFilter} />
           <LiquidityBreakdownTable />
+        </div>
+      )}
+
+      {activeTab === 'monthly_reconciliation' && (
+        <div className="space-y-6">
           <ExpenseScheduleView />
         </div>
       )}
