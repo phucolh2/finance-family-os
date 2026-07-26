@@ -4,7 +4,7 @@ import { Card, CardHeader, CardTitle, CardContent, CardDescription } from '../ui
 import { Button } from '../../components/ui/Button';
 import { Input } from '../../components/ui/Input';
 import { WarningBox } from '../../components/ui/WarningBox';
-import { Plus, Save, Trash2, Calendar, ChevronDown, ChevronRight, CheckCircle2, Wallet, PiggyBank, CircleDollarSign } from 'lucide-react';
+import { Plus, Save, Trash2, Calendar, ChevronDown, ChevronRight, CheckCircle2, Wallet, PiggyBank, CircleDollarSign, RefreshCw } from 'lucide-react';
 import { safeNumber } from '../../utils/math';
 import { formatTableMoneyVNDMillion } from '../../utils/format';
 import { rebuildTreeFromFlatRatios, collectLeafNodes } from '../../engines/budgetEngine';
@@ -364,6 +364,8 @@ export const ExpenseScheduleView: React.FC = () => {
                             newCats[id] = -1;
                           });
                           setCategories(newCats);
+                        } else {
+                          setCategories({});
                         }
                       }}
                       title="Chốt tháng và tự động điền TOÀN BỘ các hạng mục bằng mức ngân sách phân bổ"
@@ -377,6 +379,9 @@ export const ExpenseScheduleView: React.FC = () => {
                     </button>
                   </div>
                   
+                  <Button variant="outline" size="sm" onClick={() => { setCategories({}); setIsSettled(false); }} className="gap-2 shrink-0 border-orange-200 text-orange-600 hover:bg-orange-50 hover:text-orange-700">
+                    <RefreshCw className="w-4 h-4" /> Đặt lại
+                  </Button>
                   <Button variant="danger" size="sm" onClick={handleDelete} className="gap-2 shrink-0">
                     <Trash2 className="w-4 h-4" /> Xóa mốc
                   </Button>
