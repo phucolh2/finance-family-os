@@ -417,9 +417,8 @@ export const LifeStages: React.FC = () => {
                       label="Số tiền tác động một lần (triệu VND) - CHI PHÍ"
                       type="number"
                       placeholder="Ví dụ: 800 (Mua xe ô tô)"
-                      value={Math.abs(safeNumber(formData.amount)) || ''}
+                      value={formData.amount === 0 ? 0 : (Math.abs(safeNumber(formData.amount)) || '')}
                       onChange={(e) => { setFormData({ ...formData, amount: Number(e.target.value) }); }}
-                      required
                     />
                   </div>
                   <Select
