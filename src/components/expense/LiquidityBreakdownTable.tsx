@@ -5,8 +5,12 @@ import { formatTableMoneyVNDMillion } from '../../utils/format';
 import { HelpTooltip } from '../ui/HelpTooltip';
 import { useLiquidityBreakdown } from '../../hooks/useLiquidityBreakdown';
 
-export const LiquidityBreakdownTable: React.FC = () => {
-  const { liquidityBreakdownData, totalBudgetSum, totalActualSum, totalDeductedSum, totalFlexibleSum, totalRemainingSum, selectedPeriodKey } = useLiquidityBreakdown();
+interface LiquidityBreakdownTableProps {
+  mode?: 'monthly' | 'cumulative';
+}
+
+export const LiquidityBreakdownTable: React.FC<LiquidityBreakdownTableProps> = ({ mode = 'monthly' }) => {
+  const { liquidityBreakdownData, totalBudgetSum, totalActualSum, totalDeductedSum, totalFlexibleSum, totalRemainingSum, selectedPeriodKey } = useLiquidityBreakdown(mode);
   const [expandedNodes, setExpandedNodes] = useState<Record<string, boolean>>({});
 
   const toggleExpand = (id: string) => {
@@ -22,8 +26,17 @@ export const LiquidityBreakdownTable: React.FC = () => {
     <Card className="bg-white/80 border-family-accent/10 mt-6 shadow-sm">
       <CardHeader className="pb-2">
         <CardTitle className="text-sm font-semibold text-family-textMuted uppercase flex items-center gap-1.5">
-          Cấu trúc Tiền dư sinh hoạt tính đến (Tháng {selectedPeriodKey ? `${selectedPeriodKey.split('-')[1]}/${selectedPeriodKey.split('-')[0]}` : 'hiện tại'})
-          <HelpTooltip text="Bảng này chỉ phân tách số tiền dư của THÁNG ĐANG CHỌN. (Khác với con số ở trên là TỔNG tiền dư tích lũy của TẤT CẢ các tháng cộng lại)." />
+          {mode === 'monthly' ? (
+            <>
+              Cấu trúc Tiền dư sinh hoạt (Tháng {selectedPeriodKey ? `${selectedPeriodKey.split('-')[1]}/${selectedPeriodKey.split('-')[0]}` : 'hiện tại'})
+              <HelpTooltip text="Bảng này phân tách ngân sách và thực chi của RIÊNG tháng đang chọn. Số liệu Không bị cộng dồn từ các tháng trước." />
+            </>
+          ) : (
+            <>
+              Cấu trúc Tiền dư sinh hoạt Lũy Kế (Tính đến Tháng {selectedPeriodKey ? `${selectedPeriodKey.split('-')[1]}/${selectedPeriodKey.split('-')[0]}` : 'hiện tại'})
+              <HelpTooltip text="Bảng này hiển thị ngân sách và thực chi LŨY KẾ (cộng dồn) từ đầu dự án cho đến tháng đang chọn." />
+            </>
+          )}
         </CardTitle>
       </CardHeader>
       <CardContent>

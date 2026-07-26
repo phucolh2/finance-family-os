@@ -516,7 +516,11 @@ export const LifeStages: React.FC = () => {
       {activeTab === 'expense_overview' && (
         <div className="space-y-6">
           <ExpenseDashboard filter={dashboardFilter} setFilter={setDashboardFilter} />
-          <LiquidityBreakdownTable />
+          
+          <div className="grid grid-cols-1 gap-6">
+            <LiquidityBreakdownTable mode="monthly" />
+            <LiquidityBreakdownTable mode="cumulative" />
+          </div>
         </div>
       )}
 

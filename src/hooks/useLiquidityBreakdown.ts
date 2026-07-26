@@ -2,7 +2,7 @@ import { useMemo } from 'react';
 import { useAppContext } from '../context/AppContext';
 import { analyzeExpense } from '../engines/expenseEngine';
 
-export const useLiquidityBreakdown = () => {
+export const useLiquidityBreakdown = (mode: 'monthly' | 'cumulative' = 'monthly') => {
   const { state, selectedPeriodKey } = useAppContext();
 
   const activePeriodKey = useMemo(() => {
@@ -39,13 +39,7 @@ export const useLiquidityBreakdown = () => {
     return budget;
   }, [state.budgetSchedule, activePeriodKey]);
 
-  const expenseData = useMemo(() => {
-    const budgetTree = activeBudget ? activeBudget.rootGroups : [];
-    const expenseTree = budgetTree.filter((g: any) => g.classification === 'expense');
-    const expenseGroupIds = expenseTree.map((g: any) => g.groupId as string);
-    return analyzeExpense(state.resolvedMonthlyDb || [], state.lifeEvents, activePeriodKey, expenseGroupIds);
-  }, [state.resolvedMonthlyDb, state.lifeEvents, activePeriodKey, activeBudget]);
-
+  // Removed unused cumulative expenseData
   const liquidityBreakdownData = useMemo(() => {
     const budgetTree = activeBudget ? activeBudget.rootGroups : [];
     const expenseTree = budgetTree.filter((g: any) => g.classification === 'expense');
@@ -65,11 +59,22 @@ export const useLiquidityBreakdown = () => {
        const startMonthValue = fund.startYear * 12 + fund.startMonth;
        if (selMonthValue >= startMonthValue) {
           let deduction = 0;
-          if (selMonthValue === startMonthValue) {
+          if (mode === 'monthly') {
+             if (selMonthValue === startMonthValue) {
+                deduction += fund.initialDeposit || 0;
+             }
+             const contrib = fund.periodConfigs?.[pKey]?.contribution !== undefined ? fund.periodConfigs[pKey].contribution : fund.monthlyContribution;
+             deduction += contrib || 0;
+          } else {
              deduction += fund.initialDeposit || 0;
+             for (let m = startMonthValue; m <= selMonthValue; m++) {
+                const y = Math.floor((m - 1) / 12);
+                const monthStr = String(((m - 1) % 12) + 1).padStart(2, '0');
+                const loopKey = `${y}-${monthStr}`;
+                const contrib = fund.periodConfigs?.[loopKey]?.contribution !== undefined ? fund.periodConfigs[loopKey].contribution : fund.monthlyContribution;
+                deduction += contrib || 0;
+             }
           }
-          const contrib = fund.periodConfigs?.[pKey]?.contribution !== undefined ? fund.periodConfigs[pKey].contribution : fund.monthlyContribution;
-          deduction += contrib || 0;
           
           deductedByGroup[groupId] = (deductedByGroup[groupId] || 0) + deduction;
        }
@@ -77,28 +82,69 @@ export const useLiquidityBreakdown = () => {
 
     const flexibleByGroup: Record<string, number> = {};
     (state.lifeEvents || []).forEach(event => {
-      if (event.month === selMonth && event.year === selYear) {
-        // flexible expense source matches the groupId
-        flexibleByGroup[event.source] = (flexibleByGroup[event.source] || 0) + event.amount;
+      const eMonthValue = event.year * 12 + event.month;
+      if (mode === 'monthly') {
+        if (event.month === selMonth && event.year === selYear) {
+          flexibleByGroup[event.source] = (flexibleByGroup[event.source] || 0) + event.amount;
+        }
+      } else {
+        if (eMonthValue <= selMonthValue) {
+          flexibleByGroup[event.source] = (flexibleByGroup[event.source] || 0) + event.amount;
+        }
       }
     });
 
+    const targetDb = (state.resolvedMonthlyDb || []).find(db => db.periodKey === activePeriodKey);
+    const cumulativeExpenseData = mode === 'cumulative' 
+      ? analyzeExpense(state.resolvedMonthlyDb || [], state.lifeEvents, activePeriodKey, expenseTree.map((g: any) => g.groupId as string))
+      : null;
+
     return expenseTree.map((g: any) => {
-      const sum = expenseData.summaryByGroup[g.groupId] || { totalBudget: 0, totalActual: 0 };
-      const rawRemaining = Math.max(0, sum.totalBudget - sum.totalActual);
-      const deducted = deductedByGroup[g.groupId] || 0;
+      let totalBudget = 0;
+      let totalActual = 0;
+      
       const flexible = flexibleByGroup[g.groupId] || 0;
+
+      if (mode === 'monthly') {
+        totalBudget = targetDb?.budgetAmounts?.[g.groupId] || 0;
+        if (targetDb?.actualExpenseByGroup && typeof targetDb.actualExpenseByGroup[g.groupId] === 'number') {
+          totalActual = targetDb.actualExpenseByGroup[g.groupId];
+        } else if (targetDb?.actualExpenseCategories) {
+          (g.children || []).forEach((child: any) => {
+            totalActual += targetDb.actualExpenseCategories![child.id] || 0;
+          });
+        }
+      } else {
+        totalBudget = cumulativeExpenseData?.summaryByGroup?.[g.groupId]?.totalBudget || 0;
+        // cumulativeExpenseData already includes flexible in totalActual, so we subtract it here to separate it
+        totalActual = (cumulativeExpenseData?.summaryByGroup?.[g.groupId]?.totalActual || 0) - flexible;
+      }
+
+
+      const rawRemaining = Math.max(0, totalBudget - totalActual);
+      const deducted = deductedByGroup[g.groupId] || 0;
       const remaining = rawRemaining - deducted - flexible;
       
       const children = (g.children || []).map((child: any) => {
-        const catSum = expenseData.summaryByCategory?.[child.id] || { totalBudget: 0, totalActual: 0 };
-        const childRemaining = Math.max(0, catSum.totalBudget - catSum.totalActual);
+        let catBudget = 0;
+        let catActual = 0;
+        
+        if (mode === 'monthly') {
+          catBudget = targetDb?.budgetAmountsByCategory?.[child.id] || 0;
+          catActual = targetDb?.actualExpenseCategories?.[child.id] || 0;
+        } else {
+          catBudget = cumulativeExpenseData?.summaryByCategory?.[child.id]?.totalBudget || 0;
+          catActual = cumulativeExpenseData?.summaryByCategory?.[child.id]?.totalActual || 0;
+        }
+        
+        const childRemaining = Math.max(0, catBudget - catActual);
+
         return {
           id: child.id,
           name: child.name,
-        remaining: childRemaining, // Children don't have sinking funds directly
-          totalBudget: catSum.totalBudget,
-          totalActual: catSum.totalActual,
+          remaining: childRemaining, // Children don't have sinking funds directly
+          totalBudget: catBudget,
+          totalActual: catActual,
           deducted: 0,
           flexible: 0,
           sortOrder: child.sortOrder || 0
@@ -111,13 +157,14 @@ export const useLiquidityBreakdown = () => {
         remaining,
         deducted,
         flexible,
-        totalBudget: sum.totalBudget,
-        totalActual: sum.totalActual,
+        totalBudget,
+        totalActual,
         sortOrder: g.sortOrder || 0,
         children
       };
+
     }).sort((a: any, b: any) => a.sortOrder - b.sortOrder);
-  }, [activeBudget, expenseData.summaryByGroup, expenseData.summaryByCategory, state.sinkingFunds, state.lifeEvents, activePeriodKey]);
+  }, [activeBudget, state.resolvedMonthlyDb, state.sinkingFunds, state.lifeEvents, activePeriodKey, mode]);
 
   const totalBudgetSum = useMemo(() => liquidityBreakdownData.reduce((sum, g) => sum + g.totalBudget, 0), [liquidityBreakdownData]);
   const totalActualSum = useMemo(() => liquidityBreakdownData.reduce((sum, g) => sum + g.totalActual, 0), [liquidityBreakdownData]);
