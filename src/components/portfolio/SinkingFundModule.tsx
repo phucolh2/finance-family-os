@@ -82,10 +82,12 @@ export const SinkingFundModule: React.FC<SinkingFundModuleProps> = ({
   const [showAddForm, setShowAddForm] = useState(false);
   const [editingFundId, setEditingFundId] = useState<string | null>(null);
   const [expandedFundId, setExpandedFundId] = useState<string | null>(null);
+  const [formError, setFormError] = useState<string | null>(null);
   
   React.useEffect(() => {
     setShowAddForm(false);
     setEditingFundId(null);
+    setFormError(null);
     setDisbursingId(null);
   }, [selectedPeriodKey]);
   const [form, setForm] = useState({
@@ -564,15 +566,30 @@ export const SinkingFundModule: React.FC<SinkingFundModuleProps> = ({
               </select>
             </div>
           </div>
+          {formError && (
+            <div className="text-red-500 text-sm font-semibold bg-red-50 p-2 rounded-lg border border-red-200">
+              Lỗi: {formError}
+            </div>
+          )}
           <div className="flex justify-end gap-2 pt-2">
             <Button variant="outline" onClick={() => {
               setShowAddForm(false);
               setEditingFundId(null);
+              setFormError(null);
               setForm({ ...form, name: '', fundGroup: '',
     depositBank: '', initialDeposit: 0, targetAmount: 0 });
             }}>Hủy</Button>
             <Button 
               onClick={() => {
+                const firstMonthDeduction = form.initialDeposit + (form.monthlyContribution || 0);
+                const source = dynamicSources?.find(s => s.id === form.sourceOfFund);
+                
+                if (!editingFundId && source && firstMonthDeduction > source.balance) {
+                   setFormError(`Tổng vốn tháng đầu (${firstMonthDeduction}tr) vượt quá số dư khả dụng (${source.balance}tr) của ${source.label}.`);
+                   return;
+                }
+                setFormError(null);
+
                 if (editingFundId) {
                   const existing = state.sinkingFunds?.find(f => f.id === editingFundId);
                   if (existing) {
