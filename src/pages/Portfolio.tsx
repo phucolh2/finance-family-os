@@ -22,7 +22,6 @@ export const Portfolio: React.FC = () => {
     state, 
     updateProfile,
     updateAssets, 
-    resetToDefault, 
     selectedPeriodKey, 
     setSelectedPeriodKey,
     addInvestmentDeal,
@@ -124,10 +123,7 @@ export const Portfolio: React.FC = () => {
     return Math.max(0, (endYear * 12 + endMonth) - (startYear * 12 + startMonth));
   };
 
-  const handleReset = () => {
-    resetToDefault();
-    setFormError(null);
-  };
+
 
   // Reset UI states when observation month changes
   useEffect(() => {
@@ -242,12 +238,7 @@ export const Portfolio: React.FC = () => {
         <ObservationControls />
       </div>
       
-      {/* Reset Actions Row */}
-      <div className="flex justify-end gap-2 pt-1">
-        <Button variant="secondary" onClick={handleReset} className="gap-2">
-          <RotateCcw className="w-4 h-4" /> Reset Mặc định
-        </Button>
-      </div>
+
 
       {formError && <WarningBox type="danger" message={formError} />}
 

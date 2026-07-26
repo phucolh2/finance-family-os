@@ -580,6 +580,28 @@ export function useAppState() {
     saveState(INITIAL_APP_STATE);
   };
 
+  const resetBudgetToDefault = () => {
+    saveState({
+      ...state,
+      budgetSchedule: INITIAL_APP_STATE.budgetSchedule,
+    });
+  };
+
+  const resetIncomeToDefault = () => {
+    saveState({
+      ...state,
+      incomeSchedule: INITIAL_APP_STATE.incomeSchedule,
+      incomeCategories: INITIAL_APP_STATE.incomeCategories,
+    });
+  };
+
+  const resetAssumptionsToDefault = () => {
+    saveState({
+      ...state,
+      assumptions: INITIAL_APP_STATE.assumptions,
+    });
+  };
+
   // Projection Adjustment Actions
   const addProjectionAdjustment = (item: Omit<ProjectionAdjustmentRecord, 'id'>) => {
     const newItem: ProjectionAdjustmentRecord = {
@@ -860,6 +882,9 @@ export function useAppState() {
     updateProjectionAdjustment,
     deleteProjectionAdjustment,
     resetToDefault,
+    resetBudgetToDefault,
+    resetIncomeToDefault,
+    resetAssumptionsToDefault,
     importState,
   };
 }

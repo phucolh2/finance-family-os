@@ -392,7 +392,7 @@ const AssetAllocationSettings: React.FC = () => {
 };
 
 export const Settings: React.FC = () => {
-  const { state, lastSaved, schemaVersion, importState, resetToDefault, updateAssumptions } = useAppContext();
+  const { state, lastSaved, schemaVersion, importState, resetToDefault, resetBudgetToDefault, resetIncomeToDefault, resetAssumptionsToDefault, updateAssumptions } = useAppContext();
 
   const fileInputRef = useRef<HTMLInputElement>(null);
   
@@ -466,10 +466,34 @@ export const Settings: React.FC = () => {
     }
   };
 
-  const handleReset = () => {
-    if (window.confirm('Bạn có chắc chắn muốn xóa toàn bộ dữ liệu hiện tại và khôi phục cài đặt gốc của gia đình?')) {
+  const handleResetAll = () => {
+    if (window.confirm('CẢNH BÁO ĐỎ: Bạn có chắc chắn muốn xóa toàn bộ dữ liệu Ngân sách, Thu nhập và Tài sản? Hành động này sẽ đưa hệ thống về trạng thái trắng tinh và không thể hoàn tác!')) {
       resetToDefault();
-      setSuccessMsg('Khôi phục cài đặt gốc và cơ sở dữ liệu mẫu thành công!');
+      setSuccessMsg('Hệ thống đã được khôi phục về trạng thái trống ban đầu.');
+      setErrorMsg(null);
+    }
+  };
+
+  const handleResetBudget = () => {
+    if (window.confirm('Bạn có chắc chắn muốn xóa sạch Lịch sử Kế hoạch Ngân sách?')) {
+      resetBudgetToDefault();
+      setSuccessMsg('Dữ liệu Ngân sách đã được làm sạch.');
+      setErrorMsg(null);
+    }
+  };
+
+  const handleResetIncome = () => {
+    if (window.confirm('Bạn có chắc chắn muốn xóa sạch Lịch sử Kế hoạch Thu nhập?')) {
+      resetIncomeToDefault();
+      setSuccessMsg('Dữ liệu Thu nhập đã được làm sạch.');
+      setErrorMsg(null);
+    }
+  };
+
+  const handleResetAssumptions = () => {
+    if (window.confirm('Bạn có chắc chắn muốn khôi phục các chỉ số giả định (Lạm phát, Lãi suất...) về mức mặc định không?')) {
+      resetAssumptionsToDefault();
+      setSuccessMsg('Thông số giả định đã được khôi phục.');
       setErrorMsg(null);
     }
   };
@@ -552,17 +576,56 @@ export const Settings: React.FC = () => {
               </div>
             </div>
 
-            {/* Danger Zone: Reset Default */}
+            {/* Danger Zone: Reset Scopes */}
             <div className="border-t border-red-100 pt-6">
               <h4 className="font-bold text-xs text-red-700 flex items-center gap-1.5 mb-2">
                 <ShieldAlert className="w-4 h-4" /> Vùng kiểm soát nguy hiểm (Danger Zone)
               </h4>
-              <p className="text-[11px] text-family-textMuted mb-3 leading-relaxed">
-                Khôi phục cài đặt gốc sẽ xóa sạch toàn bộ các tùy chỉnh hiện tại của bạn trong LocalStorage và đưa hệ điều hành về trạng thái mẫu ban đầu. Hành động này không thể hoàn tác.
+              <p className="text-[11px] text-family-textMuted mb-4 leading-relaxed">
+                Khu vực này cho phép bạn làm sạch dữ liệu từng phần hoặc toàn bộ hệ thống. Các hành động này không thể hoàn tác, hãy chắc chắn trước khi thực hiện.
               </p>
-              <Button onClick={handleReset} variant="secondary" className="border-red-200 text-red-700 hover:bg-red-50 text-xs">
-                Xóa tất cả dữ liệu & Khôi phục mẫu gốc
-              </Button>
+              
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="p-3 bg-red-50/50 border border-red-100 rounded-lg flex flex-col justify-between gap-3">
+                  <div>
+                    <h5 className="text-xs font-bold text-gray-800 mb-1">Khôi phục Ngân sách</h5>
+                    <p className="text-[10px] text-gray-500">Xóa toàn bộ các mốc Lịch sử Kế hoạch Chi tiêu.</p>
+                  </div>
+                  <Button onClick={handleResetBudget} variant="outline" size="sm" className="border-red-200 text-red-600 hover:bg-red-50 text-[11px] self-start h-8 px-3">
+                    Xóa Dữ liệu Ngân sách
+                  </Button>
+                </div>
+                
+                <div className="p-3 bg-red-50/50 border border-red-100 rounded-lg flex flex-col justify-between gap-3">
+                  <div>
+                    <h5 className="text-xs font-bold text-gray-800 mb-1">Khôi phục Thu nhập</h5>
+                    <p className="text-[10px] text-gray-500">Xóa toàn bộ Lịch sử Thu nhập và danh mục Thu nhập.</p>
+                  </div>
+                  <Button onClick={handleResetIncome} variant="outline" size="sm" className="border-red-200 text-red-600 hover:bg-red-50 text-[11px] self-start h-8 px-3">
+                    Xóa Dữ liệu Thu nhập
+                  </Button>
+                </div>
+
+                <div className="p-3 bg-red-50/50 border border-red-100 rounded-lg flex flex-col justify-between gap-3">
+                  <div>
+                    <h5 className="text-xs font-bold text-gray-800 mb-1">Khôi phục Giả định</h5>
+                    <p className="text-[10px] text-gray-500">Trả Lạm phát, Lãi suất, Quỹ hưu trí... về cấu hình gốc.</p>
+                  </div>
+                  <Button onClick={handleResetAssumptions} variant="outline" size="sm" className="border-red-200 text-red-600 hover:bg-red-50 text-[11px] self-start h-8 px-3">
+                    Khôi phục Tham số Giả định
+                  </Button>
+                </div>
+
+                <div className="p-3 bg-red-100/50 border border-red-200 rounded-lg flex flex-col justify-between gap-3 shadow-sm">
+                  <div>
+                    <h5 className="text-xs font-bold text-red-800 mb-1">XÓA TOÀN BỘ HỆ THỐNG</h5>
+                    <p className="text-[10px] text-red-600/80">Xóa SẠCH toàn bộ dữ liệu Ngân sách, Thu nhập, Tài sản về mốc Số 0.</p>
+                  </div>
+                  <Button onClick={handleResetAll} variant="danger" size="sm" className="text-[11px] self-start font-bold h-8 px-3 bg-red-600 hover:bg-red-700">
+                    Khôi phục Trạng thái Gốc
+                  </Button>
+                </div>
+              </div>
             </div>
           </CardContent>
         </Card>

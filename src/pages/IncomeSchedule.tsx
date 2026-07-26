@@ -17,7 +17,7 @@ import { HelpTooltip } from '../components/ui/HelpTooltip';
 import type { IncomeType } from '../types/finance';
 
 export const IncomeSchedule: React.FC = () => {
-  const { state, addIncomeItem, updateIncomeItem, deleteIncomeItem, resetToDefault, selectedPeriodKey } = useAppContext();
+  const { state, addIncomeItem, updateIncomeItem, deleteIncomeItem, selectedPeriodKey } = useAppContext();
   
   // Sort schedule items by date
   const sortedSchedule = [...state.incomeSchedule].sort((a, b) => {
@@ -647,9 +647,7 @@ export const IncomeSchedule: React.FC = () => {
                   Mốc thời gian
                 </CardTitle>
                 <div className="flex gap-1.5">
-                  <Button variant="secondary" size="sm" onClick={resetToDefault} className="h-7 px-2 text-[10px]">
-                    <RotateCcw className="w-3.5 h-3.5" />
-                  </Button>
+
                   <Button size="sm" onClick={() => { setIsCreatingNew(true); }} className="h-7 px-2 text-[10px] gap-1">
                     <Plus className="w-3 h-3" />
                   </Button>

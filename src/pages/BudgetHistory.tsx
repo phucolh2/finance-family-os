@@ -27,7 +27,6 @@ export const BudgetHistory: React.FC = () => {
     addBudgetScheduleItem, 
     updateBudgetScheduleItem, 
     deleteBudgetScheduleItem, 
-    resetToDefault,
     selectedPeriodKey,
   } = useAppContext();
 
@@ -126,11 +125,7 @@ export const BudgetHistory: React.FC = () => {
     }
   }, [activeVersion?.id]);
 
-  const handleResetToDefault = () => {
-    if (window.confirm('Bạn có chắc chắn muốn khôi phục toàn bộ phân bổ ngân sách về mặc định không? Tất cả các mốc lịch sử sẽ bị xóa.')) {
-      resetToDefault();
-    }
-  };
+
 
   const handleAddRootGroup = () => {
     const newGroup: BudgetTreeNode = {
@@ -709,9 +704,7 @@ export const BudgetHistory: React.FC = () => {
                   Mốc thời gian
                 </CardTitle>
                 <div className="flex gap-1.5">
-                  <Button variant="secondary" size="sm" onClick={handleResetToDefault} className="h-7 px-2 text-[10px]" title="Khôi phục toàn bộ về mặc định">
-                    <RotateCcw className="w-3.5 h-3.5" />
-                  </Button>
+
                   <Button size="sm" onClick={() => { setIsCreatingNew(true); }} className="h-7 px-2 text-[10px] gap-1" title="Tạo mốc mới">
                     <Plus className="w-3 h-3" />
                   </Button>
