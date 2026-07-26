@@ -81,7 +81,7 @@ export const LiquidityBreakdownTable: React.FC<LiquidityBreakdownTableProps> = (
                         {group.deducted > 0 ? `-${formatTableMoneyVNDMillion(group.deducted)}` : '-'}
                       </td>
                       <td className="p-3 text-right text-red-500 font-semibold bg-red-50/20">
-                        {group.flexible > 0 ? `-${formatTableMoneyVNDMillion(group.flexible)}` : '-'}
+                        {Math.abs(group.flexible) > 0 ? `-${formatTableMoneyVNDMillion(Math.abs(group.flexible))}` : '-'}
                       </td>
                       <td className={`p-3 text-right font-bold ${group.remaining >= 0 ? 'text-emerald-600 bg-emerald-50/30' : 'text-red-600 bg-red-50/30'}`}>
                         {group.remaining > 0 ? '+' : ''}{formatTableMoneyVNDMillion(group.remaining)}
@@ -130,7 +130,7 @@ export const LiquidityBreakdownTable: React.FC<LiquidityBreakdownTableProps> = (
                   -{formatTableMoneyVNDMillion(totalDeductedSum)}
                 </td>
                 <td className="px-3 py-4 text-right text-sm font-bold text-red-500">
-                  -{formatTableMoneyVNDMillion(totalFlexibleSum)}
+                  -{formatTableMoneyVNDMillion(Math.abs(totalFlexibleSum))}
                 </td>
                 <td className={`px-3 py-4 text-right text-sm font-bold ${totalRemainingSum >= 0 ? 'text-emerald-600' : 'text-red-600'}`}>
                   {totalRemainingSum > 0 ? '+' : ''}{formatTableMoneyVNDMillion(totalRemainingSum)}
