@@ -659,10 +659,59 @@ export const SinkingFundModule: React.FC<SinkingFundModuleProps> = ({
                          <div className="pt-1">
                             <span className="text-family-textMuted text-[10px] uppercase mb-1 block">Các khoản đang gửi tích lũy:</span>
                             <div className="space-y-1.5 max-h-[800px] overflow-y-auto pr-1">
-                               {getFundBalance(fund.id).buckets.map((b: any, i: number) => {
-                                  const bMo = ((b.termStart - 1) % 12) + 1;
-                                  const bYr = Math.floor((b.termStart - 1) / 12);
-                                  const pKey = b.periodKey || `${bYr}-${String(bMo).padStart(2, '0')}`;
+                               {(() => {
+                                   const actualBuckets = getFundBalance(fund.id).buckets;
+                                   const displayBuckets = [...actualBuckets];
+                                   const bucketPeriods = new Set(actualBuckets.map((b: any) => b.periodKey || `${Math.floor((b.termStart - 1) / 12)}-${String(((b.termStart - 1) % 12) + 1).padStart(2, '0')}`));
+
+                                   if (fund.periodConfigs) {
+                                      Object.keys(fund.periodConfigs).forEach(pKey => {
+                                         if (!bucketPeriods.has(pKey)) {
+                                            const parts = pKey.split('-');
+                                            if (parts.length === 2) {
+                                               const y = Number(parts[0]);
+                                               const m = Number(parts[1]);
+                                               displayBuckets.push({
+                                                  id: `dummy_${pKey}`,
+                                                  principal: 0,
+                                                  termStart: y * 12 + m,
+                                                  termMonths: fund.periodConfigs[pKey].termMonths ?? 6,
+                                                  interestRateAnnual: fund.periodConfigs[pKey].interestRateAnnual ?? fund.interestRateAnnual ?? 0,
+                                                  periodKey: pKey,
+                                                  contribAmount: fund.periodConfigs[pKey].contribution ?? 0
+                                               });
+                                            }
+                                         }
+                                      });
+                                   }
+
+                                   if (selectedPeriodKey && !bucketPeriods.has(selectedPeriodKey) && !fund.periodConfigs?.[selectedPeriodKey]) {
+                                       const partsObs = selectedPeriodKey.split('-');
+                                       if (partsObs.length === 2) {
+                                           const y = Number(partsObs[0]);
+                                           const m = Number(partsObs[1]);
+                                           const obsIdx = y * 12 + m;
+                                           const startIdx = fund.startYear * 12 + fund.startMonth;
+                                           if (obsIdx >= startIdx) {
+                                               displayBuckets.push({
+                                                  id: `dummy_current_${selectedPeriodKey}`,
+                                                  principal: 0,
+                                                  termStart: obsIdx,
+                                                  termMonths: 6,
+                                                  interestRateAnnual: fund.interestRateAnnual ?? 0,
+                                                  periodKey: selectedPeriodKey,
+                                                  contribAmount: fund.monthlyContribution ?? 0
+                                               });
+                                           }
+                                       }
+                                   }
+
+                                   displayBuckets.sort((a, b) => a.termStart - b.termStart);
+
+                                   return displayBuckets.map((b: any, i: number) => {
+                                      const bMo = ((b.termStart - 1) % 12) + 1;
+                                      const bYr = Math.floor((b.termStart - 1) / 12);
+                                      const pKey = b.periodKey || `${bYr}-${String(bMo).padStart(2, '0')}`;
 
                                   return (
                                      <div key={i} className="flex flex-col bg-white p-2 rounded shadow-sm border border-gray-100 gap-2 mb-2">
@@ -822,9 +871,9 @@ export const SinkingFundModule: React.FC<SinkingFundModuleProps> = ({
                                         </div>
                                       </div>
                                     </div>
-                                  );
-                               })}
-                            </div>
+                                   );
+                                })})()}
+                             </div>
                          </div>
                       </div>
             );
