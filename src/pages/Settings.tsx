@@ -392,7 +392,7 @@ const AssetAllocationSettings: React.FC = () => {
 };
 
 export const Settings: React.FC = () => {
-  const { state, lastSaved, schemaVersion, importState, resetToDefault, resetBudgetToDefault, resetIncomeToDefault, resetAssumptionsToDefault, updateAssumptions } = useAppContext();
+  const { state, lastSaved, schemaVersion, importState, resetToDefault, resetBudgetToDefault, resetIncomeToDefault, resetPortfolioToDefault, resetAssumptionsToDefault, updateAssumptions } = useAppContext();
 
   const fileInputRef = useRef<HTMLInputElement>(null);
   
@@ -494,6 +494,14 @@ export const Settings: React.FC = () => {
     if (window.confirm('Bạn có chắc chắn muốn khôi phục các chỉ số giả định (Lạm phát, Lãi suất...) về mức mặc định không?')) {
       resetAssumptionsToDefault();
       setSuccessMsg('Thông số giả định đã được khôi phục.');
+      setErrorMsg(null);
+    }
+  };
+
+  const handleResetPortfolio = () => {
+    if (window.confirm('Bạn có chắc chắn muốn xóa toàn bộ danh mục Tài sản, Giao dịch đầu tư và Số dư các quỹ không?')) {
+      resetPortfolioToDefault();
+      setSuccessMsg('Dữ liệu Tài sản và Đầu tư đã được làm sạch.');
       setErrorMsg(null);
     }
   };
@@ -608,6 +616,16 @@ export const Settings: React.FC = () => {
 
                 <div className="p-3 bg-red-50/50 border border-red-100 rounded-lg flex flex-col justify-between gap-3">
                   <div>
+                    <h5 className="text-xs font-bold text-gray-800 mb-1">Khôi phục Tài sản & Đầu tư</h5>
+                    <p className="text-[10px] text-gray-500">Xóa sạch danh mục Tài sản, Giao dịch và Số dư quỹ.</p>
+                  </div>
+                  <Button onClick={handleResetPortfolio} variant="outline" size="sm" className="border-red-200 text-red-600 hover:bg-red-50 text-[11px] self-start h-8 px-3">
+                    Xóa Dữ liệu Tài sản
+                  </Button>
+                </div>
+
+                <div className="p-3 bg-red-50/50 border border-red-100 rounded-lg flex flex-col justify-between gap-3">
+                  <div>
                     <h5 className="text-xs font-bold text-gray-800 mb-1">Khôi phục Giả định</h5>
                     <p className="text-[10px] text-gray-500">Trả Lạm phát, Lãi suất, Quỹ hưu trí... về cấu hình gốc.</p>
                   </div>
@@ -616,12 +634,12 @@ export const Settings: React.FC = () => {
                   </Button>
                 </div>
 
-                <div className="p-3 bg-red-100/50 border border-red-200 rounded-lg flex flex-col justify-between gap-3 shadow-sm">
+                <div className="md:col-span-2 p-3 bg-red-100/50 border border-red-200 rounded-lg flex flex-col md:flex-row md:items-center justify-between gap-3 shadow-sm">
                   <div>
                     <h5 className="text-xs font-bold text-red-800 mb-1">XÓA TOÀN BỘ HỆ THỐNG</h5>
-                    <p className="text-[10px] text-red-600/80">Xóa SẠCH toàn bộ dữ liệu Ngân sách, Thu nhập, Tài sản về mốc Số 0.</p>
+                    <p className="text-[10px] text-red-600/80">Xóa SẠCH toàn bộ dữ liệu Ngân sách, Thu nhập, Tài sản về mốc Số 0. Không thể hoàn tác.</p>
                   </div>
-                  <Button onClick={handleResetAll} variant="danger" size="sm" className="text-[11px] self-start font-bold h-8 px-3 bg-red-600 hover:bg-red-700">
+                  <Button onClick={handleResetAll} variant="danger" size="sm" className="text-[11px] font-bold h-8 px-5 bg-red-600 hover:bg-red-700 whitespace-nowrap shrink-0">
                     Khôi phục Trạng thái Gốc
                   </Button>
                 </div>

@@ -602,6 +602,16 @@ export function useAppState() {
     });
   };
 
+  const resetPortfolioToDefault = () => {
+    saveState({
+      ...state,
+      assets: INITIAL_APP_STATE.assets,
+      investmentDeals: INITIAL_APP_STATE.investmentDeals,
+      savingsDeposits: INITIAL_APP_STATE.savingsDeposits,
+      fundTransfers: INITIAL_APP_STATE.fundTransfers,
+    });
+  };
+
   // Projection Adjustment Actions
   const addProjectionAdjustment = (item: Omit<ProjectionAdjustmentRecord, 'id'>) => {
     const newItem: ProjectionAdjustmentRecord = {
@@ -884,6 +894,7 @@ export function useAppState() {
     resetToDefault,
     resetBudgetToDefault,
     resetIncomeToDefault,
+    resetPortfolioToDefault,
     resetAssumptionsToDefault,
     importState,
   };
