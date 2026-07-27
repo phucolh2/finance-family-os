@@ -159,6 +159,7 @@ export interface WithdrawalEvent {
   realizedInterest?: number; // Lãi thực nhận (không kỳ hạn) - dùng cho Savings
   realizedProfit?: number; // Lãi thực nhận - dùng cho Đầu tư
   note?: string;
+  eventId?: string; // ID của LifeEvent sinh ra từ khoản rút này (nếu có) để phục vụ việc Hoàn tác (Undo)
 }
 
 export interface SavingsDeposit {

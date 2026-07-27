@@ -8,7 +8,7 @@ import { PortfolioFundCard } from './fund-cards/PortfolioFundCard';
 import { SavingsFundCard } from './fund-cards/SavingsFundCard';
 import { ReservesFundCard } from './fund-cards/ReservesFundCard';
 import { HelpTooltip } from '../ui/HelpTooltip';
-import { Target, Plus, Trash2, ArrowRightCircle, Edit, CheckCircle } from 'lucide-react';
+import { Target, Plus, Trash2, ArrowRightCircle, Edit, CheckCircle, RotateCcw } from 'lucide-react';
 import { formatTableMoneyVNDMillion } from '../../utils/format';
 import { safeNumber, calculateNonTermInterest } from '../../utils/math';
 import { runProjection } from '../../engines/projectionEngine';
@@ -53,6 +53,7 @@ export const SinkingFundModule: React.FC<SinkingFundModuleProps> = ({
     disburseSinkingFund,
     disburseSinkingFundWithEvent,
     updateSinkingFundWithEvent,
+    undoSinkingFundDisbursement,
     addInvestmentDeal,
     addLifeEvent,
     selectedPeriodKey,
@@ -660,12 +661,33 @@ export const SinkingFundModule: React.FC<SinkingFundModuleProps> = ({
                             <div className="pt-2 border-b border-gray-100 pb-2">
                               <span className="text-family-textMuted text-[10px] uppercase mb-1 block">Lịch sử rút tiền / Giải ngân:</span>
                               <div className="space-y-1 max-h-[200px] overflow-y-auto">
-                                {fund.withdrawals.map((w: any, idx: number) => (
-                                  <div key={idx} className="flex justify-between items-center text-[11px] bg-red-50 p-1.5 rounded border border-red-100">
-                                    <span className="text-gray-700 line-clamp-1 flex-1 pr-2 font-medium">Kỳ T{w.month}/{w.year}: {w.note || 'Giải ngân'}</span>
-                                    <span className="font-bold text-red-600 shrink-0">-{formatTableMoneyVNDMillion(w.amount)}</span>
-                                  </div>
-                                ))}
+                                {fund.withdrawals.map((w: any, idx: number) => {
+                                  let fallbackNote = 'Giải ngân';
+                                  if (variant === 'lifestyle') fallbackNote = 'Sự kiện chi tiêu';
+                                  else if (variant === 'investment') fallbackNote = 'Chuyển sang đầu tư';
+                                  
+                                  return (
+                                    <div key={idx} className="flex justify-between items-center text-[11px] bg-red-50 p-1.5 rounded border border-red-100 group">
+                                      <span className="text-gray-700 line-clamp-1 flex-1 pr-2 font-medium">Kỳ T{w.month}/{w.year}: {w.note || fallbackNote}</span>
+                                      <div className="flex items-center gap-2">
+                                        <span className="font-bold text-red-600 shrink-0">-{formatTableMoneyVNDMillion(w.amount)}</span>
+                                        {w.id && (
+                                            <button 
+                                                onClick={() => {
+                                                    if (window.confirm('Bạn có chắc muốn hoàn tác (undo) khoản rút này? Mọi sự kiện chi tiêu tự động đi kèm cũng sẽ bị xoá khỏi dòng thời gian.')) {
+                                                        undoSinkingFundDisbursement(fund.id, w.id);
+                                                    }
+                                                }}
+                                                className="text-red-300 hover:text-red-600 transition-colors opacity-0 group-hover:opacity-100"
+                                                title="Hoàn tác khoản rút này"
+                                            >
+                                                <RotateCcw className="w-3.5 h-3.5" />
+                                            </button>
+                                        )}
+                                      </div>
+                                    </div>
+                                  );
+                                })}
                               </div>
                             </div>
                          )}
@@ -1193,9 +1215,13 @@ export const SinkingFundModule: React.FC<SinkingFundModuleProps> = ({
                               }
                               
                               let ev: any = undefined;
+                              let evId: string | undefined = undefined;
+                              
                               if (filterFundType !== 'debt_prep') {
                                 if (disburseForm.disburseDestination === 'life_event') {
+                                    evId = `event_${Date.now()}_${Math.random().toString(36).substring(2, 9)}`;
                                     ev = {
+                                        id: evId,
                                         name: disburseForm.dealName || `Rút từng phần quỹ: ${fund.name}`,
                                         month: disburseForm.disbursedMonth,
                                         year: disburseForm.disbursedYear,
@@ -1211,10 +1237,12 @@ export const SinkingFundModule: React.FC<SinkingFundModuleProps> = ({
                               const updatedFund = JSON.parse(JSON.stringify(fund));
                               if (!updatedFund.withdrawals) updatedFund.withdrawals = [];
                               updatedFund.withdrawals.push({
+                                 id: `w_${Date.now()}_${Math.random().toString(36).substring(2, 9)}`,
                                  amount: wAmt,
                                  month: disburseForm.disbursedMonth,
                                  year: disburseForm.disbursedYear,
                                  note: disburseForm.dealName || (disburseForm.disburseDestination === 'life_event' ? 'Chi tiêu sự kiện' : 'Hoàn tiền về nguồn'),
+                                 eventId: evId
                               });
                               updateSinkingFundWithEvent(updatedFund, ev);
                             }

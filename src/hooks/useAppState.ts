@@ -743,7 +743,7 @@ export function useAppState() {
       if (event) {
         const newItem: LifeEvent = {
           ...event,
-          id: `event_${Date.now()}_${Math.random().toString(36).substring(2, 9)}`,
+          id: (event as any).id || `event_${Date.now()}_${Math.random().toString(36).substring(2, 9)}`,
         };
         nextEvents = [...nextEvents, newItem];
         nextExpense = ensureExpenseScheduleForEvent(newItem, nextExpense);
@@ -753,6 +753,44 @@ export function useAppState() {
         lifeEvents: nextEvents,
         expenseSchedule: nextExpense,
         sinkingFunds: (state.sinkingFunds ?? []).map(item => (item.id === updated.id ? updated : item)),
+      });
+    },
+    
+    undoSinkingFundDisbursement: (fundId: string, withdrawalId: string) => {
+      const fund = state.sinkingFunds?.find(f => f.id === fundId);
+      if (!fund || !fund.withdrawals) return;
+      
+      const withdrawal = fund.withdrawals.find(w => w.id === withdrawalId);
+      if (!withdrawal) return;
+
+      let nextEvents = state.lifeEvents;
+      let nextExpense = state.expenseSchedule || [];
+
+      // Nếu khoản rút có tạo sự kiện, ta xóa sự kiện đó đi
+      if (withdrawal.eventId) {
+        nextEvents = nextEvents.filter(e => e.id !== withdrawal.eventId);
+        nextExpense = nextExpense.map(ex => ({
+          ...ex,
+          events: ex.events.filter(e => e.eventId !== withdrawal.eventId)
+        }));
+      }
+
+      saveState({
+        ...state,
+        lifeEvents: nextEvents,
+        expenseSchedule: nextExpense,
+        sinkingFunds: (state.sinkingFunds ?? []).map(item => {
+          if (item.id === fundId) {
+            return {
+              ...item,
+              withdrawals: item.withdrawals?.filter(w => w.id !== withdrawalId),
+              // Nếu quỹ bị tất toán (disbursed) nhưng ta xoá khoản rút cuối thì có cần bật lại 'active' không?
+              // Tuỳ logic, nhưng tạm thời khôi phục withdrawals. Nếu quỹ đã 'disbursed', ta set lại 'active'
+              status: item.status === 'disbursed' ? 'active' : item.status
+            };
+          }
+          return item;
+        }),
       });
     },
 
