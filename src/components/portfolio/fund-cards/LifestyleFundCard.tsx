@@ -118,8 +118,8 @@ export const LifestyleFundCard: React.FC<FundCardProps> = ({
           
           <div className="mt-3">
             {fund.withdrawals && fund.withdrawals.length > 0 && (
-              <p className="text-[10px] text-orange-800/70 mt-0.5">
-                Đã sử dụng: <span className="font-semibold text-red-500">{formatMoney(fund.withdrawals.reduce((sum, w) => sum + w.amount, 0))} triệu</span>
+              <p className="text-[10px] text-orange-800/70 mt-0.5 flex items-center gap-1">
+                Đã sử dụng: <span className="font-semibold text-red-500">{formatMoney(fund.withdrawals.reduce((sum, w) => sum + w.amount, 0))}</span>
               </p>
             )}
           </div>

@@ -654,8 +654,21 @@ export const SinkingFundModule: React.FC<SinkingFundModuleProps> = ({
                          </div>
                          <div className="flex justify-between border-b border-gray-100 pb-1">
                             <span className="text-family-textMuted">Lãi cộng dồn:</span>
-                             <span className="font-semibold text-emerald-600">{(balance - (totalDeposited || 0)) >= 0 ? '+' : ''}{formatTableMoneyVNDMillion(balance - (totalDeposited || 0))}</span>
+                             <span className="font-semibold text-emerald-600">{(balance + (totalDisbursed || 0) - (totalDeposited || 0)) >= 0 ? '+' : ''}{formatTableMoneyVNDMillion(balance + (totalDisbursed || 0) - (totalDeposited || 0))}</span>
                          </div>
+                         {fund.withdrawals && fund.withdrawals.length > 0 && (
+                            <div className="pt-2 border-b border-gray-100 pb-2">
+                              <span className="text-family-textMuted text-[10px] uppercase mb-1 block">Lịch sử rút tiền / Giải ngân:</span>
+                              <div className="space-y-1 max-h-[200px] overflow-y-auto">
+                                {fund.withdrawals.map((w: any, idx: number) => (
+                                  <div key={idx} className="flex justify-between items-center text-[11px] bg-red-50 p-1.5 rounded border border-red-100">
+                                    <span className="text-gray-700 line-clamp-1 flex-1 pr-2 font-medium">Kỳ T{w.month}/{w.year}: {w.note || 'Giải ngân'}</span>
+                                    <span className="font-bold text-red-600 shrink-0">-{formatTableMoneyVNDMillion(w.amount)}</span>
+                                  </div>
+                                ))}
+                              </div>
+                            </div>
+                         )}
                          {nonTermCash > 0 && (
                             <div className="flex justify-between border-b border-gray-100 pb-1 bg-yellow-50 px-1 rounded">
                                <span className="text-family-textMuted">Tiền chờ phân bổ (Không kỳ hạn):</span>
@@ -1201,6 +1214,7 @@ export const SinkingFundModule: React.FC<SinkingFundModuleProps> = ({
                                  amount: wAmt,
                                  month: disburseForm.disbursedMonth,
                                  year: disburseForm.disbursedYear,
+                                 note: disburseForm.dealName || (disburseForm.disburseDestination === 'life_event' ? 'Chi tiêu sự kiện' : 'Hoàn tiền về nguồn'),
                               });
                               updateSinkingFundWithEvent(updatedFund, ev);
                             }
