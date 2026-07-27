@@ -1053,10 +1053,12 @@ export const SinkingFundModule: React.FC<SinkingFundModuleProps> = ({
                                    const interest = b.principal * (b.interestRateAnnual / 100 / 12) * b.termMonths;
                                    const maturedTotal = b.principal + interest;
                                    const deduct = Math.min(maturedTotal, rem);
-                                   
                                    breakdownMaturedBuckets.push({
                                       periodKey: b.periodKey || `${Math.floor((b.termStart-1)/12)}-${String(((b.termStart-1)%12)+1).padStart(2,'0')}`,
-                                      deduct
+                                      deduct,
+                                      leftover: maturedTotal - deduct,
+                                      termMonths: b.termMonths,
+                                      interestRateAnnual: b.interestRateAnnual
                                    });
                                    rem -= deduct;
                                 }
@@ -1069,14 +1071,18 @@ export const SinkingFundModule: React.FC<SinkingFundModuleProps> = ({
                                 for (const b of sortedUnmatured) {
                                    if (rem <= 0) break;
                                    const deduct = Math.min(b.principal, rem);
-                                   
                                    breakdownUnmaturedBuckets.push({
                                       periodKey: b.periodKey || `${Math.floor((b.termStart-1)/12)}-${String(((b.termStart-1)%12)+1).padStart(2,'0')}`,
-                                      deduct
+                                      deduct,
+                                      leftover: b.principal - deduct,
+                                      termMonths: b.termMonths,
+                                      interestRateAnnual: b.interestRateAnnual
                                    });
                                    rem -= deduct;
                                 }
                              }
+                             
+                             const hasLeftovers = breakdownMaturedBuckets.some((b: any) => b.leftover > 0) || breakdownUnmaturedBuckets.some((b: any) => b.leftover > 0);
                              
                              return (
                                 <div className="w-full mt-3 p-3 bg-yellow-50/70 border border-yellow-200/50 rounded-xl text-xs space-y-2">
@@ -1107,10 +1113,28 @@ export const SinkingFundModule: React.FC<SinkingFundModuleProps> = ({
                                             <span className="text-[10px] text-amber-700 font-medium bg-amber-50 px-1 py-0.5 rounded border border-amber-100">Mới gửi nhất - Rút trước để giảm thiểu mất lãi tích lũy</span>
                                          </li>
                                       ))}
-                                      {(breakdownMaturedBuckets.length > 0 || breakdownUnmaturedBuckets.length > 0) && (
-                                         <li className="text-[10px] text-slate-500 font-normal italic pt-1 border-t border-yellow-200/40">
-                                            * Phần dôi ra của các kỳ hạn trên (nếu có) vẫn tiếp tục được tái tục và duy trì kỳ hạn gửi ban đầu.
+                                      {hasLeftovers ? (
+                                         <li className="text-[10px] text-slate-600 font-normal pt-1 border-t border-yellow-200/40 space-y-1">
+                                            <span className="italic block mb-0.5">* Chi tiết phần dôi ra sẽ được tái tục:</span>
+                                            {breakdownMaturedBuckets.filter((b: any) => b.leftover > 0).map((b: any, i: number) => (
+                                                <div key={`mat-left-${i}`} className="pl-3 flex items-center gap-1">
+                                                   <span className="w-1 h-1 rounded-full bg-slate-400"></span>
+                                                   <span>Kỳ T{b.periodKey.split('-')[1]}/{b.periodKey.split('-')[0]}: dư <strong>{formatTableMoneyVNDMillion(b.leftover)}</strong> (Tiếp tục gửi {b.termMonths} tháng, lãi {b.interestRateAnnual}%/năm)</span>
+                                                </div>
+                                            ))}
+                                            {breakdownUnmaturedBuckets.filter((b: any) => b.leftover > 0).map((b: any, i: number) => (
+                                                <div key={`unmat-left-${i}`} className="pl-3 flex items-center gap-1">
+                                                   <span className="w-1 h-1 rounded-full bg-slate-400"></span>
+                                                   <span>Kỳ T{b.periodKey.split('-')[1]}/{b.periodKey.split('-')[0]}: dư <strong>{formatTableMoneyVNDMillion(b.leftover)}</strong> (Tiếp tục gửi {b.termMonths} tháng, lãi {b.interestRateAnnual}%/năm)</span>
+                                                </div>
+                                            ))}
                                          </li>
+                                      ) : (
+                                         (breakdownMaturedBuckets.length > 0 || breakdownUnmaturedBuckets.length > 0) && (
+                                            <li className="text-[10px] text-slate-500 font-normal italic pt-1 border-t border-yellow-200/40">
+                                               * Không có phần dôi ra (Toàn bộ các khoản gửi bị tác động đã được rút hết).
+                                            </li>
+                                         )
                                       )}
                                    </ul>
                                 </div>
