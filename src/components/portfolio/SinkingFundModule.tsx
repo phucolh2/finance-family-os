@@ -1217,8 +1217,8 @@ export const SinkingFundModule: React.FC<SinkingFundModuleProps> = ({
                    setPartialWithdrawType('amount');
                    setPartialWithdrawValue(0);
                    setDisburseForm({
-                     disbursedMonth: initMonth,
-                     disbursedYear: initYear,
+                     disbursedMonth: currentObservedMonth,
+                     disbursedYear: currentObservedYear,
                      dealName: fund.name,
                      realizedInterest: 0,
                      disburseDestination: variant === 'portfolio' ? 'none' : 'life_event',
