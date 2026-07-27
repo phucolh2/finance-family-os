@@ -116,7 +116,7 @@ export const SinkingFundModule: React.FC<SinkingFundModuleProps> = ({
     disbursedYear: initYear,
     dealName: '',
     realizedInterest: 0,
-    disburseDestination: variant === 'portfolio' ? 'investment' : 'life_event',
+    disburseDestination: variant === 'portfolio' ? 'none' : 'life_event',
   });
 
   const activeFunds = state.sinkingFunds?.filter(f => f.status === 'active' && (f.fundType || 'investment') === filterFundType) || [];
@@ -911,14 +911,13 @@ export const SinkingFundModule: React.FC<SinkingFundModuleProps> = ({
                                     value={disburseForm.disburseDestination}
                                     onChange={(e) => setDisburseForm({ ...disburseForm, disburseDestination: e.target.value })}
                                 >
-                                    <option value="life_event">Sự kiện chi tiêu (Khuyên dùng khi chi tiêu)</option>
-                                    <option value="investment">Khoản Đầu tư / Tài sản mới</option>
-                                    <option value="none">Hoàn tiền về nguồn (Chỉ rút tiền)</option>
+                                    <option value="life_event">Sự kiện chi tiêu (Tự động trừ vào quỹ)</option>
+                                    <option value="none">Hoàn tiền về nguồn (Chỉ rút tiền chờ phân bổ)</option>
                                 </select>
                             </div>
                             {disburseForm.disburseDestination !== 'none' && (
                                 <Input
-                                  label={disburseForm.disburseDestination === 'investment' ? "Tên thương vụ / Tài sản" : "Tên sự kiện chi tiêu"}
+                                  label="Tên sự kiện chi tiêu"
                                   value={disburseForm.dealName}
                                   onChange={(e) => { setDisburseForm({ ...disburseForm, dealName: e.target.value }); }}
                                   placeholder={`VD: ${fund.name}`}
@@ -1087,19 +1086,9 @@ export const SinkingFundModule: React.FC<SinkingFundModuleProps> = ({
                           onClick={() => {
                             if (settleMode === 'full') {
                               if (filterFundType !== 'debt_prep') {
-                                if (disburseForm.disburseDestination === 'investment') {
-                                    addInvestmentDeal({
-                                       name: disburseForm.dealName,
-                                       assetType: fund.targetAssetType,
-                                       capital: balance,
-                                       startMonth: disburseForm.disbursedMonth,
-                                       startYear: disburseForm.disbursedYear,
-                                       status: 'active',
-                                       notes: `Giải ngân toàn bộ từ quỹ: ${fund.name}`
-                                    });
-                                } else if (disburseForm.disburseDestination === 'life_event') {
+                                if (disburseForm.disburseDestination === 'life_event') {
                                     addLifeEvent({
-                                        name: disburseForm.dealName,
+                                        name: disburseForm.dealName || `Giải ngân quỹ: ${fund.name}`,
                                         month: disburseForm.disbursedMonth,
                                         year: disburseForm.disbursedYear,
                                         amount: balance,
@@ -1120,19 +1109,9 @@ export const SinkingFundModule: React.FC<SinkingFundModuleProps> = ({
                               }
                               
                               if (filterFundType !== 'debt_prep') {
-                                if (disburseForm.disburseDestination === 'investment') {
-                                    addInvestmentDeal({
-                                       name: disburseForm.dealName,
-                                       assetType: fund.targetAssetType,
-                                       capital: wAmt,
-                                       startMonth: disburseForm.disbursedMonth,
-                                       startYear: disburseForm.disbursedYear,
-                                       status: 'active',
-                                       notes: `Giải ngân từng phần từ quỹ: ${fund.name}`
-                                    });
-                                } else if (disburseForm.disburseDestination === 'life_event') {
+                                if (disburseForm.disburseDestination === 'life_event') {
                                     addLifeEvent({
-                                        name: disburseForm.dealName,
+                                        name: disburseForm.dealName || `Rút từng phần quỹ: ${fund.name}`,
                                         month: disburseForm.disbursedMonth,
                                         year: disburseForm.disbursedYear,
                                         amount: wAmt,
@@ -1199,7 +1178,7 @@ export const SinkingFundModule: React.FC<SinkingFundModuleProps> = ({
                      disbursedYear: initYear,
                      dealName: fund.name,
                      realizedInterest: 0,
-                     disburseDestination: variant === 'portfolio' ? 'investment' : 'life_event',
+                     disburseDestination: variant === 'portfolio' ? 'none' : 'life_event',
                    });
                },
                renderDisburseForm, renderCashflowDetails,
