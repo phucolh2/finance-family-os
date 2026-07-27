@@ -673,8 +673,9 @@ export const SinkingFundModule: React.FC<SinkingFundModuleProps> = ({
                                                const termMonths = fund.periodConfigs[pKey].termMonths ?? 6;
                                                const obsIdx = currentObservedYear * 12 + currentObservedMonth;
                                                
-                                               // Only show dummy bucket if it hasn't matured yet relative to the observed month
-                                               if (obsIdx < termStart + termMonths) {
+                                               // Only show dummy bucket if it has already started (termStart <= obsIdx) 
+                                               // AND it hasn't matured yet relative to the observed month
+                                               if (termStart <= obsIdx && obsIdx < termStart + termMonths) {
                                                    displayBuckets.push({
                                                       id: `dummy_${pKey}`,
                                                       principal: 0,
