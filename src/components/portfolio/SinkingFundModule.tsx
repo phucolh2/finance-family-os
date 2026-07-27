@@ -51,6 +51,8 @@ export const SinkingFundModule: React.FC<SinkingFundModuleProps> = ({
     updateSinkingFund,
     deleteSinkingFund,
     disburseSinkingFund,
+    disburseSinkingFundWithEvent,
+    updateSinkingFundWithEvent,
     addInvestmentDeal,
     addLifeEvent,
     selectedPeriodKey,
@@ -1153,21 +1155,23 @@ export const SinkingFundModule: React.FC<SinkingFundModuleProps> = ({
                           onClick={() => {
                             if (settleMode === 'full') {
                               if (filterFundType !== 'debt_prep') {
+                                let ev: any = undefined;
                                 if (disburseForm.disburseDestination === 'life_event') {
-                                    addLifeEvent({
+                                    ev = {
                                         name: disburseForm.dealName || `Giải ngân quỹ: ${fund.name}`,
                                         month: disburseForm.disbursedMonth,
                                         year: disburseForm.disbursedYear,
-                                        amount: balance,
+                                        amount: -balance,
                                         recurringMonthlyImpact: 0,
                                         source: disburseForm.disburseSource || fund.sourceOfFund || 'expense_surplus',
                                         type: 'other',
                                         affectsNetWorth: true
-                                    });
+                                    };
                                 }
+                                disburseSinkingFundWithEvent(fund.id, disburseForm.disbursedMonth, disburseForm.disbursedYear, ev);
+                              } else {
+                                disburseSinkingFund(fund.id, disburseForm.disbursedMonth, disburseForm.disbursedYear);
                               }
-                              // 2. Mark fund as disbursed
-                              disburseSinkingFund(fund.id, disburseForm.disbursedMonth, disburseForm.disbursedYear);
                             } else {
                               const wAmt = partialWithdrawType === 'amount' ? partialWithdrawValue : (balance * partialWithdrawValue / 100);
                               if (wAmt <= 0 || wAmt > balance) {
@@ -1175,18 +1179,19 @@ export const SinkingFundModule: React.FC<SinkingFundModuleProps> = ({
                                 return;
                               }
                               
+                              let ev: any = undefined;
                               if (filterFundType !== 'debt_prep') {
                                 if (disburseForm.disburseDestination === 'life_event') {
-                                    addLifeEvent({
+                                    ev = {
                                         name: disburseForm.dealName || `Rút từng phần quỹ: ${fund.name}`,
                                         month: disburseForm.disbursedMonth,
                                         year: disburseForm.disbursedYear,
-                                        amount: wAmt,
+                                        amount: -wAmt,
                                         recurringMonthlyImpact: 0,
                                         source: disburseForm.disburseSource || fund.sourceOfFund || 'expense_surplus',
                                         type: 'other',
                                         affectsNetWorth: true
-                                    });
+                                    };
                                 }
                               }
                               
@@ -1197,7 +1202,7 @@ export const SinkingFundModule: React.FC<SinkingFundModuleProps> = ({
                                  month: disburseForm.disbursedMonth,
                                  year: disburseForm.disbursedYear,
                               });
-                              updateSinkingFund(updatedFund);
+                              updateSinkingFundWithEvent(updatedFund, ev);
                             }
                             setDisbursingId(null);
                           }}

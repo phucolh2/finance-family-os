@@ -696,6 +696,8 @@ export function useAppState() {
         sinkingFunds: (state.sinkingFunds ?? []).map(item => item.id === updated.id ? updated : item),
       });
     },
+    updateSinkingFundWithEvent,
+    disburseSinkingFundWithEvent,
     deleteSinkingFund: (id: string) => {
       saveState({
         ...state,
@@ -711,6 +713,47 @@ export function useAppState() {
           }
           return item;
         }),
+      });
+    },
+    disburseSinkingFundWithEvent: (id: string, disbursedMonth: number, disbursedYear: number, event?: Omit<LifeEvent, 'id'>) => {
+      let nextEvents = state.lifeEvents;
+      let nextExpense = state.expenseSchedule || [];
+      if (event) {
+        const newItem: LifeEvent = {
+          ...event,
+          id: `event_${Date.now()}_${Math.random().toString(36).substring(2, 9)}`,
+        };
+        nextEvents = [...nextEvents, newItem];
+        nextExpense = ensureExpenseScheduleForEvent(newItem, nextExpense);
+      }
+      saveState({
+        ...state,
+        lifeEvents: nextEvents,
+        expenseSchedule: nextExpense,
+        sinkingFunds: (state.sinkingFunds ?? []).map(item => {
+          if (item.id === id) {
+            return { ...item, status: 'disbursed', disbursedMonth, disbursedYear };
+          }
+          return item;
+        }),
+      });
+    },
+    updateSinkingFundWithEvent: (updated: SinkingFund, event?: Omit<LifeEvent, 'id'>) => {
+      let nextEvents = state.lifeEvents;
+      let nextExpense = state.expenseSchedule || [];
+      if (event) {
+        const newItem: LifeEvent = {
+          ...event,
+          id: `event_${Date.now()}_${Math.random().toString(36).substring(2, 9)}`,
+        };
+        nextEvents = [...nextEvents, newItem];
+        nextExpense = ensureExpenseScheduleForEvent(newItem, nextExpense);
+      }
+      saveState({
+        ...state,
+        lifeEvents: nextEvents,
+        expenseSchedule: nextExpense,
+        sinkingFunds: (state.sinkingFunds ?? []).map(item => (item.id === updated.id ? updated : item)),
       });
     },
 
