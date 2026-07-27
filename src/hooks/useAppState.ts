@@ -696,8 +696,7 @@ export function useAppState() {
         sinkingFunds: (state.sinkingFunds ?? []).map(item => item.id === updated.id ? updated : item),
       });
     },
-    updateSinkingFundWithEvent,
-    disburseSinkingFundWithEvent,
+
     deleteSinkingFund: (id: string) => {
       saveState({
         ...state,
