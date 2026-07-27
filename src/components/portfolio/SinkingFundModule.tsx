@@ -935,10 +935,13 @@ export const SinkingFundModule: React.FC<SinkingFundModuleProps> = ({
                             </div>
                             
                             <div>
-                                <label className="text-xs font-semibold text-family-text mb-1 block">
+                                <label className="text-xs font-semibold text-family-text mb-1 flex items-center gap-1">
                                     {disburseForm.disburseDestination === 'life_event' 
                                       ? (variant === 'lifestyle' ? 'Khoản chi tiêu linh hoạt sẽ trừ vào quỹ:' : 'Khoản chi tiêu sẽ trừ vào quỹ:') 
                                       : (variant === 'lifestyle' ? 'Số tiền sẽ hoàn về Quỹ sinh hoạt nguồn:' : 'Số tiền sẽ hoàn về quỹ:')}
+                                    {disburseForm.disburseDestination === 'life_event' && (
+                                      <HelpTooltip text="Hệ thống sẽ đồng thời: (1) Hoàn tiền giải ngân về quỹ này, và (2) Ghi nhận khoản chi tiêu tương ứng trừ vào quỹ này. Việc này giúp lưu vết lịch sử chi tiêu mà KHÔNG làm âm số dư thực tế của quỹ." />
+                                    )}
                                 </label>
                                 <select 
                                     className={`w-full bg-white rounded-md border border-green-200 p-2 text-xs ${disburseForm.disburseDestination === 'none' ? 'bg-gray-100 cursor-not-allowed opacity-80' : ''}`}
