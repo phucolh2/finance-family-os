@@ -117,6 +117,7 @@ export const SinkingFundModule: React.FC<SinkingFundModuleProps> = ({
     dealName: '',
     realizedInterest: 0,
     disburseDestination: variant === 'portfolio' ? 'none' : 'life_event',
+    disburseSource: '',
   });
 
   const activeFunds = state.sinkingFunds?.filter(f => f.status === 'active' && (f.fundType || 'investment') === filterFundType) || [];
@@ -913,21 +914,48 @@ export const SinkingFundModule: React.FC<SinkingFundModuleProps> = ({
                             <div>
                                 <label className="text-xs font-semibold text-family-text mb-1 block">Ghi nhận số tiền rút ra thành:</label>
                                 <select 
-                                    className="w-full bg-white rounded-md border border-green-200 p-2 text-xs"
+                                    className="w-full bg-white rounded-md border border-green-200 p-2 text-xs mb-2"
                                     value={disburseForm.disburseDestination}
-                                    onChange={(e) => setDisburseForm({ ...disburseForm, disburseDestination: e.target.value })}
+                                    onChange={(e) => {
+                                      const newDest = e.target.value as 'life_event' | 'none';
+                                      setDisburseForm({ 
+                                        ...disburseForm, 
+                                        disburseDestination: newDest,
+                                        disburseSource: newDest === 'none' ? (fund.sourceOfFund || 'idle') : disburseForm.disburseSource 
+                                      });
+                                    }}
                                 >
                                     <option value="life_event">Sự kiện chi tiêu (Tự động trừ vào quỹ)</option>
-                                    <option value="none">Hoàn tiền về nguồn (Chỉ rút tiền chờ phân bổ)</option>
+                                    <option value="none">Hoàn tiền về nguồn (Không tạo sự kiện chi tiêu)</option>
                                 </select>
                             </div>
+                            
+                            <div>
+                                <label className="text-xs font-semibold text-family-text mb-1 block">
+                                    {disburseForm.disburseDestination === 'life_event' ? 'Khoản chi tiêu sẽ trừ vào quỹ:' : 'Số tiền sẽ hoàn về quỹ:'}
+                                </label>
+                                <select 
+                                    className={`w-full bg-white rounded-md border border-green-200 p-2 text-xs ${disburseForm.disburseDestination === 'none' ? 'bg-gray-100 cursor-not-allowed opacity-80' : ''}`}
+                                    value={disburseForm.disburseSource}
+                                    onChange={(e) => setDisburseForm({ ...disburseForm, disburseSource: e.target.value })}
+                                    disabled={disburseForm.disburseDestination === 'none'}
+                                    title={disburseForm.disburseDestination === 'none' ? 'Tiền sẽ tự động hoàn về nơi sinh ra quỹ này' : 'Nguồn tiền sẽ chịu tác động'}
+                                >
+                                    {activeSources.map(sourceId => (
+                                      <option key={sourceId} value={sourceId}>{getSourceLabelWithBalance(sourceId)}</option>
+                                    ))}
+                                </select>
+                            </div>
+
                             {disburseForm.disburseDestination !== 'none' && (
-                                <Input
-                                  label="Tên sự kiện chi tiêu"
-                                  value={disburseForm.dealName}
-                                  onChange={(e) => { setDisburseForm({ ...disburseForm, dealName: e.target.value }); }}
-                                  placeholder={`VD: ${fund.name}`}
-                                />
+                                <div className="mt-2">
+                                  <Input
+                                    label="Tên sự kiện chi tiêu"
+                                    value={disburseForm.dealName}
+                                    onChange={(e) => { setDisburseForm({ ...disburseForm, dealName: e.target.value }); }}
+                                    placeholder={`VD: ${fund.name}`}
+                                  />
+                                </div>
                             )}
                         </div>
                       )}
@@ -1099,7 +1127,7 @@ export const SinkingFundModule: React.FC<SinkingFundModuleProps> = ({
                                         year: disburseForm.disbursedYear,
                                         amount: balance,
                                         recurringMonthlyImpact: 0,
-                                        source: fund.sourceOfFund || 'expense_surplus',
+                                        source: disburseForm.disburseSource || fund.sourceOfFund || 'expense_surplus',
                                         type: 'other',
                                         affectsNetWorth: true
                                     });
@@ -1122,7 +1150,7 @@ export const SinkingFundModule: React.FC<SinkingFundModuleProps> = ({
                                         year: disburseForm.disbursedYear,
                                         amount: wAmt,
                                         recurringMonthlyImpact: 0,
-                                        source: fund.sourceOfFund || 'expense_surplus',
+                                        source: disburseForm.disburseSource || fund.sourceOfFund || 'expense_surplus',
                                         type: 'other',
                                         affectsNetWorth: true
                                     });
@@ -1185,6 +1213,7 @@ export const SinkingFundModule: React.FC<SinkingFundModuleProps> = ({
                      dealName: fund.name,
                      realizedInterest: 0,
                      disburseDestination: variant === 'portfolio' ? 'none' : 'life_event',
+                     disburseSource: fund.sourceOfFund || (activeSources.length > 0 ? activeSources[0] : 'idle'),
                    });
                },
                renderDisburseForm, renderCashflowDetails,
