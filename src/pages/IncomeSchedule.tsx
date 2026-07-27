@@ -648,7 +648,11 @@ export const IncomeSchedule: React.FC = () => {
                 </CardTitle>
                 <div className="flex gap-1.5">
 
-                  <Button size="sm" onClick={() => { setIsCreatingNew(true); }} className="h-7 px-2 text-[10px] gap-1">
+                  <Button size="sm" onClick={() => { 
+                    setIsCreatingNew(true); 
+                    setNewYear(parseInt(currentKey.split('-')[0], 10));
+                    setNewMonth(parseInt(currentKey.split('-')[1], 10));
+                  }} className="h-7 px-2 text-[10px] gap-1">
                     <Plus className="w-3 h-3" />
                   </Button>
                 </div>

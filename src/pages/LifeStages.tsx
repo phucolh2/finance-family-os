@@ -23,7 +23,7 @@ import type { BudgetGroup } from '../types/budget';
 import type { LifeEvent } from '../types/finance';
 
 export const LifeStages: React.FC = () => {
-  const { state, addLifeEvent, updateLifeEvent, deleteLifeEvent } = useAppContext();
+  const { state, addLifeEvent, updateLifeEvent, deleteLifeEvent, selectedPeriodKey } = useAppContext();
   
   // Dashboard filter state
   const [dashboardFilter, setDashboardFilter] = useState<BudgetGroup | 'all'>('all');
@@ -37,6 +37,12 @@ export const LifeStages: React.FC = () => {
   const [showWarningDialog, setShowWarningDialog] = useState(false);
   const [pendingEventData, setPendingEventData] = useState<any>(null);
   const [pendingWarningInfo, setPendingWarningInfo] = useState<{sourceName: string, overage: number, month: number, year: number} | null>(null);
+
+  const now = new Date();
+  const nowKey = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
+  const effectivePeriodKey = selectedPeriodKey || nowKey;
+  const currentObservedYear = parseInt(effectivePeriodKey.split('-')[0], 10);
+  const currentObservedMonth = parseInt(effectivePeriodKey.split('-')[1], 10);
 
   const [formData, setFormData] = useState<Omit<LifeEvent, 'id'>>({
     name: '',
@@ -111,8 +117,8 @@ export const LifeStages: React.FC = () => {
     setFormData({
       name: '',
       type: 'other',
-      month: 1,
-      year: 2030,
+      month: currentObservedMonth,
+      year: currentObservedYear,
       amount: 0,
       source: activeBudget?.rootGroups.find(g => g.classification === 'expense')?.groupId || 'debt',
       recurringMonthlyImpact: 0,

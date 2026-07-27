@@ -705,7 +705,12 @@ export const BudgetHistory: React.FC = () => {
                 </CardTitle>
                 <div className="flex gap-1.5">
 
-                  <Button size="sm" onClick={() => { setIsCreatingNew(true); }} className="h-7 px-2 text-[10px] gap-1" title="Tạo mốc mới">
+                  <Button size="sm" onClick={() => { 
+                    setIsCreatingNew(true); 
+                    const cKey = selectedPeriodKey || `${new Date().getFullYear()}-${String(new Date().getMonth() + 1).padStart(2, '0')}`;
+                    setNewYear(parseInt(cKey.split('-')[0], 10));
+                    setNewMonth(parseInt(cKey.split('-')[1], 10));
+                  }} className="h-7 px-2 text-[10px] gap-1" title="Tạo mốc mới">
                     <Plus className="w-3 h-3" />
                   </Button>
                 </div>

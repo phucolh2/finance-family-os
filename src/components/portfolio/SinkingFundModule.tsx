@@ -420,7 +420,12 @@ export const SinkingFundModule: React.FC<SinkingFundModuleProps> = ({
             {description}
           </p>
         </div>
-        <Button onClick={() => { setShowAddForm(!showAddForm); }} size="sm" className="gap-1 text-xs py-1 h-8 shrink-0">
+        <Button onClick={() => { 
+          if (!showAddForm) {
+            setForm({ ...form, startMonth: currentObservedMonth, startYear: currentObservedYear, name: '', fundGroup: '', depositBank: '', initialDeposit: 0, targetAmount: 0 });
+          }
+          setShowAddForm(!showAddForm); 
+        }} size="sm" className="gap-1 text-xs py-1 h-8 shrink-0">
           <Plus className="w-3.5 h-3.5" /> Tạo quỹ mới
         </Button>
       </div>
@@ -1161,8 +1166,8 @@ export const SinkingFundModule: React.FC<SinkingFundModuleProps> = ({
                      interestRateAnnual: fund.interestRateAnnual || 5.5,
                      termMonths: fund.termMonths || 1,
                      sourceOfFund: (fund.sourceOfFund || activeSources[0]) as string,
-                     startMonth: fund.startMonth,
-                     startYear: fund.startYear,
+                     startMonth: currentObservedMonth,
+                     startYear: currentObservedYear,
                      rolloverStrategy: fund.rolloverStrategy || 'principal_and_interest',
                    });
                    setShowAddForm(true);

@@ -20,14 +20,16 @@ export const DebtLiabilityModule: React.FC = () => {
     setIsAdding(false);
   }, [selectedPeriodKey]);
 
+  const currentKey = selectedPeriodKey || `${new Date().getFullYear()}-${String(new Date().getMonth() + 1).padStart(2, '0')}`;
+
   const [newDebt, setNewDebt] = useState({
     name: '',
     type: 'mortgage' as const,
     principal: '',
     interestRateAnnual: '',
     termMonths: '',
-    startMonth: new Date().getMonth() + 1,
-    startYear: new Date().getFullYear(),
+    startMonth: parseInt(currentKey.split('-')[1], 10),
+    startYear: parseInt(currentKey.split('-')[0], 10),
   });
 
   const handleAdd = () => {
@@ -51,8 +53,8 @@ export const DebtLiabilityModule: React.FC = () => {
       principal: '',
       interestRateAnnual: '',
       termMonths: '',
-      startMonth: new Date().getMonth() + 1,
-      startYear: new Date().getFullYear(),
+      startMonth: parseInt(currentKey.split('-')[1], 10),
+      startYear: parseInt(currentKey.split('-')[0], 10),
     });
   };
 
@@ -71,7 +73,12 @@ export const DebtLiabilityModule: React.FC = () => {
             </CardDescription>
           </div>
           <Button 
-            onClick={() => { setIsAdding(!isAdding); }}
+            onClick={() => { 
+              if (!isAdding) {
+                setNewDebt({ ...newDebt, startYear: parseInt(currentKey.split('-')[0], 10), startMonth: parseInt(currentKey.split('-')[1], 10) });
+              }
+              setIsAdding(!isAdding); 
+            }}
             variant="outline"
             className="border-red-500/30 text-red-400 hover:bg-red-500/10"
           >

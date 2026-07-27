@@ -591,7 +591,7 @@ export const Portfolio: React.FC = () => {
               </p>
               <Button onClick={() => { 
                 setEditDealId(null);
-                setDealForm({ name: '', assetType: 'stocks', capital: 0, startMonth: 10, startYear: 2026, notes: '', sourceFundId: 'idle', dealType: 'capital_gain', cashflowYieldAnnual: 5, createPassiveIncome: false });
+                setDealForm({ name: '', assetType: 'stocks', capital: 0, startMonth: activeRow ? activeRow.period.month : 10, startYear: activeRow ? activeRow.period.year : 2026, notes: '', sourceFundId: 'idle', dealType: 'capital_gain', cashflowYieldAnnual: 5, createPassiveIncome: false });
                 setShowAddDealForm(!showAddDealForm); 
               }} size="sm" className="gap-1 text-xs py-1 h-8 shrink-0">
                 <PlusCircle className="w-3.5 h-3.5" /> Thêm thương vụ
