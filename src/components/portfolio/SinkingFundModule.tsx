@@ -925,14 +925,20 @@ export const SinkingFundModule: React.FC<SinkingFundModuleProps> = ({
                                       });
                                     }}
                                 >
-                                    <option value="life_event">Sự kiện chi tiêu (Tự động trừ vào quỹ)</option>
-                                    <option value="none">Hoàn tiền về nguồn (Không tạo sự kiện chi tiêu)</option>
+                                    <option value="life_event">
+                                      {variant === 'lifestyle' ? 'Sự kiện chi tiêu linh hoạt (Tự động trừ vào quỹ)' : 'Sự kiện chi tiêu (Tự động trừ vào quỹ)'}
+                                    </option>
+                                    <option value="none">
+                                      {variant === 'lifestyle' ? 'Hoàn tiền về Quỹ sinh hoạt nguồn (Không tạo sự kiện)' : 'Hoàn tiền về nguồn (Không tạo sự kiện chi tiêu)'}
+                                    </option>
                                 </select>
                             </div>
                             
                             <div>
                                 <label className="text-xs font-semibold text-family-text mb-1 block">
-                                    {disburseForm.disburseDestination === 'life_event' ? 'Khoản chi tiêu sẽ trừ vào quỹ:' : 'Số tiền sẽ hoàn về quỹ:'}
+                                    {disburseForm.disburseDestination === 'life_event' 
+                                      ? (variant === 'lifestyle' ? 'Khoản chi tiêu linh hoạt sẽ trừ vào quỹ:' : 'Khoản chi tiêu sẽ trừ vào quỹ:') 
+                                      : (variant === 'lifestyle' ? 'Số tiền sẽ hoàn về Quỹ sinh hoạt nguồn:' : 'Số tiền sẽ hoàn về quỹ:')}
                                 </label>
                                 <select 
                                     className={`w-full bg-white rounded-md border border-green-200 p-2 text-xs ${disburseForm.disburseDestination === 'none' ? 'bg-gray-100 cursor-not-allowed opacity-80' : ''}`}
