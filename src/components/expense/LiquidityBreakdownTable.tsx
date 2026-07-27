@@ -46,7 +46,7 @@ export const LiquidityBreakdownTable: React.FC<LiquidityBreakdownTableProps> = (
               <tr className="border-b border-family-accent/15 text-family-textMuted font-bold bg-family-bgDark/40">
                 <th className="p-3 w-[45%]">Nhóm / Hạng mục</th>
                 <th className="p-3 text-right">Ngân sách (tr)</th>
-                <th className="p-3 text-right">Đã chi (tr)</th>
+                <th className="p-3 text-right">Chi thường xuyên (tr)</th>
                 <th className="p-3 text-right text-orange-500" title="Chuyển vào Quỹ tích lũy">Trích quỹ (tr)</th>
                 <th className="p-3 text-right text-red-500" title="Khoản chi linh hoạt">Chi linh hoạt (tr)</th>
                 <th className="p-3 text-right text-emerald-600">Còn lại (tr)</th>
