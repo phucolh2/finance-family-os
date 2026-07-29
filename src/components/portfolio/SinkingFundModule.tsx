@@ -8,7 +8,7 @@ import { PortfolioFundCard } from './fund-cards/PortfolioFundCard';
 import { SavingsFundCard } from './fund-cards/SavingsFundCard';
 import { ReservesFundCard } from './fund-cards/ReservesFundCard';
 import { HelpTooltip } from '../ui/HelpTooltip';
-import { Target, Plus, Trash2, ArrowRightCircle, Edit, CheckCircle, RotateCcw } from 'lucide-react';
+import { Target, Plus, Trash2, ArrowRightCircle, Edit, CheckCircle, RotateCcw, AlertCircle } from 'lucide-react';
 import { formatTableMoneyVNDMillion } from '../../utils/format';
 import { safeNumber, calculateNonTermInterest } from '../../utils/math';
 import { runProjection } from '../../engines/projectionEngine';
@@ -666,25 +666,73 @@ export const SinkingFundModule: React.FC<SinkingFundModuleProps> = ({
                                   if (variant === 'lifestyle') fallbackNote = 'Sự kiện chi tiêu';
                                   else if (variant === 'investment') fallbackNote = 'Chuyển sang đầu tư';
                                   
+                                  // Kiểm tra xem LifeEvent tương ứng có tồn tại không
+                                  const hasLinkedEvent = w.eventId && state.lifeEvents.some(e => e.id === w.eventId);
+                                  const isOrphanedExpense = !w.eventId && w.note && (w.note.includes('chi tiêu') || w.note.includes('Chi tiêu') || w.note.includes('sự kiện') || w.note.includes('Sự kiện'));
+                                  
                                   return (
-                                    <div key={idx} className="flex justify-between items-center text-[11px] bg-red-50 p-1.5 rounded border border-red-100 group">
-                                      <span className="text-gray-700 line-clamp-1 flex-1 pr-2 font-medium">Kỳ T{w.month}/{w.year}: {w.note || fallbackNote}</span>
-                                      <div className="flex items-center gap-2">
-                                        <span className="font-bold text-red-600 shrink-0">-{formatTableMoneyVNDMillion(w.amount)}</span>
-                                        {w.id && (
-                                            <button 
-                                                onClick={() => {
-                                                    if (window.confirm('Bạn có chắc muốn hoàn tác (undo) khoản rút này? Mọi sự kiện chi tiêu tự động đi kèm cũng sẽ bị xoá khỏi dòng thời gian.')) {
-                                                        undoSinkingFundDisbursement(fund.id, w.id);
-                                                    }
-                                                }}
-                                                className="text-red-300 hover:text-red-600 transition-colors opacity-0 group-hover:opacity-100"
-                                                title="Hoàn tác khoản rút này"
-                                            >
-                                                <RotateCcw className="w-3.5 h-3.5" />
-                                            </button>
-                                        )}
+                                    <div key={w.id || idx} className="text-[11px] bg-red-50 p-1.5 rounded border border-red-100 group">
+                                      <div className="flex justify-between items-center">
+                                        <span className="text-gray-700 line-clamp-1 flex-1 pr-2 font-medium">Kỳ T{w.month}/{w.year}: {w.note || fallbackNote}</span>
+                                        <div className="flex items-center gap-1.5">
+                                          <span className="font-bold text-red-600 shrink-0">-{formatTableMoneyVNDMillion(w.amount)}</span>
+                                          {w.id && (
+                                              <button 
+                                                  onClick={() => {
+                                                      if (window.confirm('Bạn có chắc muốn hoàn tác (undo) khoản rút này? Mọi sự kiện chi tiêu tự động đi kèm cũng sẽ bị xoá khỏi dòng thời gian.')) {
+                                                          undoSinkingFundDisbursement(fund.id, w.id);
+                                                      }
+                                                  }}
+                                                  className="text-red-300 hover:text-red-600 transition-colors opacity-0 group-hover:opacity-100"
+                                                  title="Hoàn tác khoản rút này"
+                                              >
+                                                  <RotateCcw className="w-3.5 h-3.5" />
+                                              </button>
+                                          )}
+                                        </div>
                                       </div>
+                                      {/* Trạng thái liên kết sự kiện */}
+                                      {hasLinkedEvent && (
+                                        <div className="mt-1 text-[10px] text-green-600 flex items-center gap-1">
+                                          <CheckCircle className="w-3 h-3" /> Đã ghi nhận trên dòng thời gian chi tiêu
+                                        </div>
+                                      )}
+                                      {w.eventId && !hasLinkedEvent && (
+                                        <div className="mt-1 text-[10px] text-amber-600 flex items-center gap-1">
+                                          <AlertCircle className="w-3 h-3" /> Sự kiện đã bị xoá khỏi dòng thời gian
+                                        </div>
+                                      )}
+                                      {isOrphanedExpense && (
+                                        <div className="mt-1 flex items-center gap-2">
+                                          <span className="text-[10px] text-amber-600 flex items-center gap-1">
+                                            <AlertCircle className="w-3 h-3" /> Chưa liên kết sự kiện chi tiêu
+                                          </span>
+                                          <button 
+                                            onClick={() => {
+                                              const evId = `event_${Date.now()}_${Math.random().toString(36).substring(2, 9)}`;
+                                              const wId = w.id || `w_${Date.now()}_${Math.random().toString(36).substring(2, 9)}`;
+                                              const ev = {
+                                                id: evId,
+                                                name: w.note || `Rút quỹ: ${fund.name}`,
+                                                month: w.month,
+                                                year: w.year,
+                                                amount: -(w.amount),
+                                                recurringMonthlyImpact: 0,
+                                                source: fund.sourceOfFund || 'expense_surplus',
+                                                type: 'other' as const,
+                                                affectsNetWorth: true
+                                              };
+                                              // Cập nhật withdrawal với eventId + id mới, đồng thời tạo LifeEvent
+                                              const updatedFund = JSON.parse(JSON.stringify(fund));
+                                              updatedFund.withdrawals[idx] = { ...w, id: wId, eventId: evId };
+                                              updateSinkingFundWithEvent(updatedFund, ev);
+                                            }}
+                                            className="text-[10px] text-blue-600 hover:text-blue-800 font-semibold underline transition-colors"
+                                          >
+                                            Tạo lại sự kiện
+                                          </button>
+                                        </div>
+                                      )}
                                     </div>
                                   );
                                 })}
