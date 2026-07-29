@@ -11,14 +11,15 @@ interface DebtSettlementFormProps {
 }
 
 export const DebtSettlementForm: React.FC<DebtSettlementFormProps> = ({ debt, onCancel, onSuccess }) => {
-  const { state, settleDebt, disburseSinkingFund } = useAppContext();
+  const { state, settleDebt, disburseSinkingFund, selectedPeriodKey } = useAppContext();
   const [settleForm, setSettleForm] = useState({ type: 'regular', fundId: '' });
 
   const handleSettleSubmit = () => {
     settleDebt(debt.id);
     if (settleForm.type === 'early' && settleForm.fundId && disburseSinkingFund) {
-      const now = new Date();
-      disburseSinkingFund(settleForm.fundId, now.getMonth() + 1, now.getFullYear());
+      const currentYear = selectedPeriodKey ? parseInt(selectedPeriodKey.split('-')[0], 10) : new Date().getFullYear();
+      const currentMonth = selectedPeriodKey ? parseInt(selectedPeriodKey.split('-')[1], 10) : new Date().getMonth() + 1;
+      disburseSinkingFund(settleForm.fundId, currentMonth, currentYear);
     }
     onSuccess();
   };

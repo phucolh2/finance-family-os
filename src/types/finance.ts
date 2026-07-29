@@ -75,6 +75,14 @@ export interface LifeEvent extends Partial<LifecycleProps> {
     | 'wedding'
     | 'large_purchase'
     | 'family_support'
+    | 'tech_gadget'
+    | 'home_appliances'
+    | 'personal_development'
+    | 'networking_festivals'
+    | 'vehicle_maintenance'
+    | 'pet_care'
+    | 'hobbies_sports'
+    | 'business_venture'
     | 'other';
   amount: number;
   source: string; // Used to be strict literal, now dynamic string

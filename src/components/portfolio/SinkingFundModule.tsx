@@ -17,6 +17,7 @@ import type { AssetType } from '../../types/portfolio';
 import { FUNDING_SOURCES, SCREEN_FUNDING_CONSTRAINTS } from '../../constants/fundingSources';
 import type { FundingSourceId } from '../../constants/fundingSources';
 import { VIETNAM_BANKS } from '../../constants/banks';
+import { isWithinObservationPeriod, getPeriodGuardMessage } from '../../utils/periodGuard';
 
 interface DynamicSource {
   id: string;
@@ -578,7 +579,10 @@ export const SinkingFundModule: React.FC<SinkingFundModuleProps> = ({
               Lỗi: {formError}
             </div>
           )}
-          <div className="flex justify-end gap-2 pt-2">
+          <div className="flex justify-end gap-2 pt-2 items-center">
+            {!isWithinObservationPeriod(form.startMonth, form.startYear, selectedPeriodKey) && (
+              <span className="text-red-500 text-[10px] flex-1 pr-2">{getPeriodGuardMessage(selectedPeriodKey)}</span>
+            )}
             <Button variant="outline" onClick={() => {
               setShowAddForm(false);
               setEditingFundId(null);
@@ -621,7 +625,7 @@ export const SinkingFundModule: React.FC<SinkingFundModuleProps> = ({
                 setForm({ ...form, name: '', fundGroup: '',
     depositBank: '', initialDeposit: 0, targetAmount: 0 });
               }}
-              disabled={!form.name.trim()}
+              disabled={!form.name.trim() || !isWithinObservationPeriod(form.startMonth, form.startYear, selectedPeriodKey)}
             >
               {editingFundId ? 'Cập nhật quỹ' : 'Lưu quỹ'}
             </Button>
@@ -663,8 +667,8 @@ export const SinkingFundModule: React.FC<SinkingFundModuleProps> = ({
                               <div className="space-y-1 max-h-[200px] overflow-y-auto">
                                 {fund.withdrawals.map((w: any, idx: number) => {
                                   let fallbackNote = 'Giải ngân';
-                                  if (variant === 'lifestyle') fallbackNote = 'Sự kiện chi tiêu';
-                                  else if (variant === 'investment') fallbackNote = 'Chuyển sang đầu tư';
+                                  if (variant === 'reserves') fallbackNote = 'Sự kiện chi tiêu';
+                                  else if (variant === 'portfolio') fallbackNote = 'Chuyển sang đầu tư';
                                   
                                   // Kiểm tra xem LifeEvent tương ứng có tồn tại không
                                   const hasLinkedEvent = w.eventId && state.lifeEvents.some(e => e.id === w.eventId);
@@ -1230,11 +1234,14 @@ export const SinkingFundModule: React.FC<SinkingFundModuleProps> = ({
                       })()}
 
 
-                      <div className="flex justify-end gap-2 pt-2">
+                      <div className="flex justify-end gap-2 pt-2 items-center">
+                        {!isWithinObservationPeriod(disburseForm.disbursedMonth, disburseForm.disbursedYear, selectedPeriodKey) && (
+                          <span className="text-red-500 text-[10px] flex-1 text-right pr-2">{getPeriodGuardMessage(selectedPeriodKey)}</span>
+                        )}
                         <Button variant="outline" size="sm" onClick={() => { setDisbursingId(null); }}>Hủy</Button>
                         <Button 
                           size="sm" 
-                          disabled={filterFundType !== 'debt_prep' && !disburseForm.dealName}
+                          disabled={(filterFundType !== 'debt_prep' && !disburseForm.dealName) || !isWithinObservationPeriod(disburseForm.disbursedMonth, disburseForm.disbursedYear, selectedPeriodKey)}
                           onClick={() => {
                             if (settleMode === 'full') {
                               if (filterFundType !== 'debt_prep') {

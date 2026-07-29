@@ -707,7 +707,15 @@ export const BudgetHistory: React.FC = () => {
 
                   <Button size="sm" onClick={() => { 
                     setIsCreatingNew(true); 
-                    const cKey = selectedPeriodKey || `${new Date().getFullYear()}-${String(new Date().getMonth() + 1).padStart(2, '0')}`;
+                    const now = new Date();
+                    let cKey = selectedPeriodKey || `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
+                    if (!selectedPeriodKey && state.profile) {
+                      const startYear = state.profile.planningStartYear || now.getFullYear();
+                      const startMonth = state.profile.planningStartMonth || now.getMonth() + 1;
+                      if (now.getFullYear() * 12 + now.getMonth() + 1 < startYear * 12 + startMonth) {
+                        cKey = `${startYear}-${String(startMonth).padStart(2, '0')}`;
+                      }
+                    }
                     setNewYear(parseInt(cKey.split('-')[0], 10));
                     setNewMonth(parseInt(cKey.split('-')[1], 10));
                   }} className="h-7 px-2 text-[10px] gap-1" title="Tạo mốc mới">

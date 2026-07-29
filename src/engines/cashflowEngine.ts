@@ -52,10 +52,16 @@ export function calculateCashflow(input: CashflowEngineInput): CashflowOutput {
   );
   const oneTimeImpact = currentEvents.reduce((sum, e) => sum + safeNumber(e.amount, 0), 0);
 
-  // 2. Cumulative recurring impacts (applies from the event month onwards)
+  // 2. Cumulative recurring impacts (applies from the event month + 1 onwards)
   const pastOrActiveEvents = events.filter((e) => {
+    let effectiveMonth = safeNumber(e.month) + 1;
+    let effectiveYear = safeNumber(e.year);
+    if (effectiveMonth > 12) {
+      effectiveMonth = 1;
+      effectiveYear += 1;
+    }
     return isBeforeOrEqual(
-      { year: safeNumber(e.year), month: safeNumber(e.month) },
+      { year: effectiveYear, month: effectiveMonth },
       { year: period.year, month: period.month }
     );
   });

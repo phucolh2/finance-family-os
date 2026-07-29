@@ -2,10 +2,11 @@ import { useMemo } from 'react';
 import { useAppContext } from '../context/AppContext';
 import { analyzeExpense } from '../engines/expenseEngine';
 
-export const useLiquidityBreakdown = (mode: 'monthly' | 'cumulative' = 'monthly') => {
+export const useLiquidityBreakdown = (mode: 'monthly' | 'cumulative' = 'monthly', customPeriodKey?: string) => {
   const { state, selectedPeriodKey } = useAppContext();
 
   const activePeriodKey = useMemo(() => {
+    if (customPeriodKey) return customPeriodKey;
     if (selectedPeriodKey) return selectedPeriodKey;
     
     const now = new Date();
@@ -18,7 +19,7 @@ export const useLiquidityBreakdown = (mode: 'monthly' | 'cumulative' = 'monthly'
       return `${startYear}-${String(startMonth).padStart(2, '0')}`;
     }
     return `${nowYear}-${String(nowMonth).padStart(2, '0')}`;
-  }, [selectedPeriodKey, state.profile]);
+  }, [customPeriodKey, selectedPeriodKey, state.profile]);
 
   const activeBudget = useMemo(() => {
     let budget = state.budgetSchedule.length > 0 ? state.budgetSchedule[state.budgetSchedule.length - 1] : null;
@@ -96,14 +97,14 @@ export const useLiquidityBreakdown = (mode: 'monthly' | 'cumulative' = 'monthly'
 
     const targetDb = (state.resolvedMonthlyDb || []).find(db => db.periodKey === activePeriodKey);
     const cumulativeExpenseData = mode === 'cumulative' 
-      ? analyzeExpense(state.resolvedMonthlyDb || [], state.lifeEvents, activePeriodKey, expenseTree.map((g: any) => g.groupId as string))
+      ? analyzeExpense(state.resolvedMonthlyDb || [], state.lifeEvents, activePeriodKey, expenseTree.map((g: any) => g.id as string))
       : null;
 
     return expenseTree.map((g: any) => {
       let totalBudget = 0;
       let totalActual = 0;
       
-      const flexible = flexibleByGroup[g.groupId] || 0;
+      const flexible = flexibleByGroup[g.id] || 0;
 
       if (mode === 'monthly') {
         totalBudget = targetDb?.budgetAmounts?.[g.groupId] || 0;
@@ -119,7 +120,6 @@ export const useLiquidityBreakdown = (mode: 'monthly' | 'cumulative' = 'monthly'
         // cumulativeExpenseData already includes flexible in totalActual, so we subtract it here to separate it
         totalActual = (cumulativeExpenseData?.summaryByGroup?.[g.groupId]?.totalActual || 0) - flexible;
       }
-
 
       const rawRemaining = Math.max(0, totalBudget - totalActual);
       const deducted = deductedByGroup[g.id] || 0;

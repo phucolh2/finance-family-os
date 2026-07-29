@@ -87,6 +87,7 @@ export function runProjection(input: ProjectionEngineInput): ProjectionOutput {
   const savingsStates: Record<string, { buckets: { principal: number; termStart: number }[]; balance: number; contribution: number; interest: number }> = {};
   const debtStates: Record<string, { remainingPrincipal: number }> = {};
 
+  const groupBalances: Record<string, number> = {};
   const monthlyRows: ProjectionMonthlyRow[] = [];
 
   // 3. Simulation loop
@@ -154,18 +155,54 @@ export function runProjection(input: ProjectionEngineInput): ProjectionOutput {
     const applicableExpenseSchedules = expenseSchedule.filter(
       (s) => s.effectiveYear * 12 + s.effectiveMonth <= period.year * 12 + period.month
     );
+    let activeExpenseSchedule: any = null;
+    let isEnded = false;
     if (applicableExpenseSchedules.length > 0) {
       applicableExpenseSchedules.sort((a, b) => 
         b.effectiveYear * 12 + b.effectiveMonth - (a.effectiveYear * 12 + a.effectiveMonth)
       );
-      const activeExpenseSchedule = applicableExpenseSchedules[0];
-      const isEnded = activeExpenseSchedule.endYear && activeExpenseSchedule.endMonth
+      activeExpenseSchedule = applicableExpenseSchedules[0];
+      isEnded = activeExpenseSchedule.endYear && activeExpenseSchedule.endMonth
         ? (period.year * 12 + period.month > activeExpenseSchedule.endYear * 12 + activeExpenseSchedule.endMonth)
         : false;
       if (!isEnded) {
-        totalActualExpenseMonthly = Object.values(activeExpenseSchedule.categories).reduce((sum, val) => sum + safeNumber(val), 0);
+        totalActualExpenseMonthly = Object.values(activeExpenseSchedule.categories).reduce((sum: number, val: any) => sum + safeNumber(val), 0);
       }
     }
+
+    // Calculate group-level budgets and actual expenses
+    const budgetByCategory: Record<string, number> = {};
+    budgetRes.categories.forEach(c => {
+      budgetByCategory[c.group] = (budgetByCategory[c.group] || 0) + c.amountMonthly;
+    });
+
+    const actualByCategory: Record<string, number> = {};
+    const realActualByCategory: Record<string, number> = {};
+    if (totalActualExpenseMonthly !== undefined && activeExpenseSchedule && !isEnded) {
+      Object.entries(activeExpenseSchedule.categories).forEach(([key, val]) => {
+        const parts = key.split('/');
+        const itemId = parts[parts.length - 1];
+        const matched = budgetRes.categories.find(c => c.categoryId === itemId || c.group === itemId);
+        const groupId = matched ? matched.group : parts[0];
+        
+        actualByCategory[groupId] = (actualByCategory[groupId] || 0) + safeNumber(val);
+        realActualByCategory[groupId] = (realActualByCategory[groupId] || 0) + safeNumber(val);
+      });
+    } else {
+      budgetRes.categories.forEach(c => {
+        actualByCategory[c.group] = (actualByCategory[c.group] || 0) + c.amountMonthly;
+        realActualByCategory[c.group] = 0;
+      });
+    }
+
+    // Accumulate unspent budget
+    const expenseGroupsList = budgetRes.categories.map(c => c.group);
+    const uniqueGroups = Array.from(new Set(expenseGroupsList));
+    uniqueGroups.forEach(groupId => {
+      const allocated = budgetByCategory[groupId] || 0;
+      const actual = actualByCategory[groupId] || 0;
+      groupBalances[groupId] = (groupBalances[groupId] || 0) + (allocated - actual);
+    });
 
     // Resolve Cashflow
     const cashflowRes = calculateCashflow({
@@ -229,6 +266,7 @@ export function runProjection(input: ProjectionEngineInput): ProjectionOutput {
       } else if (classification === 'expense') {
         // Expense unspent budget piles up in Liquidity, so events draw from Liquidity
         currentLiquidityBalance += amt; 
+        groupBalances[event.source] = (groupBalances[event.source] || 0) + amt;
       } else if (classification === 'debt_reserve') {
         currentDebtReserveBalance += amt;
       }
@@ -786,6 +824,28 @@ export function runProjection(input: ProjectionEngineInput): ProjectionOutput {
       }
     }
 
+    // Enforce that group balances sum up to currentLiquidityBalance by distributing any delta (transfers/interests/etc.) proportionally
+    const sumGroupBalances = Object.values(groupBalances).reduce((sum, val) => sum + val, 0);
+    const delta = currentLiquidityBalance - sumGroupBalances;
+    
+    if (Math.abs(delta) > 0.001) {
+      const activeBudget = budgetSchedule.find(
+        s => s.effectiveYear * 12 + s.effectiveMonth <= period.year * 12 + period.month
+      ) || budgetSchedule[0];
+      const expenseGroups = activeBudget?.rootGroups.filter(g => g.classification === 'expense') || [];
+      const totalRatio = expenseGroups.reduce((sum, g) => sum + safeNumber(g.ratioPercent), 0);
+      
+      expenseGroups.forEach(g => {
+        const ratio = safeNumber(g.ratioPercent);
+        const groupRatio = totalRatio > 0 ? ratio / totalRatio : 0;
+        groupBalances[g.groupId] = Math.max(0, (groupBalances[g.groupId] || 0) + delta * groupRatio);
+      });
+    }
+
+    const savedGroupBalances = { ...groupBalances };
+    const savedMonthlyBudget = { ...budgetByCategory };
+    const savedMonthlyActual = { ...realActualByCategory };
+
     monthlyRows.push({
       period,
       incomeMonthly: incomeRes.incomeMonthly,
@@ -815,6 +875,9 @@ export function runProjection(input: ProjectionEngineInput): ProjectionOutput {
       _activeSinkingFundsDebtReserve: activeSinkingFundsBalance_debtReserve,
       _totalDebtPrincipalRemaining: totalDebtPrincipalRemaining,
       _totalDebtInterestPaidMonthly: totalDebtInterestPaidMonthly,
+      _groupBalances: savedGroupBalances,
+      _monthlyBudget: savedMonthlyBudget,
+      _monthlyActual: savedMonthlyActual,
     });
     
     // Attach additional runtime metrics to the row for aggregation later

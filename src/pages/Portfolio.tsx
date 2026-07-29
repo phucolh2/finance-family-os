@@ -14,6 +14,7 @@ import { Briefcase, RotateCcw, PlusCircle, Trash2 } from 'lucide-react';
 import type { AssetType } from '../types/portfolio';
 import { ObservationControls } from '../components/ui/ObservationControls';
 import { HelpTooltip } from '../components/ui/HelpTooltip';
+import { isWithinObservationPeriod, getPeriodGuardMessage } from '../utils/periodGuard';
 
 import { SinkingFundModule } from '../components/portfolio/SinkingFundModule';
 
@@ -1049,11 +1050,15 @@ export const Portfolio: React.FC = () => {
                                         }
                                         setSettlingDealId(null);
                                       }}
-                                      className="ml-auto bg-green-700 hover:bg-green-800 text-white font-bold py-1 px-4 rounded-lg shadow-sm"
+                                      disabled={!isWithinObservationPeriod(settleForm.endMonth, settleForm.endYear, selectedPeriodKey)}
+                                      className="ml-auto bg-green-700 hover:bg-green-800 text-white font-bold py-1 px-4 rounded-lg shadow-sm disabled:opacity-50"
                                     >
                                       Xác nhận chốt
                                     </button>
                                   </div>
+                                  {!isWithinObservationPeriod(settleForm.endMonth, settleForm.endYear, selectedPeriodKey) && (
+                                    <div className="text-red-500 text-xs text-right mt-1 w-full">{getPeriodGuardMessage(selectedPeriodKey)}</div>
+                                  )}
                                 </td>
                               </tr>
                             )}

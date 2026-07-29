@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import type { AppState, PersistedAppState, FamilyProfile, IncomeScheduleItem, Assumptions, LifeEvent, InvestmentDeal, SavingsDeposit } from '../types/finance';
+import type { AppState, PersistedAppState, FamilyProfile, IncomeScheduleItem, Assumptions, LifeEvent, InvestmentDeal, SavingsDeposit, SinkingFund } from '../types/finance';
 import type { ProjectionAdjustmentRecord } from '../types/projection';
 import type { BudgetRatioScheduleItem } from '../types/budget';
 import type { AssetConfig } from '../types/portfolio';
@@ -392,49 +392,104 @@ export function useAppState() {
 
   // Life Event Actions
   const ensureExpenseScheduleForEvent = (event: LifeEvent, currentSchedules: import('../types/budget').ExpenseScheduleItem[]): import('../types/budget').ExpenseScheduleItem[] => {
-    if (!event.recurringMonthlyImpact || event.recurringMonthlyImpact <= 0 || !event.spendingCategory) {
+    if (!event.recurringMonthlyImpact || event.recurringMonthlyImpact === 0 || !event.spendingCategory) {
       return currentSchedules;
     }
 
-    const pastOrActive = currentSchedules.filter(
-      (b) => b.effectiveYear * 12 + b.effectiveMonth <= event.year * 12 + event.month
-    );
-    let priorSchedule: import('../types/budget').ExpenseScheduleItem | null = null;
-    if (pastOrActive.length > 0) {
-      const sorted = [...pastOrActive].sort((a, b) => (a.effectiveYear * 12 + a.effectiveMonth) - (b.effectiveYear * 12 + b.effectiveMonth));
-      priorSchedule = sorted[sorted.length - 1];
+    let targetMonth = event.month + 1;
+    let targetYear = event.year;
+    if (targetMonth > 12) {
+      targetMonth = 1;
+      targetYear += 1;
     }
+    const targetMonthValue = targetYear * 12 + targetMonth;
 
-    // Clone categories from prior schedule or start empty
-    const updatedCategories = priorSchedule ? { ...priorSchedule.categories } : {};
+    const parts = event.spendingCategory.split('/');
+    const categoryId = parts.length > 1 ? parts[1] : parts[0];
+    const impactAmount = Math.abs(event.recurringMonthlyImpact);
     
-    // Add the recurring impact to the specified spending category
-    updatedCategories[event.spendingCategory] = (updatedCategories[event.spendingCategory] || 0) + event.recurringMonthlyImpact;
-
     const existsIndex = currentSchedules.findIndex(
-      (s) => s.effectiveMonth === event.month && s.effectiveYear === event.year
+      (s) => s.effectiveMonth === targetMonth && s.effectiveYear === targetYear
     );
 
-    if (existsIndex >= 0) {
-      // If a schedule already exists for this month, update it directly
-      const newSchedules = [...currentSchedules];
-      newSchedules[existsIndex] = {
-        ...newSchedules[existsIndex],
-        categories: updatedCategories,
-        note: newSchedules[existsIndex].note ? `${newSchedules[existsIndex].note}, updated for event: ${event.name}` : `Auto-updated for event: ${event.name}`
+    let updatedSchedules = [...currentSchedules];
+
+    if (existsIndex === -1) {
+      const pastOrActive = currentSchedules.filter(
+        (b) => b.effectiveYear * 12 + b.effectiveMonth <= targetMonthValue
+      );
+      let priorSchedule: import('../types/budget').ExpenseScheduleItem | null = null;
+      if (pastOrActive.length > 0) {
+        const sorted = [...pastOrActive].sort((a, b) => (a.effectiveYear * 12 + a.effectiveMonth) - (b.effectiveYear * 12 + b.effectiveMonth));
+        priorSchedule = sorted[sorted.length - 1];
+      }
+      const newCategories = priorSchedule ? { ...priorSchedule.categories } : {};
+      
+      const newSchedule: import('../types/budget').ExpenseScheduleItem = {
+        id: `exp_${Date.now()}_${Math.random().toString(36).substring(2, 9)}`,
+        effectiveMonth: targetMonth,
+        effectiveYear: targetYear,
+        categories: newCategories,
+        status: 'active',
+        note: `Tự động tạo từ sự kiện: ${event.name} (tháng ${event.month}/${event.year})`,
       };
-      return newSchedules;
+      updatedSchedules.push(newSchedule);
+      updatedSchedules.sort((a, b) => (a.effectiveYear * 12 + a.effectiveMonth) - (b.effectiveYear * 12 + b.effectiveMonth));
     }
 
-    const newSchedule: import('../types/budget').ExpenseScheduleItem = {
-      id: `exp_${Date.now()}_${Math.random().toString(36).substring(2, 9)}`,
-      effectiveMonth: event.month,
-      effectiveYear: event.year,
-      categories: updatedCategories,
-      status: 'active',
-      note: `Auto-generated for event: ${event.name}`,
-    };
-    return [...currentSchedules, newSchedule];
+    return updatedSchedules.map(schedule => {
+      const scheduleMonthValue = schedule.effectiveYear * 12 + schedule.effectiveMonth;
+      if (scheduleMonthValue >= targetMonthValue) {
+         const newCategories = { ...schedule.categories };
+         newCategories[categoryId] = (newCategories[categoryId] || 0) + impactAmount;
+         
+         const isTargetSchedule = scheduleMonthValue === targetMonthValue;
+         let note = schedule.note || '';
+         if (!isTargetSchedule) {
+             note = note ? `${note} (Ảnh hưởng từ: ${event.name} tháng ${event.month}/${event.year})` : `Ảnh hưởng từ: ${event.name} (tháng ${event.month}/${event.year})`;
+         } else if (existsIndex !== -1) {
+             note = note ? `${note}, cập nhật từ sự kiện: ${event.name} (tháng ${event.month}/${event.year})` : `Tự động cập nhật từ sự kiện: ${event.name} (tháng ${event.month}/${event.year})`;
+         }
+
+         return {
+            ...schedule,
+            categories: newCategories,
+            note
+         };
+      }
+      return schedule;
+    });
+  };
+
+  const revertExpenseScheduleForEvent = (event: LifeEvent, currentSchedules: import('../types/budget').ExpenseScheduleItem[]): import('../types/budget').ExpenseScheduleItem[] => {
+    if (!event.recurringMonthlyImpact || event.recurringMonthlyImpact === 0 || !event.spendingCategory) {
+      return currentSchedules;
+    }
+
+    let targetMonth = event.month + 1;
+    let targetYear = event.year;
+    if (targetMonth > 12) {
+      targetMonth = 1;
+      targetYear += 1;
+    }
+    const targetMonthValue = targetYear * 12 + targetMonth;
+    const parts = event.spendingCategory.split('/');
+    const categoryId = parts.length > 1 ? parts[1] : parts[0];
+    const impactAmount = Math.abs(event.recurringMonthlyImpact);
+
+    return currentSchedules.map(schedule => {
+      const scheduleMonthValue = schedule.effectiveYear * 12 + schedule.effectiveMonth;
+      if (scheduleMonthValue >= targetMonthValue && schedule.categories[categoryId] !== undefined) {
+         const newCategories = { ...schedule.categories };
+         newCategories[categoryId] = Math.max(0, newCategories[categoryId] - impactAmount);
+         return {
+            ...schedule,
+            categories: newCategories,
+            note: schedule.note ? `${schedule.note} (Hoàn tác: ${event.name})` : `Đã hoàn tác sự kiện: ${event.name}`
+         };
+      }
+      return schedule;
+    });
   };
 
   const addLifeEvent = (item: Omit<LifeEvent, 'id'>) => {
@@ -451,7 +506,13 @@ export function useAppState() {
   };
 
   const updateLifeEvent = (updated: LifeEvent) => {
-    const newExpenseSchedules = ensureExpenseScheduleForEvent(updated, state.expenseSchedule || []);
+    const oldEvent = state.lifeEvents.find(e => e.id === updated.id);
+    let newExpenseSchedules = state.expenseSchedule || [];
+    if (oldEvent) {
+      newExpenseSchedules = revertExpenseScheduleForEvent(oldEvent, newExpenseSchedules);
+    }
+    newExpenseSchedules = ensureExpenseScheduleForEvent(updated, newExpenseSchedules);
+    
     saveState({
       ...state,
       lifeEvents: state.lifeEvents.map((item) => (item.id === updated.id ? updated : item)),
@@ -460,9 +521,16 @@ export function useAppState() {
   };
 
   const deleteLifeEvent = (id: string) => {
+    const oldEvent = state.lifeEvents.find(e => e.id === id);
+    let newExpenseSchedules = state.expenseSchedule || [];
+    if (oldEvent) {
+      newExpenseSchedules = revertExpenseScheduleForEvent(oldEvent, newExpenseSchedules);
+    }
+    
     saveState({
       ...state,
       lifeEvents: state.lifeEvents.filter((item) => item.id !== id),
+      expenseSchedule: newExpenseSchedules,
     });
   };
 
@@ -764,21 +832,15 @@ export function useAppState() {
       if (!withdrawal) return;
 
       let nextEvents = state.lifeEvents;
-      let nextExpense = state.expenseSchedule || [];
 
       // Nếu khoản rút có tạo sự kiện, ta xóa sự kiện đó đi
       if (withdrawal.eventId) {
         nextEvents = nextEvents.filter(e => e.id !== withdrawal.eventId);
-        nextExpense = nextExpense.map(ex => ({
-          ...ex,
-          events: ex.events.filter(e => e.eventId !== withdrawal.eventId)
-        }));
       }
 
       saveState({
         ...state,
         lifeEvents: nextEvents,
-        expenseSchedule: nextExpense,
         sinkingFunds: (state.sinkingFunds ?? []).map(item => {
           if (item.id === fundId) {
             return {

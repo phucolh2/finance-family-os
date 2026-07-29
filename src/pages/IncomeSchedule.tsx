@@ -8,6 +8,7 @@ import { generateTimeline } from '../engines/timelineEngine';
 import { calculateIncome } from '../engines/incomeEngine';
 import { runProjection } from '../engines/projectionEngine';
 import { formatTableMoneyVNDMillion, formatKpiMoneyVNDMillion } from '../utils/format';
+import { isWithinObservationPeriod, getPeriodGuardMessage } from '../utils/periodGuard';
 import { safeNumber } from '../utils/math';
 import { Trash2, Plus, Save, RotateCcw, BarChart2, Check, Sliders, AlertTriangle } from 'lucide-react';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
@@ -440,9 +441,12 @@ export const IncomeSchedule: React.FC = () => {
                 value={newNote}
                 onChange={(e) => { setNewNote(e.target.value); }}
               />
-              <div className="flex justify-end gap-2">
+              <div className="flex justify-end gap-2 items-center">
+                {!isWithinObservationPeriod(newMonth, newYear, selectedPeriodKey) && (
+                  <span className="text-red-500 text-xs flex-1 text-right pr-2">{getPeriodGuardMessage(selectedPeriodKey)}</span>
+                )}
                 <Button variant="outline" onClick={() => { setIsCreatingNew(false); }}>Hủy</Button>
-                <Button type="submit" className="gap-2">
+                <Button type="submit" className="gap-2" disabled={!isWithinObservationPeriod(newMonth, newYear, selectedPeriodKey)}>
                   <Check className="w-4 h-4" /> Khởi tạo mốc thu nhập
                 </Button>
               </div>
@@ -760,12 +764,18 @@ export const IncomeSchedule: React.FC = () => {
                     </div>
                     
                     {isDirty && (
-                      <Button 
-                        onClick={handleSaveChanges} 
-                        className="gap-2 self-start md:self-center"
-                      >
-                        <Save className="w-4 h-4" /> Lưu thay đổi của mốc
-                      </Button>
+                      <div className="flex flex-col items-end gap-1">
+                        {!isWithinObservationPeriod(editMonth, editYear, selectedPeriodKey) && (
+                          <span className="text-red-500 text-xs text-right max-w-xs">{getPeriodGuardMessage(selectedPeriodKey)}</span>
+                        )}
+                        <Button 
+                          onClick={handleSaveChanges} 
+                          className="gap-2 self-start md:self-center"
+                          disabled={!isWithinObservationPeriod(editMonth, editYear, selectedPeriodKey)}
+                        >
+                          <Save className="w-4 h-4" /> Lưu thay đổi của mốc
+                        </Button>
+                      </div>
                     )}
                   </div>
                 </CardHeader>

@@ -4,10 +4,11 @@ import { Card, CardHeader, CardTitle, CardContent, CardDescription } from '../ui
 import { Button } from '../../components/ui/Button';
 import { Input } from '../../components/ui/Input';
 import { WarningBox } from '../../components/ui/WarningBox';
-import { Plus, Save, Trash2, Calendar, ChevronDown, ChevronRight, CheckCircle2, Wallet, PiggyBank, CircleDollarSign, RefreshCw } from 'lucide-react';
+import { Calendar, Save, Trash2, RefreshCw, AlertCircle, TrendingUp, Info, Zap, Plus, ChevronDown, ChevronRight, CheckCircle2, Wallet, PiggyBank, CircleDollarSign } from 'lucide-react';
 import { safeNumber } from '../../utils/math';
 import { formatTableMoneyVNDMillion } from '../../utils/format';
 import { rebuildTreeFromFlatRatios, collectLeafNodes } from '../../engines/budgetEngine';
+import { isWithinObservationPeriod, getPeriodGuardMessage } from '../../utils/periodGuard';
 
 import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip as RechartsTooltip, Legend } from 'recharts';
 
@@ -284,9 +285,12 @@ export const ExpenseScheduleView: React.FC = () => {
                 <Input type="number" placeholder="Năm" value={newYear} onChange={e => { setNewYear(Number(e.target.value)); }} />
               </div>
               <Input placeholder="Ghi chú (tùy chọn)" value={newNote} onChange={e => { setNewNote(e.target.value); }} />
-              <div className="flex justify-end gap-2 mt-2">
+              <div className="flex justify-end gap-2 mt-2 items-center">
+                {!isWithinObservationPeriod(newMonth, newYear, selectedPeriodKey) && (
+                  <span className="text-red-500 text-xs flex-1 text-right pr-2">{getPeriodGuardMessage(selectedPeriodKey)}</span>
+                )}
                 <Button variant="outline" size="sm" onClick={() => { setIsCreatingNew(false); }}>Hủy</Button>
-                <Button size="sm" onClick={handleCreateNew}>Lưu mốc</Button>
+                <Button size="sm" onClick={handleCreateNew} disabled={!isWithinObservationPeriod(newMonth, newYear, selectedPeriodKey)}>Lưu mốc</Button>
               </div>
             </div>
           )}
@@ -349,17 +353,14 @@ export const ExpenseScheduleView: React.FC = () => {
                 </div>
                 
                 <div className="flex flex-wrap items-center justify-between gap-4 bg-family-bgDark/5 p-2 rounded-xl border border-family-accent/10">
-                  <div className="flex items-center gap-2 bg-white px-3 py-1.5 rounded-full border border-gray-200 shadow-sm shrink-0">
-                    <span className={`text-sm font-semibold ${isSettled ? 'text-emerald-600' : 'text-gray-500'}`}>
-                      Đã sử dụng hết
-                    </span>
-                    <button
-                      type="button"
-                      onClick={() => {
-                        const nextSettled = !isSettled;
-                        setIsSettled(nextSettled);
-                        if (nextSettled) {
-                          // When turning ON, fill ALL categories unconditionally with -1 (full budget)
+                  <div className="flex items-center gap-3">
+                    {/* Nút Điền nhanh */}
+                    {!isSettled && (
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        onClick={() => {
                           const newCats = { ...categories };
                           const expenseTreeTemp = budgetTree.filter((g: any) => g.classification === 'expense');
                           const allCatIds = expenseTreeTemp.flatMap((g: any) => collectLeafNodes(g)).map((c: any) => c.id);
@@ -367,22 +368,38 @@ export const ExpenseScheduleView: React.FC = () => {
                             newCats[id] = -1;
                           });
                           setCategories(newCats);
-                        } else {
-                          setCategories({});
-                        }
-                      }}
-                      title="Chốt tháng và tự động điền TOÀN BỘ các hạng mục bằng mức ngân sách phân bổ"
-                      className={`w-10 h-5 flex items-center rounded-full p-0.5 transition-colors duration-200 focus:outline-none shrink-0 ${
-                        isSettled ? 'bg-emerald-500' : 'bg-gray-300'
-                      }`}
-                    >
-                      <div className={`bg-white w-4 h-4 rounded-full shadow-md transform duration-200 ${
-                        isSettled ? 'translate-x-5' : 'translate-x-0'
-                      }`} />
-                    </button>
+                        }}
+                        className="text-xs h-8 px-3 rounded-full border-blue-200 text-blue-600 hover:bg-blue-50"
+                        title="Tự động điền số liệu bằng đúng mức Ngân sách phân bổ"
+                      >
+                        <Zap className="w-3.5 h-3.5 mr-1.5" /> Dùng hết ngân sách
+                      </Button>
+                    )}
+
+                    {/* Công tắc Chốt sổ */}
+                    <div className="flex items-center gap-2 bg-white px-3 py-1.5 rounded-full border border-gray-200 shadow-sm shrink-0">
+                      <span className={`text-sm font-semibold ${isSettled ? 'text-emerald-600' : 'text-gray-500'}`}>
+                        {isSettled ? 'Đã khóa sổ' : 'Chốt sổ'}
+                      </span>
+                      <button
+                        type="button"
+                        onClick={() => setIsSettled(!isSettled)}
+                        title="Khóa dữ liệu tháng này để không bị vô tình chỉnh sửa"
+                        className={`w-10 h-5 flex items-center rounded-full p-0.5 transition-colors duration-200 focus:outline-none shrink-0 ${
+                          isSettled ? 'bg-emerald-500' : 'bg-gray-300'
+                        }`}
+                      >
+                        <div className={`bg-white w-4 h-4 rounded-full shadow-md transform duration-200 ${
+                          isSettled ? 'translate-x-5' : 'translate-x-0'
+                        }`} />
+                      </button>
+                    </div>
                   </div>
                   
-                  <div className="flex items-center gap-2 flex-wrap">
+                  <div className="flex items-center gap-2 flex-wrap justify-end">
+                    {activeVersion && !isWithinObservationPeriod(activeVersion.effectiveMonth, activeVersion.effectiveYear, selectedPeriodKey) && (
+                      <span className="text-red-500 text-[10px] w-full text-right">{getPeriodGuardMessage(selectedPeriodKey)}</span>
+                    )}
                     <Button variant="outline" size="sm" onClick={() => { 
                       setCategories({}); 
                       setIsSettled(false); 
@@ -403,7 +420,7 @@ export const ExpenseScheduleView: React.FC = () => {
                       size="sm" 
                       onClick={handleSave} 
                       className="gap-2 shrink-0"
-                      disabled={hasValidationError}
+                      disabled={hasValidationError || (activeVersion ? !isWithinObservationPeriod(activeVersion.effectiveMonth, activeVersion.effectiveYear, selectedPeriodKey) : false)}
                     >
                       <Save className="w-4 h-4" /> Lưu mốc
                     </Button>

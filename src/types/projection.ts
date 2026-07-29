@@ -63,6 +63,9 @@ export interface ProjectionMonthlyRow {
   _childCost2?: number;
   _childCostOther?: number;
   _activeSinkingFundsDebtReserve?: number;
+  _groupBalances?: Record<string, number>;
+  _monthlyBudget?: Record<string, number>;
+  _monthlyActual?: Record<string, number>;
 }
 
 export interface ProjectionYearlyRow {

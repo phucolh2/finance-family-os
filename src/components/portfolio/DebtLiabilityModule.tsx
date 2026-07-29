@@ -8,6 +8,7 @@ import { AlertCircle, Plus, Trash2, CheckCircle2, DollarSign, Calendar } from 'l
 import { useAppContext } from '../../context/AppContext';
 import { formatMoneyVNDMillion } from '../../utils/format';
 import { calculatePMT } from '../../utils/math';
+import { isWithinObservationPeriod, getPeriodGuardMessage } from '../../utils/periodGuard';
 import { DebtSettlementForm } from './DebtSettlementForm';
 
 export const DebtLiabilityModule: React.FC = () => {
@@ -162,8 +163,11 @@ export const DebtLiabilityModule: React.FC = () => {
                 />
               </div>
             </div>
-            <div className="lg:col-span-4 flex justify-end items-end">
-              <Button onClick={handleAdd} className="bg-red-600 hover:bg-red-700 text-white w-full md:w-auto">
+            <div className="lg:col-span-4 flex flex-col items-end justify-end gap-1">
+              {!isWithinObservationPeriod(newDebt.startMonth, newDebt.startYear, selectedPeriodKey) && (
+                <span className="text-red-500 text-xs w-full text-right">{getPeriodGuardMessage(selectedPeriodKey)}</span>
+              )}
+              <Button onClick={handleAdd} disabled={!isWithinObservationPeriod(newDebt.startMonth, newDebt.startYear, selectedPeriodKey)} className="bg-red-600 hover:bg-red-700 text-white w-full md:w-auto">
                 Lưu Khoản Nợ
               </Button>
             </div>

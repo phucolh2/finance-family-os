@@ -1,17 +1,21 @@
 import React, { useState } from 'react';
 import { useAppContext } from '../context/AppContext';
+import { useLiquidityBreakdown } from '../hooks/useLiquidityBreakdown';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '../components/ui/Card';
 import { Button } from '../components/ui/Button';
 import { Input } from '../components/ui/Input';
 import { Select } from '../components/ui/Select';
+import { FundingSourceSelect } from '../components/ui/FundingSourceSelect';
 import { WarningBox } from '../components/ui/WarningBox';
 import { HelpTooltip } from '../components/ui/HelpTooltip';
 import { formatTableMoneyVNDMillion } from '../utils/format';
+import { isWithinObservationPeriod, getPeriodGuardMessage } from '../utils/periodGuard';
 import { safeNumber } from '../utils/math';
 import { EmptyState } from '../components/ui/EmptyState';
 import { 
   Milestone, CalendarRange, Plus, Trash2, Edit3, 
-  Home, Car, Baby, HeartPulse, Gift, Briefcase, Plane, Wallet, TrendingUp, TrendingDown, AlertTriangle 
+  Home, Car, Baby, HeartPulse, Gift, Briefcase, Plane, Wallet, TrendingUp, TrendingDown, AlertTriangle,
+  Smartphone, Tv, BookOpen, Sparkles, Wrench, Heart, Activity
 } from 'lucide-react';
 import { ExpenseDashboard } from '../components/expense/ExpenseDashboard';
 import { ExpenseScheduleView } from '../components/expense/ExpenseScheduleView';
@@ -38,17 +42,28 @@ export const LifeStages: React.FC = () => {
   const [pendingEventData, setPendingEventData] = useState<any>(null);
   const [pendingWarningInfo, setPendingWarningInfo] = useState<{sourceName: string, overage: number, month: number, year: number} | null>(null);
 
+  const [formPeriodKey, setFormPeriodKey] = useState<string>('');
+
   const now = new Date();
   const nowKey = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
-  const effectivePeriodKey = selectedPeriodKey || nowKey;
+  
+  let effectivePeriodKey = selectedPeriodKey || nowKey;
+  if (!selectedPeriodKey && state.profile) {
+    const startYear = state.profile.planningStartYear || now.getFullYear();
+    const startMonth = state.profile.planningStartMonth || now.getMonth() + 1;
+    if (now.getFullYear() * 12 + now.getMonth() + 1 < startYear * 12 + startMonth) {
+      effectivePeriodKey = `${startYear}-${String(startMonth).padStart(2, '0')}`;
+    }
+  }
+
   const currentObservedYear = parseInt(effectivePeriodKey.split('-')[0], 10);
   const currentObservedMonth = parseInt(effectivePeriodKey.split('-')[1], 10);
 
   const [formData, setFormData] = useState<Omit<LifeEvent, 'id'>>({
     name: '',
     type: 'other',
-    month: 1,
-    year: 2030,
+    month: currentObservedMonth,
+    year: currentObservedYear,
     amount: 0,
     source: 'debt',
     recurringMonthlyImpact: 0,
@@ -57,6 +72,25 @@ export const LifeStages: React.FC = () => {
     isMilestone: false,
     spendingCategory: '',
   });
+
+  // Tự động cập nhật tháng/năm của form đang tạo mới nếu người dùng đổi Tháng quan sát
+  React.useEffect(() => {
+    if (isAdding) {
+      setFormData(prev => ({
+        ...prev,
+        month: currentObservedMonth,
+        year: currentObservedYear
+      }));
+    }
+  }, [currentObservedMonth, currentObservedYear, isAdding]);
+
+  React.useEffect(() => {
+    if (formData.year && formData.month) {
+      setFormPeriodKey(`${formData.year}-${String(formData.month).padStart(2, '0')}`);
+    }
+  }, [formData.month, formData.year]);
+
+  const { liquidityBreakdownData: formPeriodBreakdown } = useLiquidityBreakdown('cumulative', formPeriodKey || undefined);
 
   // Generate spending category options dynamically based on the event's month and year
   const eventTime = formData.year * 12 + formData.month;
@@ -154,42 +188,138 @@ export const LifeStages: React.FC = () => {
       setFormError('Vui lòng điền tên sự kiện.');
       return;
     }
+    
+    const oneTimeAmount = Math.abs(safeNumber(formData.amount));
+    const recurringAmount = Math.abs(safeNumber(formData.recurringMonthlyImpact));
+
+    if (oneTimeAmount === 0 && recurringAmount === 0) {
+      setFormError('Vui lòng nhập ít nhất một khoản "Số tiền tác động một lần" hoặc "Tác động dòng tiền tháng" để tạo khoản chi.');
+      return;
+    }
+
     const formattedData = {
       ...formData,
-      amount: -Math.abs(safeNumber(formData.amount)),
-      recurringMonthlyImpact: -Math.abs(safeNumber(formData.recurringMonthlyImpact))
+      amount: -oneTimeAmount,
+      recurringMonthlyImpact: -recurringAmount
     };
 
-    // Virtual Check for overbudget
-    const targetDb = state.resolvedMonthlyDb?.find(db => db.month === formData.month && db.year === formData.year);
-    if (targetDb && formData.source && targetDb.budgetAmounts && targetDb.actualExpenseByGroup) {
-      const budget = targetDb.budgetAmounts[formData.source] || 0;
-      const actual = targetDb.actualExpenseByGroup[formData.source] || 0;
-      
-      let currentActualWithoutThisEvent = actual;
-      if (editingId) {
-        const oldEvent = state.lifeEvents.find(ev => ev.id === editingId);
-        if (oldEvent && oldEvent.month === formData.month && oldEvent.year === formData.year && oldEvent.source === formData.source) {
-          currentActualWithoutThisEvent -= (Math.abs(safeNumber(oldEvent.amount)) + Math.abs(safeNumber(oldEvent.recurringMonthlyImpact)));
-        }
+    // New Virtual Check for Recurring Impact Overbudget
+    if (formattedData.recurringMonthlyImpact < 0 && formData.spendingCategory) {
+      let targetMonth = formData.month + 1;
+      let targetYear = formData.year;
+      if (targetMonth > 12) {
+        targetMonth = 1;
+        targetYear += 1;
       }
+      const targetMonthValue = targetYear * 12 + targetMonth;
       
-      const newOneTimeImpact = Math.abs(safeNumber(formData.amount));
-      const newRecurringImpact = Math.abs(safeNumber(formData.recurringMonthlyImpact));
-      const newTotalActual = currentActualWithoutThisEvent + newOneTimeImpact + newRecurringImpact;
-      
-      if (newTotalActual > budget) {
-         setPendingEventData(formattedData);
-         const expenseGroups = activeBudget?.rootGroups.filter(g => g.classification === 'expense') || [];
-         const sourceName = expenseGroups.find(g => g.groupId === formData.source)?.name || formData.source;
-         setPendingWarningInfo({
-            sourceName: sourceName,
-            overage: newTotalActual - budget,
-            month: formData.month,
-            year: formData.year
-         });
-         setShowWarningDialog(true);
-         return; // Intercept save
+      const parts = formData.spendingCategory.split('/');
+      const categoryId = parts.length > 1 ? parts[1] : parts[0];
+
+      const monthsToCheck = new Set<number>();
+      monthsToCheck.add(targetMonthValue);
+      (state.expenseSchedule || []).forEach(s => {
+          const val = s.effectiveYear * 12 + s.effectiveMonth;
+          if (val >= targetMonthValue) monthsToCheck.add(val);
+      });
+
+      const sortedSchedules = [...state.budgetSchedule].sort((a, b) => (a.effectiveYear * 12 + a.effectiveMonth) - (b.effectiveYear * 12 + b.effectiveMonth));
+      const sortedExpenseSchedules = [...(state.expenseSchedule || [])].sort((a, b) => (a.effectiveYear * 12 + a.effectiveMonth) - (b.effectiveYear * 12 + b.effectiveMonth));
+      const sortedIncomes = [...state.incomeSchedule].sort((a,b) => (a.effectiveYear * 12 + a.effectiveMonth) - (b.effectiveYear * 12 + b.effectiveMonth));
+
+      for (const monthVal of Array.from(monthsToCheck).sort((a,b) => a-b)) {
+          let activeBudgetAtTarget = null;
+          for (const b of sortedSchedules) {
+            if (b.effectiveYear * 12 + b.effectiveMonth <= monthVal) activeBudgetAtTarget = b;
+          }
+
+          let budgetForCategory = 0;
+          let catName = 'Hạng mục';
+          if (activeBudgetAtTarget) {
+            for (const group of activeBudgetAtTarget.rootGroups) {
+               if (group.classification === 'expense') {
+                  const child = group.children?.find(c => c.id === categoryId);
+                  if (child) {
+                     let activeIncome = 0;
+                     for (const inc of sortedIncomes) {
+                         if (inc.effectiveYear * 12 + inc.effectiveMonth <= monthVal) activeIncome = inc.incomeMonthly;
+                     }
+                     budgetForCategory = (activeIncome * child.ratioPercent) / 100;
+                     catName = child.name;
+                     break;
+                  }
+               }
+            }
+          }
+          
+          let activeExpenseScheduleAtTarget = null;
+          for (const s of sortedExpenseSchedules) {
+            if (s.effectiveYear * 12 + s.effectiveMonth <= monthVal) activeExpenseScheduleAtTarget = s;
+          }
+          
+          let priorActual = 0;
+          if (activeExpenseScheduleAtTarget) {
+            let val = safeNumber(activeExpenseScheduleAtTarget.categories[categoryId], 0);
+            if (val === -1) val = budgetForCategory;
+            priorActual = val;
+          }
+          
+          // If editing, subtract old impact so we only check the delta effect
+          if (editingId) {
+            const oldEvent = state.lifeEvents.find(ev => ev.id === editingId);
+            if (oldEvent && oldEvent.spendingCategory === formData.spendingCategory) {
+              const oldEventMonthValue = oldEvent.year * 12 + oldEvent.month;
+              // If the old event's impact was active at `monthVal`, subtract it
+              if (oldEventMonthValue < monthVal) {
+                priorActual -= Math.abs(safeNumber(oldEvent.recurringMonthlyImpact));
+                if (priorActual < 0) priorActual = 0;
+              }
+            }
+          }
+
+          const newActual = priorActual + Math.abs(formattedData.recurringMonthlyImpact);
+          
+          if (newActual > budgetForCategory) {
+             const m = monthVal % 12 === 0 ? 12 : monthVal % 12;
+             const y = Math.floor((monthVal - 1) / 12);
+             setFormError(`Tác động dòng tiền (${Math.abs(formattedData.recurringMonthlyImpact)}tr) sẽ làm lố ngân sách Phân bổ của "${catName}" tại mốc tương lai tháng ${m}/${y}. (Thực chi cũ: ${formatTableMoneyVNDMillion(priorActual)} + Thêm mới: ${Math.abs(formattedData.recurringMonthlyImpact)}tr > Phân bổ: ${formatTableMoneyVNDMillion(budgetForCategory)})`);
+             return;
+          }
+      }
+    }
+
+    // Virtual Check for overbudget based on cumulative remaining balance of that group
+    if (formData.source && formPeriodBreakdown.length > 0) {
+      const matchedGroup = formPeriodBreakdown.find(g => g.id === formData.source);
+      if (matchedGroup) {
+        let availableRemaining = matchedGroup.remaining || 0;
+        
+        // If editing, add back the old event's impact to get the "before" balance
+        if (editingId) {
+          const oldEvent = state.lifeEvents.find(ev => ev.id === editingId);
+          if (oldEvent && oldEvent.source === formData.source) {
+            const oldEventMonthValue = oldEvent.year * 12 + oldEvent.month;
+            const targetMonthValue = formData.year * 12 + formData.month;
+            if (oldEventMonthValue <= targetMonthValue) {
+              availableRemaining += Math.abs(safeNumber(oldEvent.amount));
+            }
+          }
+        }
+        
+        const newOneTimeImpact = Math.abs(safeNumber(formData.amount));
+        const newEventCost = newOneTimeImpact;
+        
+        if (newEventCost > availableRemaining && newEventCost > 0) {
+           setPendingEventData(formattedData);
+           setPendingWarningInfo({
+              sourceName: matchedGroup.name,
+              overage: newEventCost - availableRemaining,
+              month: formData.month,
+              year: formData.year
+           });
+           setShowWarningDialog(true);
+           return; // Intercept save
+        }
       }
     }
 
@@ -209,7 +339,15 @@ export const LifeStages: React.FC = () => {
     { value: 'education', label: 'Nuôi con ăn học / Đóng học phí' },
     { value: 'home_renovation', label: 'Sửa chữa / Cải tạo nhà cửa' },
     { value: 'wedding', label: 'Đám cưới / Đám hỏi' },
-    { value: 'large_purchase', label: 'Mua sắm trang thiết bị lớn' },
+    { value: 'large_purchase', label: 'Mua sắm lớn (Ô tô/Nhà/Đất)' },
+    { value: 'tech_gadget', label: 'Thiết bị công nghệ (Điện thoại, Laptop...)' },
+    { value: 'home_appliances', label: 'Thiết bị gia dụng / Điện máy lớn' },
+    { value: 'personal_development', label: 'Học tập / Phát triển bản thân' },
+    { value: 'networking_festivals', label: 'Hiếu hỉ, Lễ Tết & Đối ngoại' },
+    { value: 'vehicle_maintenance', label: 'Đại tu / Bảo dưỡng xe cộ lớn' },
+    { value: 'pet_care', label: 'Nuôi dưỡng & Chăm sóc thú cưng' },
+    { value: 'hobbies_sports', label: 'Sở thích, Thể thao & Giải trí lớn' },
+    { value: 'business_venture', label: 'Góp vốn làm ăn / Khởi nghiệp' },
     { value: 'travel', label: 'Du lịch nghỉ dưỡng gia đình' },
     { value: 'medical', label: 'Biến cố y tế / Chữa bệnh' },
     { value: 'family_support', label: 'Hỗ trợ tài chính người thân' },
@@ -238,6 +376,14 @@ export const LifeStages: React.FC = () => {
       case 'home_renovation': return 'Sửa nhà';
       case 'wedding': return 'Đám cưới / Đám hỏi';
       case 'large_purchase': return 'Mua sắm lớn';
+      case 'tech_gadget': return 'Thiết bị công nghệ';
+      case 'home_appliances': return 'Thiết bị gia dụng';
+      case 'personal_development': return 'Phát triển bản thân';
+      case 'networking_festivals': return 'Lễ Tết / Đối ngoại';
+      case 'vehicle_maintenance': return 'Bảo dưỡng xe cộ';
+      case 'pet_care': return 'Chăm sóc thú cưng';
+      case 'hobbies_sports': return 'Sở thích & Giải trí';
+      case 'business_venture': return 'Góp vốn / Khởi nghiệp';
       case 'travel': return 'Du lịch / Trải nghiệm';
       case 'medical': return 'Sự kiện y tế';
       case 'family_support': return 'Hỗ trợ người thân';
@@ -255,10 +401,18 @@ export const LifeStages: React.FC = () => {
       case 'buy_property': return <Home className="w-5 h-5 text-white" />;
       case 'buy_car': return <Car className="w-5 h-5 text-white" />;
       case 'child_birth': return <Baby className="w-5 h-5 text-white" />;
-      case 'education': return <Briefcase className="w-5 h-5 text-white" />; // Will use a generic or Briefcase for now
+      case 'education': return <Briefcase className="w-5 h-5 text-white" />;
       case 'home_renovation': return <Home className="w-5 h-5 text-white" />;
       case 'wedding': return <HeartPulse className="w-5 h-5 text-white" />;
       case 'large_purchase': return <Gift className="w-5 h-5 text-white" />;
+      case 'tech_gadget': return <Smartphone className="w-5 h-5 text-white" />;
+      case 'home_appliances': return <Tv className="w-5 h-5 text-white" />;
+      case 'personal_development': return <BookOpen className="w-5 h-5 text-white" />;
+      case 'networking_festivals': return <Sparkles className="w-5 h-5 text-white" />;
+      case 'vehicle_maintenance': return <Wrench className="w-5 h-5 text-white" />;
+      case 'pet_care': return <Heart className="w-5 h-5 text-white" />;
+      case 'hobbies_sports': return <Activity className="w-5 h-5 text-white" />;
+      case 'business_venture': return <TrendingUp className="w-5 h-5 text-white" />;
       case 'travel': return <Plane className="w-5 h-5 text-white" />;
       case 'medical': return <HeartPulse className="w-5 h-5 text-white" />;
       case 'family_support': return <Gift className="w-5 h-5 text-white" />;
@@ -273,10 +427,24 @@ export const LifeStages: React.FC = () => {
     return groupId === dashboardFilter;
   });
 
-  // Dashboard calculations
-  const totalEvents = filteredEventsForLedger.length;
-  const netOneTime = filteredEventsForLedger.reduce((sum, e) => sum + safeNumber(e.amount), 0);
-  const netRecurring = filteredEventsForLedger.reduce((sum, e) => sum + safeNumber(e.recurringMonthlyImpact), 0);
+  const currentObservedValue = currentObservedYear * 12 + currentObservedMonth;
+
+  let currentMonthEventsCount = 0;
+  let cumulativeEventsCount = 0;
+  let currentMonthNetOneTime = 0;
+  let cumulativeNetOneTime = 0;
+
+  filteredEventsForLedger.forEach(e => {
+    const eMonthValue = e.year * 12 + e.month;
+    if (eMonthValue <= currentObservedValue) {
+      cumulativeEventsCount++;
+      cumulativeNetOneTime += safeNumber(e.amount);
+      if (eMonthValue === currentObservedValue) {
+        currentMonthEventsCount++;
+        currentMonthNetOneTime += safeNumber(e.amount);
+      }
+    }
+  });
   
   const sortedEvents = [...filteredEventsForLedger].sort((a, b) => {
     if (a.year !== b.year) return a.year - b.year;
@@ -380,50 +548,52 @@ export const LifeStages: React.FC = () => {
         <div className="space-y-6">
 
                 {/* Dashboard Summary */}
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <Card className="bg-white/80 border-family-accent/10">
                     <CardContent className="p-4 flex items-center justify-between">
                       <div>
                         <p className="text-xs font-semibold text-family-textMuted uppercase tracking-wider mb-1 flex items-center gap-1.5">
-                          Tổng khoản chi linh hoạt
-                          <HelpTooltip text="Tổng số các khoản chi tiêu linh hoạt, cột mốc đã ghi nhận." />
+                          TỔNG KHOẢN CHI LINH HOẠT
+                          <HelpTooltip text="Tổng số các sự kiện, khoản chi linh hoạt tính đến tháng quan sát hiện tại." />
                         </p>
-                        <h3 className="text-2xl font-bold text-family-text">{totalEvents}</h3>
+                        <div className="flex items-end gap-3 mt-1">
+                          <h3 className="text-2xl font-bold text-family-text">
+                            {cumulativeEventsCount} <span className="text-sm font-normal text-family-textMuted">(Lũy kế)</span>
+                          </h3>
+                        </div>
+                        {currentMonthEventsCount > 0 && (
+                           <p className="text-xs text-blue-600 mt-2 bg-blue-50/50 inline-block px-2 py-1 rounded-md">
+                             +{currentMonthEventsCount} sự kiện trong tháng {currentObservedMonth}/{currentObservedYear}
+                           </p>
+                        )}
                       </div>
                       <div className="w-12 h-12 rounded-full bg-blue-100 flex items-center justify-center text-blue-600">
                         <CalendarRange className="w-6 h-6" />
                       </div>
                     </CardContent>
                   </Card>
+                  
                   <Card className="bg-white/80 border-family-accent/10">
                     <CardContent className="p-4 flex items-center justify-between">
                       <div>
                         <p className="text-xs font-semibold text-family-textMuted uppercase tracking-wider mb-1 flex items-center gap-1.5">
-                          Tác động 1 lần (Net)
-                          <HelpTooltip text="Tổng giá trị tác động tài chính của tất cả các khoản chi linh hoạt này." />
+                          TÁC ĐỘNG 1 LẦN (NET)
+                          <HelpTooltip text="Tổng số tiền tác động 1 lần (chi/thu) tính đến tháng quan sát hiện tại." />
                         </p>
-                        <h3 className={`text-2xl font-bold ${netOneTime >= 0 ? 'text-green-600' : 'text-red-600'}`}>
-                          {netOneTime > 0 ? '+' : ''}{formatTableMoneyVNDMillion(netOneTime)}
-                        </h3>
+                        <div className="flex items-end gap-3 mt-1">
+                          <h3 className={`text-2xl font-bold ${cumulativeNetOneTime < 0 ? 'text-red-500' : cumulativeNetOneTime > 0 ? 'text-emerald-500' : 'text-family-text'}`}>
+                            {cumulativeNetOneTime > 0 ? '+' : ''}{formatTableMoneyVNDMillion(cumulativeNetOneTime)}
+                            <span className="text-sm font-normal text-family-textMuted ml-1">(Lũy kế)</span>
+                          </h3>
+                        </div>
+                        {currentMonthNetOneTime !== 0 && (
+                          <p className={`text-xs mt-2 inline-block px-2 py-1 rounded-md ${currentMonthNetOneTime < 0 ? 'text-red-600 bg-red-50/50' : 'text-emerald-600 bg-emerald-50/50'}`}>
+                            Phát sinh tháng {currentObservedMonth}/{currentObservedYear}: {currentMonthNetOneTime > 0 ? '+' : ''}{formatTableMoneyVNDMillion(currentMonthNetOneTime)}
+                          </p>
+                        )}
                       </div>
-                      <div className={`w-12 h-12 rounded-full flex items-center justify-center ${netOneTime >= 0 ? 'bg-green-100 text-green-600' : 'bg-red-100 text-red-600'}`}>
-                        {netOneTime >= 0 ? <TrendingUp className="w-6 h-6" /> : <TrendingDown className="w-6 h-6" />}
-                      </div>
-                    </CardContent>
-                  </Card>
-                  <Card className="bg-white/80 border-family-accent/10">
-                    <CardContent className="p-4 flex items-center justify-between">
-                      <div>
-                        <p className="text-xs font-semibold text-family-textMuted uppercase tracking-wider mb-1 flex items-center gap-1.5">
-                          Tác động dòng tiền (Net)
-                          <HelpTooltip text="Tổng sự thay đổi ròng trên dòng tiền hàng tháng do các khoản chi này mang lại." />
-                        </p>
-                        <h3 className={`text-2xl font-bold ${netRecurring >= 0 ? 'text-green-600' : 'text-red-600'}`}>
-                          {netRecurring > 0 ? '+' : ''}{formatTableMoneyVNDMillion(netRecurring)}<span className="text-sm font-medium">/tháng</span>
-                        </h3>
-                      </div>
-                      <div className={`w-12 h-12 rounded-full flex items-center justify-center ${netRecurring >= 0 ? 'bg-green-100 text-green-600' : 'bg-red-100 text-red-600'}`}>
-                        {netRecurring >= 0 ? <TrendingUp className="w-6 h-6" /> : <TrendingDown className="w-6 h-6" />}
+                      <div className={`w-12 h-12 rounded-full flex items-center justify-center ${cumulativeNetOneTime < 0 ? 'bg-red-100 text-red-500' : cumulativeNetOneTime > 0 ? 'bg-emerald-100 text-emerald-500' : 'bg-gray-100 text-gray-400'}`}>
+                        {cumulativeNetOneTime < 0 ? <TrendingDown className="w-6 h-6" /> : cumulativeNetOneTime > 0 ? <TrendingUp className="w-6 h-6" /> : <CalendarRange className="w-6 h-6" />}
                       </div>
                     </CardContent>
                   </Card>
@@ -503,11 +673,11 @@ export const LifeStages: React.FC = () => {
                       onChange={(e) => { setFormData({ ...formData, amount: Number(e.target.value) }); }}
                     />
                   </div>
-                  <Select
+                  <FundingSourceSelect
                     label="Nguồn chi trả"
                     value={formData.source}
-                    onChange={(e) => { setFormData({ ...formData, source: e.target.value as any }); }}
-                    options={sourceTypes}
+                    onChange={(value) => { setFormData({ ...formData, source: value as any }); }}
+                    targetPeriodKey={`${formData.year}-${String(formData.month).padStart(2, '0')}`}
                   />
                 </div>
               </div>
@@ -516,7 +686,7 @@ export const LifeStages: React.FC = () => {
               <div className="bg-family-bgDeep/10 border border-family-accent/10 rounded-xl p-4 shadow-sm space-y-4">
                 <div className="border-b border-family-accent/10 pb-2 mb-2">
                   <h3 className="text-sm font-bold text-family-text flex items-center gap-2">Tác động Dòng tiền Lâu dài & Báo cáo</h3>
-                  <p className="text-[11px] text-family-textMuted mt-1">Chi phí phát sinh <strong>đều đặn mỗi tháng</strong> sau khoản chi này. Khoản này sẽ trừ thẳng vào Dòng tiền ròng tổng của gia đình thay vì nằm trong hạn mức Chi tiêu thường xuyên hàng ngày.</p>
+                  <p className="text-[11px] text-family-textMuted mt-1">Chi phí phát sinh <strong>đều đặn mỗi tháng</strong> sau khoản chi này. Khoản này sẽ được tự động cộng dồn (xuyên thấu) vào bảng Chi tiêu thường xuyên hàng tháng (Bắt đầu từ tháng tiếp theo).</p>
                 </div>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <Input
@@ -531,9 +701,9 @@ export const LifeStages: React.FC = () => {
                       label="Lớp Tiêu sản (Ánh xạ Ngân sách)"
                       value={formData.spendingCategory || ''}
                       onChange={(e) => { setFormData({ ...formData, spendingCategory: e.target.value }); }}
-                      options={[{value: '', label: '-- Dự phòng --'}, ...spendingCategoryOptions]}
+                      options={[{value: '', label: '-- Tự động trừ vào Dự phòng --'}, ...spendingCategoryOptions]}
                     />
-                    <p className="text-[10px] text-family-accent mt-1.5 ml-1 italic font-medium leading-tight">* Ánh xạ này chỉ dùng để gom nhóm trên Báo cáo vòng đời, hoàn toàn không tự động ghi đè vào bảng "Chi tiêu thường xuyên".</p>
+                    <p className="text-[10px] text-family-accent mt-1.5 ml-1 italic font-medium leading-tight">* Tự động xuyên thấu cộng dồn số tiền này vào đúng hạng mục đã chọn trong Bảng Chi Tiêu Thường Xuyên ở tất cả các mốc tương lai.</p>
                   </div>
                 </div>
               </div>
@@ -549,21 +719,7 @@ export const LifeStages: React.FC = () => {
                     onChange={(e) => { setFormData({ ...formData, note: e.target.value }); }}
                   />
                   <div className="flex flex-col justify-center md:pl-6 md:mt-4 space-y-3">
-                    <div>
-                      <div className="flex items-center">
-                        <input
-                          type="checkbox"
-                          id="affectsNetWorth"
-                          checked={formData.affectsNetWorth}
-                          onChange={(e) => { setFormData({ ...formData, affectsNetWorth: e.target.checked }); }}
-                          className="w-4 h-4 text-family-accent border-gray-300 rounded focus:ring-family-accent cursor-pointer"
-                        />
-                        <label htmlFor="affectsNetWorth" className="ml-2 block text-sm font-bold text-family-text cursor-pointer">
-                          Ảnh hưởng Tài sản ròng (Net Worth)
-                        </label>
-                      </div>
-                      <p className="text-[10px] text-family-textMuted mt-1 ml-6 leading-tight">Bật nếu khoản chi này làm thay đổi tổng giá trị tài sản ròng của gia đình (VD: mua nhà, bán đất). Tắt nếu chỉ là chi phí tiêu dùng (VD: du lịch, tiệc).</p>
-                    </div>
+
                     <div>
                       <div className="flex items-center">
                         <input
@@ -583,9 +739,12 @@ export const LifeStages: React.FC = () => {
                 </div>
               </div>
 
-              <div className="flex justify-end gap-3 pt-2">
+              <div className="flex justify-end gap-3 pt-2 items-center">
+                {!isWithinObservationPeriod(formData.month, formData.year, selectedPeriodKey) && (
+                  <span className="text-red-500 text-xs flex-1 text-right">{getPeriodGuardMessage(selectedPeriodKey)}</span>
+                )}
                 <Button variant="outline" type="button" onClick={() => { setIsAdding(false); setEditingId(null); }} className="px-6">Hủy</Button>
-                <Button type="submit" className="px-6 font-bold">Lưu khoản chi</Button>
+                <Button type="submit" className="px-6 font-bold" disabled={!isWithinObservationPeriod(formData.month, formData.year, selectedPeriodKey)}>Lưu khoản chi</Button>
               </div>
             </form>
           </CardContent>
