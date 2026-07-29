@@ -1,0 +1,1 @@
+function e(e,t,n){if(!n)return!0;let[r,i]=n.split(`-`).map(Number);return t*12+e>=r*12+i}function t(e){if(!e)return``;let[t,n]=e.split(`-`);return`Không thể thao tác trước tháng quan sát (T${parseInt(n)}/${t}). Vui lòng chọn lại tháng quan sát phù hợp để điều chỉnh dữ liệu quá khứ.`}export{e as n,t};
