@@ -181,6 +181,9 @@ export function useAppState() {
 
         return {
           ...dbItem,
+          _groupBalances: projRow._groupBalances,
+          _monthlyBudget: projRow._monthlyBudget,
+          _monthlyActual: projRow._monthlyActual,
           investmentFlow: {
             beginningBalance: port.totalBeginningBalance,
             contribution: port.totalContribution,
@@ -404,6 +407,13 @@ export function useAppState() {
     }
     const targetMonthValue = targetYear * 12 + targetMonth;
 
+    // Calculate end boundary if duration is set
+    const duration = event.recurringDurationMonths || 0;
+    let endMonthValue = Infinity; // default: no end (infinite)
+    if (duration > 0) {
+      endMonthValue = targetMonthValue + duration; // exclusive end
+    }
+
     const parts = event.spendingCategory.split('/');
     const categoryId = parts.length > 1 ? parts[1] : parts[0];
     const impactAmount = Math.abs(event.recurringMonthlyImpact);
@@ -437,9 +447,40 @@ export function useAppState() {
       updatedSchedules.sort((a, b) => (a.effectiveYear * 12 + a.effectiveMonth) - (b.effectiveYear * 12 + b.effectiveMonth));
     }
 
+    if (endMonthValue !== Infinity) {
+      const endYear = Math.floor((endMonthValue - 1) / 12);
+      const endMonth = ((endMonthValue - 1) % 12) + 1;
+      const existsEndIndex = updatedSchedules.findIndex(
+        (s) => s.effectiveMonth === endMonth && s.effectiveYear === endYear
+      );
+      if (existsEndIndex === -1) {
+        const pastOrActiveEnd = updatedSchedules.filter(
+          (b) => b.effectiveYear * 12 + b.effectiveMonth <= endMonthValue
+        );
+        let priorScheduleEnd: import('../types/budget').ExpenseScheduleItem | null = null;
+        if (pastOrActiveEnd.length > 0) {
+          const sorted = [...pastOrActiveEnd].sort((a, b) => (a.effectiveYear * 12 + a.effectiveMonth) - (b.effectiveYear * 12 + b.effectiveMonth));
+          priorScheduleEnd = sorted[sorted.length - 1];
+        }
+        const newCategoriesEnd = priorScheduleEnd ? { ...priorScheduleEnd.categories } : {};
+        
+        const newScheduleEnd: import('../types/budget').ExpenseScheduleItem = {
+          id: `exp_${Date.now()}_${Math.random().toString(36).substring(2, 9)}`,
+          effectiveMonth: endMonth,
+          effectiveYear: endYear,
+          categories: newCategoriesEnd,
+          status: 'active',
+          note: `Khôi phục sau sự kiện: ${event.name}`,
+        };
+        updatedSchedules.push(newScheduleEnd);
+        updatedSchedules.sort((a, b) => (a.effectiveYear * 12 + a.effectiveMonth) - (b.effectiveYear * 12 + b.effectiveMonth));
+      }
+    }
+
     return updatedSchedules.map(schedule => {
       const scheduleMonthValue = schedule.effectiveYear * 12 + schedule.effectiveMonth;
-      if (scheduleMonthValue >= targetMonthValue) {
+      // Only apply within [targetMonthValue, endMonthValue) range
+      if (scheduleMonthValue >= targetMonthValue && scheduleMonthValue < endMonthValue) {
          const newCategories = { ...schedule.categories };
          newCategories[categoryId] = (newCategories[categoryId] || 0) + impactAmount;
          
@@ -473,19 +514,34 @@ export function useAppState() {
       targetYear += 1;
     }
     const targetMonthValue = targetYear * 12 + targetMonth;
+    
+    // Calculate end boundary if duration is set
+    const duration = event.recurringDurationMonths || 0;
+    let endMonthValue = Infinity;
+    if (duration > 0) {
+      endMonthValue = targetMonthValue + duration;
+    }
+    
     const parts = event.spendingCategory.split('/');
     const categoryId = parts.length > 1 ? parts[1] : parts[0];
     const impactAmount = Math.abs(event.recurringMonthlyImpact);
 
     return currentSchedules.map(schedule => {
       const scheduleMonthValue = schedule.effectiveYear * 12 + schedule.effectiveMonth;
-      if (scheduleMonthValue >= targetMonthValue && schedule.categories[categoryId] !== undefined) {
+      if (scheduleMonthValue >= targetMonthValue && scheduleMonthValue < endMonthValue && schedule.categories[categoryId] !== undefined) {
          const newCategories = { ...schedule.categories };
          newCategories[categoryId] = Math.max(0, newCategories[categoryId] - impactAmount);
+         
+         // Cleanup note if it contains tracking info for this event
+         let newNote = schedule.note || '';
+         if (newNote.includes(event.name)) {
+            newNote = newNote.replace(new RegExp(`[, ]*(Tự động cập nhật từ sự kiện|Ảnh hưởng từ|Hoàn tác)[^\\)]*${event.name}[^\\)]*\\)?`, 'g'), '').trim();
+         }
+         
          return {
             ...schedule,
             categories: newCategories,
-            note: schedule.note ? `${schedule.note} (Hoàn tác: ${event.name})` : `Đã hoàn tác sự kiện: ${event.name}`
+            note: newNote || `Đã hoàn tác sự kiện: ${event.name}`
          };
       }
       return schedule;

@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { HelpCircle } from 'lucide-react';
 
 interface HelpTooltipProps {
-  text: string;
+  text: string | React.ReactNode;
   position?: 'top' | 'bottom' | 'left' | 'right';
 }
 

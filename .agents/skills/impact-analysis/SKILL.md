@@ -220,6 +220,8 @@ Danh sách các lỗi thực tế đã xảy ra trong dự án để cảnh giá
 | 5 | Dropdown Nguồn vs Đích dùng từ ngữ không đồng nhất   | Viết text ad-hoc không theo quy chuẩn        | TransferForm                           |
 | 6 | Vốn ban đầu quỹ nhập vào nhưng không hiển thị trên card | UI card thiếu trường hiển thị            | SinkingFundModule                      |
 | 7 | Tỷ trọng mục tiêu hardcode, người dùng không chỉnh được | Thiếu UI cấu hình trong Settings          | Settings, PortfolioRadarChart           |
+| 8 | Tính toán sai hoặc không tự cấn trừ (Cross-Track) | ID mismatch bẫy nguy hiểm: Nguồn Track A (`spendingCategory`) format là `housing_basic/...`, nhưng Nguồn Track B (`recurringFundingSource`) lại là `group_housing_basic`. Không dùng `.replace('group_', '')` dẫn đến so sánh lệch ➔ Thuật toán trừ chéo không hoạt động. | LifeStages, DatabaseResolver, LiquidityBreakdown |
+| 9 | Mất đồng bộ state dropdown do auto-correct bị sai        | `useEffect` update `onChange` khi value không hợp lệ không kích hoạt đúng luồng lưu state. | FundingSourceSelect, LifeStages          |
 
 ---
 

@@ -233,6 +233,26 @@ export function runProjection(input: ProjectionEngineInput): ProjectionOutput {
       (e) => safeNumber(e.month) === period.month && safeNumber(e.year) === period.year
     );
 
+    // Track B: Process recurring fund impacts (recurringMonthlyImpactFund) over their duration
+    const currentMonthValue = period.year * 12 + period.month;
+    lifeEvents.forEach(event => {
+       if (event.recurringFundingSource && event.recurringMonthlyImpactFund && event.recurringMonthlyImpactFund < 0) {
+           let startMonth = event.month + 1;
+           let startYear = event.year;
+           if (startMonth > 12) { startMonth = 1; startYear += 1; }
+           const startMonthValue = startYear * 12 + startMonth;
+           
+           const duration = event.recurringDurationMonthsFund || 0;
+           const endMonthValue = duration > 0 ? startMonthValue + duration : Infinity;
+           
+           if (currentMonthValue >= startMonthValue && currentMonthValue < endMonthValue) {
+               const groupId = event.recurringFundingSource;
+               const impact = Math.abs(event.recurringMonthlyImpactFund);
+               groupBalances[groupId] = (groupBalances[groupId] || 0) - impact;
+           }
+       }
+    });
+
     activePeriodEvents.forEach((event) => {
       const amt = event.amount; // âm là chi tiền, dương là nhận tiền
       

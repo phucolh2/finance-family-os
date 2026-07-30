@@ -88,6 +88,10 @@ export interface LifeEvent extends Partial<LifecycleProps> {
   source: string; // Used to be strict literal, now dynamic string
   targetAssetId?: string;
   recurringMonthlyImpact?: number;
+  recurringDurationMonths?: number; // Số kỳ tác động hàng tháng. 0/undefined = vô hạn
+  recurringMonthlyImpactFund?: number;
+  recurringDurationMonthsFund?: number;
+  recurringFundingSource?: string; // Nguồn chi trả hàng tháng (groupId). Nếu có → trừ quỹ dư thay vì cộng ngân sách phân bổ
   affectsNetWorth: boolean;
   note?: string;
   isMilestone?: boolean; // Đánh dấu sự kiện là Cột mốc quan trọng

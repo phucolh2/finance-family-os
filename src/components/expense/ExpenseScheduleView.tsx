@@ -66,6 +66,9 @@ export const ExpenseScheduleView: React.FC = () => {
     setIsCreatingNew(false);
     if (selectedPeriodKey) {
       const [y, m] = selectedPeriodKey.split('-').map(Number);
+      setNewYear(y);
+      setNewMonth(m);
+      
       const pastOrActiveItems = sortedHistory.filter((item) => {
         if (item.effectiveYear < y) return true;
         if (item.effectiveYear === y && item.effectiveMonth <= m) return true;
@@ -318,7 +321,7 @@ export const ExpenseScheduleView: React.FC = () => {
                         <span className="text-[10px] bg-emerald-100 text-emerald-700 px-2 py-0.5 rounded-full font-bold border border-emerald-200">Đã chốt</span>
                       )}
                     </div>
-                    {item.note && <div className="text-[11px] text-family-textMuted mt-1 line-clamp-1">{item.note}</div>}
+                    {item.note && <div className="text-[11px] text-family-textMuted mt-1 line-clamp-2">{item.note}</div>}
                   </div>
                 </div>
               );

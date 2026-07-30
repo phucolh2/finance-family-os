@@ -54,16 +54,39 @@ export function calculateCashflow(input: CashflowEngineInput): CashflowOutput {
 
   // 2. Cumulative recurring impacts (applies from the event month + 1 onwards)
   const pastOrActiveEvents = events.filter((e) => {
+    if (!safeNumber(e.recurringMonthlyImpact, 0)) return false;
+    
     let effectiveMonth = safeNumber(e.month) + 1;
     let effectiveYear = safeNumber(e.year);
     if (effectiveMonth > 12) {
       effectiveMonth = 1;
       effectiveYear += 1;
     }
-    return isBeforeOrEqual(
+    
+    const startsBeforeOrAtPeriod = isBeforeOrEqual(
       { year: effectiveYear, month: effectiveMonth },
       { year: period.year, month: period.month }
     );
+    if (!startsBeforeOrAtPeriod) return false;
+    
+    // Check duration boundary
+    const duration = safeNumber(e.recurringDurationMonths, 0);
+    if (duration > 0) {
+      // Calculate end month (exclusive): effectiveMonth + duration
+      let endMonth = effectiveMonth + (duration % 12);
+      let endYear = effectiveYear + Math.floor(duration / 12);
+      if (endMonth > 12) {
+        endMonth -= 12;
+        endYear += 1;
+      }
+      // Period must be BEFORE the end boundary
+      return !isBeforeOrEqual(
+        { year: endYear, month: endMonth },
+        { year: period.year, month: period.month }
+      ) || (endYear === period.year && endMonth === period.month);
+    }
+    
+    return true;
   });
   const recurringImpact = pastOrActiveEvents.reduce(
     (sum, e) => sum + safeNumber(e.recurringMonthlyImpact, 0),

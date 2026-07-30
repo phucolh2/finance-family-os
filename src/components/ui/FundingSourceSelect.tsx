@@ -1,4 +1,4 @@
-import React, { useMemo } from 'react';
+import React, { useMemo, useEffect } from 'react';
 import { Select } from './Select';
 import { useLiquidityBreakdown } from '../../hooks/useLiquidityBreakdown';
 import { formatTableMoneyVNDMillion } from '../../utils/format';
@@ -10,6 +10,8 @@ interface FundingSourceSelectProps {
   label?: string;
   disabled?: boolean;
   targetPeriodKey?: string;
+  allowEmpty?: boolean;
+  emptyLabel?: string;
 }
 
 export const FundingSourceSelect: React.FC<FundingSourceSelectProps> = ({
@@ -18,15 +20,30 @@ export const FundingSourceSelect: React.FC<FundingSourceSelectProps> = ({
   label = 'Nguồn chi trả',
   disabled = false,
   targetPeriodKey,
+  allowEmpty = false,
+  emptyLabel = '-- Không sử dụng --',
 }) => {
   const { liquidityBreakdownData } = useLiquidityBreakdown('cumulative', targetPeriodKey);
 
   const sourceOptions = useMemo(() => {
-    return liquidityBreakdownData.map(group => ({
+    const options = liquidityBreakdownData.map(group => ({
       value: group.id,
       label: `${group.name} (Còn: ${formatTableMoneyVNDMillion(group.remaining)})`
     }));
-  }, [liquidityBreakdownData]);
+    if (allowEmpty) {
+      return [{ value: '', label: emptyLabel }, ...options];
+    }
+    return options;
+  }, [liquidityBreakdownData, allowEmpty, emptyLabel]);
+
+  useEffect(() => {
+    if (sourceOptions.length > 0) {
+      const isValid = sourceOptions.some(opt => opt.value === value);
+      if (!isValid) {
+        onChange(sourceOptions[0].value);
+      }
+    }
+  }, [value, sourceOptions, onChange]);
 
   return (
     <div className="relative">

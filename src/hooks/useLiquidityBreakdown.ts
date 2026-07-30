@@ -84,6 +84,8 @@ export const useLiquidityBreakdown = (mode: 'monthly' | 'cumulative' = 'monthly'
     const flexibleByGroup: Record<string, number> = {};
     (state.lifeEvents || []).forEach(event => {
       const eMonthValue = event.year * 12 + event.month;
+      
+      // 1) One-time impact (event.amount) → deduct from event.source
       if (mode === 'monthly') {
         if (event.month === selMonth && event.year === selYear) {
           flexibleByGroup[event.source] = (flexibleByGroup[event.source] || 0) + event.amount;
@@ -91,6 +93,32 @@ export const useLiquidityBreakdown = (mode: 'monthly' | 'cumulative' = 'monthly'
       } else {
         if (eMonthValue <= selMonthValue) {
           flexibleByGroup[event.source] = (flexibleByGroup[event.source] || 0) + event.amount;
+        }
+      }
+      
+      // 2) Recurring impact via dedicated funding source → deduct from recurringFundingSource
+      if (event.recurringFundingSource && event.recurringMonthlyImpactFund && event.recurringMonthlyImpactFund !== 0) {
+        let startMonth = event.month + 1;
+        let startYear = event.year;
+        if (startMonth > 12) { startMonth = 1; startYear += 1; }
+        const startMonthValue = startYear * 12 + startMonth;
+        
+        const duration = event.recurringDurationMonthsFund || 0;
+        const endMonthValue = duration > 0 ? startMonthValue + duration : Infinity;
+        const impactPerMonth = event.recurringMonthlyImpactFund; // negative number
+        
+        if (mode === 'monthly') {
+          // Only deduct if the observed month falls within the active range
+          if (selMonthValue >= startMonthValue && selMonthValue < endMonthValue) {
+            flexibleByGroup[event.recurringFundingSource] = (flexibleByGroup[event.recurringFundingSource] || 0) + impactPerMonth;
+          }
+        } else {
+          // Cumulative: count how many months of impact have occurred up to selMonthValue
+          const effectiveEnd = Math.min(selMonthValue + 1, endMonthValue);
+          const activeMonths = Math.max(0, effectiveEnd - startMonthValue);
+          if (activeMonths > 0) {
+            flexibleByGroup[event.recurringFundingSource] = (flexibleByGroup[event.recurringFundingSource] || 0) + (impactPerMonth * activeMonths);
+          }
         }
       }
     });
