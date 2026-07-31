@@ -3,7 +3,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/Card'
 import { ShieldCheck, Wallet } from 'lucide-react';
 import { useAppContext } from '../context/AppContext';
 import { formatKpiMoneyVNDMillion } from '../utils/format';
-import { SinkingFundModule } from '../components/portfolio/SinkingFundModule';
+import { SinkingFundModule_Savings } from '../components/savings/SinkingFundModule_Savings';
 import { HelpTooltip } from '../components/ui/HelpTooltip';
 import { ObservationControls } from '../components/ui/ObservationControls';
 import { runProjection } from '../engines/projectionEngine';
@@ -85,7 +85,7 @@ export const Savings: React.FC = () => {
       </div>
 
       <div className="flex flex-col gap-6 mt-6">
-        <SinkingFundModule 
+        <SinkingFundModule_Savings 
           filterFundType="savings" 
           filterSources={['savings', 'savings_kids', 'savings_biz']}
           title="Tích luỹ Dài hạn & Mục tiêu"

@@ -16,7 +16,7 @@ import { ObservationControls } from '../components/ui/ObservationControls';
 import { HelpTooltip } from '../components/ui/HelpTooltip';
 import { isWithinObservationPeriod, getPeriodGuardMessage } from '../utils/periodGuard';
 
-import { SinkingFundModule } from '../components/portfolio/SinkingFundModule';
+import { SinkingFundModule_Portfolio } from '../components/portfolio/SinkingFundModule_Portfolio';
 
 export const Portfolio: React.FC = () => {
   const { 
@@ -574,7 +574,7 @@ export const Portfolio: React.FC = () => {
 
       {/* Sinking Funds */}
       <div className="flex flex-col gap-6 mt-6">
-        <SinkingFundModule filterFundType="investment" />
+        <SinkingFundModule_Portfolio filterFundType="investment" />
       </div>
 
 

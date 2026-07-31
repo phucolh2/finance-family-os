@@ -8,7 +8,7 @@ import { formatTableMoneyVNDMillion } from '../../utils/format';
 import { HelpTooltip } from '../ui/HelpTooltip';
 import { runProjection } from '../../engines/projectionEngine';
 import { analyzeExpense } from '../../engines/expenseEngine';
-import { SinkingFundModule } from '../portfolio/SinkingFundModule';
+import { SinkingFundModule_Liquidity } from './SinkingFundModule_Liquidity';
 
 export const SavingsAndLiquidityView: React.FC = () => {
   const { state, selectedPeriodKey } = useAppContext();
@@ -95,7 +95,7 @@ export const SavingsAndLiquidityView: React.FC = () => {
 
         {/* Thêm SinkingFundModule dành riêng cho Quỹ sinh hoạt dư */}
         <div className="mt-8">
-          <SinkingFundModule
+          <SinkingFundModule_Liquidity
             dynamicSources={[
               ...liquidityBreakdownData.map(group => ({
                 id: `expense_surplus_${group.id}`,

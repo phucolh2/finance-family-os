@@ -3,10 +3,10 @@ import { useAppContext } from '../../context/AppContext';
 import { Button } from '../ui/Button';
 import { Input } from '../ui/Input';
 import { EmptyState } from '../ui/EmptyState';
-import { LifestyleFundCard } from './fund-cards/LifestyleFundCard';
-import { PortfolioFundCard } from './fund-cards/PortfolioFundCard';
-import { SavingsFundCard } from './fund-cards/SavingsFundCard';
-import { ReservesFundCard } from './fund-cards/ReservesFundCard';
+import { LifestyleFundCard } from '../portfolio/fund-cards/LifestyleFundCard';
+import { PortfolioFundCard } from '../portfolio/fund-cards/PortfolioFundCard';
+import { SavingsFundCard } from '../portfolio/fund-cards/SavingsFundCard';
+import { ReservesFundCard } from '../portfolio/fund-cards/ReservesFundCard';
 import { HelpTooltip } from '../ui/HelpTooltip';
 import { Target, Plus, Trash2, ArrowRightCircle, Edit, CheckCircle, RotateCcw, AlertCircle } from 'lucide-react';
 import { formatTableMoneyVNDMillion } from '../../utils/format';
@@ -25,7 +25,7 @@ interface DynamicSource {
   balance: number;
 }
 
-interface SinkingFundModuleProps {
+interface SinkingFundModule_LiquidityProps {
   filterFundType?: 'investment' | 'debt_prep' | 'lifestyle_savings' | 'expense_surplus' | 'savings';
   filterSources?: FundingSourceId[] | string[];
   dynamicSources?: DynamicSource[];
@@ -36,7 +36,7 @@ interface SinkingFundModuleProps {
   variant?: 'portfolio' | 'savings' | 'reserves' | 'lifestyle';
 }
 
-export const SinkingFundModule: React.FC<SinkingFundModuleProps> = ({
+export const SinkingFundModule_Liquidity: React.FC<SinkingFundModule_LiquidityProps> = ({
   filterFundType = 'investment',
   filterSources,
   dynamicSources,
