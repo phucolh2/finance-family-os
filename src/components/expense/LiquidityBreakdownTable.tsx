@@ -121,7 +121,7 @@ export const LiquidityBreakdownTable: React.FC<LiquidityBreakdownTableProps> = (
                       >
                         {Math.abs(group.trackA) > 0 ? (
                           <div className={`flex items-center justify-end gap-1 ${group.flexibleEvents.some((evt: any) => evt.type === 'trackA') ? 'cursor-pointer hover:text-orange-700 transition-colors' : ''}`}>
-                            -{formatTableMoneyVNDMillion(Math.abs(group.trackA))}
+                            {formatTableMoneyVNDMillion(Math.abs(group.trackA))}
                             {group.flexibleEvents.some((evt: any) => evt.type === 'trackA') && <Info className="w-3.5 h-3.5 opacity-80" />}
                           </div>
                         ) : '-'}
@@ -137,7 +137,7 @@ export const LiquidityBreakdownTable: React.FC<LiquidityBreakdownTableProps> = (
                                   <span className="text-gray-700 font-medium leading-tight">
                                     {evt.name} <span className="text-[9px] bg-orange-50 text-orange-600 px-1 py-0.5 rounded ml-1 border border-orange-100">Định kỳ</span>
                                   </span>
-                                  <span className="text-orange-600 font-bold shrink-0">-{formatTableMoneyVNDMillion(Math.abs(evt.impact))}</span>
+                                  <span className="text-orange-600 font-bold shrink-0">{formatTableMoneyVNDMillion(Math.abs(evt.impact))}</span>
                                 </div>
                               ))}
                             </div>
@@ -267,7 +267,7 @@ export const LiquidityBreakdownTable: React.FC<LiquidityBreakdownTableProps> = (
                           {formatTableMoneyVNDMillion(child.totalActual)}
                         </td>
                         <td className="p-2 text-right text-orange-400">
-                          {Math.abs(child.trackA) > 0 ? `-${formatTableMoneyVNDMillion(Math.abs(child.trackA))}` : '-'}
+                          {Math.abs(child.trackA) > 0 ? `${formatTableMoneyVNDMillion(Math.abs(child.trackA))}` : '-'}
                         </td>
                         <td className="p-2 text-right font-semibold border-l border-family-accent/5 text-family-text">
                           {formatTableMoneyVNDMillion(child.rawRemaining)}
@@ -305,7 +305,7 @@ export const LiquidityBreakdownTable: React.FC<LiquidityBreakdownTableProps> = (
                   {formatTableMoneyVNDMillion(totalActualSum)}
                 </td>
                 <td className="px-3 py-4 text-right text-sm font-bold text-orange-600">
-                  -{formatTableMoneyVNDMillion(Math.abs(totalTrackASum))}
+                  {formatTableMoneyVNDMillion(Math.abs(totalTrackASum))}
                 </td>
                 <td className="px-3 py-4 text-right text-sm font-bold text-family-text border-l border-family-accent/5">
                   {formatTableMoneyVNDMillion(totalRawRemainingSum)}
