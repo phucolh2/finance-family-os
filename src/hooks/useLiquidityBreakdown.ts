@@ -166,7 +166,7 @@ export const useLiquidityBreakdown = (mode: 'monthly' | 'cumulative' = 'monthly'
 
     const targetDb = (state.resolvedMonthlyDb || []).find(db => db.periodKey === activePeriodKey);
     const cumulativeExpenseData = mode === 'cumulative' 
-      ? analyzeExpense(state.resolvedMonthlyDb || [], state.lifeEvents, activePeriodKey, expenseTree.map((g: any) => g.id as string))
+      ? analyzeExpense(state.resolvedMonthlyDb || [], state.lifeEvents, activePeriodKey, expenseTree.map((g: any) => g.groupId as string))
       : null;
 
     return expenseTree.map((g: any) => {
@@ -176,8 +176,15 @@ export const useLiquidityBreakdown = (mode: 'monthly' | 'cumulative' = 'monthly'
       const flexData = flexibleByGroup[g.id] || { oneTime: 0, trackA: 0, trackB: 0 };
       const flexibleEvents = flexibleEventsByGroup[g.id] || [];
       const trackA = flexData.trackA;
-      const oneTime = flexData.oneTime;
       const trackB = flexData.trackB;
+
+      const oneTimeExpense = flexibleEvents
+        .filter((e: any) => e.type === 'oneTime' && e.impact < 0)
+        .reduce((sum: number, e: any) => sum + Math.abs(e.impact), 0);
+        
+      const oneTimeIncome = flexibleEvents
+        .filter((e: any) => e.type === 'oneTime' && e.impact > 0)
+        .reduce((sum: number, e: any) => sum + e.impact, 0);
 
       if (mode === 'monthly') {
         totalBudget = targetDb?.budgetAmounts?.[g.groupId] || 0;
@@ -201,7 +208,7 @@ export const useLiquidityBreakdown = (mode: 'monthly' | 'cumulative' = 'monthly'
                     const eMonthValue = eYear * 12 + eMonth;
                     if (eMonthValue <= selMonthValue) {
                         const dbItemExists = (state.resolvedMonthlyDb || []).some(
-                            db => Number(db.month) === eMonth && Number(db.year) === eYear && db.periodKey === activePeriodKey
+                            db => Number(db.month) === eMonth && Number(db.year) === eYear
                         );
                         if (dbItemExists) {
                             includedFlexibleAmount += Math.abs(amt);
@@ -215,7 +222,7 @@ export const useLiquidityBreakdown = (mode: 'monthly' | 'cumulative' = 'monthly'
 
       const rawRemaining = Math.max(0, totalBudget - totalActual - Math.abs(trackA));
       const deducted = deductedByGroup[g.id] || 0;
-      const remaining = rawRemaining - deducted - Math.abs(oneTime) - Math.abs(trackB);
+      const remaining = rawRemaining - deducted - oneTimeExpense - Math.abs(trackB) + oneTimeIncome;
       
       const children = (g.children || []).map((child: any) => {
         let catBudget = 0;
@@ -239,7 +246,8 @@ export const useLiquidityBreakdown = (mode: 'monthly' | 'cumulative' = 'monthly'
           totalActual: catActual,
           deducted: 0,
           trackA: 0,
-          oneTime: 0,
+          oneTimeExpense: 0,
+          oneTimeIncome: 0,
           trackB: 0,
           flexibleEvents: [],
           sortOrder: child.sortOrder || 0
@@ -250,13 +258,14 @@ export const useLiquidityBreakdown = (mode: 'monthly' | 'cumulative' = 'monthly'
         id: g.id,
         name: g.name,
         remaining,
-        deducted,
-        trackA,
-        oneTime,
-        trackB,
-        flexibleEvents,
         totalBudget,
         totalActual,
+        deducted,
+        trackA,
+        oneTimeExpense,
+        oneTimeIncome,
+        trackB,
+        flexibleEvents,
         sortOrder: g.sortOrder || 0,
         children
       };
@@ -268,7 +277,8 @@ export const useLiquidityBreakdown = (mode: 'monthly' | 'cumulative' = 'monthly'
   const totalActualSum = useMemo(() => liquidityBreakdownData.reduce((sum, g) => sum + g.totalActual, 0), [liquidityBreakdownData]);
   const totalDeductedSum = useMemo(() => liquidityBreakdownData.reduce((sum, g) => sum + g.deducted, 0), [liquidityBreakdownData]);
   const totalTrackASum = useMemo(() => liquidityBreakdownData.reduce((sum, g) => sum + g.trackA, 0), [liquidityBreakdownData]);
-  const totalOneTimeSum = useMemo(() => liquidityBreakdownData.reduce((sum, g) => sum + g.oneTime, 0), [liquidityBreakdownData]);
+  const totalOneTimeExpenseSum = useMemo(() => liquidityBreakdownData.reduce((sum, g) => sum + g.oneTimeExpense, 0), [liquidityBreakdownData]);
+  const totalOneTimeIncomeSum = useMemo(() => liquidityBreakdownData.reduce((sum, g) => sum + g.oneTimeIncome, 0), [liquidityBreakdownData]);
   const totalTrackBSum = useMemo(() => liquidityBreakdownData.reduce((sum, g) => sum + g.trackB, 0), [liquidityBreakdownData]);
   const totalRemainingSum = useMemo(() => liquidityBreakdownData.reduce((sum, g) => sum + g.remaining, 0), [liquidityBreakdownData]);
 
@@ -278,7 +288,8 @@ export const useLiquidityBreakdown = (mode: 'monthly' | 'cumulative' = 'monthly'
     totalActualSum,
     totalDeductedSum,
     totalTrackASum,
-    totalOneTimeSum,
+    totalOneTimeExpenseSum,
+    totalOneTimeIncomeSum,
     totalTrackBSum,
     totalRemainingSum,
     selectedPeriodKey: activePeriodKey
