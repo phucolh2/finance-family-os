@@ -166,13 +166,16 @@ export const useLiquidityBreakdown = (mode: 'monthly' | 'cumulative' = 'monthly'
         }
       } else {
         totalBudget = cumulativeExpenseData?.summaryByGroup?.[g.groupId]?.totalBudget || 0;
-        // cumulativeExpenseData already includes flexible in totalActual, so we subtract it here to separate it
-        totalActual = (cumulativeExpenseData?.summaryByGroup?.[g.groupId]?.totalActual || 0) - flexible;
+        let flexibleExpensePart = 0;
+        (flexibleEvents || []).forEach((ev: any) => {
+           if (ev.impact < 0) flexibleExpensePart += Math.abs(ev.impact);
+        });
+        totalActual = (cumulativeExpenseData?.summaryByGroup?.[g.groupId]?.totalActual || 0) - flexibleExpensePart;
       }
 
       const rawRemaining = Math.max(0, totalBudget - totalActual);
       const deducted = deductedByGroup[g.id] || 0;
-      const remaining = rawRemaining - deducted - flexible;
+      const remaining = rawRemaining - deducted + flexible;
       
       const children = (g.children || []).map((child: any) => {
         let catBudget = 0;
