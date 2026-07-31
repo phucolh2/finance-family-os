@@ -10,7 +10,17 @@ interface LiquidityBreakdownTableProps {
 }
 
 export const LiquidityBreakdownTable: React.FC<LiquidityBreakdownTableProps> = ({ mode = 'monthly' }) => {
-  const { liquidityBreakdownData, totalBudgetSum, totalActualSum, totalDeductedSum, totalFlexibleSum, totalRemainingSum, selectedPeriodKey } = useLiquidityBreakdown(mode);
+  const { 
+    liquidityBreakdownData, 
+    totalBudgetSum, 
+    totalActualSum, 
+    totalDeductedSum, 
+    totalTrackASum,
+    totalOneTimeSum,
+    totalTrackBSum,
+    totalRemainingSum, 
+    selectedPeriodKey 
+  } = useLiquidityBreakdown(mode);
   const [expandedNodes, setExpandedNodes] = useState<Record<string, boolean>>({});
   const [activeDetailId, setActiveDetailId] = useState<string | null>(null);
   const tableRef = useRef<HTMLDivElement>(null);
@@ -56,12 +66,18 @@ export const LiquidityBreakdownTable: React.FC<LiquidityBreakdownTableProps> = (
           <table className="w-full text-left text-sm border-collapse">
             <thead>
               <tr className="border-b border-family-accent/15 text-family-textMuted font-bold bg-family-bgDark/40">
-                <th className="p-3 w-[45%]">Nhóm / Hạng mục</th>
-                <th className="p-3 text-right">Ngân sách (tr)</th>
-                <th className="p-3 text-right">Chi thường xuyên (tr)</th>
-                <th className="p-3 text-right text-red-500" title="Khoản chi linh hoạt">Chi linh hoạt (tr)</th>
-                <th className="p-3 text-right text-orange-500" title="Chuyển vào Quỹ tích lũy">Trích quỹ (tr)</th>
-                <th className="p-3 text-right text-emerald-600">Còn lại (tr)</th>
+                <th className="p-3 w-[25%]" rowSpan={2}>Nhóm / Hạng mục</th>
+                <th className="p-3 text-right" rowSpan={2}>Ngân sách (tr)</th>
+                <th className="p-2 text-center border-b border-family-accent/15 border-l border-white/50" colSpan={2}>Chi tiêu thường xuyên (tr)</th>
+                <th className="p-2 text-center border-b border-family-accent/15 border-l border-white/50" colSpan={2}>Chi tiêu linh hoạt (tr)</th>
+                <th className="p-3 text-right text-orange-500 border-l border-white/50" rowSpan={2} title="Chuyển vào Quỹ tích lũy">Trích quỹ (tr)</th>
+                <th className="p-3 text-right text-emerald-600 border-l border-white/50" rowSpan={2}>Còn lại (tr)</th>
+              </tr>
+              <tr className="border-b border-family-accent/15 text-family-textMuted font-bold bg-family-bgDark/20 text-xs">
+                <th className="p-2 text-right border-l border-white/50 text-gray-500 font-medium">Hằng tháng</th>
+                <th className="p-2 text-right text-orange-600/80 font-medium" title="Luồng A: Trừ từ Ngân sách">Luồng A</th>
+                <th className="p-2 text-right border-l border-white/50 text-red-500/80 font-medium">1 Lần</th>
+                <th className="p-2 text-right text-red-600/80 font-medium" title="Luồng B: Tác động Quỹ thanh khoản">Luồng B</th>
               </tr>
             </thead>
             <tbody>
@@ -88,34 +104,98 @@ export const LiquidityBreakdownTable: React.FC<LiquidityBreakdownTableProps> = (
                       <td className="p-3 text-right text-family-textMuted font-semibold">
                         {formatTableMoneyVNDMillion(group.totalBudget)}
                       </td>
-                      <td className="p-3 text-right text-family-textMuted font-semibold">
+                      <td className="p-3 text-right text-family-textMuted font-semibold border-l border-family-accent/5">
                         {formatTableMoneyVNDMillion(group.totalActual)}
                       </td>
-                      <td className="p-3 text-right text-red-500 font-semibold bg-red-50/20 relative"
+                      <td className="p-3 text-right text-orange-600 font-semibold bg-orange-50/10 relative"
                           onClick={(e) => {
-                            if (hasFlexibleDetails) {
+                            if (group.flexibleEvents.some((evt: any) => evt.type === 'trackA')) {
                               e.stopPropagation();
-                              setActiveDetailId(activeDetailId === group.id ? null : group.id);
+                              setActiveDetailId(activeDetailId === group.id + '-A' ? null : group.id + '-A');
                             }
                           }}
                       >
-                        {Math.abs(group.flexible) > 0 ? (
-                          <div className={`flex items-center justify-end gap-1 ${hasFlexibleDetails ? 'cursor-pointer hover:text-red-700 transition-colors' : ''}`}>
-                            -{formatTableMoneyVNDMillion(Math.abs(group.flexible))}
-                            {hasFlexibleDetails && <Info className="w-3.5 h-3.5 opacity-80" />}
+                        {Math.abs(group.trackA) > 0 ? (
+                          <div className={`flex items-center justify-end gap-1 ${group.flexibleEvents.some((evt: any) => evt.type === 'trackA') ? 'cursor-pointer hover:text-orange-700 transition-colors' : ''}`}>
+                            -{formatTableMoneyVNDMillion(Math.abs(group.trackA))}
+                            {group.flexibleEvents.some((evt: any) => evt.type === 'trackA') && <Info className="w-3.5 h-3.5 opacity-80" />}
                           </div>
                         ) : '-'}
 
-                        {activeDetailId === group.id && hasFlexibleDetails && (
+                        {activeDetailId === group.id + '-A' && group.flexibleEvents.some((evt: any) => evt.type === 'trackA') && (
                           <div className="absolute top-full right-0 mt-1 w-64 bg-white rounded-lg shadow-xl border border-gray-100 z-50 text-left p-3 animate-in fade-in zoom-in-95" onClick={(e) => e.stopPropagation()}>
                             <div className="text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-2 border-b border-gray-100 pb-1.5 flex items-center gap-1.5">
-                              <Info className="w-3 h-3" /> Chi tiết linh hoạt
+                              <Info className="w-3 h-3" /> Chi tiết Luồng A
                             </div>
                             <div className="space-y-2.5">
-                              {group.flexibleEvents.map((evt: any, idx: number) => (
+                              {group.flexibleEvents.filter((evt: any) => evt.type === 'trackA').map((evt: any, idx: number) => (
                                 <div key={idx} className="flex justify-between items-start text-xs gap-3">
                                   <span className="text-gray-700 font-medium leading-tight">
-                                    {evt.name} {evt.isRecurring ? <span className="text-[9px] bg-gray-100 text-gray-500 px-1 py-0.5 rounded ml-1">Định kỳ</span> : ''}
+                                    {evt.name} <span className="text-[9px] bg-orange-50 text-orange-600 px-1 py-0.5 rounded ml-1 border border-orange-100">Định kỳ</span>
+                                  </span>
+                                  <span className="text-orange-600 font-bold shrink-0">-{formatTableMoneyVNDMillion(Math.abs(evt.impact))}</span>
+                                </div>
+                              ))}
+                            </div>
+                          </div>
+                        )}
+                      </td>
+                      <td className="p-3 text-right text-red-500 font-semibold bg-red-50/10 relative border-l border-family-accent/5"
+                          onClick={(e) => {
+                            if (group.flexibleEvents.some((evt: any) => evt.type === 'oneTime')) {
+                              e.stopPropagation();
+                              setActiveDetailId(activeDetailId === group.id + '-1' ? null : group.id + '-1');
+                            }
+                          }}
+                      >
+                        {Math.abs(group.oneTime) > 0 ? (
+                          <div className={`flex items-center justify-end gap-1 ${group.flexibleEvents.some((evt: any) => evt.type === 'oneTime') ? 'cursor-pointer hover:text-red-700 transition-colors' : ''}`}>
+                            -{formatTableMoneyVNDMillion(Math.abs(group.oneTime))}
+                            {group.flexibleEvents.some((evt: any) => evt.type === 'oneTime') && <Info className="w-3.5 h-3.5 opacity-80" />}
+                          </div>
+                        ) : '-'}
+
+                        {activeDetailId === group.id + '-1' && group.flexibleEvents.some((evt: any) => evt.type === 'oneTime') && (
+                          <div className="absolute top-full right-0 mt-1 w-64 bg-white rounded-lg shadow-xl border border-gray-100 z-50 text-left p-3 animate-in fade-in zoom-in-95" onClick={(e) => e.stopPropagation()}>
+                            <div className="text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-2 border-b border-gray-100 pb-1.5 flex items-center gap-1.5">
+                              <Info className="w-3 h-3" /> Chi tiết 1 Lần
+                            </div>
+                            <div className="space-y-2.5">
+                              {group.flexibleEvents.filter((evt: any) => evt.type === 'oneTime').map((evt: any, idx: number) => (
+                                <div key={idx} className="flex justify-between items-start text-xs gap-3">
+                                  <span className="text-gray-700 font-medium leading-tight">{evt.name}</span>
+                                  <span className="text-red-600 font-bold shrink-0">-{formatTableMoneyVNDMillion(Math.abs(evt.impact))}</span>
+                                </div>
+                              ))}
+                            </div>
+                          </div>
+                        )}
+                      </td>
+                      <td className="p-3 text-right text-red-600 font-semibold bg-red-50/20 relative"
+                          onClick={(e) => {
+                            if (group.flexibleEvents.some((evt: any) => evt.type === 'trackB')) {
+                              e.stopPropagation();
+                              setActiveDetailId(activeDetailId === group.id + '-B' ? null : group.id + '-B');
+                            }
+                          }}
+                      >
+                        {Math.abs(group.trackB) > 0 ? (
+                          <div className={`flex items-center justify-end gap-1 ${group.flexibleEvents.some((evt: any) => evt.type === 'trackB') ? 'cursor-pointer hover:text-red-700 transition-colors' : ''}`}>
+                            -{formatTableMoneyVNDMillion(Math.abs(group.trackB))}
+                            {group.flexibleEvents.some((evt: any) => evt.type === 'trackB') && <Info className="w-3.5 h-3.5 opacity-80" />}
+                          </div>
+                        ) : '-'}
+
+                        {activeDetailId === group.id + '-B' && group.flexibleEvents.some((evt: any) => evt.type === 'trackB') && (
+                          <div className="absolute top-full right-0 mt-1 w-64 bg-white rounded-lg shadow-xl border border-gray-100 z-50 text-left p-3 animate-in fade-in zoom-in-95" onClick={(e) => e.stopPropagation()}>
+                            <div className="text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-2 border-b border-gray-100 pb-1.5 flex items-center gap-1.5">
+                              <Info className="w-3 h-3" /> Chi tiết Luồng B
+                            </div>
+                            <div className="space-y-2.5">
+                              {group.flexibleEvents.filter((evt: any) => evt.type === 'trackB').map((evt: any, idx: number) => (
+                                <div key={idx} className="flex justify-between items-start text-xs gap-3">
+                                  <span className="text-gray-700 font-medium leading-tight">
+                                    {evt.name} <span className="text-[9px] bg-red-50 text-red-600 px-1 py-0.5 rounded ml-1 border border-red-100">Định kỳ</span>
                                   </span>
                                   <span className="text-red-600 font-bold shrink-0">-{formatTableMoneyVNDMillion(Math.abs(evt.impact))}</span>
                                 </div>
@@ -124,10 +204,10 @@ export const LiquidityBreakdownTable: React.FC<LiquidityBreakdownTableProps> = (
                           </div>
                         )}
                       </td>
-                      <td className="p-3 text-right text-orange-500 font-semibold bg-orange-50/30">
+                      <td className="p-3 text-right text-orange-500 font-semibold bg-orange-50/30 border-l border-family-accent/5">
                         {group.deducted > 0 ? `-${formatTableMoneyVNDMillion(group.deducted)}` : '-'}
                       </td>
-                      <td className={`p-3 text-right font-bold ${group.remaining >= 0 ? 'text-emerald-600 bg-emerald-50/30' : 'text-red-600 bg-red-50/30'}`}>
+                      <td className={`p-3 text-right font-bold border-l border-family-accent/5 ${group.remaining >= 0 ? 'text-emerald-600 bg-emerald-50/30' : 'text-red-600 bg-red-50/30'}`}>
                         {group.remaining > 0 ? '+' : ''}{formatTableMoneyVNDMillion(group.remaining)}
                       </td>
                     </tr>
@@ -141,16 +221,22 @@ export const LiquidityBreakdownTable: React.FC<LiquidityBreakdownTableProps> = (
                         <td className="p-2 text-right text-family-textMuted">
                           {formatTableMoneyVNDMillion(child.totalBudget)}
                         </td>
-                        <td className="p-2 text-right text-family-textMuted">
+                        <td className="p-2 text-right text-family-textMuted border-l border-family-accent/5">
                           {formatTableMoneyVNDMillion(child.totalActual)}
-                        </td>
-                        <td className="p-2 text-right text-red-400">
-                          -
                         </td>
                         <td className="p-2 text-right text-orange-400">
                           -
                         </td>
-                        <td className={`p-2 text-right font-semibold ${child.remaining >= 0 ? 'text-emerald-600' : 'text-red-500'}`}>
+                        <td className="p-2 text-right text-red-400 border-l border-family-accent/5">
+                          -
+                        </td>
+                        <td className="p-2 text-right text-red-400">
+                          -
+                        </td>
+                        <td className="p-2 text-right text-orange-400 border-l border-family-accent/5">
+                          -
+                        </td>
+                        <td className={`p-2 text-right font-semibold border-l border-family-accent/5 ${child.remaining >= 0 ? 'text-emerald-600' : 'text-red-500'}`}>
                           {child.remaining > 0 ? '+' : ''}{formatTableMoneyVNDMillion(child.remaining)}
                         </td>
                       </tr>
@@ -167,16 +253,22 @@ export const LiquidityBreakdownTable: React.FC<LiquidityBreakdownTableProps> = (
                 <td className="px-3 py-4 text-right text-sm font-bold text-family-text">
                   {formatTableMoneyVNDMillion(totalBudgetSum)}
                 </td>
-                <td className="px-3 py-4 text-right text-sm font-bold text-family-text">
+                <td className="px-3 py-4 text-right text-sm font-bold text-family-text border-l border-family-accent/5">
                   {formatTableMoneyVNDMillion(totalActualSum)}
                 </td>
-                <td className="px-3 py-4 text-right text-sm font-bold text-red-500">
-                  -{formatTableMoneyVNDMillion(Math.abs(totalFlexibleSum))}
+                <td className="px-3 py-4 text-right text-sm font-bold text-orange-600">
+                  -{formatTableMoneyVNDMillion(Math.abs(totalTrackASum))}
                 </td>
-                <td className="px-3 py-4 text-right text-sm font-bold text-orange-500">
+                <td className="px-3 py-4 text-right text-sm font-bold text-red-500 border-l border-family-accent/5">
+                  -{formatTableMoneyVNDMillion(Math.abs(totalOneTimeSum))}
+                </td>
+                <td className="px-3 py-4 text-right text-sm font-bold text-red-600">
+                  -{formatTableMoneyVNDMillion(Math.abs(totalTrackBSum))}
+                </td>
+                <td className="px-3 py-4 text-right text-sm font-bold text-orange-500 border-l border-family-accent/5">
                   -{formatTableMoneyVNDMillion(totalDeductedSum)}
                 </td>
-                <td className={`px-3 py-4 text-right text-sm font-bold ${totalRemainingSum >= 0 ? 'text-emerald-600' : 'text-red-600'}`}>
+                <td className={`px-3 py-4 text-right text-sm font-bold border-l border-family-accent/5 ${totalRemainingSum >= 0 ? 'text-emerald-600' : 'text-red-600'}`}>
                   {totalRemainingSum > 0 ? '+' : ''}{formatTableMoneyVNDMillion(totalRemainingSum)}
                 </td>
               </tr>
