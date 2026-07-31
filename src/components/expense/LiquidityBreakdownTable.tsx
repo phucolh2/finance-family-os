@@ -59,8 +59,8 @@ export const LiquidityBreakdownTable: React.FC<LiquidityBreakdownTableProps> = (
                 <th className="p-3 w-[45%]">Nhóm / Hạng mục</th>
                 <th className="p-3 text-right">Ngân sách (tr)</th>
                 <th className="p-3 text-right">Chi thường xuyên (tr)</th>
-                <th className="p-3 text-right text-orange-500" title="Chuyển vào Quỹ tích lũy">Trích quỹ (tr)</th>
                 <th className="p-3 text-right text-red-500" title="Khoản chi linh hoạt">Chi linh hoạt (tr)</th>
+                <th className="p-3 text-right text-orange-500" title="Chuyển vào Quỹ tích lũy">Trích quỹ (tr)</th>
                 <th className="p-3 text-right text-emerald-600">Còn lại (tr)</th>
               </tr>
             </thead>
@@ -90,9 +90,6 @@ export const LiquidityBreakdownTable: React.FC<LiquidityBreakdownTableProps> = (
                       </td>
                       <td className="p-3 text-right text-family-textMuted font-semibold">
                         {formatTableMoneyVNDMillion(group.totalActual)}
-                      </td>
-                      <td className="p-3 text-right text-orange-500 font-semibold bg-orange-50/30">
-                        {group.deducted > 0 ? `-${formatTableMoneyVNDMillion(group.deducted)}` : '-'}
                       </td>
                       <td className="p-3 text-right text-red-500 font-semibold bg-red-50/20 relative"
                           onClick={(e) => {
@@ -127,6 +124,9 @@ export const LiquidityBreakdownTable: React.FC<LiquidityBreakdownTableProps> = (
                           </div>
                         )}
                       </td>
+                      <td className="p-3 text-right text-orange-500 font-semibold bg-orange-50/30">
+                        {group.deducted > 0 ? `-${formatTableMoneyVNDMillion(group.deducted)}` : '-'}
+                      </td>
                       <td className={`p-3 text-right font-bold ${group.remaining >= 0 ? 'text-emerald-600 bg-emerald-50/30' : 'text-red-600 bg-red-50/30'}`}>
                         {group.remaining > 0 ? '+' : ''}{formatTableMoneyVNDMillion(group.remaining)}
                       </td>
@@ -144,10 +144,10 @@ export const LiquidityBreakdownTable: React.FC<LiquidityBreakdownTableProps> = (
                         <td className="p-2 text-right text-family-textMuted">
                           {formatTableMoneyVNDMillion(child.totalActual)}
                         </td>
-                        <td className="p-2 text-right text-orange-400">
+                        <td className="p-2 text-right text-red-400">
                           -
                         </td>
-                        <td className="p-2 text-right text-red-400">
+                        <td className="p-2 text-right text-orange-400">
                           -
                         </td>
                         <td className={`p-2 text-right font-semibold ${child.remaining >= 0 ? 'text-emerald-600' : 'text-red-500'}`}>
@@ -170,11 +170,11 @@ export const LiquidityBreakdownTable: React.FC<LiquidityBreakdownTableProps> = (
                 <td className="px-3 py-4 text-right text-sm font-bold text-family-text">
                   {formatTableMoneyVNDMillion(totalActualSum)}
                 </td>
-                <td className="px-3 py-4 text-right text-sm font-bold text-orange-500">
-                  -{formatTableMoneyVNDMillion(totalDeductedSum)}
-                </td>
                 <td className="px-3 py-4 text-right text-sm font-bold text-red-500">
                   -{formatTableMoneyVNDMillion(Math.abs(totalFlexibleSum))}
+                </td>
+                <td className="px-3 py-4 text-right text-sm font-bold text-orange-500">
+                  -{formatTableMoneyVNDMillion(totalDeductedSum)}
                 </td>
                 <td className={`px-3 py-4 text-right text-sm font-bold ${totalRemainingSum >= 0 ? 'text-emerald-600' : 'text-red-600'}`}>
                   {totalRemainingSum > 0 ? '+' : ''}{formatTableMoneyVNDMillion(totalRemainingSum)}
