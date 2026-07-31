@@ -128,7 +128,7 @@ export const useLiquidityBreakdown = (mode: 'monthly' | 'cumulative' = 'monthly'
       if (event.spendingCategory && event.recurringMonthlyImpact && event.recurringMonthlyImpact !== 0) {
         const durationA = event.recurringDurationMonths || 0;
         const endMonthValueA = durationA > 0 ? startMonthValue + durationA : Infinity;
-        const impactPerMonthA = event.recurringMonthlyImpact; // negative number
+        const impactPerMonthA = Number(event.recurringMonthlyImpact) || 0; // negative number
         const groupIdA = event.spendingCategory.split('/')[0];
         
         if (mode === 'monthly') {
@@ -148,7 +148,7 @@ export const useLiquidityBreakdown = (mode: 'monthly' | 'cumulative' = 'monthly'
       if (event.recurringFundingSource && event.recurringMonthlyImpactFund && event.recurringMonthlyImpactFund !== 0) {
         const durationB = event.recurringDurationMonthsFund || 0;
         const endMonthValueB = durationB > 0 ? startMonthValue + durationB : Infinity;
-        const impactPerMonthB = event.recurringMonthlyImpactFund; // negative number
+        const impactPerMonthB = Number(event.recurringMonthlyImpactFund) || 0; // negative number
         
         if (mode === 'monthly') {
           if (selMonthValue >= startMonthValue && selMonthValue < endMonthValueB) {
@@ -173,8 +173,8 @@ export const useLiquidityBreakdown = (mode: 'monthly' | 'cumulative' = 'monthly'
       let totalBudget = 0;
       let totalActual = 0;
       
-      const flexData = flexibleByGroup[g.id] || { oneTime: 0, trackA: 0, trackB: 0 };
-      const flexibleEvents = flexibleEventsByGroup[g.id] || [];
+      const flexData = flexibleByGroup[g.groupId] || { oneTime: 0, trackA: 0, trackB: 0 };
+      const flexibleEvents = flexibleEventsByGroup[g.groupId] || [];
       const trackA = flexData.trackA;
       const trackB = flexData.trackB;
 
