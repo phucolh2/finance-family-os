@@ -307,17 +307,22 @@ export const LifeStages: React.FC = () => {
               priorActual = val;
             }
             
-            // If editing, subtract old impact so we only check the delta effect
-            if (editingId) {
-              const oldEvent = state.lifeEvents.find(ev => ev.id === editingId);
-              if (oldEvent && oldEvent.spendingCategory === formData.spendingCategory) {
-                const oldEventMonthValue = oldEvent.year * 12 + oldEvent.month;
-                if (oldEventMonthValue < monthVal) {
-                  priorActual -= Math.abs(safeNumber(oldEvent.recurringMonthlyImpact));
-                  if (priorActual < 0) priorActual = 0;
+            // Add impact of ALL OTHER active life events on this category
+            state.lifeEvents.forEach(ev => {
+              if (ev.id === editingId) return;
+              if (ev.spendingCategory === formData.spendingCategory && ev.recurringMonthlyImpact) {
+                let evStartMonth = ev.month + 1;
+                let evStartYear = ev.year;
+                if (evStartMonth > 12) { evStartMonth = 1; evStartYear += 1; }
+                const evStartVal = evStartYear * 12 + evStartMonth;
+                const dur = safeNumber(ev.recurringDurationMonths) || 1200;
+                const evEndVal = evStartVal + dur - 1;
+                
+                if (monthVal >= evStartVal && monthVal <= evEndVal) {
+                  priorActual += Math.abs(safeNumber(ev.recurringMonthlyImpact));
                 }
               }
-            }
+            });
 
             const newActual = priorActual + Math.abs(formattedData.recurringMonthlyImpact);
             
@@ -921,16 +926,22 @@ export const LifeStages: React.FC = () => {
                           priorActual = val;
                         }
                         
-                        if (editingId) {
-                          const oldEvent = state.lifeEvents.find(ev => ev.id === editingId);
-                          if (oldEvent && oldEvent.spendingCategory === formData.spendingCategory) {
-                            const oldEventMonthValue = oldEvent.year * 12 + oldEvent.month;
-                            if (oldEventMonthValue < targetMonthValue) {
-                              priorActual -= Math.abs(safeNumber(oldEvent.recurringMonthlyImpact));
-                              if (priorActual < 0) priorActual = 0;
+                        // Add impact of ALL OTHER active life events on this category
+                        state.lifeEvents.forEach(ev => {
+                          if (ev.id === editingId) return;
+                          if (ev.spendingCategory === formData.spendingCategory && ev.recurringMonthlyImpact) {
+                            let evStartMonth = ev.month + 1;
+                            let evStartYear = ev.year;
+                            if (evStartMonth > 12) { evStartMonth = 1; evStartYear += 1; }
+                            const evStartVal = evStartYear * 12 + evStartMonth;
+                            const dur = safeNumber(ev.recurringDurationMonths) || 1200;
+                            const evEndVal = evStartVal + dur - 1;
+                            
+                            if (targetMonthValue >= evStartVal && targetMonthValue <= evEndVal) {
+                              priorActual += Math.abs(safeNumber(ev.recurringMonthlyImpact));
                             }
                           }
-                        }
+                        });
                         
                         const newActual = priorActual + impact;
                         const fillRatio = budgetForCategory > 0 ? (newActual / budgetForCategory) * 100 : (newActual > 0 ? Infinity : 0);
@@ -1135,6 +1146,28 @@ export const LifeStages: React.FC = () => {
                               if (dbRow) {
                                   budget = dbRow.budgetAmounts?.[lookupGroupId] || 0;
                                   actual = dbRow.actualExpenseByGroup?.[lookupGroupId] || 0;
+                                  
+                                  let oldTrackAImpact = 0;
+                                  if (editingId) {
+                                      const oldEvent = state.lifeEvents.find(ev => ev.id === editingId);
+                                      if (oldEvent && oldEvent.spendingCategory && oldEvent.recurringMonthlyImpact) {
+                                          const oldGroup = oldEvent.spendingCategory.split('/')[0];
+                                          if (oldGroup === lookupGroupId) {
+                                              let evStartMonth = oldEvent.month + 1;
+                                              let evStartYear = oldEvent.year;
+                                              if (evStartMonth > 12) { evStartMonth = 1; evStartYear += 1; }
+                                              const evStartVal = evStartYear * 12 + evStartMonth;
+                                              const dur = safeNumber(oldEvent.recurringDurationMonths) || 1200;
+                                              const evEndVal = evStartVal + dur - 1;
+                                              const currentVal = y * 12 + m;
+                                              if (currentVal >= evStartVal && currentVal <= evEndVal) {
+                                                  oldTrackAImpact = Math.abs(safeNumber(oldEvent.recurringMonthlyImpact));
+                                              }
+                                          }
+                                      }
+                                  }
+                                  actual -= oldTrackAImpact;
+                                  
                                   periodSurplus = budget - actual;
                                   if (isSameCategoryGroup && trackAImpact > 0) {
                                       periodSurplus = periodSurplus - trackAImpact;
@@ -1168,13 +1201,13 @@ export const LifeStages: React.FC = () => {
                                       simulatedCash -= impact;
                                       coveredPeriods++;
                                       if (i <= 3 || i === duration) {
-                                          traceLines.push(`- Kỳ ${i} (Tháng ${m}/${y}): Vốn đệm (${formatTableMoneyVNDMillion(oldCash)}) + Sinh lời (${formatTableMoneyVNDMillion(periodSurplus)}) - Trừ tiền (${formatTableMoneyVNDMillion(impact)}) ➔ Còn dư: ${formatTableMoneyVNDMillion(simulatedCash)}`);
+                                          traceLines.push(`- Kỳ ${i} (Tháng ${m}/${y}): Vốn đệm (${formatTableMoneyVNDMillion(oldCash)}) + Thực dư (${formatTableMoneyVNDMillion(periodSurplus)}) - Trừ tiền (${formatTableMoneyVNDMillion(impact)}) ➔ Còn dư: ${formatTableMoneyVNDMillion(simulatedCash)}`);
                                       } else if (i === 4) {
                                           traceLines.push(`- ... (Các kỳ ${i} đến ${duration - 1} dòng tiền vẫn đủ chi trả) ...`);
                                       }
                                   } else {
                                       didRunOut = true;
-                                      traceLines.push(`- ⚠️ Kỳ ${i} (Tháng ${m}/${y}): Vốn đệm (${formatTableMoneyVNDMillion(oldCash)}) + Sinh lời (${formatTableMoneyVNDMillion(periodSurplus)}) = ${formatTableMoneyVNDMillion(simulatedCash)} ➔ BÙM! Quỹ cạn kiệt, không đủ trừ ${formatTableMoneyVNDMillion(impact)}.`);
+                                      traceLines.push(`- ⚠️ Kỳ ${i} (Tháng ${m}/${y}): Vốn đệm (${formatTableMoneyVNDMillion(oldCash)}) + Thực dư (${formatTableMoneyVNDMillion(periodSurplus)}) = ${formatTableMoneyVNDMillion(simulatedCash)} ➔ BÙM! Quỹ cạn kiệt, không đủ trừ ${formatTableMoneyVNDMillion(impact)}.`);
                                   }
                               }
                           }
@@ -1202,6 +1235,32 @@ export const LifeStages: React.FC = () => {
                           if (firstDbRow) {
                               sampleBudget = firstDbRow.budgetAmounts?.[lookupGroupId] || 0;
                               sampleActual = firstDbRow.actualExpenseByGroup?.[lookupGroupId] || 0;
+                              
+                              let oldTrackAImpact = 0;
+                              if (editingId) {
+                                  const oldEvent = state.lifeEvents.find(ev => ev.id === editingId);
+                                  if (oldEvent && oldEvent.spendingCategory && oldEvent.recurringMonthlyImpact) {
+                                      const oldGroup = oldEvent.spendingCategory.split('/')[0];
+                                      if (oldGroup === lookupGroupId) {
+                                          let evStartMonth = oldEvent.month + 1;
+                                          let evStartYear = oldEvent.year;
+                                          if (evStartMonth > 12) { evStartMonth = 1; evStartYear += 1; }
+                                          const evStartVal = evStartYear * 12 + evStartMonth;
+                                          const dur = safeNumber(oldEvent.recurringDurationMonths) || 1200;
+                                          const evEndVal = evStartVal + dur - 1;
+                                          
+                                          let currentM = formData.month + 1;
+                                          let currentY = formData.year;
+                                          while (currentM > 12) { currentM -= 12; currentY += 1; }
+                                          const currentVal = currentY * 12 + currentM;
+                                          
+                                          if (currentVal >= evStartVal && currentVal <= evEndVal) {
+                                              oldTrackAImpact = Math.abs(safeNumber(oldEvent.recurringMonthlyImpact));
+                                          }
+                                      }
+                                  }
+                              }
+                              sampleActual -= oldTrackAImpact;
                           }
                           const nextM = formData.month + 1 > 12 ? 1 : formData.month + 1;
                           const nextY = formData.month + 1 > 12 ? formData.year + 1 : formData.year;
@@ -1237,7 +1296,7 @@ export const LifeStages: React.FC = () => {
 
                           text1 += `\n**3. Đánh giá sơ bộ:**\nĐể gánh được toàn bộ chi phí ${formatTableMoneyVNDMillion(totalCost)} trong ${duration} kỳ tới, tổng tiền bạn có (gồm ${formatTableMoneyVNDMillion(cashAfterOneTime)} vốn đệm + ${formatTableMoneyVNDMillion(totalSurplusOverDuration)} sinh thêm) phải lớn hơn mức này.\n`;
 
-                          text1 += `\n**4. Diễn biến chi trả từng tháng (Vốn đầu kỳ + Sinh lời - Trừ tiền = Còn lại):**\n`;
+                          text1 += `\n**4. Diễn biến chi trả từng tháng (Vốn đầu kỳ + Thực dư - Trừ tiền = Còn lại):**\n`;
                           if (upfrontShortfall > 0) {
                               text1 += `- ⚠️ Ngay từ lúc Khởi điểm, quỹ đã cạn kiệt vì không đủ trả Tác động 1 lần (Thiếu ${formatTableMoneyVNDMillion(upfrontShortfall)}). Các kỳ sau không thể chi trả.\n`;
                           }
@@ -1252,11 +1311,11 @@ export const LifeStages: React.FC = () => {
                           let conclusionTitle = '';
                           let conclusionText = '';
                           if (coveredPeriods >= duration) {
-                              let survivalText = `Nguồn tiền kết hợp (Vốn đệm + Sinh lời) dư sức gánh trọn vẹn đủ ${duration} kỳ.`;
+                              let survivalText = `Nguồn tiền kết hợp (Vốn đệm + Thực dư) dư sức gánh trọn vẹn đủ ${duration} kỳ.`;
                               if (impactRatio < 30) {
                                   adviceType = 'safe';
                                   conclusionTitle = 'Cấp độ 1 (An toàn tuyệt đối)';
-                                  conclusionText = `${survivalText} Khoản chi này chỉ ngốn ${impactRatio.toFixed(1)}% tổng sinh lời & vốn đệm tương lai của quỹ. Hoàn toàn không làm suy yếu hàng phòng ngự tài chính. 👉 Chi tiêu thông minh! Bạn có thể tự tin duyệt phương án này.`;
+                                  conclusionText = `${survivalText} Khoản chi này chỉ ngốn ${impactRatio.toFixed(1)}% tổng thực dư & vốn đệm tương lai của quỹ. Hoàn toàn không làm suy yếu hàng phòng ngự tài chính. 👉 Chi tiêu thông minh! Bạn có thể tự tin duyệt phương án này.`;
                               } else if (impactRatio <= 70) {
                                   adviceType = 'warning';
                                   conclusionTitle = 'Cấp độ 2 (Đáng cân nhắc)';
@@ -1313,7 +1372,7 @@ export const LifeStages: React.FC = () => {
                                           </div>
 
                                           <div>
-                                              <span className="font-semibold block opacity-90 mb-0.5">4. Diễn biến chi trả từng tháng (Vốn đầu kỳ + Sinh lời - Trừ tiền = Còn lại):</span>
+                                              <span className="font-semibold block opacity-90 mb-0.5">4. Diễn biến chi trả từng tháng (Vốn đầu kỳ + Thực dư - Trừ tiền = Còn lại):</span>
                                               <div className="space-y-0.5 mt-1 ml-1 opacity-90">
                                                   {upfrontShortfall > 0 && (
                                                       <div className="flex gap-1.5"><AlertTriangle className="w-3.5 h-3.5 shrink-0 text-red-500 mt-0.5"/> Ngay từ lúc Khởi điểm, quỹ đã cạn kiệt vì không đủ trả Tác động 1 lần (Thiếu {formatTableMoneyVNDMillion(upfrontShortfall)}). Các kỳ sau không thể chi trả.</div>

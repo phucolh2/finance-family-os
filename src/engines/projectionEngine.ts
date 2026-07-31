@@ -195,6 +195,39 @@ export function runProjection(input: ProjectionEngineInput): ProjectionOutput {
       });
     }
 
+    // Process Track A Life Events into actual expenses
+    lifeEvents.forEach(e => {
+      if (e.spendingCategory && e.recurringMonthlyImpact) {
+        let effectiveMonth = safeNumber(e.month) + 1;
+        let effectiveYear = safeNumber(e.year);
+        if (effectiveMonth > 12) {
+          effectiveMonth = 1;
+          effectiveYear += 1;
+        }
+        
+        const startsBeforeOrAtPeriod = (effectiveYear < period.year) || (effectiveYear === period.year && effectiveMonth <= period.month);
+        if (!startsBeforeOrAtPeriod) return;
+        
+        const duration = safeNumber(e.recurringDurationMonths, 0);
+        if (duration > 0) {
+          let endMonth = effectiveMonth + (duration % 12);
+          let endYear = effectiveYear + Math.floor(duration / 12);
+          if (endMonth > 12) {
+            endMonth -= 12;
+            endYear += 1;
+          }
+          const isBeforeEnd = (period.year < endYear) || (period.year === endYear && period.month < endMonth);
+          if (!isBeforeEnd) return;
+        }
+        
+        const parts = e.spendingCategory.split('/');
+        const groupId = parts[0];
+        const impact = Math.abs(safeNumber(e.recurringMonthlyImpact, 0));
+        actualByCategory[groupId] = (actualByCategory[groupId] || 0) + impact;
+        realActualByCategory[groupId] = (realActualByCategory[groupId] || 0) + impact;
+      }
+    });
+
     // Accumulate unspent budget
     const expenseGroupsList = budgetRes.categories.map(c => c.group);
     const uniqueGroups = Array.from(new Set(expenseGroupsList));
