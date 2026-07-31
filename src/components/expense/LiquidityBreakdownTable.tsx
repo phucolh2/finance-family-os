@@ -75,8 +75,11 @@ export const LiquidityBreakdownTable: React.FC<LiquidityBreakdownTableProps> = (
                 <th className="p-2 text-center border-b border-family-accent/15 border-l border-white/50" colSpan={2}>Chi tiêu linh hoạt (tr)</th>
                 <th className="p-3 text-right text-emerald-600 border-l border-white/50" rowSpan={2} title="Hoàn tiền về quỹ sinh hoạt">Tiền vào quỹ (tr)</th>
                 <th className="p-3 text-right text-orange-500 border-l border-white/50" rowSpan={2} title="Chuyển ra khỏi Quỹ">Tiền ra khỏi quỹ (tr)</th>
-                <th className="p-3 text-right text-emerald-600 border-l border-white/50" rowSpan={2} title={mode === 'monthly' ? "Số dư tăng/giảm của Quỹ trong tháng" : "Tổng số dư của Quỹ tính đến hiện tại"}>
-                  {mode === 'monthly' ? 'Biến động quỹ (tr)' : 'Số dư Quỹ (tr)'}
+                <th className="p-3 text-right text-emerald-600 border-l border-white/50" rowSpan={2}>
+                  <div className="flex items-center justify-end gap-1">
+                    {mode === 'monthly' ? 'Biến động quỹ (tr)' : 'Số dư Quỹ (tr)'}
+                    <HelpTooltip text={mode === 'monthly' ? "Công thức = Ngân sách còn lại - Chi tiêu linh hoạt + Tiền vào quỹ - Tiền ra khỏi quỹ" : "Tổng số dư của Quỹ tính đến hiện tại (bằng tổng biến động các tháng cộng lại)."} />
+                  </div>
                 </th>
               </tr>
               <tr className="border-b border-family-accent/15 text-family-textMuted font-bold bg-family-bgDark/20 text-xs">
