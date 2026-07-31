@@ -3,7 +3,7 @@ import { HelpCircle } from 'lucide-react';
 
 interface HelpTooltipProps {
   text: string | React.ReactNode;
-  position?: 'top' | 'bottom' | 'left' | 'right';
+  position?: 'top' | 'bottom' | 'left' | 'right' | 'bottom-right' | 'bottom-left' | 'top-right' | 'top-left';
 }
 
 /**
@@ -18,6 +18,10 @@ export const HelpTooltip: React.FC<HelpTooltipProps> = ({ text, position = 'bott
     bottom: 'top-full left-1/2 -translate-x-1/2 mt-2',
     left: 'right-full top-1/2 -translate-y-1/2 mr-2',
     right: 'left-full top-1/2 -translate-y-1/2 ml-2',
+    'bottom-right': 'top-full right-0 mt-2',
+    'bottom-left': 'top-full left-0 mt-2',
+    'top-right': 'bottom-full right-0 mb-2',
+    'top-left': 'bottom-full left-0 mb-2',
   };
 
   return (

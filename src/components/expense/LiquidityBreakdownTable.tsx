@@ -86,6 +86,7 @@ export const LiquidityBreakdownTable: React.FC<LiquidityBreakdownTableProps> = (
                   <div className="flex items-center justify-end gap-1">
                     {mode === 'monthly' ? 'Biến động' : 'Số dư'}
                     <HelpTooltip 
+                      position="bottom-right"
                       text={mode === 'monthly' 
                         ? "Công thức: Ngân sách còn lại + [Trừ quỹ tức thì] + [Trừ quỹ định kì] + [Tiền vào] + [Tiền ra]. (Lưu ý: Vì các khoản chi và tiền ra đã mang dấu âm, ta chỉ việc cộng gộp tất cả các cột). Ví dụ: 3.4 + (-1) + (-3) = -0.6" 
                         : "Số dư thực tế của Quỹ tính đến hiện tại. Công thức: Ngân sách còn lại lũy kế + Tổng [Trừ quỹ linh hoạt] + Tổng [Tiền vào/ra] từ trước đến nay. Ví dụ: 7.8 + (-1) + (-3) = +3.8"} 
