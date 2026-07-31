@@ -130,16 +130,19 @@ export const useLiquidityBreakdown = (mode: 'monthly' | 'cumulative' = 'monthly'
         const endMonthValueA = durationA > 0 ? startMonthValue + durationA : Infinity;
         const impactPerMonthA = Number(event.recurringMonthlyImpact) || 0; // negative number
         const groupIdA = event.spendingCategory.split('/')[0];
+        const categoryIdA = event.spendingCategory;
         
         if (mode === 'monthly') {
           if (selMonthValue >= startMonthValue && selMonthValue < endMonthValueA) {
             addFlexibleEvent(groupIdA, event, impactPerMonthA, 'trackA');
+            if (groupIdA !== categoryIdA) addFlexibleEvent(categoryIdA, event, impactPerMonthA, 'trackA');
           }
         } else {
           const effectiveEndA = Math.min(selMonthValue + 1, endMonthValueA);
           const activeMonthsA = Math.max(0, effectiveEndA - startMonthValue);
           if (activeMonthsA > 0) {
             addFlexibleEvent(groupIdA, event, impactPerMonthA * activeMonthsA, 'trackA');
+            if (groupIdA !== categoryIdA) addFlexibleEvent(categoryIdA, event, impactPerMonthA * activeMonthsA, 'trackA');
           }
         }
       }
@@ -233,10 +236,41 @@ export const useLiquidityBreakdown = (mode: 'monthly' | 'cumulative' = 'monthly'
           catActual = targetDb?.actualExpenseCategories?.[child.id] || 0;
         } else {
           catBudget = cumulativeExpenseData?.summaryByCategory?.[child.id]?.totalBudget || 0;
-          catActual = cumulativeExpenseData?.summaryByCategory?.[child.id]?.totalActual || 0;
+          
+          let catIncludedFlexibleAmount = 0;
+          (state.lifeEvents || []).forEach((e: any) => {
+              const amt = Number(e.amount) || 0;
+              if (amt < 0 && e.spendingCategory === `${g.groupId}/${child.id}`) {
+                  const eMonth = Number(e.month) || 0;
+                  const eYear = Number(e.year) || 0;
+                  const eMonthValue = eYear * 12 + eMonth;
+                  if (eMonthValue <= selMonthValue) {
+                      const dbItemExists = (state.resolvedMonthlyDb || []).some(
+                          db => Number(db.month) === eMonth && Number(db.year) === eYear
+                      );
+                      if (dbItemExists) {
+                          catIncludedFlexibleAmount += Math.abs(amt);
+                      }
+                  }
+              }
+          });
+          catActual = Math.max(0, (cumulativeExpenseData?.summaryByCategory?.[child.id]?.totalActual || 0) - catIncludedFlexibleAmount);
         }
         
-        const childRemaining = Math.max(0, catBudget - catActual);
+        const catKey = `${g.groupId}/${child.id}`;
+        const flexDataCat = flexibleByGroup[catKey] || { oneTime: 0, trackA: 0, trackB: 0 };
+        const flexibleEventsCat = flexibleEventsByGroup[catKey] || [];
+        
+        const oneTimeExpenseCat = flexibleEventsCat
+          .filter((e: any) => e.type === 'oneTime' && e.impact < 0)
+          .reduce((sum: number, e: any) => sum + Math.abs(e.impact), 0);
+          
+        const oneTimeIncomeCat = flexibleEventsCat
+          .filter((e: any) => e.type === 'oneTime' && e.impact > 0)
+          .reduce((sum: number, e: any) => sum + e.impact, 0);
+
+        const rawRemainingChild = Math.max(0, catBudget - catActual - Math.abs(flexDataCat.trackA));
+        const childRemaining = rawRemainingChild - oneTimeExpenseCat - Math.abs(flexDataCat.trackB) + oneTimeIncomeCat;
 
         return {
           id: child.id,
@@ -245,11 +279,11 @@ export const useLiquidityBreakdown = (mode: 'monthly' | 'cumulative' = 'monthly'
           totalBudget: catBudget,
           totalActual: catActual,
           deducted: 0,
-          trackA: 0,
-          oneTimeExpense: 0,
-          oneTimeIncome: 0,
-          trackB: 0,
-          flexibleEvents: [],
+          trackA: flexDataCat.trackA,
+          oneTimeExpense: oneTimeExpenseCat,
+          oneTimeIncome: oneTimeIncomeCat,
+          trackB: flexDataCat.trackB,
+          flexibleEvents: flexibleEventsCat,
           sortOrder: child.sortOrder || 0
         };
       }).sort((a: any, b: any) => a.sortOrder - b.sortOrder);

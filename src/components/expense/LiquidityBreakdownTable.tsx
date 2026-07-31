@@ -262,16 +262,16 @@ export const LiquidityBreakdownTable: React.FC<LiquidityBreakdownTableProps> = (
                           {formatTableMoneyVNDMillion(child.totalActual)}
                         </td>
                         <td className="p-2 text-right text-orange-400">
-                          -
+                          {Math.abs(child.trackA) > 0 ? `-${formatTableMoneyVNDMillion(Math.abs(child.trackA))}` : '-'}
                         </td>
                         <td className="p-2 text-right text-red-400 border-l border-family-accent/5">
-                          -
+                          {child.oneTimeExpense > 0 ? `-${formatTableMoneyVNDMillion(child.oneTimeExpense)}` : '-'}
                         </td>
                         <td className="p-2 text-right text-red-400">
-                          -
+                          {Math.abs(child.trackB) > 0 ? `-${formatTableMoneyVNDMillion(Math.abs(child.trackB))}` : '-'}
                         </td>
                         <td className="p-2 text-right text-orange-400 border-l border-family-accent/5">
-                          -
+                          {child.deducted > 0 ? `-${formatTableMoneyVNDMillion(child.deducted)}` : '-'}
                         </td>
                         <td className={`p-2 text-right font-semibold border-l border-family-accent/5 ${child.remaining >= 0 ? 'text-emerald-600' : 'text-red-500'}`}>
                           {child.remaining > 0 ? '+' : ''}{formatTableMoneyVNDMillion(child.remaining)}
