@@ -106,10 +106,17 @@ export const useLiquidityBreakdown = (mode: 'monthly' | 'cumulative' = 'monthly'
 
     const resolveGroupId = (sourceId: string) => {
       if (!sourceId) return '';
+      
       const fund = state.sinkingFunds?.find(f => f.id === sourceId);
       if (fund && fund.fundGroup) {
         return fund.fundGroup;
       }
+      
+      const expenseGroup = activeBudget?.rootGroups?.find((g: any) => g.id === sourceId);
+      if (expenseGroup && expenseGroup.groupId) {
+        return expenseGroup.groupId;
+      }
+      
       return sourceId;
     };
 
