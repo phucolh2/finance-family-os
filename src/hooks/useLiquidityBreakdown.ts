@@ -104,17 +104,26 @@ export const useLiquidityBreakdown = (mode: 'monthly' | 'cumulative' = 'monthly'
       }
     };
 
+    const resolveGroupId = (sourceId: string) => {
+      if (!sourceId) return '';
+      const fund = state.sinkingFunds?.find(f => f.id === sourceId);
+      if (fund && fund.fundGroup) {
+        return fund.fundGroup;
+      }
+      return sourceId;
+    };
+
     (state.lifeEvents || []).forEach(event => {
       const eMonthValue = event.year * 12 + event.month;
       
-      // 1) One-time impact (event.amount) → deduct from event.source
+      // 1) One-time impact (event.amount) -> deduct from event.source
       if (mode === 'monthly') {
         if (event.month === selMonth && event.year === selYear) {
-          addFlexibleEvent(event.source, event, event.amount, 'oneTime');
+          addFlexibleEvent(resolveGroupId(event.source), event, event.amount, 'oneTime');
         }
       } else {
         if (eMonthValue <= selMonthValue) {
-          addFlexibleEvent(event.source, event, event.amount, 'oneTime');
+          addFlexibleEvent(resolveGroupId(event.source), event, event.amount, 'oneTime');
         }
       }
       
@@ -147,7 +156,7 @@ export const useLiquidityBreakdown = (mode: 'monthly' | 'cumulative' = 'monthly'
         }
       }
 
-      // 3) Track B (event.recurringMonthlyImpactFund) → deduct from recurringFundingSource
+      // 3) Track B (event.recurringMonthlyImpactFund) -> deduct from recurringFundingSource
       if (event.recurringFundingSource && event.recurringMonthlyImpactFund && event.recurringMonthlyImpactFund !== 0) {
         const durationB = event.recurringDurationMonthsFund || 0;
         const endMonthValueB = durationB > 0 ? startMonthValue + durationB : Infinity;
@@ -155,13 +164,13 @@ export const useLiquidityBreakdown = (mode: 'monthly' | 'cumulative' = 'monthly'
         
         if (mode === 'monthly') {
           if (selMonthValue >= startMonthValue && selMonthValue < endMonthValueB) {
-            addFlexibleEvent(event.recurringFundingSource, event, impactPerMonthB, 'trackB');
+            addFlexibleEvent(resolveGroupId(event.recurringFundingSource), event, impactPerMonthB, 'trackB');
           }
         } else {
           const effectiveEndB = Math.min(selMonthValue + 1, endMonthValueB);
           const activeMonthsB = Math.max(0, effectiveEndB - startMonthValue);
           if (activeMonthsB > 0) {
-            addFlexibleEvent(event.recurringFundingSource, event, impactPerMonthB * activeMonthsB, 'trackB');
+            addFlexibleEvent(resolveGroupId(event.recurringFundingSource), event, impactPerMonthB * activeMonthsB, 'trackB');
           }
         }
       }
