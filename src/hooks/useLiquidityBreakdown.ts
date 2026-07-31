@@ -82,17 +82,37 @@ export const useLiquidityBreakdown = (mode: 'monthly' | 'cumulative' = 'monthly'
     });
 
     const flexibleByGroup: Record<string, number> = {};
+    const flexibleEventsByGroup: Record<string, Array<{id: string, name: string, impact: number, isRecurring: boolean}>> = {};
+
+    const addFlexibleEvent = (groupId: string, event: any, impact: number, isRecurring: boolean) => {
+      if (!groupId || impact === 0) return;
+      flexibleByGroup[groupId] = (flexibleByGroup[groupId] || 0) + impact;
+      if (!flexibleEventsByGroup[groupId]) flexibleEventsByGroup[groupId] = [];
+      
+      const existing = flexibleEventsByGroup[groupId].find(e => e.id === event.id && e.isRecurring === isRecurring);
+      if (existing) {
+        existing.impact += impact;
+      } else {
+        flexibleEventsByGroup[groupId].push({
+          id: event.id,
+          name: event.name,
+          impact,
+          isRecurring
+        });
+      }
+    };
+
     (state.lifeEvents || []).forEach(event => {
       const eMonthValue = event.year * 12 + event.month;
       
       // 1) One-time impact (event.amount) → deduct from event.source
       if (mode === 'monthly') {
         if (event.month === selMonth && event.year === selYear) {
-          flexibleByGroup[event.source] = (flexibleByGroup[event.source] || 0) + event.amount;
+          addFlexibleEvent(event.source, event, event.amount, false);
         }
       } else {
         if (eMonthValue <= selMonthValue) {
-          flexibleByGroup[event.source] = (flexibleByGroup[event.source] || 0) + event.amount;
+          addFlexibleEvent(event.source, event, event.amount, false);
         }
       }
       
@@ -110,14 +130,14 @@ export const useLiquidityBreakdown = (mode: 'monthly' | 'cumulative' = 'monthly'
         if (mode === 'monthly') {
           // Only deduct if the observed month falls within the active range
           if (selMonthValue >= startMonthValue && selMonthValue < endMonthValue) {
-            flexibleByGroup[event.recurringFundingSource] = (flexibleByGroup[event.recurringFundingSource] || 0) + impactPerMonth;
+            addFlexibleEvent(event.recurringFundingSource, event, impactPerMonth, true);
           }
         } else {
           // Cumulative: count how many months of impact have occurred up to selMonthValue
           const effectiveEnd = Math.min(selMonthValue + 1, endMonthValue);
           const activeMonths = Math.max(0, effectiveEnd - startMonthValue);
           if (activeMonths > 0) {
-            flexibleByGroup[event.recurringFundingSource] = (flexibleByGroup[event.recurringFundingSource] || 0) + (impactPerMonth * activeMonths);
+            addFlexibleEvent(event.recurringFundingSource, event, impactPerMonth * activeMonths, true);
           }
         }
       }
@@ -133,6 +153,7 @@ export const useLiquidityBreakdown = (mode: 'monthly' | 'cumulative' = 'monthly'
       let totalActual = 0;
       
       const flexible = flexibleByGroup[g.id] || 0;
+      const flexibleEvents = flexibleEventsByGroup[g.id] || [];
 
       if (mode === 'monthly') {
         totalBudget = targetDb?.budgetAmounts?.[g.groupId] || 0;
@@ -175,6 +196,7 @@ export const useLiquidityBreakdown = (mode: 'monthly' | 'cumulative' = 'monthly'
           totalActual: catActual,
           deducted: 0,
           flexible: 0,
+          flexibleEvents: [],
           sortOrder: child.sortOrder || 0
         };
       }).sort((a: any, b: any) => a.sortOrder - b.sortOrder);
@@ -185,6 +207,7 @@ export const useLiquidityBreakdown = (mode: 'monthly' | 'cumulative' = 'monthly'
         remaining,
         deducted,
         flexible,
+        flexibleEvents,
         totalBudget,
         totalActual,
         sortOrder: g.sortOrder || 0,
