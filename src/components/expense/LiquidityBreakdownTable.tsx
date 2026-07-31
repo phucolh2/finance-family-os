@@ -75,9 +75,9 @@ export const LiquidityBreakdownTable: React.FC<LiquidityBreakdownTableProps> = (
               </tr>
               <tr className="border-b border-family-accent/15 text-family-textMuted font-bold bg-family-bgDark/20 text-xs">
                 <th className="p-2 text-right border-l border-white/50 text-gray-500 font-medium">Hằng tháng</th>
-                <th className="p-2 text-right text-orange-600/80 font-medium" title="Luồng A: Trừ từ Ngân sách">Luồng A</th>
+                <th className="p-2 text-right text-orange-600/80 font-medium" title="Trừ từ Ngân sách Phân bổ">Trừ Ngân Sách</th>
                 <th className="p-2 text-right border-l border-white/50 text-red-500/80 font-medium">1 Lần</th>
-                <th className="p-2 text-right text-red-600/80 font-medium" title="Luồng B: Tác động Quỹ thanh khoản">Luồng B</th>
+                <th className="p-2 text-right text-red-600/80 font-medium" title="Tác động Quỹ thanh khoản sinh hoạt">Tác động Quỹ</th>
               </tr>
             </thead>
             <tbody>
@@ -125,7 +125,7 @@ export const LiquidityBreakdownTable: React.FC<LiquidityBreakdownTableProps> = (
                         {activeDetailId === group.id + '-A' && group.flexibleEvents.some((evt: any) => evt.type === 'trackA') && (
                           <div className="absolute top-full right-0 mt-1 w-64 bg-white rounded-lg shadow-xl border border-gray-100 z-50 text-left p-3 animate-in fade-in zoom-in-95" onClick={(e) => e.stopPropagation()}>
                             <div className="text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-2 border-b border-gray-100 pb-1.5 flex items-center gap-1.5">
-                              <Info className="w-3 h-3" /> Chi tiết Luồng A
+                              <Info className="w-3 h-3" /> Chi tiết Trừ Ngân Sách
                             </div>
                             <div className="space-y-2.5">
                               {group.flexibleEvents.filter((evt: any) => evt.type === 'trackA').map((evt: any, idx: number) => (
@@ -189,7 +189,7 @@ export const LiquidityBreakdownTable: React.FC<LiquidityBreakdownTableProps> = (
                         {activeDetailId === group.id + '-B' && group.flexibleEvents.some((evt: any) => evt.type === 'trackB') && (
                           <div className="absolute top-full right-0 mt-1 w-64 bg-white rounded-lg shadow-xl border border-gray-100 z-50 text-left p-3 animate-in fade-in zoom-in-95" onClick={(e) => e.stopPropagation()}>
                             <div className="text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-2 border-b border-gray-100 pb-1.5 flex items-center gap-1.5">
-                              <Info className="w-3 h-3" /> Chi tiết Luồng B
+                              <Info className="w-3 h-3" /> Chi tiết Tác động Quỹ
                             </div>
                             <div className="space-y-2.5">
                               {group.flexibleEvents.filter((evt: any) => evt.type === 'trackB').map((evt: any, idx: number) => (
