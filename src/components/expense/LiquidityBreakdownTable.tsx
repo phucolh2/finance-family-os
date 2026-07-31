@@ -74,7 +74,7 @@ export const LiquidityBreakdownTable: React.FC<LiquidityBreakdownTableProps> = (
                 <th className="p-3 text-right border-l border-white/50" rowSpan={2} title="Ngân sách còn lại sau các khoản chi tiêu">Ngân sách còn lại<br/>(tr)</th>
                 <th className="p-2 text-center border-b border-family-accent/15 border-l border-white/50" colSpan={2}>Chi tiêu linh hoạt (tr)</th>
                 <th className="p-3 text-right text-emerald-600 border-l border-white/50" rowSpan={2} title="Hoàn tiền về quỹ sinh hoạt">Tiền vào quỹ (tr)</th>
-                <th className="p-3 text-right text-orange-500 border-l border-white/50" rowSpan={2} title="Chuyển vào Quỹ tích lũy">Trích quỹ (tr)</th>
+                <th className="p-3 text-right text-orange-500 border-l border-white/50" rowSpan={2} title="Chuyển ra khỏi Quỹ">Tiền ra khỏi quỹ (tr)</th>
                 <th className="p-3 text-right text-emerald-600 border-l border-white/50" rowSpan={2}>Quỹ sinh hoạt (tr)</th>
               </tr>
               <tr className="border-b border-family-accent/15 text-family-textMuted font-bold bg-family-bgDark/20 text-xs">
@@ -277,6 +277,9 @@ export const LiquidityBreakdownTable: React.FC<LiquidityBreakdownTableProps> = (
                         </td>
                         <td className="p-2 text-right text-red-400">
                           {Math.abs(child.trackB) > 0 ? `-${formatTableMoneyVNDMillion(Math.abs(child.trackB))}` : '-'}
+                        </td>
+                        <td className="p-2 text-right text-emerald-600 border-l border-family-accent/5">
+                          {child.oneTimeIncome > 0 ? `+${formatTableMoneyVNDMillion(child.oneTimeIncome)}` : '-'}
                         </td>
                         <td className="p-2 text-right text-orange-400 border-l border-family-accent/5">
                           {child.deducted > 0 ? `-${formatTableMoneyVNDMillion(child.deducted)}` : '-'}
