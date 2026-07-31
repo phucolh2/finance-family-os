@@ -56,16 +56,16 @@ export const ExpenseDashboard: React.FC<ExpenseDashboardProps> = ({ filter, setF
     return analyzeExpense(state.resolvedMonthlyDb || [], state.lifeEvents, selectedPeriodKey, expenseGroupIds);
   }, [state.resolvedMonthlyDb, state.lifeEvents, selectedPeriodKey, expenseGroupIds]);
 
-  const currentSummary = expenseData.summaryByGroup[filter] || { totalBudget: 0, totalActual: 0 };
+  const currentSummary = expenseData.summaryByGroup[filter] || { totalBudget: 0, totalActual: 0, totalRegularActual: 0 };
   const currentSeries = expenseData.monthlySeries[filter] || [];
 
   const percentageSpent = currentSummary.totalBudget > 0 
-    ? (currentSummary.totalActual / currentSummary.totalBudget) * 100 
+    ? (currentSummary.totalRegularActual / currentSummary.totalBudget) * 100 
     : 0;
 
   const pieData = [
-    { name: 'Đã chi tiêu', value: currentSummary.totalActual },
-    { name: 'Còn lại', value: Math.max(0, currentSummary.totalBudget - currentSummary.totalActual) },
+    { name: 'Đã chi tiêu', value: currentSummary.totalRegularActual },
+    { name: 'Còn lại', value: Math.max(0, currentSummary.totalBudget - currentSummary.totalRegularActual) },
   ];
 
   const pieColors = ['#3b82f6', '#f97316']; // Blue for actual, Orange for remaining budget
@@ -75,7 +75,7 @@ export const ExpenseDashboard: React.FC<ExpenseDashboardProps> = ({ filter, setF
     remaining: Math.max(0, s.budget - s.actual)
   }));
 
-  const remainingTotal = Math.max(0, currentSummary.totalBudget - currentSummary.totalActual);
+  const remainingTotal = Math.max(0, currentSummary.totalBudget - currentSummary.totalRegularActual);
 
   // A nice color palette for the breakdown bars
   const BREAKDOWN_COLORS = ['#10b981', '#3b82f6', '#f59e0b', '#8b5cf6', '#ec4899', '#06b6d4', '#84cc16'];
@@ -119,7 +119,7 @@ export const ExpenseDashboard: React.FC<ExpenseDashboardProps> = ({ filter, setF
               </div>
               <div className="flex justify-between items-end">
                 <span className="text-xs text-family-textMuted">Thực tế chi tiêu thường xuyên:</span>
-                <span className="font-bold text-blue-500">{formatTableMoneyVNDMillion(currentSummary.totalActual)}</span>
+                <span className="font-bold text-blue-500">{formatTableMoneyVNDMillion(currentSummary.totalRegularActual)}</span>
               </div>
               <div className="flex justify-between items-end border-t border-dashed pt-1 mt-1">
                 <span className="text-xs font-semibold text-family-textMuted">Quỹ thanh khoản sinh hoạt:</span>

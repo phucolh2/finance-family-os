@@ -5,7 +5,8 @@ import { safeNumber } from '../utils/math';
 export interface ExpenseGroupSummary {
   groupId: BudgetGroup | 'all';
   totalBudget: number;
-  totalActual: number;
+  totalActual: number; // Includes flexible (LifeEvents)
+  totalRegularActual: number; // Excludes flexible (LifeEvents)
 }
 
 export interface ExpenseMonthlyPoint {
@@ -52,7 +53,7 @@ export function analyzeExpense(
   const monthlySeries: Record<string, ExpenseMonthlyPoint[]> = {};
   
   groups.forEach(g => {
-    summaryByGroup[g] = { groupId: g as any, totalBudget: 0, totalActual: 0 };
+    summaryByGroup[g] = { groupId: g as any, totalBudget: 0, totalActual: 0, totalRegularActual: 0 };
     monthlySeries[g] = [];
   });
 
@@ -142,6 +143,8 @@ export function analyzeExpense(
       });
     }
 
+    const monthlyRegularActuals = { ...monthlyActuals };
+
     // Add Life Events spending that hit these expense groups
     const currentMonthEvents = lifeEvents.filter(e => safeNumber(e.month) === dbItem.month && safeNumber(e.year) === dbItem.year);
     currentMonthEvents.forEach(e => {
@@ -181,6 +184,7 @@ export function analyzeExpense(
     groups.forEach(g => {
       summaryByGroup[g].totalBudget += monthlyBudgets[g] || 0;
       summaryByGroup[g].totalActual += monthlyActuals[g] || 0;
+      summaryByGroup[g].totalRegularActual += monthlyRegularActuals[g] || 0;
 
       monthlySeries[g].push({
         periodKey: dbItem.periodKey,
