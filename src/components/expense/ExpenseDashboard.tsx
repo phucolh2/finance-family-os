@@ -118,7 +118,7 @@ export const ExpenseDashboard: React.FC<ExpenseDashboardProps> = ({ filter, setF
                 <span className="font-bold text-orange-500">{formatTableMoneyVNDMillion(currentSummary.totalBudget)}</span>
               </div>
               <div className="flex justify-between items-end">
-                <span className="text-xs text-family-textMuted">Thực tế sử dụng:</span>
+                <span className="text-xs text-family-textMuted">Thực tế chi tiêu thường xuyên:</span>
                 <span className="font-bold text-blue-500">{formatTableMoneyVNDMillion(currentSummary.totalActual)}</span>
               </div>
               <div className="flex justify-between items-end border-t border-dashed pt-1 mt-1">
