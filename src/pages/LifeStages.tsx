@@ -528,6 +528,18 @@ export const LifeStages: React.FC = () => {
     return sourceTypes.find(t => t.value === source)?.label || source;
   };
 
+  const getCategoryLabel = (catKey: string) => {
+    if (!catKey) return '';
+    const parts = catKey.split('/');
+    const groupId = parts[0];
+    const childId = parts.length > 1 ? parts[1] : parts[0];
+    
+    const group = activeBudget?.rootGroups.find(g => g.groupId === groupId);
+    if (!group) return catKey;
+    const child = group.children?.find(c => c.id === childId);
+    return `${group.name} / ${child ? child.name : childId}`;
+  };
+
   const getEventIcon = (type: string) => {
     switch (type) {
       case 'buy_property': return <Home className="w-5 h-5 text-white" />;
@@ -1691,7 +1703,7 @@ export const LifeStages: React.FC = () => {
                                   {isIncome ? 'Thu 1 lần:' : 'Trừ 1 lần:'} {isIncome ? '+' : ''}{formatTableMoneyVNDMillion(event.amount)}
                                 </div>
                                 <div className="text-[10px] text-gray-500 font-medium">
-                                  {event.source ? `Từ nguồn: ${formPeriodBreakdown.find((g: any) => g.id === event.source)?.name || getSourceLabel(event.source)}` : 'Không xác định'}
+                                  {event.source ? `Từ Quỹ/Nguồn: ${formPeriodBreakdown.find((g: any) => g.id === event.source)?.name || getSourceLabel(event.source)}` : 'Không xác định'}
                                 </div>
                               </div>
                             </div>
@@ -1708,6 +1720,10 @@ export const LifeStages: React.FC = () => {
                                   Ngân sách: {isRecurringIncome ? '+' : ''}{event.recurringMonthlyImpact} tr/tháng
                                 </div>
                                 <div className="text-[10px] text-gray-500 font-medium mt-0.5">
+                                  <span className="flex items-center gap-1 mb-0.5">
+                                    <Filter className="w-3 h-3 inline" />
+                                    {event.spendingCategory ? `Phân bổ vào: ${getCategoryLabel(event.spendingCategory)}` : 'Không xác định'}
+                                  </span>
                                   {(() => {
                                     const dur = safeNumber(event.recurringDurationMonths);
                                     if (!dur) return 'Vô thời hạn';
@@ -1742,7 +1758,7 @@ export const LifeStages: React.FC = () => {
                                 <div className="text-[10px] text-gray-500 font-medium mt-0.5">
                                   <span className="flex items-center gap-1 mb-0.5">
                                     <Landmark className="w-3 h-3 inline" />
-                                    {event.recurringFundingSource ? `${formPeriodBreakdown.find((g: any) => g.id === event.recurringFundingSource)?.name || getSourceLabel(event.recurringFundingSource)}` : 'Không xác định'}
+                                    {event.recurringFundingSource ? `Từ Quỹ: ${formPeriodBreakdown.find((g: any) => g.id === event.recurringFundingSource)?.name || getSourceLabel(event.recurringFundingSource)}` : 'Không xác định'}
                                   </span>
                                   {(() => {
                                     const dur = safeNumber(event.recurringDurationMonthsFund);
