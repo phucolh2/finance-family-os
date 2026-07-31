@@ -116,7 +116,7 @@ export const LiquidityBreakdownTable: React.FC<LiquidityBreakdownTableProps> = (
                       <td className="p-3 text-right text-family-textMuted font-semibold border-l border-family-accent/5">
                         {formatTableMoneyVNDMillion(group.totalActual)}
                       </td>
-                      <td className="p-3 text-right text-orange-600 font-semibold bg-orange-50/10 border-l border-family-accent/5"
+                      <td className="p-3 text-right text-orange-600 font-semibold bg-orange-50/10 relative border-l border-family-accent/5"
                           onClick={(e) => {
                             if (group.flexibleEvents.some((evt: any) => evt.type === 'trackA')) {
                               e.stopPropagation();
