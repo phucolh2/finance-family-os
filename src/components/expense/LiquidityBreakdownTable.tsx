@@ -19,7 +19,8 @@ export const LiquidityBreakdownTable: React.FC<LiquidityBreakdownTableProps> = (
     totalOneTimeExpenseSum,
     totalOneTimeIncomeSum,
     totalTrackBSum,
-    totalRemainingSum, 
+    totalRemainingSum,
+    totalRawRemainingSum,
     selectedPeriodKey 
   } = useLiquidityBreakdown(mode);
   const [expandedNodes, setExpandedNodes] = useState<Record<string, boolean>>({});
@@ -70,10 +71,11 @@ export const LiquidityBreakdownTable: React.FC<LiquidityBreakdownTableProps> = (
                 <th className="p-3 w-[25%]" rowSpan={2}>Nhóm / Hạng mục</th>
                 <th className="p-3 text-right" rowSpan={2}>Ngân sách (tr)</th>
                 <th className="p-2 text-center border-b border-family-accent/15 border-l border-white/50" colSpan={2}>Chi tiêu thường xuyên (tr)</th>
+                <th className="p-3 text-right border-l border-white/50" rowSpan={2} title="Ngân sách còn lại sau các khoản chi tiêu">Ngân sách còn lại<br/>(tr)</th>
                 <th className="p-2 text-center border-b border-family-accent/15 border-l border-white/50" colSpan={2}>Chi tiêu linh hoạt (tr)</th>
                 <th className="p-3 text-right text-emerald-600 border-l border-white/50" rowSpan={2} title="Hoàn tiền về quỹ sinh hoạt">Tiền vào quỹ (tr)</th>
                 <th className="p-3 text-right text-orange-500 border-l border-white/50" rowSpan={2} title="Chuyển vào Quỹ tích lũy">Trích quỹ (tr)</th>
-                <th className="p-3 text-right text-emerald-600 border-l border-white/50" rowSpan={2}>Còn lại (tr)</th>
+                <th className="p-3 text-right text-emerald-600 border-l border-white/50" rowSpan={2}>Quỹ sinh hoạt (tr)</th>
               </tr>
               <tr className="border-b border-family-accent/15 text-family-textMuted font-bold bg-family-bgDark/20 text-xs">
                 <th className="p-2 text-right border-l border-white/50 text-gray-500 font-medium">Thường Xuyên</th>
@@ -109,7 +111,7 @@ export const LiquidityBreakdownTable: React.FC<LiquidityBreakdownTableProps> = (
                       <td className="p-3 text-right text-family-textMuted font-semibold border-l border-family-accent/5">
                         {formatTableMoneyVNDMillion(group.totalActual)}
                       </td>
-                      <td className="p-3 text-right text-orange-600 font-semibold bg-orange-50/10 relative"
+                      <td className="p-3 text-right text-orange-600 font-semibold bg-orange-50/10 border-l border-family-accent/5"
                           onClick={(e) => {
                             if (group.flexibleEvents.some((evt: any) => evt.type === 'trackA')) {
                               e.stopPropagation();
@@ -141,6 +143,9 @@ export const LiquidityBreakdownTable: React.FC<LiquidityBreakdownTableProps> = (
                             </div>
                           </div>
                         )}
+                      </td>
+                      <td className="p-3 text-right font-semibold border-l border-family-accent/5">
+                        {formatTableMoneyVNDMillion(group.rawRemaining)}
                       </td>
                       <td className="p-3 text-right text-red-500 font-semibold bg-red-50/10 relative border-l border-family-accent/5"
                           onClick={(e) => {
@@ -264,6 +269,9 @@ export const LiquidityBreakdownTable: React.FC<LiquidityBreakdownTableProps> = (
                         <td className="p-2 text-right text-orange-400">
                           {Math.abs(child.trackA) > 0 ? `-${formatTableMoneyVNDMillion(Math.abs(child.trackA))}` : '-'}
                         </td>
+                        <td className="p-2 text-right font-semibold border-l border-family-accent/5 text-family-text">
+                          {formatTableMoneyVNDMillion(child.rawRemaining)}
+                        </td>
                         <td className="p-2 text-right text-red-400 border-l border-family-accent/5">
                           {child.oneTimeExpense > 0 ? `-${formatTableMoneyVNDMillion(child.oneTimeExpense)}` : '-'}
                         </td>
@@ -295,6 +303,9 @@ export const LiquidityBreakdownTable: React.FC<LiquidityBreakdownTableProps> = (
                 </td>
                 <td className="px-3 py-4 text-right text-sm font-bold text-orange-600">
                   -{formatTableMoneyVNDMillion(Math.abs(totalTrackASum))}
+                </td>
+                <td className="px-3 py-4 text-right text-sm font-bold text-family-text border-l border-family-accent/5">
+                  {formatTableMoneyVNDMillion(totalRawRemainingSum)}
                 </td>
                 <td className="px-3 py-4 text-right text-sm font-bold text-red-500 border-l border-family-accent/5">
                   -{formatTableMoneyVNDMillion(Math.abs(totalOneTimeExpenseSum))}

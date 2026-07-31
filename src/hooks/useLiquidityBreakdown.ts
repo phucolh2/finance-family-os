@@ -276,6 +276,7 @@ export const useLiquidityBreakdown = (mode: 'monthly' | 'cumulative' = 'monthly'
           id: child.id,
           name: child.name,
           remaining: childRemaining, // Children don't have sinking funds directly
+          rawRemaining: rawRemainingChild,
           totalBudget: catBudget,
           totalActual: catActual,
           deducted: 0,
@@ -292,6 +293,7 @@ export const useLiquidityBreakdown = (mode: 'monthly' | 'cumulative' = 'monthly'
         id: g.id,
         name: g.name,
         remaining,
+        rawRemaining,
         totalBudget,
         totalActual,
         deducted,
@@ -315,6 +317,7 @@ export const useLiquidityBreakdown = (mode: 'monthly' | 'cumulative' = 'monthly'
   const totalOneTimeIncomeSum = useMemo(() => liquidityBreakdownData.reduce((sum, g) => sum + g.oneTimeIncome, 0), [liquidityBreakdownData]);
   const totalTrackBSum = useMemo(() => liquidityBreakdownData.reduce((sum, g) => sum + g.trackB, 0), [liquidityBreakdownData]);
   const totalRemainingSum = useMemo(() => liquidityBreakdownData.reduce((sum, g) => sum + g.remaining, 0), [liquidityBreakdownData]);
+  const totalRawRemainingSum = useMemo(() => liquidityBreakdownData.reduce((sum, g) => sum + g.rawRemaining, 0), [liquidityBreakdownData]);
 
   return {
     liquidityBreakdownData,
@@ -326,6 +329,7 @@ export const useLiquidityBreakdown = (mode: 'monthly' | 'cumulative' = 'monthly'
     totalOneTimeIncomeSum,
     totalTrackBSum,
     totalRemainingSum,
+    totalRawRemainingSum,
     selectedPeriodKey: activePeriodKey
   };
 };
