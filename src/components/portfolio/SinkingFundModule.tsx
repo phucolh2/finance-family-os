@@ -1002,59 +1002,19 @@ export const SinkingFundModule: React.FC<SinkingFundModuleProps> = ({
                         <div className="space-y-2">
                             <div>
                                 <label className="text-xs font-semibold text-family-text mb-1 block">Ghi nhận số tiền rút ra thành:</label>
-                                <select 
-                                    className="w-full bg-white rounded-md border border-green-200 p-2 text-xs mb-2"
-                                    value={disburseForm.disburseDestination}
-                                    onChange={(e) => {
-                                      const newDest = e.target.value as 'life_event' | 'none';
-                                      setDisburseForm({ 
-                                        ...disburseForm, 
-                                        disburseDestination: newDest,
-                                        disburseSource: newDest === 'none' ? (fund.sourceOfFund || 'idle') : disburseForm.disburseSource 
-                                      });
-                                    }}
-                                >
-                                    <option value="life_event">
-                                      {variant === 'lifestyle' ? 'Sự kiện chi tiêu linh hoạt (Tự động trừ vào quỹ)' : 'Sự kiện chi tiêu (Tự động trừ vào quỹ)'}
-                                    </option>
-                                    <option value="none">
-                                      {variant === 'lifestyle' ? 'Hoàn tiền về Quỹ sinh hoạt nguồn (Không tạo sự kiện)' : 'Hoàn tiền về nguồn (Không tạo sự kiện chi tiêu)'}
-                                    </option>
-                                </select>
+                                <div className="w-full bg-gray-50 rounded-md border border-gray-200 p-2 text-xs mb-2 text-gray-500">
+                                  {variant === 'lifestyle' ? 'Hoàn tiền về Quỹ sinh hoạt nguồn (Không tạo sự kiện)' : 'Hoàn tiền về nguồn (Không tạo sự kiện chi tiêu)'}
+                                </div>
                             </div>
                             
                             <div>
                                 <label className="text-xs font-semibold text-family-text mb-1 flex items-center gap-1">
-                                    {disburseForm.disburseDestination === 'life_event' 
-                                      ? (variant === 'lifestyle' ? 'Khoản chi tiêu linh hoạt sẽ trừ vào quỹ:' : 'Khoản chi tiêu sẽ trừ vào quỹ:') 
-                                      : (variant === 'lifestyle' ? 'Số tiền sẽ hoàn về Quỹ sinh hoạt nguồn:' : 'Số tiền sẽ hoàn về quỹ:')}
-                                    {disburseForm.disburseDestination === 'life_event' && (
-                                      <HelpTooltip text="Hệ thống sẽ đồng thời: (1) Hoàn tiền giải ngân về quỹ này, và (2) Ghi nhận khoản chi tiêu tương ứng trừ vào quỹ này. Việc này giúp lưu vết lịch sử chi tiêu mà KHÔNG làm âm số dư thực tế của quỹ." />
-                                    )}
+                                    {variant === 'lifestyle' ? 'Số tiền sẽ tự động hoàn về Quỹ sinh hoạt nguồn:' : 'Số tiền sẽ tự động hoàn về quỹ:'}
                                 </label>
-                                <select 
-                                    className={`w-full bg-white rounded-md border border-green-200 p-2 text-xs ${disburseForm.disburseDestination === 'none' ? 'bg-gray-100 cursor-not-allowed opacity-80' : ''}`}
-                                    value={disburseForm.disburseSource}
-                                    onChange={(e) => setDisburseForm({ ...disburseForm, disburseSource: e.target.value })}
-                                    disabled={disburseForm.disburseDestination === 'none'}
-                                    title={disburseForm.disburseDestination === 'none' ? 'Tiền sẽ tự động hoàn về nơi sinh ra quỹ này' : 'Nguồn tiền sẽ chịu tác động'}
-                                >
-                                    {activeSources.map(sourceId => (
-                                      <option key={sourceId} value={sourceId}>{getSourceLabelWithBalance(sourceId)}</option>
-                                    ))}
-                                </select>
-                            </div>
-
-                            {disburseForm.disburseDestination !== 'none' && (
-                                <div className="mt-2">
-                                  <Input
-                                    label="Tên sự kiện chi tiêu"
-                                    value={disburseForm.dealName}
-                                    onChange={(e) => { setDisburseForm({ ...disburseForm, dealName: e.target.value }); }}
-                                    placeholder={`VD: ${fund.name}`}
-                                  />
+                                <div className="w-full bg-gray-50 rounded-md border border-gray-200 p-2 text-xs text-gray-500">
+                                    {getSourceLabelWithBalance(disburseForm.disburseSource || fund.sourceOfFund || 'idle')}
                                 </div>
-                            )}
+                            </div>
                         </div>
                       )}
                       
@@ -1241,7 +1201,7 @@ export const SinkingFundModule: React.FC<SinkingFundModuleProps> = ({
                         <Button variant="outline" size="sm" onClick={() => { setDisbursingId(null); }}>Hủy</Button>
                         <Button 
                           size="sm" 
-                          disabled={(filterFundType !== 'debt_prep' && !disburseForm.dealName) || !isWithinObservationPeriod(disburseForm.disbursedMonth, disburseForm.disbursedYear, selectedPeriodKey)}
+                          disabled={!isWithinObservationPeriod(disburseForm.disbursedMonth, disburseForm.disbursedYear, selectedPeriodKey)}
                           onClick={() => {
                             if (settleMode === 'full') {
                               if (filterFundType !== 'debt_prep') {
