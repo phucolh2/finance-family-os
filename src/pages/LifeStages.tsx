@@ -684,10 +684,10 @@ export const LifeStages: React.FC = () => {
                   <Card className="bg-white/80 border-family-accent/10">
                     <CardContent className="p-4 flex items-center justify-between">
                       <div>
-                        <p className="text-xs font-semibold text-family-textMuted uppercase tracking-wider mb-1 flex items-center gap-1.5">
+                        <div className="text-xs font-semibold text-family-textMuted uppercase tracking-wider mb-1 flex items-center gap-1.5">
                           TỔNG KHOẢN CHI LINH HOẠT
                           <HelpTooltip text="Tổng số các sự kiện, khoản chi linh hoạt tính đến tháng quan sát hiện tại." />
-                        </p>
+                        </div>
                         <div className="flex items-end gap-3 mt-1">
                           <h3 className="text-2xl font-bold text-family-text">
                             {cumulativeEventsCount} <span className="text-sm font-normal text-family-textMuted">(Lũy kế)</span>
@@ -708,10 +708,10 @@ export const LifeStages: React.FC = () => {
                   <Card className="bg-white/80 border-family-accent/10">
                     <CardContent className="p-4 flex items-center justify-between">
                       <div>
-                        <p className="text-xs font-semibold text-family-textMuted uppercase tracking-wider mb-1 flex items-center gap-1.5">
+                        <div className="text-xs font-semibold text-family-textMuted uppercase tracking-wider mb-1 flex items-center gap-1.5">
                           TÁC ĐỘNG 1 LẦN (NET)
                           <HelpTooltip text="Tổng số tiền tác động 1 lần (chi/thu) tính đến tháng quan sát hiện tại." />
-                        </p>
+                        </div>
                         <div className="flex items-end gap-3 mt-1">
                           <h3 className={`text-2xl font-bold ${cumulativeNetOneTime < 0 ? 'text-red-500' : cumulativeNetOneTime > 0 ? 'text-emerald-500' : 'text-family-text'}`}>
                             {cumulativeNetOneTime > 0 ? '+' : ''}{formatTableMoneyVNDMillion(cumulativeNetOneTime)}
@@ -1627,9 +1627,9 @@ export const LifeStages: React.FC = () => {
                     
                     {/* Content Card */}
                     <div className={`bg-white rounded-xl border border-gray-100 border-l-4 ${theme.border} p-5 shadow-sm hover:shadow-md transition-all group relative overflow-hidden`}>
-                      <div className="flex flex-col xl:flex-row xl:items-stretch justify-between gap-6">
+                      <div className="flex flex-col lg:flex-row lg:items-stretch justify-between gap-6">
                         {/* Left: Info & Visual Summary */}
-                        <div className="flex flex-col justify-between flex-1 pr-4 relative">
+                        <div className="flex flex-col justify-between flex-1 lg:pr-6 relative">
                           <div className="space-y-3 relative z-10">
                             <div className="flex flex-wrap items-center gap-2">
                               <span className={`text-sm font-bold px-2.5 py-0.5 rounded-full border ${theme.badge}`}>
@@ -1669,7 +1669,7 @@ export const LifeStages: React.FC = () => {
                         </div>
                         
                         {/* Right: Financial Impact */}
-                        <div className="flex flex-col gap-2.5 min-w-[320px] bg-gradient-to-br from-gray-50 to-gray-50/50 rounded-xl p-4 border border-gray-100/80 shadow-sm mt-4 xl:mt-0 relative overflow-hidden group-hover:border-gray-200 transition-colors">
+                        <div className="flex flex-col gap-3 w-full lg:w-[380px] lg:min-w-[380px] xl:w-[440px] xl:min-w-[440px] bg-gradient-to-br from-gray-50 to-gray-50/50 rounded-xl p-5 border border-gray-100/80 shadow-sm mt-4 lg:mt-0 relative overflow-hidden group-hover:border-gray-200 transition-colors">
                           {/* Background decoration */}
                           <div className="absolute -right-4 -top-4 opacity-[0.02] pointer-events-none">
                             <Wallet className="w-32 h-32" />
@@ -1682,7 +1682,7 @@ export const LifeStages: React.FC = () => {
                           
                           {/* One-time impact */}
                           {safeNumber(event.amount) !== 0 && (
-                            <div className="flex items-start gap-2.5 relative z-10 bg-white/60 p-2 rounded-lg border border-gray-100/50">
+                            <div className="flex items-start gap-2.5 relative z-10 bg-white/60 p-3 rounded-xl border border-gray-100/50">
                               <div className={`mt-0.5 p-1 rounded-md ${isIncome ? 'bg-emerald-100 text-emerald-600' : 'bg-red-100 text-red-600'}`}>
                                 <ArrowDownRight className={`w-4 h-4 ${isIncome ? 'rotate-180' : ''}`} />
                               </div>
@@ -1699,7 +1699,7 @@ export const LifeStages: React.FC = () => {
                           
                           {/* Recurring Track A (Budget) */}
                           {safeNumber(event.recurringMonthlyImpact) !== 0 && (
-                            <div className={`flex items-start gap-2.5 relative z-10 p-2 rounded-lg border transition-all ${warnings.hasBudgetWarning ? 'bg-red-50 border-red-300 animate-pulse' : 'bg-white/60 border-gray-100/50'} ${safeNumber(event.amount) !== 0 ? 'mt-1' : ''}`}>
+                            <div className={`flex items-start gap-2.5 relative z-10 p-3 rounded-xl border transition-all ${warnings.hasBudgetWarning ? 'bg-red-50 border-red-300 animate-pulse' : 'bg-white/60 border-gray-100/50'} ${safeNumber(event.amount) !== 0 ? 'mt-1' : ''}`}>
                               <div className={`mt-0.5 p-1 rounded-md ${isRecurringIncome ? 'bg-emerald-100 text-emerald-600' : 'bg-rose-100 text-rose-600'}`}>
                                 {warnings.hasBudgetWarning ? <AlertTriangle className="w-4 h-4 text-red-600" /> : <CreditCard className="w-4 h-4" />}
                               </div>
@@ -1729,7 +1729,7 @@ export const LifeStages: React.FC = () => {
 
                           {/* Recurring Track B (Fund) */}
                           {safeNumber(event.recurringMonthlyImpactFund) !== 0 && (
-                            <div className={`flex items-start gap-2.5 relative z-10 p-2 rounded-lg border transition-all ${warnings.hasFundWarning ? 'bg-orange-50 border-orange-300 animate-pulse' : 'bg-white/60 border-gray-100/50'} ${(safeNumber(event.amount) !== 0 || safeNumber(event.recurringMonthlyImpact) !== 0) ? 'mt-1' : ''}`}>
+                            <div className={`flex items-start gap-2.5 relative z-10 p-3 rounded-xl border transition-all ${warnings.hasFundWarning ? 'bg-orange-50 border-orange-300 animate-pulse' : 'bg-white/60 border-gray-100/50'} ${(safeNumber(event.amount) !== 0 || safeNumber(event.recurringMonthlyImpact) !== 0) ? 'mt-1' : ''}`}>
                               <div className="mt-0.5 p-1 rounded-md bg-teal-100 text-teal-600">
                                 {warnings.hasFundWarning ? <AlertTriangle className="w-4 h-4 text-orange-600" /> : <PiggyBank className="w-4 h-4" />}
                               </div>
