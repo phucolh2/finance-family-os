@@ -1713,12 +1713,14 @@ export const LifeStages: React.FC = () => {
                                     if (!dur) return 'Vô thời hạn';
                                     let sM = event.month + 1; let sY = event.year;
                                     if (sM > 12) { sM = 1; sY += 1; }
-                                    let eM = sM + dur - 1; let eY = sY + Math.floor(eM / 12);
-                                    eM = (eM % 12) + 1;
+                                    const sM0 = sM - 1;
+                                    const endTotal = sY * 12 + sM0 + dur - 1;
+                                    const eY = Math.floor(endTotal / 12);
+                                    const eM = (endTotal % 12) + 1;
                                     return (
                                       <span className="flex items-center gap-1">
                                         <CalendarRange className="w-3 h-3 inline" />
-                                        Trong {dur} kỳ (Đến tháng {eM}/{eY})
+                                        Trong {dur} kỳ (Từ tháng {sM}/{sY} đến tháng {eM}/{eY})
                                       </span>
                                     );
                                   })()}
@@ -1747,12 +1749,14 @@ export const LifeStages: React.FC = () => {
                                     if (!dur) return 'Vô thời hạn';
                                     let sM = event.month + 1; let sY = event.year;
                                     if (sM > 12) { sM = 1; sY += 1; }
-                                    let eM = sM + dur - 1; let eY = sY + Math.floor(eM / 12);
-                                    eM = (eM % 12) + 1;
+                                    const sM0 = sM - 1;
+                                    const endTotal = sY * 12 + sM0 + dur - 1;
+                                    const eY = Math.floor(endTotal / 12);
+                                    const eM = (endTotal % 12) + 1;
                                     return (
                                       <span className="flex items-center gap-1">
                                         <CalendarRange className="w-3 h-3 inline" />
-                                        Trong {dur} kỳ (Đến tháng {eM}/{eY})
+                                        Trong {dur} kỳ (Từ tháng {sM}/{sY} đến tháng {eM}/{eY})
                                       </span>
                                     );
                                   })()}
