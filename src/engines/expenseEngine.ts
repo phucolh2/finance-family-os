@@ -15,6 +15,8 @@ export interface ExpenseMonthlyPoint {
   year: number;
   budget: number;
   actual: number;
+  regularActual: number;
+  flexibleActual: number;
 }
 
 export interface ExpenseCategorySummary {
@@ -191,7 +193,9 @@ export function analyzeExpense(
         month: dbItem.month,
         year: dbItem.year,
         budget: monthlyBudgets[g] || 0,
-        actual: monthlyActuals[g] || 0
+        actual: monthlyActuals[g] || 0,
+        regularActual: monthlyRegularActuals[g] || 0,
+        flexibleActual: (monthlyActuals[g] || 0) - (monthlyRegularActuals[g] || 0)
       });
     });
   });
