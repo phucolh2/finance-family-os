@@ -166,11 +166,27 @@ export const useLiquidityBreakdown = (mode: 'monthly' | 'cumulative' = 'monthly'
         }
       } else {
         totalBudget = cumulativeExpenseData?.summaryByGroup?.[g.groupId]?.totalBudget || 0;
-        let flexibleExpensePart = 0;
-        (flexibleEvents || []).forEach((ev: any) => {
-           if (ev.impact < 0) flexibleExpensePart += Math.abs(ev.impact);
+        let includedFlexibleAmount = 0;
+        (state.lifeEvents || []).forEach((e: any) => {
+            const amt = Number(e.amount) || 0;
+            if (amt < 0) {
+                const eGroupId = e.spendingCategory ? e.spendingCategory.split('/')[0] : e.source;
+                if (eGroupId === g.groupId) {
+                    const eMonth = Number(e.month) || 0;
+                    const eYear = Number(e.year) || 0;
+                    const eMonthValue = eYear * 12 + eMonth;
+                    if (eMonthValue <= selMonthValue) {
+                        const dbItemExists = (state.resolvedMonthlyDb || []).some(
+                            db => Number(db.month) === eMonth && Number(db.year) === eYear && db.periodKey === activePeriodKey
+                        );
+                        if (dbItemExists) {
+                            includedFlexibleAmount += Math.abs(amt);
+                        }
+                    }
+                }
+            }
         });
-        totalActual = (cumulativeExpenseData?.summaryByGroup?.[g.groupId]?.totalActual || 0) - flexibleExpensePart;
+        totalActual = Math.max(0, (cumulativeExpenseData?.summaryByGroup?.[g.groupId]?.totalActual || 0) - includedFlexibleAmount);
       }
 
       const rawRemaining = Math.max(0, totalBudget - totalActual);
