@@ -91,19 +91,27 @@ export const SmartAllocationAdvisorModal: React.FC<Props> = ({ isOpen, onClose, 
                 <h2 className="text-xl font-bold text-slate-800 tracking-tight">Trợ lý Phân bổ Thông minh</h2>
                 <HelpTooltip 
                   text={
-                    <div className="w-72 space-y-2">
-                      <p className="font-bold border-b border-indigo-200/50 pb-1.5 mb-2 text-indigo-700">Nguyên tắc Phân bổ Waterfall</p>
-                      <p className="text-slate-600">Dòng tiền sẽ chảy tuần tự qua các tầng ưu tiên sau:</p>
-                      <ul className="list-disc pl-4 text-xs space-y-1.5 text-slate-600">
-                        <li><b className="text-slate-800">Khẩn cấp:</b> Đảm bảo Quỹ an toàn tối thiểu (3 tháng sinh hoạt)</li>
-                        <li><b className="text-slate-800">Nên làm:</b> Ưu tiên các Mục tiêu cố định (Sinking Funds) đang chạy</li>
-                        <li><b className="text-slate-800">Tối ưu:</b> Bù đắp cho Quỹ an toàn đạt mức khuyến nghị (6 tháng)</li>
-                        <li><b className="text-slate-800">Dài hạn:</b> Phân bổ thặng dư vào Đầu tư & Tiết kiệm theo tỷ trọng cài đặt của Giai đoạn hiện tại.</li>
-                      </ul>
-                      <p className="text-xs text-indigo-600 font-semibold italic mt-3 border-t border-indigo-100 pt-2">
-                        * Dữ liệu phân tích phụ thuộc vào trạng thái tài chính tại tháng quan sát.
-                      </p>
-                    </div>
+                    mode === 'income' ? (
+                      <div className="w-72 space-y-2">
+                        <p className="font-bold border-b border-indigo-200/50 pb-1.5 mb-2 text-indigo-700">Nguyên tắc Phân bổ Waterfall</p>
+                        <p className="text-slate-600">Dòng tiền sẽ chảy tuần tự qua các tầng ưu tiên sau:</p>
+                        <ul className="list-disc pl-4 text-xs space-y-1.5 text-slate-600">
+                          <li><b className="text-slate-800">Khẩn cấp:</b> Đảm bảo Quỹ an toàn tối thiểu (3 tháng sinh hoạt)</li>
+                          <li><b className="text-slate-800">Nên làm:</b> Ưu tiên các Mục tiêu cố định đang chạy</li>
+                          <li><b className="text-slate-800">Tối ưu:</b> Bù đắp Quỹ an toàn (6 tháng)</li>
+                          <li><b className="text-slate-800">Dài hạn:</b> Đầu tư & Tiết kiệm theo tỷ trọng</li>
+                        </ul>
+                      </div>
+                    ) : (
+                      <div className="w-72 space-y-2">
+                        <p className="font-bold border-b border-indigo-200/50 pb-1.5 mb-2 text-indigo-700">Nguyên tắc Trả góp Khoản chi</p>
+                        <p className="text-slate-600">Tính toán phương án an toàn nhất khi mua sắm lớn:</p>
+                        <ul className="list-disc pl-4 text-xs space-y-1.5 text-slate-600">
+                          <li><b className="text-slate-800">Trả trước:</b> Rút từ Quỹ thanh khoản nhưng đảm bảo giữ lại số dư tối thiểu (3 tháng sinh hoạt).</li>
+                          <li><b className="text-slate-800">Trả góp:</b> Dùng tối đa 90% thặng dư dòng tiền hàng tháng để gánh số tiền còn thiếu.</li>
+                        </ul>
+                      </div>
+                    )
                   }
                   position="bottom-left"
                 />
@@ -114,7 +122,11 @@ export const SmartAllocationAdvisorModal: React.FC<Props> = ({ isOpen, onClose, 
                   </span>
                 )}
               </div>
-              <p className="text-sm text-slate-500 mt-1 font-medium">Tối ưu dòng tiền dựa trên các nguyên tắc tài chính cá nhân</p>
+              <p className="text-sm text-slate-500 mt-1 font-medium">
+                {mode === 'income' 
+                  ? "Tối ưu dòng tiền dựa trên các nguyên tắc tài chính cá nhân"
+                  : "Mô phỏng cấu trúc trả trước & trả góp an toàn cho khoản chi lớn"}
+              </p>
             </div>
           </div>
           <button onClick={onClose} className="p-2 text-slate-400 hover:text-slate-600 hover:bg-slate-100 rounded-full transition-all duration-200 hover:rotate-90">
