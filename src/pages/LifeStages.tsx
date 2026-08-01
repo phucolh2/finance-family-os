@@ -17,7 +17,7 @@ import { EmptyState } from '../components/ui/EmptyState';
 import { 
   Milestone, CalendarRange, Plus, Trash2, Edit3, 
   Home, Car, Baby, HeartPulse, Gift, Briefcase, Plane, Wallet, TrendingUp, TrendingDown, AlertTriangle,
-  Smartphone, Tv, BookOpen, Sparkles, Wrench, Heart, Activity, PiggyBank, CreditCard, ArrowDownRight, Receipt, Landmark, Filter
+  Smartphone, Tv, BookOpen, Sparkles, Wrench, Heart, Activity, PiggyBank, CreditCard, ArrowDownRight, ArrowUpRight, Receipt, Landmark, Filter, Banknote, BrainCircuit
 } from 'lucide-react';
 import { ExpenseDashboard } from '../components/expense/ExpenseDashboard';
 import { ExpenseScheduleView } from '../components/expense/ExpenseScheduleView';
@@ -27,6 +27,9 @@ import { ObservationControls } from '../components/ui/ObservationControls';
 
 import type { BudgetGroup } from '../types/budget';
 import type { LifeEvent } from '../types/finance';
+import { SmartAllocationAdvisorModal } from '../components/ui/SmartAllocationAdvisorModal';
+import { runProjection } from '../engines/projectionEngine';
+import type { AllocationSnapshot } from '../engines/SmartAllocationAdvisor';
 
 export const LifeStages: React.FC = () => {
   const { state, addLifeEvent, updateLifeEvent, deleteLifeEvent, selectedPeriodKey } = useAppContext();
@@ -47,6 +50,9 @@ export const LifeStages: React.FC = () => {
   const [showWarningDialog, setShowWarningDialog] = useState(false);
   const [pendingEventData, setPendingEventData] = useState<any>(null);
   const [pendingWarningInfo, setPendingWarningInfo] = useState<{sourceName: string, overage: number, month: number, year: number} | null>(null);
+
+  const [isAdvisorOpen, setIsAdvisorOpen] = useState(false);
+  const [advisorSnapshot, setAdvisorSnapshot] = useState<AllocationSnapshot | null>(null);
 
 
   const now = new Date();
@@ -1504,9 +1510,51 @@ export const LifeStages: React.FC = () => {
                   Bức tranh toàn cảnh về các khoản chi tiêu linh hoạt được sắp xếp theo thời gian.
                 </CardDescription>
               </div>
-              <Button onClick={handleAddClick} className="gap-2 text-xs h-9 shrink-0">
-                <Plus className="w-4 h-4 shrink-0" /> Thêm khoản chi linh hoạt
-              </Button>
+              <div className="flex items-center gap-2">
+                <Button onClick={() => {
+                  const projection = runProjection({
+                    profile: state.profile,
+                    incomeSchedule: state.incomeSchedule,
+                    budgetSchedule: state.budgetSchedule,
+                    expenseSchedule: state.expenseSchedule,
+                    lifeEvents: state.lifeEvents,
+                    assets: state.assets,
+                    assumptions: state.assumptions,
+                    investmentDeals: state.investmentDeals,
+                    savingsDeposits: state.savingsDeposits,
+                    sinkingFunds: state.sinkingFunds,
+                    debts: state.debts,
+                    projectionAdjustments: state.projectionAdjustments,
+                    lifeStages: state.lifeStages,
+                    fundTransfers: state.fundTransfers,
+                  });
+                  const currentPeriodValue = parseInt(effectivePeriodKey.split('-')[0], 10) * 12 + parseInt(effectivePeriodKey.split('-')[1], 10);
+                  const projData = projection.monthlyRows.find((r: any) => r.period.key === effectivePeriodKey);
+                  
+                  const activeBudget = state.budgetSchedule.filter(
+                    (b) => b.effectiveYear * 12 + b.effectiveMonth <= currentPeriodValue
+                  ).sort((a,b) => (b.effectiveYear * 12 + b.effectiveMonth) - (a.effectiveYear * 12 + a.effectiveMonth))[0];
+                  
+                  let housingBasicBudget = 0;
+                  if (activeBudget && state.resolvedMonthlyDbMap && state.resolvedMonthlyDbMap[effectivePeriodKey]) {
+                    housingBasicBudget = state.resolvedMonthlyDbMap[effectivePeriodKey].budgetAmounts?.['housing_basic'] || 0;
+                  }
+                  
+                  setAdvisorSnapshot({
+                    appState: state,
+                    projection,
+                    currentPeriodKey: effectivePeriodKey,
+                    housingBasicAvgExpense: housingBasicBudget,
+                    currentLiquidityBalance: projData ? projData.liquidityBalance : 0
+                  });
+                  setIsAdvisorOpen(true);
+                }} className="gap-2 text-xs h-9 shrink-0 bg-indigo-50 text-indigo-700 hover:bg-indigo-100 border border-indigo-200" variant="outline">
+                  <BrainCircuit className="w-4 h-4 shrink-0 text-pink-500" /> Phân bổ thông minh
+                </Button>
+                <Button onClick={handleAddClick} className="gap-2 text-xs h-9 shrink-0">
+                  <Plus className="w-4 h-4 shrink-0" /> Thêm khoản chi linh hoạt
+                </Button>
+              </div>
             </div>
           </CardHeader>
         <CardContent>
@@ -1680,23 +1728,19 @@ export const LifeStages: React.FC = () => {
                           </div>
                         </div>
                         
-                        {/* Right: Financial Impact */}
-                        <div className="flex flex-col gap-3 w-full lg:w-[380px] lg:min-w-[380px] xl:w-[440px] xl:min-w-[440px] bg-gradient-to-br from-gray-50 to-gray-50/50 rounded-xl p-5 border border-gray-100/80 shadow-sm mt-4 lg:mt-0 relative overflow-hidden group-hover:border-gray-200 transition-colors">
-                          {/* Background decoration */}
-                          <div className="absolute -right-4 -top-4 opacity-[0.02] pointer-events-none">
-                            <Wallet className="w-32 h-32" />
-                          </div>
+                        {/* Right: Cashflow Details */}
+                        <div className="w-full lg:w-[45%] flex flex-col gap-2 relative border-t lg:border-t-0 lg:border-l border-gray-100 pt-5 lg:pt-0 lg:pl-6">
+                          <div className="absolute inset-0 bg-gradient-to-l from-white/40 to-transparent pointer-events-none rounded-r-xl"></div>
                           
-                          <div className="flex items-center gap-1.5 mb-1.5">
-                            <Receipt className="w-3.5 h-3.5 text-family-textMuted" />
-                            <span className="text-[11px] font-bold text-family-textMuted uppercase tracking-wider">Chi tiết Dòng tiền</span>
+                          <div className="text-[10px] font-bold text-gray-400 mb-1 flex items-center gap-1.5 uppercase tracking-wider relative z-10">
+                            <Banknote className="w-3.5 h-3.5" /> Chi tiết dòng tiền
                           </div>
                           
                           {/* One-time impact */}
                           {safeNumber(event.amount) !== 0 && (
                             <div className="flex items-start gap-2.5 relative z-10 bg-white/60 p-3 rounded-xl border border-gray-100/50">
                               <div className={`mt-0.5 p-1 rounded-md ${isIncome ? 'bg-emerald-100 text-emerald-600' : 'bg-red-100 text-red-600'}`}>
-                                <ArrowDownRight className={`w-4 h-4 ${isIncome ? 'rotate-180' : ''}`} />
+                                {isIncome ? <ArrowUpRight className="w-4 h-4" /> : <ArrowDownRight className="w-4 h-4" />}
                               </div>
                               <div className="flex flex-col">
                                 <div className={`text-sm font-bold ${isIncome ? 'text-emerald-700' : 'text-red-700'}`}>
@@ -1710,76 +1754,130 @@ export const LifeStages: React.FC = () => {
                           )}
                           
                           {/* Recurring Track A (Budget) */}
-                          {safeNumber(event.recurringMonthlyImpact) !== 0 && (
-                            <div className={`flex items-start gap-2.5 relative z-10 p-3 rounded-xl border transition-all ${warnings.hasBudgetWarning ? 'bg-red-50 border-red-300 animate-pulse' : 'bg-white/60 border-gray-100/50'} ${safeNumber(event.amount) !== 0 ? 'mt-1' : ''}`}>
-                              <div className={`mt-0.5 p-1 rounded-md ${isRecurringIncome ? 'bg-emerald-100 text-emerald-600' : 'bg-rose-100 text-rose-600'}`}>
-                                {warnings.hasBudgetWarning ? <AlertTriangle className="w-4 h-4 text-red-600" /> : <CreditCard className="w-4 h-4" />}
-                              </div>
-                              <div className="flex flex-col">
-                                <div className={`text-sm font-bold ${isRecurringIncome ? 'text-emerald-600' : 'text-rose-600'}`}>
-                                  Ngân sách: {isRecurringIncome ? '+' : ''}{event.recurringMonthlyImpact} tr/tháng
+                          {safeNumber(event.recurringMonthlyImpact) !== 0 && (() => {
+                            const obsMonthValue = currentObservedYear * 12 + currentObservedMonth;
+                            const getTrackStatus = (m: number, y: number, d: number | undefined) => {
+                              let sM = safeNumber(m) + 1; let sY = safeNumber(y);
+                              if (sM > 12) { sM = 1; sY += 1; }
+                              const startVal = sY * 12 + sM;
+                              const endVal = safeNumber(d) > 0 ? startVal + safeNumber(d) : Infinity;
+                              if (obsMonthValue < startVal) return 'pending';
+                              if (obsMonthValue >= endVal) return 'expired';
+                              return 'active';
+                            };
+                            const status = getTrackStatus(event.month, event.year, event.recurringDurationMonths);
+                            const boxClasses = status === 'expired' ? 'opacity-60 grayscale-[0.8] bg-gray-50 border-gray-200' : status === 'pending' ? 'bg-gray-50/50 border-gray-100 opacity-80' : warnings.hasBudgetWarning ? 'bg-red-50 border-red-300 animate-pulse' : 'bg-white/60 border-gray-100/50';
+
+                            return (
+                              <div className={`flex items-start gap-2.5 relative z-10 p-3 rounded-xl border transition-all ${boxClasses} ${safeNumber(event.amount) !== 0 ? 'mt-1' : ''}`}>
+                                <div className={`mt-0.5 p-1 rounded-md ${isRecurringIncome ? 'bg-emerald-100 text-emerald-600' : 'bg-rose-100 text-rose-600'}`}>
+                                  {warnings.hasBudgetWarning && status === 'active' ? <AlertTriangle className="w-4 h-4 text-red-600" /> : <CreditCard className="w-4 h-4" />}
                                 </div>
-                                <div className="text-[10px] text-gray-500 font-medium mt-0.5">
-                                  <span className="flex items-center gap-1 mb-0.5">
-                                    <Filter className="w-3 h-3 inline" />
-                                    {event.spendingCategory ? `Phân bổ vào: ${getCategoryLabel(event.spendingCategory)}` : 'Không xác định'}
-                                  </span>
-                                  {(() => {
-                                    const dur = safeNumber(event.recurringDurationMonths);
-                                    if (!dur) return 'Vô thời hạn';
-                                    let sM = event.month + 1; let sY = event.year;
-                                    if (sM > 12) { sM = 1; sY += 1; }
-                                    const sM0 = sM - 1;
-                                    const endTotal = sY * 12 + sM0 + dur - 1;
-                                    const eY = Math.floor(endTotal / 12);
-                                    const eM = (endTotal % 12) + 1;
-                                    return (
-                                      <span className="flex items-center gap-1">
-                                        <CalendarRange className="w-3 h-3 inline" />
-                                        Trong {dur} kỳ (Từ tháng {sM}/{sY} đến tháng {eM}/{eY})
-                                      </span>
-                                    );
-                                  })()}
+                                <div className="flex flex-col w-full">
+                                  <div className="flex flex-wrap justify-between items-start gap-2">
+                                    <div className={`text-sm font-bold ${isRecurringIncome ? 'text-emerald-600' : 'text-rose-600'}`}>
+                                      Ngân sách: {isRecurringIncome ? '+' : ''}{event.recurringMonthlyImpact} tr/tháng
+                                    </div>
+                                    {status === 'expired' && <span className="text-[9px] font-bold text-gray-500 bg-gray-200/50 px-1.5 py-0.5 rounded border border-gray-200 uppercase whitespace-nowrap shrink-0">Đã kết thúc</span>}
+                                    {status === 'pending' && <span className="text-[9px] font-bold text-blue-500 bg-blue-50 px-1.5 py-0.5 rounded border border-blue-100 uppercase whitespace-nowrap shrink-0">Chưa bắt đầu</span>}
+                                    {status === 'active' && <span className="text-[9px] font-bold text-emerald-500 bg-emerald-50 px-1.5 py-0.5 rounded border border-emerald-100 uppercase whitespace-nowrap shrink-0 flex items-center gap-1"><span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span> Đang tác động</span>}
+                                  </div>
+                                  <div className="text-[10px] text-gray-500 font-medium mt-0.5">
+                                    <span className="flex items-center gap-1 mb-0.5">
+                                      <Filter className="w-3 h-3 inline" />
+                                      {event.spendingCategory ? `Phân bổ vào: ${getCategoryLabel(event.spendingCategory)}` : 'Không xác định'}
+                                    </span>
+                                    {(() => {
+                                      const dur = safeNumber(event.recurringDurationMonths);
+                                      if (!dur) return 'Vô thời hạn';
+                                      let sM = event.month + 1; let sY = event.year;
+                                      if (sM > 12) { sM = 1; sY += 1; }
+                                      const sM0 = sM - 1;
+                                      const endTotal = sY * 12 + sM0 + dur - 1;
+                                      const eY = Math.floor(endTotal / 12);
+                                      const eM = (endTotal % 12) + 1;
+                                      return (
+                                        <span className="flex items-center gap-1">
+                                          <CalendarRange className="w-3 h-3 inline" />
+                                          Trong {dur} kỳ (Từ tháng {sM}/{sY} đến tháng {eM}/{eY})
+                                        </span>
+                                      );
+                                    })()}
+                                    
+                                    {warnings.hasBudgetWarning && status === 'active' && (
+                                      <div className="text-red-600 text-[10.5px] font-bold mt-1.5 flex items-start gap-1 bg-red-100/50 p-1 rounded">
+                                        <AlertTriangle className="w-3.5 h-3.5 shrink-0" />
+                                        Cảnh báo: Khoản chi này làm vượt ngân sách phân bổ trong ít nhất 1 kỳ tương lai.
+                                      </div>
+                                    )}
+                                  </div>
                                 </div>
                               </div>
-                            </div>
-                          )}
+                            );
+                          })()}
 
                           {/* Recurring Track B (Fund) */}
-                          {safeNumber(event.recurringMonthlyImpactFund) !== 0 && (
-                            <div className={`flex items-start gap-2.5 relative z-10 p-3 rounded-xl border transition-all ${warnings.hasFundWarning ? 'bg-orange-50 border-orange-300 animate-pulse' : 'bg-white/60 border-gray-100/50'} ${(safeNumber(event.amount) !== 0 || safeNumber(event.recurringMonthlyImpact) !== 0) ? 'mt-1' : ''}`}>
-                              <div className="mt-0.5 p-1 rounded-md bg-teal-100 text-teal-600">
-                                {warnings.hasFundWarning ? <AlertTriangle className="w-4 h-4 text-orange-600" /> : <PiggyBank className="w-4 h-4" />}
-                              </div>
-                              <div className="flex flex-col">
-                                <div className="text-sm font-bold text-teal-700">
-                                  Quỹ dự phòng: {event.recurringMonthlyImpactFund} tr/tháng
+                          {safeNumber(event.recurringMonthlyImpactFund) !== 0 && (() => {
+                            const obsMonthValue = currentObservedYear * 12 + currentObservedMonth;
+                            const getTrackStatus = (m: number, y: number, d: number | undefined) => {
+                              let sM = safeNumber(m) + 1; let sY = safeNumber(y);
+                              if (sM > 12) { sM = 1; sY += 1; }
+                              const startVal = sY * 12 + sM;
+                              const endVal = safeNumber(d) > 0 ? startVal + safeNumber(d) : Infinity;
+                              if (obsMonthValue < startVal) return 'pending';
+                              if (obsMonthValue >= endVal) return 'expired';
+                              return 'active';
+                            };
+                            const status = getTrackStatus(event.month, event.year, event.recurringDurationMonthsFund);
+                            const boxClasses = status === 'expired' ? 'opacity-60 grayscale-[0.8] bg-gray-50 border-gray-200' : status === 'pending' ? 'bg-gray-50/50 border-gray-100 opacity-80' : warnings.hasFundWarning ? 'bg-orange-50 border-orange-300 animate-pulse' : 'bg-white/60 border-gray-100/50';
+
+                            return (
+                              <div className={`flex items-start gap-2.5 relative z-10 p-3 rounded-xl border transition-all ${boxClasses} ${(safeNumber(event.amount) !== 0 || safeNumber(event.recurringMonthlyImpact) !== 0) ? 'mt-1' : ''}`}>
+                                <div className="mt-0.5 p-1 rounded-md bg-teal-100 text-teal-600">
+                                  {warnings.hasFundWarning && status === 'active' ? <AlertTriangle className="w-4 h-4 text-orange-600" /> : <PiggyBank className="w-4 h-4" />}
                                 </div>
-                                <div className="text-[10px] text-gray-500 font-medium mt-0.5">
-                                  <span className="flex items-center gap-1 mb-0.5">
-                                    <Landmark className="w-3 h-3 inline" />
-                                    {event.recurringFundingSource ? `Từ Quỹ: ${formPeriodBreakdown.find((g: any) => g.id === event.recurringFundingSource)?.name || getSourceLabel(event.recurringFundingSource)}` : 'Không xác định'}
-                                  </span>
-                                  {(() => {
-                                    const dur = safeNumber(event.recurringDurationMonthsFund);
-                                    if (!dur) return 'Vô thời hạn';
-                                    let sM = event.month + 1; let sY = event.year;
-                                    if (sM > 12) { sM = 1; sY += 1; }
-                                    const sM0 = sM - 1;
-                                    const endTotal = sY * 12 + sM0 + dur - 1;
-                                    const eY = Math.floor(endTotal / 12);
-                                    const eM = (endTotal % 12) + 1;
-                                    return (
-                                      <span className="flex items-center gap-1">
-                                        <CalendarRange className="w-3 h-3 inline" />
-                                        Trong {dur} kỳ (Từ tháng {sM}/{sY} đến tháng {eM}/{eY})
-                                      </span>
-                                    );
-                                  })()}
+                                <div className="flex flex-col w-full">
+                                  <div className="flex flex-wrap justify-between items-start gap-2">
+                                    <div className="text-sm font-bold text-teal-700">
+                                      Quỹ dự phòng: {event.recurringMonthlyImpactFund} tr/tháng
+                                    </div>
+                                    {status === 'expired' && <span className="text-[9px] font-bold text-gray-500 bg-gray-200/50 px-1.5 py-0.5 rounded border border-gray-200 uppercase whitespace-nowrap shrink-0">Đã kết thúc</span>}
+                                    {status === 'pending' && <span className="text-[9px] font-bold text-blue-500 bg-blue-50 px-1.5 py-0.5 rounded border border-blue-100 uppercase whitespace-nowrap shrink-0">Chưa bắt đầu</span>}
+                                    {status === 'active' && <span className="text-[9px] font-bold text-emerald-500 bg-emerald-50 px-1.5 py-0.5 rounded border border-emerald-100 uppercase whitespace-nowrap shrink-0 flex items-center gap-1"><span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span> Đang tác động</span>}
+                                  </div>
+                                  <div className="text-[10px] text-gray-500 font-medium mt-0.5">
+                                    <span className="flex items-center gap-1 mb-0.5">
+                                      <Landmark className="w-3 h-3 inline" />
+                                      {event.recurringFundingSource ? `Từ Quỹ: ${formPeriodBreakdown.find((g: any) => g.id === event.recurringFundingSource)?.name || getSourceLabel(event.recurringFundingSource)}` : 'Không xác định'}
+                                    </span>
+                                    {(() => {
+                                      const dur = safeNumber(event.recurringDurationMonthsFund);
+                                      if (!dur) return 'Vô thời hạn';
+                                      let sM = event.month + 1; let sY = event.year;
+                                      if (sM > 12) { sM = 1; sY += 1; }
+                                      const sM0 = sM - 1;
+                                      const endTotal = sY * 12 + sM0 + dur - 1;
+                                      const eY = Math.floor(endTotal / 12);
+                                      const eM = (endTotal % 12) + 1;
+                                      return (
+                                        <span className="flex items-center gap-1">
+                                          <CalendarRange className="w-3 h-3 inline" />
+                                          Trong {dur} kỳ (Từ tháng {sM}/{sY} đến tháng {eM}/{eY})
+                                        </span>
+                                      );
+                                    })()}
+                                    
+                                    {warnings.hasFundWarning && status === 'active' && (
+                                      <div className="text-orange-600 text-[10.5px] font-bold mt-1.5 flex items-start gap-1 bg-orange-100/50 p-1 rounded">
+                                        <AlertTriangle className="w-3.5 h-3.5 shrink-0" />
+                                        Cảnh báo: Số dư nguồn trích không đủ trong ít nhất 1 kỳ tương lai.
+                                      </div>
+                                    )}
+                                  </div>
                                 </div>
                               </div>
-                            </div>
-                          )}
+                            );
+                          })()}
                         </div>
                       </div>
                       
@@ -1845,6 +1943,12 @@ export const LifeStages: React.FC = () => {
       </Card>
         </div>
       )}
+
+      <SmartAllocationAdvisorModal 
+        isOpen={isAdvisorOpen}
+        onClose={() => setIsAdvisorOpen(false)}
+        snapshot={advisorSnapshot}
+      />
     </div>
   );
 };

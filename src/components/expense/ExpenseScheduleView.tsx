@@ -114,8 +114,11 @@ export const ExpenseScheduleView: React.FC = () => {
     
     (state.lifeEvents || []).forEach(event => {
       const eventMonthValue = event.year * 12 + event.month;
-      // if event is active in or before this month
-      if (eventMonthValue <= targetMonthValue && event.recurringMonthlyImpact && event.recurringMonthlyImpact > 0 && event.spendingCategory) {
+      const duration = event.recurringDurationMonths || Infinity;
+      const eventEndMonthValue = duration === Infinity ? Infinity : eventMonthValue + duration - 1;
+      
+      // if event is active in this month
+      if (eventMonthValue <= targetMonthValue && targetMonthValue <= eventEndMonthValue && event.recurringMonthlyImpact && event.recurringMonthlyImpact > 0 && event.spendingCategory) {
         // spendingCategory format is usually "groupId/childId", we need just "childId" for ExpenseSchedule matching
         const parts = event.spendingCategory.split('/');
         const categoryId = parts.length > 1 ? parts[1] : parts[0];
@@ -215,19 +218,12 @@ export const ExpenseScheduleView: React.FC = () => {
   // Calculate strict total budget from the ratios
   const totalBudget = allCategories.reduce((sum, cat) => sum + (activeIncome * cat.ratioPercent) / 100, 0);
 
-  // Calculate totalActual correctly mapping -1 to budget
-  const totalActual = Object.keys(categories).reduce((sum, catId) => {
-    let val = safeNumber(categories[catId], 0);
+  const totalActual = allCategories.reduce((sum, catNode) => {
+    let val = safeNumber(categories[catNode.id], 0);
     if (val === -1) {
-      const catNode = allCategories.find(c => c.id === catId);
-      if (catNode) {
-        val = (activeIncome * catNode.ratioPercent) / 100;
-      } else {
-        val = 0;
-      }
+      val = (activeIncome * catNode.ratioPercent) / 100;
     }
-    const eventImpact = eventImpacts[catId]?.total || 0;
-    return sum + val + eventImpact;
+    return sum + val;
   }, 0);
 
   // Collect validation warnings
@@ -246,8 +242,7 @@ export const ExpenseScheduleView: React.FC = () => {
       
       if (actual === -1) actual = budget; // dynamically mapped
 
-      const eventImpact = eventImpacts[cat.id]?.total || 0;
-      const totalCatActual = actual + eventImpact;
+      const totalCatActual = actual;
 
       if (!isSettled && totalCatActual > budget) {
         validationWarnings.push(`"${cat.name}" vượt ngân sách (lố ${formatTableMoneyVNDMillion(totalCatActual - budget)}).`);
@@ -661,12 +656,12 @@ export const ExpenseScheduleView: React.FC = () => {
                                     <span className="text-[9px] uppercase font-bold text-family-textMuted">Phân bổ</span>
                                     <span className="text-sm font-bold text-family-textMuted">{formatTableMoneyVNDMillion(budget)}</span>
                                   </div>
-                                  <div className="w-[120px] flex flex-col items-end">
+                                  <div className="min-w-[120px] flex flex-col items-end">
                                     <span className="text-[9px] uppercase font-bold text-family-textMuted mb-1">
                                       Thực tế (tr)
                                     </span>
                                     <div className="relative w-full flex flex-col gap-1 items-end">
-                                      <div className="flex items-center gap-1.5 w-full">
+                                      <div className="flex items-center gap-1.5 w-full justify-end">
                                         <button 
                                           type="button" 
                                           onClick={handleToggleCatFilled}
@@ -675,7 +670,7 @@ export const ExpenseScheduleView: React.FC = () => {
                                         >
                                           <CheckCircle2 className="w-4 h-4" />
                                         </button>
-                                        <div className="relative flex-1">
+                                        <div className="relative w-[80px]">
                                           <Input 
                                             type="number"
                                             min="0"
@@ -685,16 +680,26 @@ export const ExpenseScheduleView: React.FC = () => {
                                             placeholder="0"
                                             className={`text-right font-bold w-full h-8 px-2 text-sm ${isOver ? 'border-red-500 text-red-600 focus-visible:ring-red-500' : (isCatFilled ? 'text-emerald-600 bg-emerald-50/50' : 'text-family-accent')}`}
                                             disabled={isSettled || isCatFilled}
-                                            title={eventImpact ? `Gồm số nhập tay + ${eventImpact.total}tr sự kiện` : undefined}
+                                            title={eventImpact ? `Chi phí gốc (chưa tính ${eventImpact.total}tr từ sự kiện)` : undefined}
                                           />
-                                          {isOver && <span className="absolute -bottom-4 right-0 text-[9px] text-red-500 font-bold whitespace-nowrap">Vượt mức!</span>}
                                         </div>
+                                        {eventImpact && (
+                                          <div className="text-sm font-bold text-orange-600 whitespace-nowrap pl-1" title={`Từ sự kiện: ${eventImpact.names.join(', ')}`}>
+                                            + {formatTableMoneyVNDMillion(eventImpact.total)}
+                                          </div>
+                                        )}
                                       </div>
-                                      {eventImpact && (
-                                        <div className="text-[10px] text-orange-500 font-bold mr-1">
-                                          TỔNG: {formatTableMoneyVNDMillion(totalCatActual)}
-                                        </div>
-                                      )}
+                                      
+                                      {/* Total display and Validation */}
+                                      <div className="flex flex-col items-end w-full">
+                                        {isOver && !eventImpact && <span className="text-[9px] text-red-500 font-bold whitespace-nowrap">Vượt mức!</span>}
+                                        {eventImpact && (
+                                          <div className="text-[11px] text-orange-600 font-bold whitespace-nowrap mt-0.5">
+                                            = {formatTableMoneyVNDMillion(totalCatActual)} <span className="font-medium text-orange-500/80">triệu (Tổng)</span>
+                                            {isOver && <span className="text-red-500 ml-2">Vượt mức!</span>}
+                                          </div>
+                                        )}
+                                      </div>
                                     </div>
                                   </div>
                                 </div>

@@ -185,15 +185,15 @@ export const useLiquidityBreakdown = (mode: 'monthly' | 'cumulative' = 'monthly'
 
     const targetDb = (state.resolvedMonthlyDb || []).find(db => db.periodKey === activePeriodKey);
     const cumulativeExpenseData = mode === 'cumulative' 
-      ? analyzeExpense(state.resolvedMonthlyDb || [], state.lifeEvents, activePeriodKey, expenseTree.map((g: any) => g.groupId as string))
+      ? analyzeExpense(state.resolvedMonthlyDb || [], state.lifeEvents, activePeriodKey, expenseTree.map((g: any) => (g.groupId || g.id) as string))
       : null;
 
     return expenseTree.map((g: any) => {
       let totalBudget = 0;
       let totalActual = 0;
-      
-      const flexData = flexibleByGroup[g.groupId] || { oneTime: 0, trackA: 0, trackB: 0 };
-      const flexibleEvents = flexibleEventsByGroup[g.groupId] || [];
+      const groupId = g.groupId || g.id;
+      const flexData = flexibleByGroup[groupId] || { oneTime: 0, trackA: 0, trackB: 0 };
+      const flexibleEvents = flexibleEventsByGroup[groupId] || [];
       const trackA = flexData.trackA;
       const trackB = flexData.trackB;
 
@@ -206,40 +206,18 @@ export const useLiquidityBreakdown = (mode: 'monthly' | 'cumulative' = 'monthly'
         .reduce((sum: number, e: any) => sum + e.impact, 0);
 
         if (mode === 'monthly') {
-          totalBudget = targetDb?.budgetAmounts?.[g.groupId] || 0;
-          if (targetDb?.actualExpenseByGroup && typeof targetDb.actualExpenseByGroup[g.groupId] === 'number') {
-            totalActual = targetDb.actualExpenseByGroup[g.groupId];
+          totalBudget = targetDb?.budgetAmounts?.[groupId] || 0;
+          if (targetDb?.actualExpenseByGroup && typeof targetDb.actualExpenseByGroup[groupId] === 'number') {
+            totalActual = targetDb.actualExpenseByGroup[groupId];
           } else if (targetDb?.actualExpenseCategories) {
             (g.children || []).forEach((child: any) => {
               totalActual += targetDb.actualExpenseCategories![child.id] || 0;
             });
           }
-          // The user logs their total spending in the DB, so we subtract trackA from the base 'Thường xuyên'
-          // to prevent double-deducting from the budget and correctly break down the display.
-          totalActual = Math.max(0, totalActual - Math.abs(trackA));
+          // Note: totalActual now represents purely the base 'Thường xuyên' because the UI splits the event impact.
         } else {
-        totalBudget = cumulativeExpenseData?.summaryByGroup?.[g.groupId]?.totalBudget || 0;
-        let includedFlexibleAmount = 0;
-        (state.lifeEvents || []).forEach((e: any) => {
-            const amt = Number(e.amount) || 0;
-            if (amt < 0) {
-                const eGroupId = e.spendingCategory ? e.spendingCategory.split('/')[0] : e.source;
-                if (eGroupId === g.groupId) {
-                    const eMonth = Number(e.month) || 0;
-                    const eYear = Number(e.year) || 0;
-                    const eMonthValue = eYear * 12 + eMonth;
-                    if (eMonthValue <= selMonthValue) {
-                        const dbItemExists = (state.resolvedMonthlyDb || []).some(
-                            db => Number(db.month) === eMonth && Number(db.year) === eYear
-                        );
-                        if (dbItemExists) {
-                            includedFlexibleAmount += Math.abs(amt);
-                        }
-                    }
-                }
-            }
-        });
-        totalActual = Math.max(0, (cumulativeExpenseData?.summaryByGroup?.[g.groupId]?.totalActual || 0) - includedFlexibleAmount - Math.abs(trackA));
+        totalBudget = cumulativeExpenseData?.summaryByGroup?.[groupId]?.totalBudget || 0;
+        totalActual = cumulativeExpenseData?.summaryByGroup?.[groupId]?.totalRegularActual || 0;
       }
 
       const rawRemaining = Math.max(0, totalBudget - totalActual - Math.abs(trackA));
@@ -250,35 +228,16 @@ export const useLiquidityBreakdown = (mode: 'monthly' | 'cumulative' = 'monthly'
         let catBudget = 0;
         let catActual = 0;
         
-        const catKey = `${g.groupId}/${child.id}`;
+        const catKey = child.id;
         const flexDataCat = flexibleByGroup[catKey] || { oneTime: 0, trackA: 0, trackB: 0 };
         const flexibleEventsCat = flexibleEventsByGroup[catKey] || [];
 
         if (mode === 'monthly') {
           catBudget = targetDb?.budgetAmountsByCategory?.[child.id] || 0;
           catActual = targetDb?.actualExpenseCategories?.[child.id] || 0;
-          catActual = Math.max(0, catActual - Math.abs(flexDataCat.trackA));
         } else {
           catBudget = cumulativeExpenseData?.summaryByCategory?.[child.id]?.totalBudget || 0;
-          
-          let catIncludedFlexibleAmount = 0;
-          (state.lifeEvents || []).forEach((e: any) => {
-              const amt = Number(e.amount) || 0;
-              if (amt < 0 && e.spendingCategory === `${g.groupId}/${child.id}`) {
-                  const eMonth = Number(e.month) || 0;
-                  const eYear = Number(e.year) || 0;
-                  const eMonthValue = eYear * 12 + eMonth;
-                  if (eMonthValue <= selMonthValue) {
-                      const dbItemExists = (state.resolvedMonthlyDb || []).some(
-                          db => Number(db.month) === eMonth && Number(db.year) === eYear
-                      );
-                      if (dbItemExists) {
-                          catIncludedFlexibleAmount += Math.abs(amt);
-                      }
-                  }
-              }
-          });
-          catActual = Math.max(0, (cumulativeExpenseData?.summaryByCategory?.[child.id]?.totalActual || 0) - catIncludedFlexibleAmount - Math.abs(flexDataCat.trackA));
+          catActual = cumulativeExpenseData?.summaryByCategory?.[child.id]?.totalActual || 0;
         }
         
         const oneTimeExpenseCat = flexibleEventsCat

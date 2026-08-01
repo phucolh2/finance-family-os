@@ -146,7 +146,7 @@ export const LiquidityBreakdownTable: React.FC<LiquidityBreakdownTableProps> = (
                               {group.flexibleEvents.filter((evt: any) => evt.type === 'trackA').map((evt: any, idx: number) => (
                                 <div key={idx} className="flex justify-between items-start text-xs gap-3">
                                   <span className="text-gray-700 font-medium leading-tight">
-                                    {evt.name} <span className="text-[9px] bg-orange-50 text-orange-600 px-1 py-0.5 rounded ml-1 border border-orange-100">Định kỳ</span>
+                                    {evt.name} <span className="text-[9px] bg-orange-100 text-orange-600 px-1 py-0.5 rounded ml-1 border border-orange-200">Định kỳ</span>
                                   </span>
                                   <span className="text-orange-600 font-bold shrink-0">{formatTableMoneyVNDMillion(Math.abs(evt.impact))}</span>
                                 </div>
@@ -176,13 +176,13 @@ export const LiquidityBreakdownTable: React.FC<LiquidityBreakdownTableProps> = (
                         {activeDetailId === group.id + '-1' && group.flexibleEvents.some((evt: any) => evt.type === 'oneTime' && evt.impact < 0) && (
                           <div className="absolute top-full right-0 mt-1 w-64 bg-white rounded-lg shadow-xl border border-gray-100 z-50 text-left p-3 animate-in fade-in zoom-in-95" onClick={(e) => e.stopPropagation()}>
                             <div className="text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-2 border-b border-gray-100 pb-1.5 flex items-center gap-1.5">
-                              <Info className="w-3 h-3" /> Chi tiết Trừ quỹ tức thì
+                              <Info className="w-3 h-3" /> Chi tiết Linh hoạt
                             </div>
                             <div className="space-y-2.5">
                               {group.flexibleEvents.filter((evt: any) => evt.type === 'oneTime' && evt.impact < 0).map((evt: any, idx: number) => (
                                 <div key={idx} className="flex justify-between items-start text-xs gap-3">
                                   <span className="text-gray-700 font-medium leading-tight">
-                                    {evt.name} <span className="text-[9px] bg-red-50 text-red-600 px-1 py-0.5 rounded ml-1 border border-red-100">1 Lần</span>
+                                    {evt.name} <span className="text-[9px] bg-red-100 text-red-600 px-1 py-0.5 rounded ml-1 border border-red-200">Tức thì</span>
                                   </span>
                                   <span className="text-red-600 font-bold shrink-0">-{formatTableMoneyVNDMillion(Math.abs(evt.impact))}</span>
                                 </div>
@@ -215,7 +215,7 @@ export const LiquidityBreakdownTable: React.FC<LiquidityBreakdownTableProps> = (
                               {group.flexibleEvents.filter((evt: any) => evt.type === 'trackB').map((evt: any, idx: number) => (
                                 <div key={idx} className="flex justify-between items-start text-xs gap-3">
                                   <span className="text-gray-700 font-medium leading-tight">
-                                    {evt.name} <span className="text-[9px] bg-red-50 text-red-600 px-1 py-0.5 rounded ml-1 border border-red-100">Định kỳ</span>
+                                    {evt.name} <span className="text-[9px] bg-red-100 text-red-600 px-1 py-0.5 rounded ml-1 border border-red-200">Định kỳ</span>
                                   </span>
                                   <span className="text-red-600 font-bold shrink-0">-{formatTableMoneyVNDMillion(Math.abs(evt.impact))}</span>
                                 </div>

@@ -130,10 +130,10 @@ export const ExpertPortfolioCharts: React.FC<ExpertPortfolioChartsProps> = ({
     if (active && payload?.length) {
       const data = payload[0].payload;
       return (
-        <div className="bg-slate-800 border border-slate-700 text-white p-3 rounded-lg shadow-xl text-xs">
+        <div className="bg-white border border-gray-200 text-gray-800 p-3 rounded-lg shadow-xl text-xs">
           <p className="font-bold text-family-accent mb-1">{data.tierName}</p>
-          <p>Quy mô: <span className="font-semibold text-white">{formatKpiMoneyVNDMillion(data.value)}</span></p>
-          <p>Tỷ trọng: <span className="font-semibold text-white">{data.percent.toFixed(1)}%</span></p>
+          <p>Quy mô: <span className="font-semibold text-gray-900">{formatKpiMoneyVNDMillion(data.value)}</span></p>
+          <p>Tỷ trọng: <span className="font-semibold text-gray-900">{data.percent.toFixed(1)}%</span></p>
         </div>
       );
     }
@@ -145,11 +145,11 @@ export const ExpertPortfolioCharts: React.FC<ExpertPortfolioChartsProps> = ({
       const data = payload[0].payload;
       const isOver = data.diff > 0;
       return (
-        <div className="bg-slate-800 border border-slate-700 text-white p-3 rounded-lg shadow-xl text-xs">
+        <div className="bg-white border border-gray-200 text-gray-800 p-3 rounded-lg shadow-xl text-xs">
           <p className="font-bold text-family-accent mb-1">{data.name}</p>
           <p>Thực tế: <span className="font-semibold">{data.actual.toFixed(1)}%</span> ({formatKpiMoneyVNDMillion(data.balance)})</p>
           <p>Kỳ vọng: <span className="font-semibold">{data.target.toFixed(1)}%</span></p>
-          <div className={`mt-2 p-1.5 rounded bg-slate-700/50 ${isOver ? 'text-emerald-400' : 'text-amber-400'}`}>
+          <div className={`mt-2 p-1.5 rounded bg-gray-50 ${isOver ? 'text-emerald-600' : 'text-amber-600'}`}>
             {isOver ? '▲ Vượt tỷ trọng: ' : '▼ Thiếu tỷ trọng: '} 
             <span className="font-bold">{Math.abs(data.diff).toFixed(1)}%</span>
           </div>
@@ -164,15 +164,14 @@ export const ExpertPortfolioCharts: React.FC<ExpertPortfolioChartsProps> = ({
       const data = payload[0].payload;
       const isProfit = data.pnl >= 0;
       return (
-        <div className="bg-slate-800 border border-slate-700 text-white p-3 rounded-lg shadow-xl text-xs">
+        <div className="bg-white border border-gray-200 text-gray-800 p-3 rounded-lg shadow-xl text-xs">
           <p className="font-bold text-family-accent mb-1">{data.name}</p>
-          <p>Vốn đầu tư: <span className="font-semibold text-sky-400">{formatKpiMoneyVNDMillion(data.capital)}</span></p>
-          <p>Số dư hiện tại: <span className="font-semibold text-emerald-400">{formatKpiMoneyVNDMillion(data.balance)}</span></p>
-          <div className="mt-2 pt-2 border-t border-slate-600">
-            Lãi/Lỗ: <span className={`font-bold ${isProfit ? 'text-emerald-500' : 'text-red-500'}`}>
-              {isProfit ? '+' : ''}{formatKpiMoneyVNDMillion(data.pnl)}
-            </span>
-          </div>
+          <p>Vốn đầu tư: <span className="font-semibold text-sky-600">{formatKpiMoneyVNDMillion(data.capital)}</span></p>
+          <p>Số dư hiện tại: <span className="font-semibold text-emerald-600">{formatKpiMoneyVNDMillion(data.balance)}</span></p>
+          <div className="border-t border-gray-100 my-1"></div>
+          <p>PnL: <span className={`font-bold ${isProfit ? 'text-emerald-600' : 'text-red-500'}`}>
+            {isProfit ? '+' : ''}{formatKpiMoneyVNDMillion(data.pnl)}
+          </span></p>
         </div>
       );
     }

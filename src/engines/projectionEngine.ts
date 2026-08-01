@@ -877,15 +877,23 @@ export function runProjection(input: ProjectionEngineInput): ProjectionOutput {
       }
     }
 
+    // First, ensure no expense group has a negative balance (it gets subsidized by general liquidity)
+    const activeBudget = budgetSchedule.find(
+      s => s.effectiveYear * 12 + s.effectiveMonth <= period.year * 12 + period.month
+    ) || budgetSchedule[0];
+    const expenseGroups = activeBudget?.rootGroups.filter(g => g.classification === 'expense') || [];
+    
+    expenseGroups.forEach(g => {
+      if ((groupBalances[g.groupId] || 0) < 0) {
+        groupBalances[g.groupId] = 0;
+      }
+    });
+
     // Enforce that group balances sum up to currentLiquidityBalance by distributing any delta (transfers/interests/etc.) proportionally
     const sumGroupBalances = Object.values(groupBalances).reduce((sum, val) => sum + val, 0);
     const delta = currentLiquidityBalance - sumGroupBalances;
     
     if (Math.abs(delta) > 0.001) {
-      const activeBudget = budgetSchedule.find(
-        s => s.effectiveYear * 12 + s.effectiveMonth <= period.year * 12 + period.month
-      ) || budgetSchedule[0];
-      const expenseGroups = activeBudget?.rootGroups.filter(g => g.classification === 'expense') || [];
       const totalRatio = expenseGroups.reduce((sum, g) => sum + safeNumber(g.ratioPercent), 0);
       
       expenseGroups.forEach(g => {

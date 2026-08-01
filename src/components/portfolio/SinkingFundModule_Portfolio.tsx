@@ -809,6 +809,7 @@ export const SinkingFundModule_Portfolio: React.FC<SinkingFundModule_PortfolioPr
                                       const bMo = ((b.termStart - 1) % 12) + 1;
                                       const bYr = Math.floor((b.termStart - 1) / 12);
                                       const pKey = b.periodKey || `${bYr}-${String(bMo).padStart(2, '0')}`;
+                                      const isPast = b.termStart < currentObservedYear * 12 + currentObservedMonth;
 
                                   return (
                                      <div key={i} className="flex flex-col bg-white p-2 rounded shadow-sm border border-gray-100 gap-2 mb-2">
@@ -848,10 +849,7 @@ export const SinkingFundModule_Portfolio: React.FC<SinkingFundModule_PortfolioPr
                                                           )}
                                                           <span className="text-gray-300 font-light">+</span>
                                                           <div className="flex items-center gap-1 bg-white px-1.5 py-0.5 rounded border border-slate-200 shadow-sm">
-                                                             <input
-                                                                type="number"
-                                                                step="0.1"
-                                                                min="0"
+                                                             <input type="number" step="0.1" min="0" disabled={isPast}
                                                                 value={fund.periodConfigs?.[pKey]?.contribution !== undefined ? fund.periodConfigs[pKey].contribution : fund.monthlyContribution}
                                                                 onChange={(e) => {
                                                                    const newContrib = safeNumber(Number(e.target.value), 0);
@@ -867,17 +865,14 @@ export const SinkingFundModule_Portfolio: React.FC<SinkingFundModule_PortfolioPr
                                                                       periodConfigs: updatedConfigs,
                                                                    });
                                                                 }}
-                                                                className="w-10 text-right text-[11px] font-bold text-family-accent bg-transparent focus:outline-none"
+                                                                className="w-10 text-right text-[11px] font-bold text-family-accent bg-transparent focus:outline-none disabled:opacity-50 disabled:cursor-not-allowed"
                                                              />
                                                              <span className="text-family-accent font-bold text-[11px]">triệu định kỳ</span>
                                                           </div>
                                                        </div>
                                                     ) : (
                                                        <div className="flex items-center gap-1.5 bg-slate-50 px-2 py-1 rounded-md border border-slate-100">
-                                                          <input
-                                                             type="number"
-                                                             step="0.1"
-                                                             min="0"
+                                                          <input type="number" step="0.1" min="0" disabled={isPast}
                                                              value={fund.periodConfigs?.[pKey]?.contribution !== undefined ? fund.periodConfigs[pKey].contribution : fund.monthlyContribution}
                                                              onChange={(e) => {
                                                                 const newContrib = safeNumber(Number(e.target.value), 0);
@@ -893,7 +888,7 @@ export const SinkingFundModule_Portfolio: React.FC<SinkingFundModule_PortfolioPr
                                                                    periodConfigs: updatedConfigs,
                                                                 });
                                                              }}
-                                                             className="w-14 text-right text-[11px] bg-white border border-family-accent/30 rounded px-1.5 py-0.5 font-bold text-family-accent focus:outline-none focus:ring-1 focus:ring-family-accent"
+                                                             className="w-14 text-right text-[11px] bg-white border border-family-accent/30 rounded px-1.5 py-0.5 font-bold text-family-accent focus:outline-none focus:ring-1 focus:ring-family-accent disabled:opacity-50 disabled:cursor-not-allowed disabled:bg-gray-50"
                                                           />
                                                           <span className="font-bold text-family-accent text-[11px]">triệu định kỳ</span>
                                                        </div>
@@ -905,8 +900,7 @@ export const SinkingFundModule_Portfolio: React.FC<SinkingFundModule_PortfolioPr
                                         <div className="flex items-center gap-3 text-xs">
                                            <div className="flex items-center gap-1">
                                               <span className="text-[10px] text-family-textMuted">Kỳ hạn:</span>
-                                              <select
-                                                 value={b.termMonths}
+                                              <select value={b.termMonths} disabled={isPast}
                                                  onChange={(e) => {
                                                     const newTerm = Number(e.target.value);
                                                     const updatedConfigs = {
@@ -922,7 +916,7 @@ export const SinkingFundModule_Portfolio: React.FC<SinkingFundModule_PortfolioPr
                                                        periodConfigs: updatedConfigs,
                                                     });
                                                  }}
-                                                 className="text-[10px] bg-slate-50 border border-slate-200 rounded px-1.5 py-0.5 font-medium text-family-text focus:outline-none focus:ring-1 focus:ring-family-accent"
+                                                 className="text-[10px] bg-slate-50 border border-slate-200 rounded px-1.5 py-0.5 font-medium text-family-text focus:outline-none focus:ring-1 focus:ring-family-accent disabled:opacity-50 disabled:cursor-not-allowed"
                                               >
                                                  <option value={0}>Không kỳ hạn</option>
                                                  <option value={1}>1 tháng</option>
@@ -936,10 +930,7 @@ export const SinkingFundModule_Portfolio: React.FC<SinkingFundModule_PortfolioPr
 
                                            <div className="flex items-center gap-1">
                                               <span className="text-[10px] text-family-textMuted">Lãi suất:</span>
-                                              <input
-                                                 type="number"
-                                                 step="0.1"
-                                                 min="0"
+                                              <input type="number" step="0.1" min="0" disabled={isPast}
                                                  value={b.interestRateAnnual}
                                                  onChange={(e) => {
                                                     const newRate = safeNumber(Number(e.target.value), 0);
@@ -956,7 +947,7 @@ export const SinkingFundModule_Portfolio: React.FC<SinkingFundModule_PortfolioPr
                                                        periodConfigs: updatedConfigs,
                                                     });
                                                  }}
-                                                 className="w-12 text-center text-[10px] bg-slate-50 border border-slate-200 rounded px-1 py-0.5 font-medium text-family-text focus:outline-none focus:ring-1 focus:ring-family-accent"
+                                                 className="w-12 text-center text-[10px] bg-slate-50 border border-slate-200 rounded px-1 py-0.5 font-medium text-family-text focus:outline-none focus:ring-1 focus:ring-family-accent disabled:opacity-50 disabled:cursor-not-allowed"
                                               />
                                               <span className="text-[10px] text-family-textMuted">%/năm</span>
                                               {b.termMonths > 0 && b.interestRateAnnual > 0 && (
@@ -1049,8 +1040,7 @@ export const SinkingFundModule_Portfolio: React.FC<SinkingFundModule_PortfolioPr
                               <option value="amount">Số tiền (triệu)</option>
                               <option value="percentage">% quỹ</option>
                             </select>
-                            <input
-                              type="number" step="0.1" min="0" max={partialWithdrawType === 'percentage' ? 100 : balance}
+                            <input type="number" step="0.1" min="0" max={partialWithdrawType === 'percentage' ? 100 : balance}
                               value={partialWithdrawValue}
                               onChange={(e) => { setPartialWithdrawValue(safeNumber(Number(e.target.value), 0)); }}
                               className="w-16 text-center text-xs bg-white rounded-md border border-green-200 p-1 font-bold text-green-700"

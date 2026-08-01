@@ -47,13 +47,13 @@ export const SavingsDebtInsights: React.FC<SavingsDebtInsightsProps> = ({ projec
   const CustomTooltip = ({ active, payload, label }: any) => {
     if (active && payload?.length) {
       return (
-        <div className="bg-family-bgDeep border border-family-accent/20 p-3 rounded-lg shadow-lg">
-          <p className="font-semibold text-family-text mb-2 text-sm">{label}</p>
+        <div className="bg-white border border-gray-200 p-3 rounded-lg shadow-xl">
+          <p className="font-semibold text-gray-900 mb-2 text-sm">{label}</p>
           {payload.map((p: any, i: number) => (
             <div key={i} className="flex items-center gap-2 text-xs mb-1">
               <div className="w-2 h-2 rounded-full" style={{ backgroundColor: p.color }} />
-              <span className="text-family-textMuted">{p.name}:</span>
-              <span className="font-bold text-family-text" style={{ color: p.color }}>
+              <span className="text-gray-600">{p.name}:</span>
+              <span className="font-bold text-gray-900">
                 {formatMoneyVNDMillion(Math.abs(p.value))}
               </span>
             </div>
