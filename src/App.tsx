@@ -4,7 +4,6 @@ import type { FallbackProps } from 'react-error-boundary';
 import { AppProvider } from './context/AppContext';
 import { Layout } from './components/layout/Layout';
 import { Suspense, lazy } from 'react';
-import { CopilotChat } from './components/copilot/CopilotChat';
 
 const Dashboard = lazy(() => import('./pages/Dashboard').then(m => ({ default: m.Dashboard })));
 const CashflowQuadrant = lazy(() => import('./pages/CashflowQuadrant').then(m => ({ default: m.CashflowQuadrant })));
@@ -76,7 +75,6 @@ function AppContent() {
       <Suspense fallback={<div className="p-8 text-center text-gray-500 animate-pulse">Đang tải phân hệ...</div>}>
         {renderActivePage()}
       </Suspense>
-      <CopilotChat />
     </Layout>
   );
 }
