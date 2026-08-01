@@ -1,9 +1,14 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useAppContext } from '../../context/AppContext';
 import { runProjection } from '../../engines/projectionEngine';
+import { SmartAllocationAdvisorModal } from './SmartAllocationAdvisorModal';
+import { BrainCircuit } from 'lucide-react';
+import { Button } from './Button';
 
 export const ObservationControls: React.FC = () => {
   const { state, updateProfile, selectedPeriodKey, setSelectedPeriodKey } = useAppContext();
+  const [isAdvisorOpen, setIsAdvisorOpen] = useState(false);
+  const [advisorSnapshot, setAdvisorSnapshot] = useState<any>(null);
 
   // Run projection dynamically to get the month list
   const projection = runProjection({
@@ -92,12 +97,51 @@ export const ObservationControls: React.FC = () => {
           <button
             onClick={() => { setSelectedPeriodKey(undefined); }}
             className="ml-1 px-2 py-0.5 text-[10px] font-bold text-white bg-family-accent/80 rounded hover:bg-family-primary transition-colors whitespace-nowrap"
-            title="Trở về hiện tại"
+            title="Trợ về hiện tại"
           >
             Về hiện tại
           </button>
         )}
       </div>
+      
+      {/* Smart Allocation Advisor Button */}
+      <Button 
+        onClick={() => {
+          const effectivePeriodKey = activeKey;
+          const currentPeriodValue = parseInt(effectivePeriodKey.split('-')[0], 10) * 12 + parseInt(effectivePeriodKey.split('-')[1], 10);
+          const projData = projection.monthlyRows.find((r: any) => r.period.key === effectivePeriodKey);
+          
+          const activeBudget = state.budgetSchedule.filter(
+            (b) => b.effectiveYear * 12 + b.effectiveMonth <= currentPeriodValue
+          ).sort((a,b) => (b.effectiveYear * 12 + b.effectiveMonth) - (a.effectiveYear * 12 + a.effectiveMonth))[0];
+          
+          let housingBasicBudget = 0;
+          if (activeBudget && state.resolvedMonthlyDbMap && state.resolvedMonthlyDbMap[effectivePeriodKey]) {
+            housingBasicBudget = state.resolvedMonthlyDbMap[effectivePeriodKey].budgetAmounts?.['housing_basic'] || 0;
+          }
+          
+          setAdvisorSnapshot({
+            appState: state,
+            projection,
+            currentPeriodKey: effectivePeriodKey,
+            housingBasicAvgExpense: housingBasicBudget,
+            currentLiquidityBalance: projData ? projData.liquidityBalance : 0
+          });
+          setIsAdvisorOpen(true);
+        }} 
+        className="gap-1.5 text-xs h-[30px] shrink-0 bg-indigo-50 text-indigo-700 hover:bg-indigo-100 border border-indigo-200/60 shadow-sm rounded-xl px-3 ml-auto sm:ml-2" 
+        variant="outline"
+      >
+        <BrainCircuit className="w-4 h-4 text-pink-500" /> 
+        <span className="font-bold">Trợ lý AI</span>
+      </Button>
+
+      {/* Advisor Modal */}
+      <SmartAllocationAdvisorModal 
+        isOpen={isAdvisorOpen}
+        onClose={() => setIsAdvisorOpen(false)}
+        snapshot={advisorSnapshot}
+      />
     </div>
   );
 };

@@ -1510,47 +1510,7 @@ export const LifeStages: React.FC = () => {
                   Bức tranh toàn cảnh về các khoản chi tiêu linh hoạt được sắp xếp theo thời gian.
                 </CardDescription>
               </div>
-              <div className="flex items-center gap-2">
-                <Button onClick={() => {
-                  const projection = runProjection({
-                    profile: state.profile,
-                    incomeSchedule: state.incomeSchedule,
-                    budgetSchedule: state.budgetSchedule,
-                    expenseSchedule: state.expenseSchedule,
-                    lifeEvents: state.lifeEvents,
-                    assets: state.assets,
-                    assumptions: state.assumptions,
-                    investmentDeals: state.investmentDeals,
-                    savingsDeposits: state.savingsDeposits,
-                    sinkingFunds: state.sinkingFunds,
-                    debts: state.debts,
-                    projectionAdjustments: state.projectionAdjustments,
-                    lifeStages: state.lifeStages,
-                    fundTransfers: state.fundTransfers,
-                  });
-                  const currentPeriodValue = parseInt(effectivePeriodKey.split('-')[0], 10) * 12 + parseInt(effectivePeriodKey.split('-')[1], 10);
-                  const projData = projection.monthlyRows.find((r: any) => r.period.key === effectivePeriodKey);
-                  
-                  const activeBudget = state.budgetSchedule.filter(
-                    (b) => b.effectiveYear * 12 + b.effectiveMonth <= currentPeriodValue
-                  ).sort((a,b) => (b.effectiveYear * 12 + b.effectiveMonth) - (a.effectiveYear * 12 + a.effectiveMonth))[0];
-                  
-                  let housingBasicBudget = 0;
-                  if (activeBudget && state.resolvedMonthlyDbMap && state.resolvedMonthlyDbMap[effectivePeriodKey]) {
-                    housingBasicBudget = state.resolvedMonthlyDbMap[effectivePeriodKey].budgetAmounts?.['housing_basic'] || 0;
-                  }
-                  
-                  setAdvisorSnapshot({
-                    appState: state,
-                    projection,
-                    currentPeriodKey: effectivePeriodKey,
-                    housingBasicAvgExpense: housingBasicBudget,
-                    currentLiquidityBalance: projData ? projData.liquidityBalance : 0
-                  });
-                  setIsAdvisorOpen(true);
-                }} className="gap-2 text-xs h-9 shrink-0 bg-indigo-50 text-indigo-700 hover:bg-indigo-100 border border-indigo-200" variant="outline">
-                  <BrainCircuit className="w-4 h-4 shrink-0 text-pink-500" /> Phân bổ thông minh
-                </Button>
+              <div className="flex gap-2">
                 <Button onClick={handleAddClick} className="gap-2 text-xs h-9 shrink-0">
                   <Plus className="w-4 h-4 shrink-0" /> Thêm khoản chi linh hoạt
                 </Button>
@@ -1944,11 +1904,7 @@ export const LifeStages: React.FC = () => {
         </div>
       )}
 
-      <SmartAllocationAdvisorModal 
-        isOpen={isAdvisorOpen}
-        onClose={() => setIsAdvisorOpen(false)}
-        snapshot={advisorSnapshot}
-      />
+
     </div>
   );
 };
