@@ -133,7 +133,7 @@ export const ObservationControls: React.FC = () => {
         variant="outline"
       >
         <BrainCircuit className="w-4 h-4 text-pink-500" /> 
-        <span className="font-bold">Trợ lý AI</span>
+        <span className="font-bold">Trợ lý Phân bổ</span>
       </Button>
 
       {/* Advisor Modal */}
