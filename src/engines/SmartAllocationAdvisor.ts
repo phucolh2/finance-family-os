@@ -311,3 +311,80 @@ export const computeSmartAllocation = (amount: number, snapshot: AllocationSnaps
 
   return { suggestions: allSuggestions, remaining };
 };
+
+export interface ExpenseFinancingResult {
+  expenseAmount: number;
+  availableLiquidity: number;
+  upfrontPayment: number;
+  remainingToFinance: number;
+  surplusMonthly: number;
+  durationMonths: number;
+  monthlyPayment: number;
+  isFeasible: boolean;
+  message: string;
+}
+
+/**
+ * Tính toán Cấu trúc Khoản chi (Expense Financing)
+ * Cố gắng tối đa hóa việc trả góp để không làm thủng ngưỡng Quỹ an toàn (3 tháng sinh hoạt).
+ */
+export const computeExpenseFinancing = (expenseAmount: number, snapshot: AllocationSnapshot): ExpenseFinancingResult => {
+  const floorTarget = snapshot.housingBasicAvgExpense * 3;
+  
+  // 1. Tính toán lượng thanh khoản dư thừa có thể dùng trả ngay (Upfront)
+  const availableLiquidity = Math.max(0, snapshot.currentLiquidityBalance - floorTarget);
+  
+  const upfrontPayment = Math.min(expenseAmount, availableLiquidity);
+  const remainingToFinance = expenseAmount - upfrontPayment;
+  
+  // Nếu khoản chi nhỏ hơn lượng thanh khoản dư thừa, có thể trả thẳng 1 lần
+  if (remainingToFinance <= 0) {
+    return {
+      expenseAmount,
+      availableLiquidity,
+      upfrontPayment,
+      remainingToFinance: 0,
+      surplusMonthly: 0,
+      durationMonths: 0,
+      monthlyPayment: 0,
+      isFeasible: true,
+      message: `Bạn có dư ${formatMoney(availableLiquidity)}tr thanh khoản an toàn. Có thể thanh toán đứt điểm 1 lần.`
+    };
+  }
+
+  // 2. Nếu còn dư nợ, tính toán trả góp dựa trên dòng tiền hàng tháng
+  const currentRow = snapshot.projection.monthlyRows.find(r => r.period.key === snapshot.currentPeriodKey);
+  const surplusMonthly = currentRow ? Math.max(0, currentRow.netCashflowMonthly) : 0;
+  
+  // Tính tỷ lệ an toàn: dùng tối đa 90% thặng dư để trả góp (để lại 10% sai số)
+  const safeMonthlyPayment = surplusMonthly * 0.9;
+  
+  if (safeMonthlyPayment <= 0) {
+    return {
+      expenseAmount,
+      availableLiquidity,
+      upfrontPayment,
+      remainingToFinance,
+      surplusMonthly,
+      durationMonths: 0,
+      monthlyPayment: 0,
+      isFeasible: false,
+      message: `Dòng tiền thặng dư hàng tháng hiện tại không đủ (≈ 0) để gánh khoản trả góp ${formatMoney(remainingToFinance)}tr. Cần cân nhắc cắt giảm chi tiêu khác trước khi quyết định.`
+    };
+  }
+  
+  const durationMonths = Math.ceil(remainingToFinance / safeMonthlyPayment);
+  const monthlyPayment = remainingToFinance / durationMonths;
+  
+  return {
+    expenseAmount,
+    availableLiquidity,
+    upfrontPayment,
+    remainingToFinance,
+    surplusMonthly,
+    durationMonths,
+    monthlyPayment,
+    isFeasible: true,
+    message: `Trích ${formatMoney(upfrontPayment)}tr từ Quỹ Thanh Khoản dư. Phần còn lại ${formatMoney(remainingToFinance)}tr trả góp trong ${durationMonths} tháng.`
+  };
+};

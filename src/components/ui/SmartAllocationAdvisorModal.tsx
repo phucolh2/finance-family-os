@@ -2,8 +2,8 @@ import React, { useState, useEffect } from 'react';
 import { Card, CardContent } from './Card';
 import { Button } from './Button';
 import { Input } from './Input';
-import { computeSmartAllocation } from '../../engines/SmartAllocationAdvisor';
-import type { AllocationSnapshot, AllocationSuggestion } from '../../engines/SmartAllocationAdvisor';
+import { computeSmartAllocation, computeExpenseFinancing } from '../../engines/SmartAllocationAdvisor';
+import type { AllocationSnapshot, AllocationSuggestion, ExpenseFinancingResult } from '../../engines/SmartAllocationAdvisor';
 import { Sparkles, X, BrainCircuit, ShieldAlert, ArrowDownToLine, Target, TrendingUp, CheckCircle2 } from 'lucide-react';
 import { formatTableMoneyVNDMillion } from '../../utils/format';
 import { HelpTooltip } from './HelpTooltip';
@@ -15,17 +15,27 @@ interface Props {
 }
 
 export const SmartAllocationAdvisorModal: React.FC<Props> = ({ isOpen, onClose, snapshot }) => {
+  const [mode, setMode] = useState<'income' | 'expense'>('income');
   const [amountInput, setAmountInput] = useState<string>('');
   const [amount, setAmount] = useState<number>(0);
   const [results, setResults] = useState<{ suggestions: AllocationSuggestion[], remaining: number } | null>(null);
+  const [expenseResult, setExpenseResult] = useState<ExpenseFinancingResult | null>(null);
 
   useEffect(() => {
     if (!isOpen) {
       setAmountInput('');
       setAmount(0);
       setResults(null);
+      setExpenseResult(null);
+      setMode('income');
     }
   }, [isOpen]);
+
+  // Clear results when switching mode
+  useEffect(() => {
+    setResults(null);
+    setExpenseResult(null);
+  }, [mode]);
 
   if (!isOpen) return null;
 
@@ -35,9 +45,14 @@ export const SmartAllocationAdvisorModal: React.FC<Props> = ({ isOpen, onClose, 
       return;
     }
     setAmount(val);
-    // clone deep if needed, but snapshot is already read-only in compute
-    const res = computeSmartAllocation(val, snapshot);
-    setResults(res);
+    
+    if (mode === 'income') {
+      const res = computeSmartAllocation(val, snapshot);
+      setResults(res);
+    } else {
+      const res = computeExpenseFinancing(val, snapshot);
+      setExpenseResult(res);
+    }
   };
 
 
@@ -112,11 +127,36 @@ export const SmartAllocationAdvisorModal: React.FC<Props> = ({ isOpen, onClose, 
           <div className="flex flex-col gap-8">
             
             {/* Input Section */}
+            <div className="flex bg-slate-200/50 p-1 rounded-xl w-full max-w-sm mx-auto mb-2">
+              <button
+                onClick={() => setMode('income')}
+                className={`flex-1 py-2 text-sm font-bold rounded-lg transition-all duration-200 ${
+                  mode === 'income' 
+                    ? 'bg-white text-indigo-700 shadow-sm ring-1 ring-slate-200/50' 
+                    : 'text-slate-500 hover:text-slate-700 hover:bg-slate-200/50'
+                }`}
+              >
+                💰 Phân bổ Thu nhập
+              </button>
+              <button
+                onClick={() => setMode('expense')}
+                className={`flex-1 py-2 text-sm font-bold rounded-lg transition-all duration-200 ${
+                  mode === 'expense' 
+                    ? 'bg-white text-rose-700 shadow-sm ring-1 ring-slate-200/50' 
+                    : 'text-slate-500 hover:text-slate-700 hover:bg-slate-200/50'
+                }`}
+              >
+                🛒 Trả góp Khoản chi
+              </button>
+            </div>
+
             <Card className="border-0 shadow-md shadow-slate-200/50 bg-white ring-1 ring-slate-200/50 rounded-2xl overflow-hidden">
               <CardContent className="p-7">
                 <div className="flex gap-5 items-end">
                   <div className="flex-1 space-y-2.5">
-                    <label className="text-sm font-bold text-slate-700">Số tiền cần phân bổ (Triệu VNĐ)</label>
+                    <label className="text-sm font-bold text-slate-700">
+                      {mode === 'income' ? 'Số tiền thu nhập/tiền dư (Triệu VNĐ)' : 'Số tiền cần chi tiêu (Triệu VNĐ)'}
+                    </label>
                     <Input 
                       type="number" 
                       placeholder="VD: 100" 
@@ -211,6 +251,88 @@ export const SmartAllocationAdvisorModal: React.FC<Props> = ({ isOpen, onClose, 
                   <p className="text-center text-sm font-medium text-amber-600 bg-amber-50 py-2 px-4 rounded-lg border border-amber-200/60 shadow-sm mt-4">
                     Số tiền chưa đủ để phủ hết nhu cầu an toàn các tầng dưới, hệ thống tạm dừng phân bổ Tầng 3.
                   </p>
+                )}
+              </div>
+            )}
+
+            {/* Expense Financing Results */}
+            {mode === 'expense' && expenseResult && (
+              <div className="space-y-5 animate-in slide-in-from-bottom-4 duration-500">
+                <h3 className="font-bold text-lg text-slate-800 tracking-tight flex items-center gap-2">
+                  Cấu trúc Trả góp Đề xuất
+                </h3>
+
+                <div className={`p-5 rounded-2xl border ${expenseResult.isFeasible ? 'bg-emerald-50/50 border-emerald-200' : 'bg-rose-50/50 border-rose-200'} shadow-sm`}>
+                  <p className={`text-sm font-medium ${expenseResult.isFeasible ? 'text-emerald-800' : 'text-rose-800'}`}>
+                    {expenseResult.message}
+                  </p>
+                </div>
+
+                {expenseResult.isFeasible && (
+                  <div className="space-y-4">
+                    {/* Upfront Card */}
+                    <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm flex gap-4 items-start relative overflow-hidden group">
+                      <div className="absolute left-0 top-0 bottom-0 w-1 bg-blue-400 opacity-50"></div>
+                      <div className="mt-1 bg-slate-50 p-2 rounded-xl ring-1 ring-slate-100">
+                        <Target className="w-5 h-5 text-blue-500" />
+                      </div>
+                      <div className="flex-1">
+                        <div className="flex justify-between items-start mb-2">
+                          <h4 className="font-bold text-slate-800 text-base">Tác động Một lần (Trả trước)</h4>
+                          <span className="px-2.5 py-1 text-[10px] uppercase tracking-wider rounded-full bg-blue-50 text-blue-700 font-bold border border-blue-200 shadow-sm">
+                            Từ Quỹ Thanh Khoản
+                          </span>
+                        </div>
+                        <div className="text-sm text-slate-500 mb-4 leading-relaxed">
+                          Hệ thống đã tính toán giữ lại {formatTableMoneyVNDMillion((snapshot?.housingBasicAvgExpense || 0) * 3)} mức sàn an toàn (3 tháng). Số tiền tối đa có thể rút ra trả ngay là:
+                        </div>
+                        <div className="flex items-center gap-6 bg-slate-50/80 px-4 py-3.5 rounded-xl border border-slate-100/80">
+                          <div className="flex flex-col">
+                            <span className="text-[10px] text-slate-400 uppercase tracking-wider font-bold mb-0.5">Số tiền thanh toán ngay</span>
+                            <span className="font-black text-transparent bg-clip-text bg-gradient-to-r from-blue-600 to-indigo-600 text-lg">
+                              {formatTableMoneyVNDMillion(expenseResult.upfrontPayment)}
+                            </span>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Installments Card */}
+                    {expenseResult.remainingToFinance > 0 && (
+                      <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm flex gap-4 items-start relative overflow-hidden group">
+                        <div className="absolute left-0 top-0 bottom-0 w-1 bg-orange-400 opacity-50"></div>
+                        <div className="mt-1 bg-slate-50 p-2 rounded-xl ring-1 ring-slate-100">
+                          <TrendingUp className="w-5 h-5 text-orange-500" />
+                        </div>
+                        <div className="flex-1">
+                          <div className="flex justify-between items-start mb-2">
+                            <h4 className="font-bold text-slate-800 text-base">Luồng B: Trả góp hàng tháng</h4>
+                            <span className="px-2.5 py-1 text-[10px] uppercase tracking-wider rounded-full bg-orange-50 text-orange-700 font-bold border border-orange-200 shadow-sm">
+                              Dòng tiền thặng dư
+                            </span>
+                          </div>
+                          <div className="text-sm text-slate-500 mb-4 leading-relaxed">
+                            Dòng tiền thặng dư mỗi tháng đang là {formatTableMoneyVNDMillion(expenseResult.surplusMonthly)}. Trích 90% thặng dư để trả góp phần còn lại ({formatTableMoneyVNDMillion(expenseResult.remainingToFinance)}).
+                          </div>
+                          <div className="flex items-center gap-6 bg-slate-50/80 px-4 py-3.5 rounded-xl border border-slate-100/80">
+                            <div className="flex flex-col">
+                              <span className="text-[10px] text-slate-400 uppercase tracking-wider font-bold mb-0.5">Số tiền (Triệu/tháng)</span>
+                              <span className="font-black text-transparent bg-clip-text bg-gradient-to-r from-orange-600 to-rose-600 text-lg">
+                                {formatTableMoneyVNDMillion(expenseResult.monthlyPayment)}
+                              </span>
+                            </div>
+                            <div className="w-px h-8 bg-slate-200"></div>
+                            <div className="flex flex-col">
+                              <span className="text-[10px] text-slate-400 uppercase tracking-wider font-bold mb-0.5">Số kỳ tác động</span>
+                              <span className="font-semibold text-slate-700">
+                                {expenseResult.durationMonths} tháng
+                              </span>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    )}
+                  </div>
                 )}
               </div>
             )}
