@@ -9,7 +9,7 @@ import { SavingsFundCard } from '../portfolio/fund-cards/SavingsFundCard';
 import { ReservesFundCard } from '../portfolio/fund-cards/ReservesFundCard';
 import { HelpTooltip } from '../ui/HelpTooltip';
 import { Target, Plus, Trash2, ArrowRightCircle, Edit, CheckCircle, RotateCcw, AlertCircle } from 'lucide-react';
-import { formatTableMoneyVNDMillion } from '../../utils/format';
+import { formatTableMoneyVNDMillion, formatKpiMoneyVNDMillion } from '../../utils/format';
 import { safeNumber, calculateNonTermInterest } from '../../utils/math';
 import { runProjection } from '../../engines/projectionEngine';
 import { simulateSinkingFund } from '../../engines/sinkingFundEngine';
@@ -82,7 +82,7 @@ export const SinkingFundModule_Reserves: React.FC<SinkingFundModule_ReservesProp
   const initMonth = now.getMonth() + 1;
   const initYear = now.getFullYear();
 
-  const activeSources = dynamicSources ? dynamicSources.map(d => d.id) : (filterSources || (filterFundType === 'debt_prep' ? SCREEN_FUNDING_CONSTRAINTS.debt_prep : SCREEN_FUNDING_CONSTRAINTS.portfolio));
+  const activeSources = dynamicSources ? dynamicSources.map(d => d.id) : (filterSources || (filterFundType === 'debt_prep' ? SCREEN_FUNDING_CONSTRAINTS.debt_prep : filterFundType === 'savings' ? SCREEN_FUNDING_CONSTRAINTS.savings_deposit : SCREEN_FUNDING_CONSTRAINTS.portfolio));
 
   const [showAddForm, setShowAddForm] = useState(false);
   const [editingFundId, setEditingFundId] = useState<string | null>(null);
@@ -135,7 +135,7 @@ export const SinkingFundModule_Reserves: React.FC<SinkingFundModule_ReservesProp
       if (dynamicSources) {
           const dyn = dynamicSources.find(d => d.id === sourceId);
           if (dyn) {
-              return `${dyn.label} (Còn: ${formatTableMoneyVNDMillion(dyn.balance)})`;
+              return `${dyn.label} (Còn: ${formatKpiMoneyVNDMillion(dyn.balance)})`;
           }
       }
       
@@ -150,21 +150,21 @@ export const SinkingFundModule_Reserves: React.FC<SinkingFundModule_ReservesProp
          }
          
          if (filterFundType === 'investment') {
-            prefix = 'Chưa có kế hoạch (Dòng tiền nhàn rỗi)';
+            prefix = 'Ngân sách Đầu tư (Chưa phân bổ)';
          } else {
-            prefix = 'Dòng tiền Nhàn rỗi (Chưa phân bổ)';
+            prefix = 'Tiền nhàn rỗi (Chưa có kế hoạch)';
          }
       } else if (sourceId === 'saving') {
          balance = currentRow ? currentRow.savingBalance : 0;
          prefix = 'Số dư Quỹ Tiết Kiệm & Dự phòng';
       } else if (sourceId === 'debt_reserve') {
          balance = (currentRow ? currentRow.debtReserveBalance : 0) + (currentRow ? (currentRow as any)._activeSinkingFundsDebtReserve || 0 : 0);
-         prefix = 'Quỹ Dự phòng';
+         prefix = 'Số dư Dự phòng';
       } else if (sourceId.startsWith('expense_surplus')) {
          balance = currentRow ? currentRow.liquidityBalance : 0;
          prefix = 'Quỹ Sinh Hoạt dư';
       }
-      return `${prefix} (Còn: ${formatTableMoneyVNDMillion(balance)})`;
+      return `${prefix} (Còn: ${formatKpiMoneyVNDMillion(balance)})`;
   };
 
   const nowKey = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
@@ -186,8 +186,8 @@ export const SinkingFundModule_Reserves: React.FC<SinkingFundModule_ReservesProp
     const start = fund.startYear * 12 + fund.startMonth;
     const current = currentObservedYear * 12 + currentObservedMonth;
     
-    let totalDeposited = current >= start ? 0 : fund.initialDeposit;
-    let totalDisbursed = current >= start ? 0 : (fund.withdrawals || []).reduce((sum, w) => sum + w.amount, 0);
+    let totalDeposited = 0;
+    let totalDisbursed = 0;
     
     if (current >= start) {
        for (let m = start; m <= current; m++) {
@@ -419,7 +419,11 @@ export const SinkingFundModule_Reserves: React.FC<SinkingFundModule_ReservesProp
         <div className="w-full md:w-3/4">
           <h3 className="text-xl font-serif font-bold text-family-text flex items-center gap-2">
             {title}
-            <HelpTooltip text="Công cụ giúp bạn lên kế hoạch góp tiền đều đặn hàng tháng để đạt được mục tiêu mua tài sản lớn (nhà, xe, mở sổ tiết kiệm lớn) trong tương lai mà không bị sốc dòng tiền." />
+            <HelpTooltip text={variant === 'reserves' 
+              ? "Công cụ giúp bạn lên kế hoạch góp tiền đều đặn hàng tháng để chuẩn bị tài chính cho các sự kiện rủi ro (y tế, thất nghiệp) hoặc mục tiêu phòng thủ."
+              : variant === 'savings'
+              ? "Công cụ giúp bạn lên kế hoạch góp tiền đều đặn hàng tháng để đạt được mục tiêu tích lũy hoặc mua sắm (hưu trí, học vấn, mua xe) trong tương lai."
+              : "Công cụ giúp bạn lên kế hoạch góp tiền đều đặn hàng tháng để đạt được mục tiêu mua tài sản lớn (nhà, xe, mở sổ tiết kiệm lớn) trong tương lai mà không bị sốc dòng tiền."} />
           </h3>
           <p className="text-sm text-family-textMuted mt-1">
             {description}
@@ -445,7 +449,7 @@ export const SinkingFundModule_Reserves: React.FC<SinkingFundModule_ReservesProp
             <Input
               label="Tên mục tiêu / Quỹ"
               value={form.name}
-              placeholder="VD: Quỹ mua ô tô / Trả nợ nhà"
+              placeholder={variant === 'reserves' ? "VD: Quỹ y tế / Dự phòng thất nghiệp" : variant === 'savings' ? "VD: Quỹ học vấn / Hưu trí" : "VD: Quỹ mua ô tô / Trả nợ nhà"}
               onChange={(e) => { setForm({ ...form, name: e.target.value }); }}
             />
             <div className="flex flex-col">
@@ -454,7 +458,7 @@ export const SinkingFundModule_Reserves: React.FC<SinkingFundModule_ReservesProp
                 list="fund-groups"
                 className="block w-full rounded-xl border border-family-accent/20 bg-white/60 py-2.5 px-3 text-sm text-family-text focus:border-family-accent focus:bg-white focus:outline-none focus:ring-1 focus:ring-family-accent transition-colors"
                 value={form.fundGroup}
-                placeholder="VD: Cổ phiếu, BDS..."
+                placeholder={variant === 'reserves' ? "VD: Sức khỏe, Khẩn cấp..." : variant === 'savings' ? "VD: Tiết kiệm dài hạn..." : "VD: Cổ phiếu, BDS..."}
                 onChange={(e) => { setForm({ ...form, fundGroup: e.target.value }); }}
               />
             </div>
@@ -1279,8 +1283,8 @@ export const SinkingFundModule_Reserves: React.FC<SinkingFundModule_ReservesProp
                      interestRateAnnual: fund.interestRateAnnual || 5.5,
                      termMonths: fund.termMonths || 1,
                      sourceOfFund: (fund.sourceOfFund || activeSources[0]) as string,
-                     startMonth: currentObservedMonth,
-                     startYear: currentObservedYear,
+                     startMonth: fund.startMonth,
+                     startYear: fund.startYear,
                      rolloverStrategy: fund.rolloverStrategy || 'principal_and_interest',
                    });
                    setShowAddForm(true);

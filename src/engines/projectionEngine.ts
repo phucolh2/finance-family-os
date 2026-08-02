@@ -613,7 +613,7 @@ export function runProjection(input: ProjectionEngineInput): ProjectionOutput {
     const _unallocatedForCompounding = Math.max(0, totalInvestable - activeValueUpToLastMonth - activeSavingsPrincipalThisMonth - activeSinkingFundsBalance_unallocated);
 
     // Evaluate adjustments for the current month
-    let adjustedSavingRate: number | null = null;
+
     let manualAnnualProfit = 0;
     let manualMonthlyProfit = 0;
     let manualOneTimeProfit = 0;
@@ -623,7 +623,7 @@ export function runProjection(input: ProjectionEngineInput): ProjectionOutput {
       const isWithinPeriod = (period.year > adj.startYear || (period.year === adj.startYear && period.month >= adj.startMonth)) &&
                              (period.year < adj.endYear || (period.year === adj.endYear && period.month <= adj.endMonth));
       if (isWithinPeriod) {
-        if (adj.adjustedSavingRate != null) adjustedSavingRate = adj.adjustedSavingRate;
+        if (adj.adjustedSavingRate != null) { /* no longer used */ }
         if (adj.annualInvestmentProfit != null || adj.monthlyInvestmentProfit != null || adj.oneTimeInvestmentProfit != null) {
           hasManualInvestmentAdj = true;
           if (adj.annualInvestmentProfit) manualAnnualProfit += adj.annualInvestmentProfit;
@@ -635,13 +635,8 @@ export function runProjection(input: ProjectionEngineInput): ProjectionOutput {
       }
     }
 
-    const activeSavingRate = adjustedSavingRate ?? safeNumber(assumptions.savingsInterestRateAnnual, 0);
-    const savingsRateRatio = activeSavingRate > 1 ? activeSavingRate / 100 : activeSavingRate;
-    const savingsMonthlyYield = savingsRateRatio / 12;
-
     const savingMonthlyContribution = cashflowRes.savingMonthly - activeSinkingFundsContrib_saving - activeSavingsContrib_saving;
-    const savingPnl = currentSavingBalance * savingsMonthlyYield + savingMonthlyContribution * (savingsMonthlyYield / 2);
-    currentSavingBalance = currentSavingBalance + savingMonthlyContribution + savingPnl + activeSavingsMaturedThisMonth_saving + sinkingFundMaturedThisMonth_saving;
+    currentSavingBalance = currentSavingBalance + savingMonthlyContribution + activeSavingsMaturedThisMonth_saving + sinkingFundMaturedThisMonth_saving;
 
     const monthlyContribution = cashflowRes.investmentMonthly;
     
@@ -695,6 +690,15 @@ export function runProjection(input: ProjectionEngineInput): ProjectionOutput {
               }
            });
         }
+
+        // --- NEW: Handle Cashflow Events (Dividends) ---
+        if (deal.cashflowEvents) {
+           deal.cashflowEvents.forEach(e => {
+              if (e.year === period.year && e.month === period.month) {
+                 totalDealPnlThisMonth += safeNumber(e.amount, 0);
+              }
+           });
+        }
       }
 
       if (deal.status === 'settled' && deal.endMonth === period.month && deal.endYear === period.year) {
@@ -707,6 +711,14 @@ export function runProjection(input: ProjectionEngineInput): ProjectionOutput {
            if (w.year === period.year && w.month === period.month) {
               const profit = w.realizedProfit || 0;
               dealSettleNotes.push(`Rút một phần ${deal.name}: Gốc ${w.amount}M, ${profit >= 0 ? `Lãi +` : `Lỗ `}${profit}M`);
+           }
+        });
+      }
+      
+      if (deal.cashflowEvents) {
+        deal.cashflowEvents.forEach(e => {
+           if (e.year === period.year && e.month === period.month) {
+              dealSettleNotes.push(`Nhận cổ tức ${deal.name}: ${e.type === 'cash_dividend' ? 'Tiền mặt' : 'Cổ phiếu'} +${e.amount}M`);
            }
         });
       }
@@ -755,6 +767,13 @@ export function runProjection(input: ProjectionEngineInput): ProjectionOutput {
            deal.withdrawals.forEach(w => {
               if (w.year * 12 + w.month <= current) {
                  currentCapital -= w.amount;
+              }
+           });
+        }
+        if (deal.cashflowEvents) {
+           deal.cashflowEvents.forEach(e => {
+              if (e.type === 'stock_dividend' && (e.year * 12 + e.month <= current)) {
+                 currentCapital += e.amount;
               }
            });
         }
@@ -943,10 +962,10 @@ export function runProjection(input: ProjectionEngineInput): ProjectionOutput {
     
     // Attach additional runtime metrics to the row for aggregation later
     const lastRow = monthlyRows[monthlyRows.length - 1];
-    lastRow._savingInterestRateAnnual = activeSavingRate;
+    lastRow._savingInterestRateAnnual = 0;
     lastRow._customProfit = investmentPnl;
     lastRow._hasManualInvestmentAdj = hasManualInvestmentAdj;
-    lastRow._savingPnl = savingPnl;
+    lastRow._savingPnl = 0;
     lastRow._childCost1 = childCostRes.totalMonthly;
     lastRow._childCost2 = 0;
     lastRow._childCostOther = 0;

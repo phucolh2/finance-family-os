@@ -20,6 +20,8 @@ export const Reserves: React.FC = () => {
     assumptions: state.assumptions,
     investmentDeals: state.investmentDeals,
     savingsDeposits: state.savingsDeposits,
+    sinkingFunds: state.sinkingFunds,
+    debts: state.debts,
     projectionAdjustments: state.projectionAdjustments,
     lifeStages: state.lifeStages,
     fundTransfers: state.fundTransfers,
@@ -60,6 +62,18 @@ export const Reserves: React.FC = () => {
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <Card className="border border-amber-500/20 bg-amber-500/5">
+          <CardHeader className="pb-2">
+            <CardTitle className="text-sm text-amber-400 flex items-center gap-2">
+              <ShieldCheck className="w-4 h-4" /> Số dư Dự phòng
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold text-amber-400">{formatKpiMoneyVNDMillion(sinkingFundsTotal)}</div>
+            <p className="text-xs text-family-textMuted mt-1">Lũy kế từ phân bổ ngân sách, chờ tạo quỹ dự phòng</p>
+          </CardContent>
+        </Card>
+
         <Card className="border border-amber-500/20 bg-family-bgDeep">
           <CardHeader className="pb-2">
             <CardTitle className="text-sm text-amber-400 flex items-center gap-2">
@@ -73,25 +87,13 @@ export const Reserves: React.FC = () => {
             <p className="text-xs text-amber-500 mt-1">Quỹ đang hoạt động</p>
           </CardContent>
         </Card>
-
-        <Card className="border border-amber-500/20 bg-amber-500/5">
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm text-amber-400 flex items-center gap-2">
-              <ShieldCheck className="w-4 h-4" /> Tổng tài sản Dự phòng
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold text-amber-400">{formatKpiMoneyVNDMillion(sinkingFundsTotal)}</div>
-            <p className="text-xs text-family-textMuted mt-1">Tổng cộng các quỹ dự phòng hiện có</p>
-          </CardContent>
-        </Card>
       </div>
 
       <div className="flex flex-col gap-6 mt-6">
         <SinkingFundModule_Reserves 
           title="Kho Dự phòng (Dạng Quỹ)"
           filterFundType="debt_prep" 
-          filterSources={['reserves', 'reserves_biz', 'reserves_health']}
+          filterSources={['debt_reserve']}
           description="Lên kế hoạch và theo dõi các khoản dự phòng cần gom đủ."
           emptyStateTitle="Chưa có quỹ dự phòng dạng tiết kiệm/đầu tư nào"
           emptyStateDescription="Thêm quỹ dự phòng để theo dõi các khoản bảo vệ gia đình lâu dài."

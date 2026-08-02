@@ -151,6 +151,7 @@ export interface InvestmentDeal {
   expectedSavingRate?: number; // Saving interest rate for earmarked deals (%/year)
   savingTermMonths?: number;   // Term of the savings period for earmarked deal (months)
   withdrawals?: WithdrawalEvent[]; // For partial withdrawal / capital liquidation
+  cashflowEvents?: DealCashflowEvent[]; // Dòng tiền thực tế (Cổ tức, chia lợi nhuận, v.v.)
   dealType?: 'capital_gain' | 'cash_flow'; // Forms of investment (capital gain or cash flow)
   realEstateType?: 'capital_gain' | 'cash_flow'; // (Deprecated) Specific to Real Estate
   cashflowYieldAnnual?: number; // Annual yield for cash flow real estate (%)
@@ -160,7 +161,18 @@ export interface InvestmentDeal {
   conversionYear?: number;
   realizedSavingInterest?: number; // realized saving interest when converted/settled early (VND Million)
   bankName?: string; // Tên ngân hàng nếu gửi tiết kiệm chờ phân bổ
+  quantity?: number; // Số lượng (cổ phiếu, lượng vàng, coin...)
+  purchasePrice?: number; // Đơn giá mua thực tế (VND)
   notes?: string;
+}
+
+export interface DealCashflowEvent {
+  id: string;
+  month: number;
+  year: number;
+  amount: number; // Tiền mặt hoặc Quy đổi giá trị cổ phiếu
+  type: 'cash_dividend' | 'stock_dividend';
+  note?: string;
 }
 
 export interface WithdrawalEvent {

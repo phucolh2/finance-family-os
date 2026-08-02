@@ -6,6 +6,7 @@ import { WarningBox } from '../components/ui/WarningBox';
 import { EmptyState } from '../components/ui/EmptyState';
 import { runProjection } from '../engines/projectionEngine';
 import { formatTableMoneyVNDMillion, formatKpiMoneyVNDMillion } from '../utils/format';
+import { simulateSinkingFund } from '../engines/sinkingFundEngine';
 import { safeNumber } from '../utils/math';
 import { ExpertPortfolioCharts } from '../components/portfolio/ExpertPortfolioCharts';
 import { PieChart, Pie, Cell, ResponsiveContainer, Legend, Tooltip } from 'recharts';
@@ -32,7 +33,9 @@ export const Portfolio: React.FC = () => {
     withdrawInvestmentDeal,
     addSavingsDeposit,
     disburseSinkingFund,
-    addIncomeItem
+    updateSinkingFund,
+    addIncomeItem,
+    updateAppState
   } = useAppContext();
   
   // Run projection dynamically to get actual accumulated assets at the observed time
@@ -45,6 +48,8 @@ export const Portfolio: React.FC = () => {
     assumptions: state.assumptions,
     investmentDeals: state.investmentDeals,
     savingsDeposits: state.savingsDeposits,
+    sinkingFunds: state.sinkingFunds,
+    debts: state.debts,
     projectionAdjustments: state.projectionAdjustments,
     lifeStages: state.lifeStages,
     fundTransfers: state.fundTransfers,
@@ -89,6 +94,8 @@ export const Portfolio: React.FC = () => {
     dealType: 'capital_gain' as 'capital_gain' | 'cash_flow',
     cashflowYieldAnnual: 5,
     createPassiveIncome: false,
+    quantity: '' as number | '',
+    purchasePrice: '' as number | '',
   });
 
   const [settleForm, setSettleForm] = useState({
@@ -111,6 +118,15 @@ export const Portfolio: React.FC = () => {
     reinvestAssetType: 'stocks' as AssetType,
   });
 
+  const [cashflowDealId, setCashflowDealId] = useState<string | null>(null);
+  const [cashflowForm, setCashflowForm] = useState({
+    month: activeRow ? activeRow.period.month : 10,
+    year: activeRow ? activeRow.period.year : 2026,
+    amount: 0,
+    type: 'cash_dividend' as 'cash_dividend' | 'stock_dividend',
+    note: ''
+  });
+
   const [formError, setFormError] = useState<string | null>(null);
 
   // Smart calculation input modes & rates
@@ -131,6 +147,7 @@ export const Portfolio: React.FC = () => {
     setShowAddDealForm(false);
     setSettlingDealId(null);
     setConvertingDealId(null);
+    setCashflowDealId(null);
     setFormError(null);
   }, [activeRow?.period.key]);
 
@@ -197,30 +214,19 @@ export const Portfolio: React.FC = () => {
     (r) => r.period.month === dealForm.startMonth && r.period.year === dealForm.startYear
   );
   
-  const getAvailableFundingForDeal = () => {
-    if (dealForm.sourceFundId === 'idle') {
+  const getAvailableFundingFor = (fundId: string) => {
+    if (fundId === 'idle') {
       return targetMonthRow ? (targetMonthRow.portfolio.unallocatedEndingBalance ?? 0) : totalStartingBalance;
     }
-    const fund = state.sinkingFunds?.find(f => f.id === dealForm.sourceFundId);
+    const fund = state.sinkingFunds?.find(f => f.id === fundId);
     if (!fund) return 0;
     
-    // Quick calculation of fund balance at deal start date
-    let bal = fund.initialDeposit;
-    const start = fund.startYear * 12 + fund.startMonth;
-    const current = dealForm.startYear * 12 + dealForm.startMonth;
-    if (current >= start) {
-       for (let m = start; m <= current; m++) {
-          if (m > start) {
-             bal += fund.monthlyContribution;
-          }
-          const rate = (fund.interestRateAnnual || 0) / 100 / 12;
-          bal += bal * rate;
-       }
-    }
-    return bal;
+    // Sử dụng simulateSinkingFund để đảm bảo logic tính toán khớp 100% với SinkingFundCard và Projection
+    const simResult = simulateSinkingFund(fund, dealForm.startMonth, dealForm.startYear);
+    return simResult.totalPrincipal + simResult.nonTermCash;
   };
   
-  const availableFunding = getAvailableFundingForDeal();
+  const availableFunding = getAvailableFundingFor(dealForm.sourceFundId);
   const isDealCapitalOverLimit = dealForm.capital > availableFunding;
 
   return (
@@ -365,7 +371,7 @@ export const Portfolio: React.FC = () => {
                   <p className="text-xl font-bold text-violet-800">{formatKpiMoneyVNDMillion(plannedCapital)}</p>
                   <p className="text-[10px] text-violet-600/70 mt-1.5">
                     {(state.sinkingFunds || []).filter(f => {
-                      if (f.fundType === 'debt_prep') return false;
+                      if (f.fundType !== 'investment') return false;
                       const start = f.startYear * 12 + f.startMonth;
                       const end = f.status === 'disbursed' && f.disbursedYear && f.disbursedMonth
                         ? f.disbursedYear * 12 + f.disbursedMonth
@@ -385,8 +391,8 @@ export const Portfolio: React.FC = () => {
                     <span className="text-[10px] font-bold text-sky-700 uppercase tracking-wider">Chưa có kế hoạch</span>
                   </div>
                   <p className="text-xl font-bold text-sky-800">{formatKpiMoneyVNDMillion(idleCash)}</p>
-                  <p className="text-[10px] text-sky-600/70 mt-1.5">
-                    Tiền nhàn rỗi{savBal > 0 ? ` (${formatKpiMoneyVNDMillion(savBal)} đang gửi TK)` : ''}
+                  <p className="text-[10px] text-sky-600/70 mt-1.5 leading-tight">
+                    Nguồn vốn chính để tạo thương vụ, tự động trích lập từ Ngân sách Đầu tư hàng tháng.{savBal > 0 ? ` (Bao gồm ${formatKpiMoneyVNDMillion(savBal)} đang gửi tiết kiệm)` : ''}
                   </p>
                 </CardContent>
               </Card>
@@ -632,10 +638,17 @@ export const Portfolio: React.FC = () => {
                       dealType: dealForm.dealType,
                       cashflowYieldAnnual: dealForm.dealType === 'cash_flow' ? dealForm.cashflowYieldAnnual : undefined,
                       cashflowTrackedInIncome: dealForm.createPassiveIncome && dealForm.dealType === 'cash_flow' ? true : deal.cashflowTrackedInIncome,
+                      quantity: dealForm.quantity !== '' ? Number(dealForm.quantity) : undefined,
+                      purchasePrice: dealForm.purchasePrice !== '' ? Number(dealForm.purchasePrice) : undefined,
                     });
                   }
                 } else {
-                  addInvestmentDeal({
+                  // Atomic state update to prevent race conditions
+                  const nextState = { ...state };
+                  const newDealId = `deal_${Date.now()}_${Math.random().toString(36).substring(2, 9)}`;
+                  
+                  const newDeal: any = {
+                    id: newDealId,
                     name: dealForm.name,
                     assetType: dealForm.assetType,
                     capital: dealForm.capital,
@@ -646,12 +659,41 @@ export const Portfolio: React.FC = () => {
                     dealType: dealForm.dealType,
                     cashflowYieldAnnual: dealForm.dealType === 'cash_flow' ? dealForm.cashflowYieldAnnual : undefined,
                     cashflowTrackedInIncome: dealForm.createPassiveIncome && dealForm.dealType === 'cash_flow' ? true : undefined,
-                  });
+                    quantity: dealForm.quantity !== '' ? Number(dealForm.quantity) : undefined,
+                    purchasePrice: dealForm.purchasePrice !== '' ? Number(dealForm.purchasePrice) : undefined,
+                  };
+                  
+                  nextState.investmentDeals = [...(nextState.investmentDeals || []), newDeal];
+
                   if (dealForm.sourceFundId !== 'idle') {
-                    disburseSinkingFund(dealForm.sourceFundId, dealForm.startMonth, dealForm.startYear);
+                    const fundBalance = getAvailableFundingFor(dealForm.sourceFundId);
+                    
+                    if (dealForm.capital < fundBalance) {
+                      // Nếu số tiền đầu tư < số dư quỹ -> Rút một phần, không khóa quỹ
+                      const newWithdrawal = {
+                        id: `w_${Date.now()}_${Math.random().toString(36).substring(2, 9)}`,
+                        month: dealForm.startMonth,
+                        year: dealForm.startYear,
+                        amount: dealForm.capital,
+                        note: `Giải ngân một phần vào thương vụ: ${dealForm.name}`
+                      };
+                      nextState.sinkingFunds = (nextState.sinkingFunds || []).map(f => 
+                        f.id === dealForm.sourceFundId 
+                          ? { ...f, withdrawals: [...(f.withdrawals || []), newWithdrawal] } 
+                          : f
+                      );
+                    } else {
+                      // Nếu đầu tư >= số dư quỹ -> Tất toán (khóa) toàn bộ quỹ
+                      nextState.sinkingFunds = (nextState.sinkingFunds || []).map(f => 
+                        f.id === dealForm.sourceFundId 
+                          ? { ...f, status: 'disbursed', disbursedMonth: dealForm.startMonth, disbursedYear: dealForm.startYear } 
+                          : f
+                      );
+                    }
                   }
+                  updateAppState(nextState);
                 }
-                setDealForm({ name: '', assetType: 'stocks', capital: 0, startMonth: 10, startYear: 2026, notes: '', sourceFundId: 'idle', dealType: 'capital_gain', cashflowYieldAnnual: 5, createPassiveIncome: false });
+                setDealForm({ name: '', assetType: 'stocks', capital: 0, startMonth: 10, startYear: 2026, notes: '', sourceFundId: 'idle', dealType: 'capital_gain', cashflowYieldAnnual: 5, createPassiveIncome: false, quantity: '', purchasePrice: '' });
                 setShowAddDealForm(false);
                 setEditDealId(null);
               }}
@@ -673,7 +715,14 @@ export const Portfolio: React.FC = () => {
                   <label className="block text-xs font-semibold text-family-text mb-1">Lớp tài sản</label>
                   <select
                     value={dealForm.assetType}
-                    onChange={(e) => { setDealForm({ ...dealForm, assetType: e.target.value as AssetType }); }}
+                    onChange={(e) => { 
+                      const newAssetType = e.target.value as AssetType;
+                      setDealForm({ 
+                        ...dealForm, 
+                        assetType: newAssetType,
+                        dealType: newAssetType !== 'real_estate' ? 'capital_gain' : dealForm.dealType
+                      }); 
+                    }}
                     className="w-full text-xs bg-white rounded-xl border border-family-accent/15 px-3 py-1.5 focus:outline-none focus:ring-1 focus:ring-family-accent"
                   >
                     <option value="stocks">Chứng Khoán</option>
@@ -683,15 +732,66 @@ export const Portfolio: React.FC = () => {
                     <option value="crypto">Crypto</option>
                   </select>
                 </div>
+                
+                {dealForm.assetType !== 'real_estate' && dealForm.assetType !== 'fx_reserve_usd' && (
+                  <>
+                    <div>
+                      <label className="block text-xs font-semibold text-family-text mb-1">
+                        {dealForm.assetType === 'stocks' ? 'Số lượng (Cổ phiếu)' : dealForm.assetType === 'crypto' ? 'Số lượng (Coin/Token)' : 'Số lượng (Chỉ/Lượng)'}
+                      </label>
+                      <input
+                        type="number"
+                        min={0}
+                        step="any"
+                        value={dealForm.quantity}
+                        onChange={(e) => {
+                          const q = e.target.value === '' ? '' : Number(e.target.value);
+                          const p = dealForm.purchasePrice;
+                          const newCap = (q !== '' && p !== '') ? Number(((q * Number(p)) / 1000000).toFixed(2)) : dealForm.capital;
+                          setDealForm({ ...dealForm, quantity: q, capital: newCap });
+                        }}
+                        placeholder="VD: 1000"
+                        className="w-full text-xs bg-white rounded-xl border border-family-accent/15 px-3 py-1.5 focus:outline-none focus:ring-1 focus:ring-family-accent"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-xs font-semibold text-family-text mb-1">Đơn giá mua (VND)</label>
+                      <input
+                        type="number"
+                        min={0}
+                        step="any"
+                        value={dealForm.purchasePrice}
+                        onChange={(e) => {
+                          const p = e.target.value === '' ? '' : Number(e.target.value);
+                          const q = dealForm.quantity;
+                          const newCap = (q !== '' && p !== '') ? Number(((Number(q) * p) / 1000000).toFixed(2)) : dealForm.capital;
+                          setDealForm({ ...dealForm, purchasePrice: p, capital: newCap });
+                        }}
+                        placeholder="VD: 25000"
+                        className="w-full text-xs bg-white rounded-xl border border-family-accent/15 px-3 py-1.5 focus:outline-none focus:ring-1 focus:ring-family-accent"
+                      />
+                    </div>
+                  </>
+                )}
+
                 <div>
-                  <label className="block text-xs font-semibold text-family-text mb-1">Vốn đầu tư (triệu VND)</label>
+                  <label className="block text-xs font-semibold text-family-text mb-1">
+                    Vốn đầu tư (triệu VND)
+                  </label>
                   <input
                     type="number"
-                    value={dealForm.capital || ''}
+                    value={dealForm.capital === 0 ? '' : dealForm.capital}
                     placeholder="VD: 500"
-                    onChange={(e) => { setDealForm({ ...dealForm, capital: Math.max(0, safeNumber(Number(e.target.value), 0)) }); }}
+                    onChange={(e) => { 
+                      setDealForm({ ...dealForm, capital: Math.max(0, safeNumber(Number(e.target.value), 0)) }); 
+                    }}
                     required
-                    className="w-full text-xs bg-white rounded-xl border border-family-accent/15 px-3 py-1.5 focus:outline-none focus:ring-1 focus:ring-family-accent"
+                    readOnly={dealForm.assetType !== 'real_estate' && dealForm.assetType !== 'fx_reserve_usd' && dealForm.quantity !== '' && dealForm.purchasePrice !== ''}
+                    className={`w-full text-xs bg-white rounded-xl border border-family-accent/15 px-3 py-1.5 focus:outline-none focus:ring-1 focus:ring-family-accent ${
+                      dealForm.assetType !== 'real_estate' && dealForm.assetType !== 'fx_reserve_usd' && dealForm.quantity !== '' && dealForm.purchasePrice !== ''
+                        ? 'bg-gray-100 cursor-not-allowed text-gray-500' 
+                        : ''
+                    }`}
                   />
                 </div>
                 <div>
@@ -729,7 +829,9 @@ export const Portfolio: React.FC = () => {
                     className="w-full text-xs bg-white rounded-xl border border-family-accent/15 px-3 py-1.5 focus:outline-none focus:ring-1 focus:ring-family-accent"
                   >
                     <option value="capital_gain">Đầu tư Giá vốn (Lãi/lỗ khi bán)</option>
-                    <option value="cash_flow">Đầu tư Dòng tiền (Cổ tức, tiền thuê)</option>
+                    {dealForm.assetType === 'real_estate' && (
+                      <option value="cash_flow">Đầu tư Dòng tiền (Cổ tức, tiền thuê)</option>
+                    )}
                   </select>
                 </div>
                 {dealForm.dealType === 'cash_flow' && (
@@ -742,6 +844,7 @@ export const Portfolio: React.FC = () => {
                         value={dealForm.cashflowYieldAnnual || ''}
                         onChange={(e) => { setDealForm({ ...dealForm, cashflowYieldAnnual: Math.max(0, safeNumber(Number(e.target.value), 0)) }); }}
                         className="w-full text-xs bg-white rounded-xl border border-family-accent/15 px-3 py-1.5 focus:outline-none focus:ring-1 focus:ring-family-accent"
+                        placeholder="Không bắt buộc với Cổ phiếu"
                       />
                     </div>
                     {!editDealId && (
@@ -770,9 +873,9 @@ export const Portfolio: React.FC = () => {
                     onChange={(e) => { setDealForm({ ...dealForm, sourceFundId: e.target.value }); }}
                     className="w-full text-xs bg-white rounded-xl border border-family-accent/15 px-3 py-1.5 focus:outline-none focus:ring-1 focus:ring-family-accent"
                   >
-                    <option value="idle">Tiền mặt nhàn rỗi (Chưa phân bổ)</option>
-                    {state.sinkingFunds?.filter(f => f.status === 'active').map(f => (
-                      <option key={f.id} value={f.id}>Quỹ tích lũy: {f.name}</option>
+                    <option value="idle">Ngân sách Đầu tư nhàn rỗi (Từ thẻ "Chưa có kế hoạch") ({formatTableMoneyVNDMillion(getAvailableFundingFor('idle'))})</option>
+                    {state.sinkingFunds?.filter(f => f.status === 'active' && f.fundType === 'investment').map(f => (
+                      <option key={f.id} value={f.id}>Quỹ tích lũy: {f.name} ({formatTableMoneyVNDMillion(getAvailableFundingFor(f.id))})</option>
                     ))}
                   </select>
                 </div>
@@ -844,7 +947,12 @@ export const Portfolio: React.FC = () => {
                                 <div className="font-semibold text-family-text">{deal.name}</div>
                                 {deal.withdrawals && deal.withdrawals.length > 0 && (
                                   <div className="text-[10px] text-family-textMuted mt-1">
-                                    Đã rút: {deal.withdrawals.length} lần ({deal.withdrawals.reduce((s, w) => s + w.amount, 0)} triệu)
+                                    Đã rút: {deal.withdrawals.length} lần ({deal.withdrawals.reduce((s, w) => s + w.amount, 0)}M)
+                                  </div>
+                                )}
+                                {deal.cashflowEvents && deal.cashflowEvents.length > 0 && (
+                                  <div className="text-[10px] text-green-700 mt-0.5">
+                                    Đã nhận: {deal.cashflowEvents.reduce((s, e) => s + e.amount, 0)}M cổ tức
                                   </div>
                                 )}
                               </td>
@@ -876,6 +984,28 @@ export const Portfolio: React.FC = () => {
                               <td className="p-3 text-right space-x-2">
                                 {hasStarted && (
                                   <>
+                                    <button
+                                      type="button"
+                                      onClick={() => {
+                                        if (cashflowDealId === deal.id) {
+                                          setCashflowDealId(null);
+                                        } else {
+                                          setCashflowDealId(deal.id);
+                                          setSettlingDealId(null);
+                                          setCashflowForm({
+                                            month: activeRow ? activeRow.period.month : deal.startMonth,
+                                            year: activeRow ? activeRow.period.year : deal.startYear,
+                                            amount: 0,
+                                            type: 'cash_dividend',
+                                            note: ''
+                                          });
+                                        }
+                                      }}
+                                      className={`text-[10px] font-bold py-1 px-2.5 rounded-lg text-white transition-all shadow-sm ${cashflowDealId === deal.id ? 'bg-slate-500' : 'bg-blue-600 hover:bg-blue-700'}`}
+                                      title="Nhận cổ tức / Dòng tiền đột xuất"
+                                    >
+                                      {cashflowDealId === deal.id ? 'Hủy' : 'Nhận tiền'}
+                                    </button>
                                     <button
                                       type="button"
                                       onClick={() => {
@@ -916,6 +1046,8 @@ export const Portfolio: React.FC = () => {
                                       dealType: deal.dealType || deal.realEstateType || 'capital_gain',
                                       cashflowYieldAnnual: deal.cashflowYieldAnnual || 5,
                                       createPassiveIncome: false,
+                                      quantity: deal.quantity || '',
+                                      purchasePrice: deal.purchasePrice || '',
                                     });
                                     setShowAddDealForm(true);
                                     window.scrollTo({ top: 0, behavior: 'smooth' });
@@ -1057,6 +1189,119 @@ export const Portfolio: React.FC = () => {
                                     </button>
                                   </div>
                                   {!isWithinObservationPeriod(settleForm.endMonth, settleForm.endYear, selectedPeriodKey) && (
+                                    <div className="text-red-500 text-xs text-right mt-1 w-full">{getPeriodGuardMessage(selectedPeriodKey)}</div>
+                                  )}
+                                </td>
+                              </tr>
+                            )}
+                            
+                            {cashflowDealId === deal.id && (
+                              <tr className="bg-blue-600/5 border-b border-family-accent/5">
+                                <td colSpan={6} className="p-3">
+                                  <div className="flex flex-wrap items-start gap-4 text-xs bg-white/70 p-3 rounded-xl border border-blue-600/20">
+                                    <div className="font-bold text-blue-800 pt-2">Ghi nhận cổ tức/dòng tiền:</div>
+                                    <div className="flex flex-col gap-3 flex-1">
+                                      <div className="flex items-center gap-4">
+                                        <div className="flex items-center gap-2">
+                                          <label className="font-semibold text-family-text">Thời điểm:</label>
+                                          <input
+                                            type="number" min={1} max={12}
+                                            value={cashflowForm.month}
+                                            onChange={(e) => { setCashflowForm({ ...cashflowForm, month: safeNumber(Number(e.target.value), 12) }); }}
+                                            className="w-14 text-center bg-white rounded-lg border border-family-accent/15 p-1"
+                                            required
+                                          />
+                                          <span>/</span>
+                                          <input
+                                            type="number" min={2020} max={2060}
+                                            value={cashflowForm.year}
+                                            onChange={(e) => { setCashflowForm({ ...cashflowForm, year: safeNumber(Number(e.target.value), 2026) }); }}
+                                            className="w-18 text-center bg-white rounded-lg border border-family-accent/15 p-1"
+                                            required
+                                          />
+                                        </div>
+                                        <div className="flex gap-3 ml-4">
+                                          <label className="flex items-center gap-1 cursor-pointer">
+                                            <input 
+                                              type="radio" name={`cashflow-type-${deal.id}`} value="cash_dividend"
+                                              checked={cashflowForm.type === 'cash_dividend'}
+                                              onChange={() => { setCashflowForm({ ...cashflowForm, type: 'cash_dividend' }); }}
+                                            />
+                                            <span className="font-semibold text-family-text">Cổ tức Tiền mặt</span>
+                                          </label>
+                                          <label className="flex items-center gap-1 cursor-pointer">
+                                            <input 
+                                              type="radio" name={`cashflow-type-${deal.id}`} value="stock_dividend"
+                                              checked={cashflowForm.type === 'stock_dividend'}
+                                              onChange={() => { setCashflowForm({ ...cashflowForm, type: 'stock_dividend' }); }}
+                                            />
+                                            <span className="font-semibold text-family-text">Cổ tức Cổ phiếu</span>
+                                          </label>
+                                        </div>
+                                      </div>
+
+                                      <div className="flex items-center gap-2">
+                                        <label className="font-semibold text-family-text">
+                                          {cashflowForm.type === 'cash_dividend' ? 'Số tiền nhận được (triệu VND):' : 'Giá trị cổ phiếu nhận được (triệu VND):'}
+                                        </label>
+                                        <input
+                                          type="number" step="any" min="0"
+                                          value={cashflowForm.amount || ''}
+                                          onChange={(e) => { setCashflowForm({ ...cashflowForm, amount: Math.max(0, safeNumber(Number(e.target.value), 0)) }); }}
+                                          className="w-24 text-center bg-white rounded-lg border border-family-accent/15 p-1 font-bold text-blue-700"
+                                          placeholder="VD: 5"
+                                          required
+                                        />
+                                        <span className="text-family-textMuted italic ml-2">
+                                          {cashflowForm.type === 'cash_dividend' 
+                                            ? '(Sẽ tự động cộng vào Ngân sách nhàn rỗi để tái đầu tư)' 
+                                            : '(Sẽ tự động cộng dồn vào Vốn đầu tư của thương vụ này)'}
+                                        </span>
+                                      </div>
+                                      <div className="flex items-center gap-2">
+                                        <label className="font-semibold text-family-text">Ghi chú:</label>
+                                        <input
+                                          type="text"
+                                          value={cashflowForm.note}
+                                          onChange={(e) => { setCashflowForm({ ...cashflowForm, note: e.target.value }); }}
+                                          className="flex-1 bg-white rounded-lg border border-family-accent/15 p-1"
+                                          placeholder="Nhập ghi chú (nếu có)"
+                                        />
+                                      </div>
+                                    </div>
+                                    <button
+                                      type="button"
+                                      onClick={() => {
+                                        if (cashflowForm.amount <= 0) {
+                                          alert("Số tiền/giá trị cổ tức phải lớn hơn 0");
+                                          return;
+                                        }
+                                        
+                                        const eventId = Math.random().toString(36).substring(2, 9);
+                                        const newEvent = {
+                                          id: eventId,
+                                          month: cashflowForm.month,
+                                          year: cashflowForm.year,
+                                          amount: cashflowForm.amount,
+                                          type: cashflowForm.type,
+                                          note: cashflowForm.note
+                                        };
+                                        
+                                        const updatedCashflows = [...(deal.cashflowEvents || []), newEvent];
+                                        updateInvestmentDeal({
+                                          ...deal,
+                                          cashflowEvents: updatedCashflows
+                                        });
+                                        
+                                        setCashflowDealId(null);
+                                      }}
+                                      disabled={!isWithinObservationPeriod(cashflowForm.month, cashflowForm.year, selectedPeriodKey)}
+                                      className="ml-auto bg-blue-600 hover:bg-blue-700 text-white font-bold py-1 px-4 rounded-lg shadow-sm disabled:opacity-50"
+                                    >
+                                      Lưu
+                                    </button>
+                                  </div>
+                                  {!isWithinObservationPeriod(cashflowForm.month, cashflowForm.year, selectedPeriodKey) && (
                                     <div className="text-red-500 text-xs text-right mt-1 w-full">{getPeriodGuardMessage(selectedPeriodKey)}</div>
                                   )}
                                 </td>

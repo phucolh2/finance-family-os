@@ -152,9 +152,9 @@ export const SinkingFundModule_Liquidity: React.FC<SinkingFundModule_LiquidityPr
          }
          
          if (filterFundType === 'investment') {
-            prefix = 'Chưa có kế hoạch (Dòng tiền nhàn rỗi)';
+            prefix = 'Ngân sách Đầu tư (Chưa phân bổ)';
          } else {
-            prefix = 'Dòng tiền Nhàn rỗi (Chưa phân bổ)';
+            prefix = 'Tiền nhàn rỗi (Chưa có kế hoạch)';
          }
       } else if (sourceId === 'saving') {
          balance = currentRow ? currentRow.savingBalance : 0;
@@ -211,8 +211,8 @@ export const SinkingFundModule_Liquidity: React.FC<SinkingFundModule_LiquidityPr
     const start = fund.startYear * 12 + fund.startMonth;
     const current = currentObservedYear * 12 + currentObservedMonth;
     
-    let totalDeposited = current >= start ? 0 : fund.initialDeposit;
-    let totalDisbursed = current >= start ? 0 : (fund.withdrawals || []).reduce((sum, w) => sum + w.amount, 0);
+    let totalDeposited = 0;
+    let totalDisbursed = 0;
     
     if (current >= start) {
        for (let m = start; m <= current; m++) {
@@ -1296,8 +1296,8 @@ export const SinkingFundModule_Liquidity: React.FC<SinkingFundModule_LiquidityPr
                      interestRateAnnual: fund.interestRateAnnual || 5.5,
                      termMonths: fund.termMonths || 1,
                      sourceOfFund: (fund.sourceOfFund || activeSources[0]) as string,
-                     startMonth: currentObservedMonth,
-                     startYear: currentObservedYear,
+                     startMonth: fund.startMonth,
+                     startYear: fund.startYear,
                      rolloverStrategy: fund.rolloverStrategy || 'principal_and_interest',
                    });
                    setShowAddForm(true);

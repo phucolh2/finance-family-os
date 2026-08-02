@@ -22,7 +22,9 @@ export const DebtManagement: React.FC = () => {
         assumptions: state.assumptions,
         investmentDeals: state.investmentDeals,
         savingsDeposits: state.savingsDeposits,
-        projectionAdjustments: state.projectionAdjustments,
+    sinkingFunds: state.sinkingFunds,
+    debts: state.debts,
+    projectionAdjustments: state.projectionAdjustments,
         lifeStages: state.lifeStages,
         fundTransfers: state.fundTransfers,
     });

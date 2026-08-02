@@ -20,6 +20,8 @@ export const Savings: React.FC = () => {
     assumptions: state.assumptions,
     investmentDeals: state.investmentDeals,
     savingsDeposits: state.savingsDeposits,
+    sinkingFunds: state.sinkingFunds,
+    debts: state.debts,
     projectionAdjustments: state.projectionAdjustments,
     lifeStages: state.lifeStages,
     fundTransfers: state.fundTransfers,
@@ -58,23 +60,11 @@ export const Savings: React.FC = () => {
         <ObservationControls />
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        <Card className="border border-blue-500/20 bg-family-bgDeep">
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm text-blue-400 flex items-center gap-2">
-              <Wallet className="w-4 h-4" /> Tài sản đang Gửi Tiết Kiệm
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold text-family-text">+{formatKpiMoneyVNDMillion((activeRow?.portfolio.defenseSavingsBalance || 0) + (activeRow?.portfolio.defenseSavingsInterestAccrued || 0))}</div>
-            <p className="text-xs text-blue-500 mt-1">Gốc và Lãi dự kiến hiện tại</p>
-          </CardContent>
-        </Card>
-
+      <div className="grid grid-cols-1 gap-4">
         <Card className="border border-blue-500/20 bg-blue-500/5">
           <CardHeader className="pb-2">
             <CardTitle className="text-sm text-blue-400 flex items-center gap-2">
-              <ShieldCheck className="w-4 h-4" /> Số dư Quỹ Tiết Kiệm (Tiền mặt)
+              <ShieldCheck className="w-4 h-4" /> Quỹ Tiết Kiệm
             </CardTitle>
           </CardHeader>
           <CardContent>
@@ -87,7 +77,7 @@ export const Savings: React.FC = () => {
       <div className="flex flex-col gap-6 mt-6">
         <SinkingFundModule_Savings 
           filterFundType="savings" 
-          filterSources={['savings', 'savings_kids', 'savings_biz']}
+          filterSources={['saving']}
           title="Tích luỹ Dài hạn & Mục tiêu"
           description="Lên kế hoạch và theo dõi các mục tiêu tài chính lớn (mua nhà, mua xe, hưu trí, học vấn con cái)."
           emptyStateTitle="Chưa có quỹ tích luỹ nào"

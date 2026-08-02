@@ -186,8 +186,8 @@ export const SinkingFundModule_Portfolio: React.FC<SinkingFundModule_PortfolioPr
     const start = fund.startYear * 12 + fund.startMonth;
     const current = currentObservedYear * 12 + currentObservedMonth;
     
-    let totalDeposited = current >= start ? 0 : fund.initialDeposit;
-    let totalDisbursed = current >= start ? 0 : (fund.withdrawals || []).reduce((sum, w) => sum + w.amount, 0);
+    let totalDeposited = 0;
+    let totalDisbursed = 0;
     
     if (current >= start) {
        for (let m = start; m <= current; m++) {
@@ -994,13 +994,13 @@ export const SinkingFundModule_Portfolio: React.FC<SinkingFundModule_PortfolioPr
                             <div>
                                 <label className="text-xs font-semibold text-family-text mb-1 block">Ghi nhận số tiền rút ra thành:</label>
                                 <div className="w-full bg-gray-50 rounded-md border border-gray-200 p-2 text-xs mb-2 text-gray-500">
-                                  {variant === 'lifestyle' ? 'Hoàn tiền về Quỹ sinh hoạt nguồn (Không tạo sự kiện)' : 'Hoàn tiền về nguồn (Không tạo sự kiện chi tiêu)'}
+                                  {variant === 'lifestyle' ? 'Hoàn tiền về Quỹ sinh hoạt nguồn (Không tạo sự kiện)' : variant === 'portfolio' ? 'Hoàn tiền về Ngân sách Đầu tư nhàn rỗi' : 'Hoàn tiền về nguồn (Không tạo sự kiện chi tiêu)'}
                                 </div>
                             </div>
                             
                             <div>
                                 <label className="text-xs font-semibold text-family-text mb-1 flex items-center gap-1">
-                                    {variant === 'lifestyle' ? 'Số tiền sẽ tự động hoàn về Quỹ sinh hoạt nguồn:' : 'Số tiền sẽ tự động hoàn về quỹ:'}
+                                    {variant === 'lifestyle' ? 'Số tiền sẽ tự động hoàn về Quỹ sinh hoạt nguồn:' : variant === 'portfolio' ? 'Số tiền sẽ tự động hoàn về:' : 'Số tiền sẽ tự động hoàn về quỹ:'}
                                 </label>
                                 <div className="w-full bg-gray-50 rounded-md border border-gray-200 p-2 text-xs text-gray-500">
                                     {getSourceLabelWithBalance(disburseForm.disburseSource || fund.sourceOfFund || 'idle')}
@@ -1279,8 +1279,8 @@ export const SinkingFundModule_Portfolio: React.FC<SinkingFundModule_PortfolioPr
                      interestRateAnnual: fund.interestRateAnnual || 5.5,
                      termMonths: fund.termMonths || 1,
                      sourceOfFund: (fund.sourceOfFund || activeSources[0]) as string,
-                     startMonth: currentObservedMonth,
-                     startYear: currentObservedYear,
+                     startMonth: fund.startMonth,
+                     startYear: fund.startYear,
                      rolloverStrategy: fund.rolloverStrategy || 'principal_and_interest',
                    });
                    setShowAddForm(true);
