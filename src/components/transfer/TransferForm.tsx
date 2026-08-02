@@ -41,8 +41,6 @@ export const TransferForm: React.FC<TransferFormProps> = ({ onSuccess, onCancel 
     lifeStages: state.lifeStages,
     fundTransfers: state.fundTransfers,
     expenseSchedule: state.expenseSchedule,
-    sinkingFunds: state.sinkingFunds,
-    debts: state.debts,
   });
 
   const currentKey = `${currentYear}-${String(currentMonth).padStart(2, '0')}`;
