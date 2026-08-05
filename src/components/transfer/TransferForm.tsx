@@ -59,8 +59,7 @@ export const TransferForm: React.FC<TransferFormProps> = ({ onSuccess, onCancel 
   const debtReserveBalance = (currentRow?.debtReserveBalance || 0) + (currentRow?._activeSinkingFundsDebtReserve || 0);
 
   const totalLifeEventsMoney = state.lifeEvents?.reduce((sum, e) => sum + Math.max(0, e.amount), 0) || 0;
-  const hasActiveInvestments = (state.investmentDeals?.filter(d => d.status === 'active').length ?? 0) > 0 || 
-                               (state.sinkingFunds?.filter(f => f.status === 'active').length ?? 0) > 0;
+  const hasActiveInvestments = (state.investmentDeals?.filter(d => d.status === 'active').length ?? 0) > 0;
 
   const [srcType, srcId] = sourceValue.split(':');
   const [destType, destId] = destinationValue.split(':');
@@ -162,9 +161,6 @@ export const TransferForm: React.FC<TransferFormProps> = ({ onSuccess, onCancel 
                         {!hasActiveInvestments && <option disabled>(Không có Thương vụ / Quỹ đang hoạt động)</option>}
                         {state.investmentDeals?.filter(d => d.status === 'active').map(d => (
                           <option key={d.id} value={`investment:${d.id}`}>Thương vụ: {d.name} (Rút vốn, {formatMoneyVNDMillion(d.capital)})</option>
-                        ))}
-                        {state.sinkingFunds?.filter(f => f.status === 'active').map(f => (
-                          <option key={f.id} value={`sinking_fund:${f.id}`}>Quỹ: {f.name} (Tất toán, {formatMoneyVNDMillion(f.initialDeposit)})</option>
                         ))}
                       </optgroup>
 
