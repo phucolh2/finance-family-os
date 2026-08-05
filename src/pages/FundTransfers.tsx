@@ -50,11 +50,6 @@ export const FundTransfers: React.FC = () => {
         </div>
         <div className="flex items-center gap-4">
           <ObservationControls />
-          {!showTransferForm && (
-            <Button onClick={() => setShowTransferForm(true)} className="bg-blue-600 hover:bg-blue-700 text-white gap-2 shrink-0">
-              <Plus className="w-4 h-4" /> Thực hiện Điều chuyển
-            </Button>
-          )}
         </div>
       </div>
 
@@ -208,10 +203,15 @@ export const FundTransfers: React.FC = () => {
       </Card>
 
       <Card className="border border-family-accent/20 bg-family-bgDeep overflow-hidden">
-        <CardHeader className="border-b border-family-accent/10 pb-4">
+        <CardHeader className="border-b border-family-accent/10 pb-4 flex flex-row items-center justify-between">
           <CardTitle className="text-lg flex items-center gap-2">
             <History className="w-5 h-5 text-emerald-500" /> Lịch sử Điều chuyển (Ledger)
           </CardTitle>
+          {!showTransferForm && (
+            <Button onClick={() => setShowTransferForm(true)} className="bg-blue-600 hover:bg-blue-700 text-white gap-2 shrink-0">
+              <Plus className="w-4 h-4" /> Thực hiện Điều chuyển
+            </Button>
+          )}
         </CardHeader>
         <CardContent className="p-0">
           {fundTransfers.length > 0 ? (
