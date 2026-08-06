@@ -73,9 +73,7 @@ export const sendChatMessage = async (
   return response.text();
 };
 
-// Hàm phân tích phân bổ ngân sách bằng AI
-export const analyzeAllocationWithAI = async (
-  apiKey: string,
+export const analyzeAllocationOffline = (
   inputData: {
     thu_nhap_du_phong: number;
     goc_phan_bo: number;
@@ -83,78 +81,99 @@ export const analyzeAllocationWithAI = async (
     chi_phi_hang_thang: number;
   }
 ) => {
-  if (!apiKey) throw new Error("Chưa cấu hình Gemini API Key.");
+  const { thu_nhap_du_phong, goc_phan_bo, cay_ngan_sach, chi_phi_hang_thang } = inputData;
+  const thang_du = Math.max(0, thu_nhap_du_phong - goc_phan_bo);
 
-  const genAI = new GoogleGenerativeAI(apiKey);
-  const model = genAI.getGenerativeModel({ 
-    model: 'gemini-2.5-flash',
-    systemInstruction: `Bạn là công cụ phân tích tài chính cá nhân bên trong Finance Family OS. Nhiệm vụ: nhận dữ liệu phân bổ ngân sách của người dùng, đối chiếu với 4 chuẩn tài chính bên dưới, và trả về cảnh báo/gợi ý ngắn gọn, cụ thể theo số liệu thực — không nói chung chung.
-Ràng buộc quan trọng — CHỈ ĐỌC, KHÔNG GHI
-Toàn bộ dữ liệu đầu vào chỉ được dùng để xem và tính toán hiển thị. Bạn KHÔNG được đề xuất, thực hiện, hay ngụ ý bất kỳ hành động ghi/sửa/xóa nào lên dữ liệu gốc của người dùng.
-Nếu muốn gợi ý người dùng điều chỉnh phân bổ, chỉ diễn đạt dưới dạng đề xuất bằng lời trong \`de_xuat_hanh_dong\` để người dùng tự thao tác thủ công (ví dụ qua màn hình Điều chuyển dòng tiền).
-Output của model chỉ là dữ liệu phân tích JSON để UI render.
+  const benchmarks = {
+    muc_tieu_tu_do_tai_chinh: thu_nhap_du_phong * 300,
+    dau_tu_toi_thieu: goc_phan_bo * 0.20,
+    quy_khan_cap_can: chi_phi_hang_thang * 3,
+    chi_phi_toi_da: goc_phan_bo * 0.50
+  };
 
-4 chuẩn đối chiếu (áp dụng trên goc_phan_bo, KHÔNG áp dụng trên thang_du):
-- Mục tiêu tự do tài chính = thu_nhap_du_phong × 300 (dựa trên safe withdrawal rate 4%/năm)
-- Đầu tư tối thiểu/tháng = goc_phan_bo × 0.20
-- Quỹ khẩn cấp cần có = chi_phi_hang_thang × 3 (ngưỡng tối thiểu; nếu người dùng có thu nhập không ổn định, khuyến nghị 6x thay vì cảnh báo cứng)
-- Chi phí thiết yếu tối đa nên chi = goc_phan_bo × 0.50
+  const canh_bao: any[] = [];
+  let totalPercent = 0;
+  let allGood = true;
 
-Logic sinh cảnh báo:
-- So sánh từng mục trong cay_ngan_sach với 4 chuẩn trên:
-- Nếu mục "Sinh hoạt/Chi phí thiết yếu" > 50% goc_phan_bo → cảnh báo mức độ cao: "Chi phí thiết yếu đang chiếm X%, vượt ngưỡng khuyến nghị 50%."
-- Nếu mục "Đầu tư" < 20% goc_phan_bo → cảnh báo mức độ trung_binh: "Đầu tư hiện tại chỉ X%, dưới mức tối thiểu 20% để đạt tự do tài chính đúng lộ trình."
-- Nếu mục "Dự phòng/Quỹ khẩn cấp" tích lũy < 3 × chi_phi_hang_thang → cảnh báo mức độ trung_binh: "Quỹ khẩn cấp hiện tại chỉ đủ Y tháng chi phí, cần tối thiểu 3 tháng."
-- Nếu tổng % các mục ≠ 100% → cảnh báo mức độ cao (lỗi cấu hình): "Cây ngân sách đang phân bổ X%, chưa khớp 100% Gốc phân bổ."
-- Nếu thang_du > 0 → hiển thị insight mức độ thong_tin: "Bạn đang dư Z, có thể chuyển sang Quỹ tích lũy qua Điều chuyển dòng tiền — đây là chiến thuật Pay Yourself First."
-- Không tạo cảnh báo nếu mọi chỉ số đều đạt chuẩn — thay vào đó trả về thông điệp tích cực.
+  cay_ngan_sach.forEach(item => {
+    const percent = item.ty_le_phan_tram;
+    totalPercent += percent;
+    const name = item.ten_muc.toLowerCase();
 
-Nguyên tắc viết nội dung cảnh báo:
-- Luôn dùng số liệu thực từ dữ liệu đầu vào, không dùng số ví dụ minh họa.
-- Không phán xét, giọng điệu như cố vấn tài chính đồng hành — nêu sự kiện + số liệu + đề xuất, không chê trách.
-- Ưu tiên tối đa 3 cảnh báo quan trọng nhất.
-- Nếu goc_phan_bo < thu_nhap_du_phong (có thang_du), không tính cảnh báo dựa trên toàn bộ thu_nhap_du_phong — chỉ tính trên goc_phan_bo theo đúng cơ chế Gốc phân bổ.
-
-Định dạng output BẮT BUỘC (JSON):
-{
-  "goc_phan_bo": number,
-  "thang_du": number,
-  "benchmarks": {
-    "muc_tieu_tu_do_tai_chinh": number,
-    "dau_tu_toi_thieu": number,
-    "quy_khan_cap_can": number,
-    "chi_phi_toi_da": number
-  },
-  "canh_bao": [
-    {
-      "muc_do": "cao" | "trung_binh" | "thong_tin",
-      "tieu_de": "string",
-      "noi_dung": "string",
-      "de_xuat_hanh_dong": "string"
+    if (name.includes('sinh hoạt') || name.includes('thiết yếu') || name.includes('cố định')) {
+      if (percent > 50) {
+        allGood = false;
+        canh_bao.push({
+          muc_do: 'cao',
+          tieu_de: 'Chi phí sinh hoạt quá cao',
+          noi_dung: `Chi phí thiết yếu đang chiếm ${percent.toFixed(1)}%, vượt ngưỡng an toàn khuyến nghị 50%.`,
+          de_xuat_hanh_dong: 'Cân nhắc cắt giảm các khoản chi tiêu không cần thiết hoặc tối ưu hóa chi phí cố định.'
+        });
+      }
     }
-  ],
-  "tong_ket": "string"
-}
-`
+
+    if (name.includes('đầu tư') || name.includes('tích lũy')) {
+      if (percent < 20) {
+        allGood = false;
+        canh_bao.push({
+          muc_do: 'trung_binh',
+          tieu_de: 'Tỷ lệ đầu tư thấp',
+          noi_dung: `Đầu tư hiện tại chỉ ${percent.toFixed(1)}%, dưới mức tối thiểu 20% để đạt tự do tài chính đúng lộ trình.`,
+          de_xuat_hanh_dong: 'Cố gắng trích lập thêm quỹ đầu tư ngay khi nhận lương (Pay Yourself First).'
+        });
+      }
+    }
   });
 
-  const message = `Dữ liệu đầu vào:
-- thu_nhap_du_phong: ${inputData.thu_nhap_du_phong}
-- goc_phan_bo: ${inputData.goc_phan_bo}
-- thang_du: ${inputData.thu_nhap_du_phong - inputData.goc_phan_bo}
-- cay_ngan_sach: ${JSON.stringify(inputData.cay_ngan_sach, null, 2)}
-- chi_phi_hang_thang: ${inputData.chi_phi_hang_thang}
+  if (Math.abs(totalPercent - 100) > 0.1) {
+    allGood = false;
+    canh_bao.push({
+      muc_do: 'cao',
+      tieu_de: 'Cấu hình tỷ lệ lỗi',
+      noi_dung: `Cây ngân sách đang phân bổ ${totalPercent.toFixed(1)}%, chưa khớp 100% Gốc phân bổ.`,
+      de_xuat_hanh_dong: 'Vào cấu hình Cây ngân sách để điều chỉnh lại tổng tỷ lệ các quỹ về chuẩn 100%.'
+    });
+  }
 
-Hãy phân tích và trả về JSON theo đúng System Prompt.`;
+  // Chú ý: Ở hệ thống offline này, ta không có số dư hiện tại của quỹ khẩn cấp trực tiếp,
+  // nhưng nếu cần ta có thể mô phỏng hoặc dựa trên đầu vào tỷ lệ, hiện tại ta chỉ tạo cảnh báo nếu không có quỹ này trong budget.
+  const hasEmergency = cay_ngan_sach.some(item => item.ten_muc.toLowerCase().includes('khẩn cấp') || item.ten_muc.toLowerCase().includes('dự phòng'));
+  if (!hasEmergency) {
+    allGood = false;
+    canh_bao.push({
+      muc_do: 'trung_binh',
+      tieu_de: 'Thiếu quỹ dự phòng',
+      noi_dung: `Ngân sách chưa có khoản mục cho quỹ khẩn cấp. Bạn cần chuẩn bị tối thiểu ${formatTableMoneyVNDMillionOffline(benchmarks.quy_khan_cap_can)} (3 tháng chi phí).`,
+      de_xuat_hanh_dong: 'Tạo một mục dự phòng/khẩn cấp trong cây ngân sách để tích lũy dần.'
+    });
+  }
 
-  const chat = model.startChat({
-    generationConfig: {
-      temperature: 0.2,
-      responseMimeType: "application/json",
-    },
-  });
+  if (thang_du > 0) {
+    canh_bao.push({
+      muc_do: 'thong_tin',
+      tieu_de: 'Tối ưu hóa thặng dư',
+      noi_dung: `Bạn đang có dư ${formatTableMoneyVNDMillionOffline(thang_du)}, số tiền này có thể bị hao hụt nếu để không.`,
+      de_xuat_hanh_dong: 'Có thể chuyển ngay thặng dư này sang Quỹ tích lũy hoặc Đầu tư qua chức năng Điều chuyển dòng tiền.'
+    });
+  }
 
-  const result = await chat.sendMessage(message);
-  const response = await result.response;
-  return JSON.parse(response.text());
+  return {
+    goc_phan_bo,
+    thang_du,
+    benchmarks,
+    canh_bao: canh_bao.sort((a, b) => {
+      const rank = { cao: 0, trung_binh: 1, thong_tin: 2 };
+      return rank[a.muc_do as keyof typeof rank] - rank[b.muc_do as keyof typeof rank];
+    }).slice(0, 3), // Lấy top 3
+    tong_ket: allGood ? 
+      "Xin chúc mừng! Cơ cấu phân bổ ngân sách của bạn đang đạt mức tối ưu theo các quy chuẩn tài chính cá nhân. Hãy tiếp tục duy trì kỷ luật này nhé." : 
+      "Dựa trên các chuẩn mực tài chính, dòng tiền của bạn cần được tinh chỉnh đôi chút để tối ưu hóa khả năng tích lũy và phòng vệ rủi ro. Hãy xem các cảnh báo bên dưới."
+  };
 };
+
+function formatTableMoneyVNDMillionOffline(amount: number): string {
+  if (amount >= 1000) {
+    return (amount / 1000).toLocaleString('en-US', { minimumFractionDigits: 1, maximumFractionDigits: 2 }) + ' Tỷ';
+  }
+  return amount.toLocaleString('en-US', { minimumFractionDigits: 1, maximumFractionDigits: 2 }) + ' Tr';
+}

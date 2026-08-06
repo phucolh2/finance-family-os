@@ -4,7 +4,7 @@ import { Button } from './Button';
 import { Input } from './Input';
 import { computeExpenseFinancing } from '../../engines/SmartAllocationAdvisor';
 import type { AllocationSnapshot, ExpenseFinancingResult } from '../../engines/SmartAllocationAdvisor';
-import { analyzeAllocationWithAI } from '../../services/aiService';
+import { analyzeAllocationOffline } from '../../services/aiService';
 
 export interface AIAllocationResult {
   goc_phan_bo: number;
@@ -72,57 +72,57 @@ export const SmartAllocationAdvisorModal: React.FC<Props> = ({ isOpen, onClose, 
     setAmount(val);
     
     if (mode === 'income') {
-      if (!apiKey) {
-        alert("Vui lòng cấu hình Gemini API Key (ở mục Trợ lý Chat) trước khi sử dụng AI.");
-        return;
-      }
       setIsAnalyzing(true);
-      try {
-        const currentDb = snapshot.appState.resolvedMonthlyDbMap?.[snapshot.currentPeriodKey];
-        const actualIncome = currentDb ? currentDb.income : val;
-        
-        let activeVersion = snapshot.appState.budgetSchedule[0];
-        const periodParts = snapshot.currentPeriodKey.split('-');
-        const y = parseInt(periodParts[0], 10);
-        const m = parseInt(periodParts[1], 10);
-        
-        const sortedHistory = [...snapshot.appState.budgetSchedule].sort((a, b) => {
-          if (a.effectiveYear !== b.effectiveYear) return a.effectiveYear - b.effectiveYear;
-          return a.effectiveMonth - b.effectiveMonth;
-        });
-        
-        const pastOrActive = sortedHistory.filter(item => {
-          if (item.effectiveYear < y) return true;
-          if (item.effectiveYear === y && item.effectiveMonth <= m) return true;
-          return false;
-        });
-        
-        if (pastOrActive.length > 0) {
-          activeVersion = pastOrActive[pastOrActive.length - 1];
+      
+      // Giả lập thời gian load một chút (600ms) để giữ cảm giác Premium cho UI
+      setTimeout(() => {
+        try {
+          const currentDb = snapshot.appState.resolvedMonthlyDbMap?.[snapshot.currentPeriodKey];
+          const actualIncome = currentDb ? currentDb.income : val;
+          
+          let activeVersion = snapshot.appState.budgetSchedule[0];
+          const periodParts = snapshot.currentPeriodKey.split('-');
+          const y = parseInt(periodParts[0], 10);
+          const m = parseInt(periodParts[1], 10);
+          
+          const sortedHistory = [...snapshot.appState.budgetSchedule].sort((a, b) => {
+            if (a.effectiveYear !== b.effectiveYear) return a.effectiveYear - b.effectiveYear;
+            return a.effectiveMonth - b.effectiveMonth;
+          });
+          
+          const pastOrActive = sortedHistory.filter(item => {
+            if (item.effectiveYear < y) return true;
+            if (item.effectiveYear === y && item.effectiveMonth <= m) return true;
+            return false;
+          });
+          
+          if (pastOrActive.length > 0) {
+            activeVersion = pastOrActive[pastOrActive.length - 1];
+          }
+
+          const chiPhiGroup = activeVersion?.rootGroups.find(g => g.name.toLowerCase().includes('sinh hoạt') || g.name.toLowerCase().includes('thiết yếu'));
+          const chi_phi_hang_thang = chiPhiGroup ? (val * chiPhiGroup.ratioPercent / 100) : (val * 0.5);
+
+          const inputData = {
+            thu_nhap_du_phong: actualIncome,
+            goc_phan_bo: val,
+            cay_ngan_sach: activeVersion?.rootGroups.map(g => ({
+              ten_muc: g.name,
+              ty_le_phan_tram: g.ratioPercent,
+              so_tien: (val * g.ratioPercent) / 100
+            })) || [],
+            chi_phi_hang_thang
+          };
+
+          const result = analyzeAllocationOffline(inputData);
+          setAiResults(result);
+        } catch (err) {
+          console.error(err);
+          alert("Lỗi khi phân tích: " + (err as Error).message);
+        } finally {
+          setIsAnalyzing(false);
         }
-
-        const chiPhiGroup = activeVersion?.rootGroups.find(g => g.name.toLowerCase().includes('sinh hoạt') || g.name.toLowerCase().includes('thiết yếu'));
-        const chi_phi_hang_thang = chiPhiGroup ? (val * chiPhiGroup.ratioPercent / 100) : (val * 0.5);
-
-        const inputData = {
-          thu_nhap_du_phong: actualIncome,
-          goc_phan_bo: val,
-          cay_ngan_sach: activeVersion?.rootGroups.map(g => ({
-             ten_muc: g.name,
-             ty_le_phan_tram: g.ratioPercent,
-             so_tien: (val * g.ratioPercent) / 100
-          })) || [],
-          chi_phi_hang_thang
-        };
-
-        const result = await analyzeAllocationWithAI(apiKey, inputData);
-        setAiResults(result);
-      } catch (err) {
-        console.error(err);
-        alert("Lỗi khi phân tích AI: " + (err as Error).message);
-      } finally {
-        setIsAnalyzing(false);
-      }
+      }, 600);
     } else {
       const res = computeExpenseFinancing(val, snapshot);
       setExpenseResult(res);
