@@ -77,11 +77,12 @@ export const analyzeAllocationOffline = (
   inputData: {
     thu_nhap_du_phong: number;
     goc_phan_bo: number;
-    cay_ngan_sach: any[];
+    cay_ngan_sach: { ten_muc: string; ty_le_phan_tram: number; so_tien: number; classification?: string }[];
     chi_phi_hang_thang: number;
+    current_liquidity: number;
   }
 ) => {
-  const { thu_nhap_du_phong, goc_phan_bo, cay_ngan_sach, chi_phi_hang_thang } = inputData;
+  const { thu_nhap_du_phong, goc_phan_bo, cay_ngan_sach, chi_phi_hang_thang, current_liquidity } = inputData;
   const thang_du = Math.max(0, thu_nhap_du_phong - goc_phan_bo);
 
   const benchmarks = {
@@ -95,35 +96,43 @@ export const analyzeAllocationOffline = (
   let totalPercent = 0;
   let allGood = true;
 
+  let totalExpense = 0;
+  let totalInvestment = 0;
+
   cay_ngan_sach.forEach(item => {
     const percent = item.ty_le_phan_tram;
     totalPercent += percent;
-    const name = item.ten_muc.toLowerCase();
+    
+    // Nếu không có phân loại cứng thì tự đoán dựa trên tên
+    const cls = item.classification || (
+      item.ten_muc.toLowerCase().includes('sinh hoạt') || item.ten_muc.toLowerCase().includes('thiết yếu') ? 'expense' :
+      item.ten_muc.toLowerCase().includes('đầu tư') || item.ten_muc.toLowerCase().includes('tích lũy') ? 'investment' :
+      item.ten_muc.toLowerCase().includes('tiết kiệm') ? 'savings' : 'debt_reserve'
+    );
 
-    if (name.includes('sinh hoạt') || name.includes('thiết yếu') || name.includes('cố định')) {
-      if (percent > 50) {
-        allGood = false;
-        canh_bao.push({
-          muc_do: 'cao',
-          tieu_de: 'Chi phí sinh hoạt quá cao',
-          noi_dung: `Chi phí thiết yếu đang chiếm ${percent.toFixed(1)}%, vượt ngưỡng an toàn khuyến nghị 50%.`,
-          de_xuat_hanh_dong: 'Cân nhắc cắt giảm các khoản chi tiêu không cần thiết hoặc tối ưu hóa chi phí cố định.'
-        });
-      }
-    }
-
-    if (name.includes('đầu tư') || name.includes('tích lũy')) {
-      if (percent < 20) {
-        allGood = false;
-        canh_bao.push({
-          muc_do: 'trung_binh',
-          tieu_de: 'Tỷ lệ đầu tư thấp',
-          noi_dung: `Đầu tư hiện tại chỉ ${percent.toFixed(1)}%, dưới mức tối thiểu 20% để đạt tự do tài chính đúng lộ trình.`,
-          de_xuat_hanh_dong: 'Cố gắng trích lập thêm quỹ đầu tư ngay khi nhận lương (Pay Yourself First).'
-        });
-      }
-    }
+    if (cls === 'expense') totalExpense += percent;
+    if (cls === 'investment') totalInvestment += percent;
   });
+
+  if (totalExpense > 50) {
+    allGood = false;
+    canh_bao.push({
+      muc_do: 'cao',
+      tieu_de: 'Chi phí sinh hoạt quá cao',
+      noi_dung: `Chi phí thiết yếu đang phân bổ chiếm ${totalExpense.toFixed(1)}%, vượt ngưỡng an toàn khuyến nghị 50%.`,
+      de_xuat_hanh_dong: 'Cân nhắc cắt giảm các khoản chi tiêu không cần thiết hoặc tối ưu hóa chi phí cố định.'
+    });
+  }
+
+  if (totalInvestment < 20) {
+    allGood = false;
+    canh_bao.push({
+      muc_do: 'trung_binh',
+      tieu_de: 'Tỷ lệ đầu tư thấp',
+      noi_dung: `Đầu tư hiện tại chỉ phân bổ ${totalInvestment.toFixed(1)}%, dưới mức tối thiểu 20% để đạt tự do tài chính đúng lộ trình.`,
+      de_xuat_hanh_dong: 'Cố gắng trích lập thêm quỹ đầu tư ngay khi nhận lương (Pay Yourself First).'
+    });
+  }
 
   if (Math.abs(totalPercent - 100) > 0.1) {
     allGood = false;
@@ -135,16 +144,20 @@ export const analyzeAllocationOffline = (
     });
   }
 
-  // Chú ý: Ở hệ thống offline này, ta không có số dư hiện tại của quỹ khẩn cấp trực tiếp,
-  // nhưng nếu cần ta có thể mô phỏng hoặc dựa trên đầu vào tỷ lệ, hiện tại ta chỉ tạo cảnh báo nếu không có quỹ này trong budget.
-  const hasEmergency = cay_ngan_sach.some(item => item.ten_muc.toLowerCase().includes('khẩn cấp') || item.ten_muc.toLowerCase().includes('dự phòng'));
-  if (!hasEmergency) {
+  if (current_liquidity < benchmarks.quy_khan_cap_can) {
     allGood = false;
     canh_bao.push({
       muc_do: 'trung_binh',
-      tieu_de: 'Thiếu quỹ dự phòng',
-      noi_dung: `Ngân sách chưa có khoản mục cho quỹ khẩn cấp. Bạn cần chuẩn bị tối thiểu ${formatTableMoneyVNDMillionOffline(benchmarks.quy_khan_cap_can)} (3 tháng chi phí).`,
-      de_xuat_hanh_dong: 'Tạo một mục dự phòng/khẩn cấp trong cây ngân sách để tích lũy dần.'
+      tieu_de: 'Thiếu quỹ khẩn cấp',
+      noi_dung: `Thanh khoản thực tế của bạn là ${formatTableMoneyVNDMillionOffline(current_liquidity)}, chưa đạt mức tối thiểu an toàn (${formatTableMoneyVNDMillionOffline(benchmarks.quy_khan_cap_can)} - 3 tháng chi phí).`,
+      de_xuat_hanh_dong: 'Ưu tiên dùng tiền dư bù đắp quỹ khẩn cấp trước khi đầu tư rủi ro.'
+    });
+  } else if (current_liquidity < chi_phi_hang_thang * 6) {
+    canh_bao.push({
+      muc_do: 'thong_tin',
+      tieu_de: 'Tối ưu quỹ dự phòng',
+      noi_dung: `Quỹ khẩn cấp đã qua mức tối thiểu nhưng chưa đạt mức lý tưởng 6 tháng (${formatTableMoneyVNDMillionOffline(chi_phi_hang_thang * 6)}).`,
+      de_xuat_hanh_dong: 'Nên trích một phần thặng dư để tiếp tục bồi đắp quỹ này cho an tâm tuyệt đối.'
     });
   }
 

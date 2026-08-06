@@ -100,8 +100,7 @@ export const SmartAllocationAdvisorModal: React.FC<Props> = ({ isOpen, onClose, 
             activeVersion = pastOrActive[pastOrActive.length - 1];
           }
 
-          const chiPhiGroup = activeVersion?.rootGroups.find(g => g.name.toLowerCase().includes('sinh hoạt') || g.name.toLowerCase().includes('thiết yếu'));
-          const chi_phi_hang_thang = chiPhiGroup ? (val * chiPhiGroup.ratioPercent / 100) : (val * 0.5);
+          const chi_phi_hang_thang = snapshot.housingBasicAvgExpense > 0 ? snapshot.housingBasicAvgExpense : (val * 0.5);
 
           const inputData = {
             thu_nhap_du_phong: actualIncome,
@@ -109,9 +108,11 @@ export const SmartAllocationAdvisorModal: React.FC<Props> = ({ isOpen, onClose, 
             cay_ngan_sach: activeVersion?.rootGroups.map(g => ({
               ten_muc: g.name,
               ty_le_phan_tram: g.ratioPercent,
-              so_tien: (val * g.ratioPercent) / 100
+              so_tien: (val * g.ratioPercent) / 100,
+              classification: g.classification
             })) || [],
-            chi_phi_hang_thang
+            chi_phi_hang_thang,
+            current_liquidity: snapshot.currentLiquidityBalance
           };
 
           const result = analyzeAllocationOffline(inputData);
