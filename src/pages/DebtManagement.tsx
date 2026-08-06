@@ -45,7 +45,29 @@ export const DebtManagement: React.FC = () => {
     const totalDebtMonthlyPayment = activeDebts.reduce((sum, d) => sum + calculatePMT(d.principal, d.interestRateAnnual, d.termMonths), 0);
     
     // 28/36 Rule Calculations
-    const monthlyIncome = activeRow ? safeNumber(activeRow.incomeMonthly, 0) : 0;
+    let monthlyIncome = activeRow ? safeNumber(activeRow.incomeMonthly, 0) : 0;
+    
+    // Fallback: Tìm thu nhập gần nhất nếu tháng hiện tại = 0 (theo yêu cầu user)
+    if (monthlyIncome === 0 && hasData && activeRow) {
+        const activeIndex = projection.monthlyRows.findIndex(r => r.period.key === activeRow.period.key);
+        // Tìm ngược về quá khứ
+        for (let i = activeIndex - 1; i >= 0; i--) {
+            if (projection.monthlyRows[i].incomeMonthly > 0) {
+                monthlyIncome = projection.monthlyRows[i].incomeMonthly;
+                break;
+            }
+        }
+        // Nếu vẫn 0, tìm tiến về tương lai
+        if (monthlyIncome === 0) {
+             for (let i = activeIndex + 1; i < projection.monthlyRows.length; i++) {
+                if (projection.monthlyRows[i].incomeMonthly > 0) {
+                    monthlyIncome = projection.monthlyRows[i].incomeMonthly;
+                    break;
+                }
+            }
+        }
+    }
+
     const housingMonthlyPayment = activeDebts.filter(d => d.type === 'mortgage').reduce((sum, d) => sum + calculatePMT(d.principal, d.interestRateAnnual, d.termMonths), 0);
     const housingDTI = monthlyIncome > 0 ? (housingMonthlyPayment / monthlyIncome) * 100 : 0;
     const totalDTI = monthlyIncome > 0 ? (totalDebtMonthlyPayment / monthlyIncome) * 100 : 0;
@@ -172,7 +194,7 @@ export const DebtManagement: React.FC = () => {
                         <CardTitle className="text-sm font-medium text-family-textMuted flex items-center gap-2">
                             <TrendingDown className="w-4 h-4 text-orange-400" />
                             Trả Hàng Tháng
-                            <HelpTooltip text="Tổng số tiền gốc và lãi ước tính phải trả mỗi tháng (theo phương pháp PMT)." />
+                            <HelpTooltip text="Công thức PMT = [P × r × (1 + r)^n] / [(1 + r)^n - 1]. P: Gốc, r: Lãi/tháng, n: Số tháng vay." />
                         </CardTitle>
                     </CardHeader>
                     <CardContent>
@@ -187,7 +209,7 @@ export const DebtManagement: React.FC = () => {
                         <CardTitle className="text-sm font-medium text-family-textMuted flex items-center gap-2">
                             <Scale className="w-4 h-4 text-blue-400" />
                             Tỷ lệ Nợ/Thu nhập
-                            <HelpTooltip text="Tỷ lệ thanh toán nợ hàng tháng trên tổng thu nhập (DTI). Dưới 36% là tiêu chuẩn an toàn thế giới." />
+                            <HelpTooltip text="Công thức DTI = (Trả Hàng Tháng / Tổng Thu Nhập) × 100%. Lấy thu nhập gần nhất so với Tháng quan sát." />
                         </CardTitle>
                     </CardHeader>
                     <CardContent>
