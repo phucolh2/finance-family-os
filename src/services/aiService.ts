@@ -99,6 +99,9 @@ export const analyzeAllocationOffline = (
   let totalExpense = 0;
   let totalInvestment = 0;
 
+  let totalSavings = 0;
+  let totalReserve = 0;
+
   cay_ngan_sach.forEach(item => {
     const percent = item.ty_le_phan_tram;
     totalPercent += percent;
@@ -112,6 +115,8 @@ export const analyzeAllocationOffline = (
 
     if (cls === 'expense') totalExpense += percent;
     if (cls === 'investment') totalInvestment += percent;
+    if (cls === 'savings') totalSavings += percent;
+    if (cls === 'debt_reserve') totalReserve += percent;
   });
 
   if (totalExpense > 50) {
@@ -148,14 +153,22 @@ export const analyzeAllocationOffline = (
     allGood = false;
     canh_bao.push({
       muc_do: 'trung_binh',
-      tieu_de: 'Thiếu quỹ khẩn cấp',
-      noi_dung: `Thanh khoản thực tế của bạn là ${formatTableMoneyVNDMillionOffline(current_liquidity)}, chưa đạt mức tối thiểu an toàn (${formatTableMoneyVNDMillionOffline(benchmarks.quy_khan_cap_can)} - 3 tháng chi phí).`,
-      de_xuat_hanh_dong: 'Ưu tiên dùng tiền dư bù đắp quỹ khẩn cấp trước khi đầu tư rủi ro.'
+      tieu_de: 'Số dư quỹ khẩn cấp thấp',
+      noi_dung: `Thanh khoản thực tế tích lũy của bạn là ${formatTableMoneyVNDMillionOffline(current_liquidity)}, chưa đạt mức tối thiểu an toàn (${formatTableMoneyVNDMillionOffline(benchmarks.quy_khan_cap_can)} - 3 tháng chi phí).`,
+      de_xuat_hanh_dong: 'Ưu tiên dùng tiền dư và tăng tỷ lệ phân bổ vào quỹ Dự phòng trước khi đầu tư rủi ro.'
     });
+    if (totalSavings + totalReserve === 0) {
+      canh_bao.push({
+        muc_do: 'cao',
+        tieu_de: 'Thiếu trích lập dự phòng',
+        noi_dung: `Bạn đang thiếu tiền dự phòng nhưng Cây ngân sách lại đang trích 0% cho Tiết kiệm/Dự phòng.`,
+        de_xuat_hanh_dong: 'Chỉnh sửa Cây ngân sách ngay để tự động chảy tiền vào quỹ Khẩn cấp hàng tháng.'
+      });
+    }
   } else if (current_liquidity < chi_phi_hang_thang * 6) {
     canh_bao.push({
       muc_do: 'thong_tin',
-      tieu_de: 'Tối ưu quỹ dự phòng',
+      tieu_de: 'Tối ưu số dư dự phòng',
       noi_dung: `Quỹ khẩn cấp đã qua mức tối thiểu nhưng chưa đạt mức lý tưởng 6 tháng (${formatTableMoneyVNDMillionOffline(chi_phi_hang_thang * 6)}).`,
       de_xuat_hanh_dong: 'Nên trích một phần thặng dư để tiếp tục bồi đắp quỹ này cho an tâm tuyệt đối.'
     });
@@ -177,13 +190,13 @@ export const analyzeAllocationOffline = (
   let reason = "";
 
   if (current_liquidity < benchmarks.quy_khan_cap_can) {
-     idealSavings = 30;
+     idealReserve = 30;
      idealInvestment = 20;
-     reason = "Quỹ khẩn cấp của bạn đang thiếu, nên dồn 30% vào Tiết kiệm/Dự phòng để sớm đạt mức an toàn (3 tháng chi phí). Giữ Đầu tư ở mức tối thiểu 20%.";
+     reason = "Quỹ khẩn cấp của bạn đang thiếu, nên dồn 30% vào Dự phòng để sớm đạt mức an toàn (3 tháng chi phí). Giữ Đầu tư ở mức tối thiểu 20%.";
   } else if (current_liquidity < chi_phi_hang_thang * 6) {
-     idealSavings = 10;
+     idealReserve = 10;
      idealInvestment = 40;
-     reason = "Quỹ khẩn cấp đã đạt mức cơ bản. Bạn có thể tăng tốc Đầu tư lên 40% để mau đạt Tự do tài chính, trích 10% để tiếp tục làm dày Quỹ khẩn cấp.";
+     reason = "Quỹ khẩn cấp đã đạt mức cơ bản. Bạn có thể tăng tốc Đầu tư lên 40% để mau đạt Tự do tài chính, trích 10% để tiếp tục làm dày Dự phòng.";
   } else {
      idealReserve = 10;
      idealInvestment = 40;
