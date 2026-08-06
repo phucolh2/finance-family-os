@@ -249,17 +249,18 @@ export function runProjection(input: ProjectionEngineInput): ProjectionOutput {
     // Add budget's debt reserve allocation to the running balance
     currentDebtReserveBalance += safeNumber(cashflowRes.debtReserveMonthly, 0);
 
+    // BỎ QUA - KHÔNG TỰ ĐỘNG TRỪ TIỀN TRẢ NỢ VÀO DÒNG TIỀN (USER TỰ QUẢN LÝ BẰNG CÂY NGÂN SÁCH)
     // Pay active debt from the reserve balance
-    currentDebtReserveBalance -= activeDebtPaymentMonthly;
-
-    if (currentDebtReserveBalance < 0) {
-      const deficit = Math.abs(currentDebtReserveBalance);
-      // Deduct the missing amount from free cashflow (netCashflowMonthly)
-      cashflowRes.netCashflowMonthly -= deficit;
-      currentDebtReserveBalance = 0;
-      
-      warnings.push(`[Công nợ] Tháng ${period.month}/${period.year}: Quỹ Dự Phòng Nợ thiếu hụt ${deficit.toFixed(1)} tr. Đã tự động trừ vào dòng tiền tự do (Cashflow). Bạn có thể điều chỉnh ngân sách thủ công để bù đắp.`);
-    }
+    // currentDebtReserveBalance -= activeDebtPaymentMonthly;
+    //
+    // if (currentDebtReserveBalance < 0) {
+    //   const deficit = Math.abs(currentDebtReserveBalance);
+    //   // Deduct the missing amount from free cashflow (netCashflowMonthly)
+    //   cashflowRes.netCashflowMonthly -= deficit;
+    //   currentDebtReserveBalance = 0;
+    //   
+    //   warnings.push(`[Nợ] Bù ${formatMoneyVNDMillionOffline(deficit)} từ dòng tiền tự do do Quỹ dự phòng nợ không đủ trả gốc/lãi tháng này.`);
+    // }
 
     // Handle Life Event balances directly
     const activePeriodEvents = lifeEvents.filter(
