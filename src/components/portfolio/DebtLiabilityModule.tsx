@@ -42,8 +42,8 @@ export const DebtLiabilityModule: React.FC = () => {
       principal: Number(newDebt.principal),
       interestRateAnnual: Number(newDebt.interestRateAnnual) || 0,
       termMonths: Number(newDebt.termMonths),
-      startMonth: newDebt.startMonth,
-      startYear: newDebt.startYear,
+      startMonth: parseInt(currentKey.split('-')[1], 10),
+      startYear: parseInt(currentKey.split('-')[0], 10),
       status: 'active',
     });
     
@@ -144,30 +144,9 @@ export const DebtLiabilityModule: React.FC = () => {
                 className="bg-family-bgDark"
               />
             </div>
-            <div className="space-y-2">
-              <label className="text-xs text-family-textMuted uppercase">Bắt đầu từ (Tháng/Năm)</label>
-              <div className="flex gap-2">
-                <Input
-                  type="number"
-                  value={newDebt.startMonth}
-                  placeholder="VD: 1"
-                  onChange={e => { setNewDebt({...newDebt, startMonth: Number(e.target.value)}); }}
-                  className="w-24 bg-family-bgDark"
-                />
-                <Input
-                  type="number"
-                  value={newDebt.startYear}
-                  placeholder="VD: 2026"
-                  onChange={e => { setNewDebt({...newDebt, startYear: Number(e.target.value)}); }}
-                  className="w-28 bg-family-bgDark"
-                />
-              </div>
-            </div>
+
             <div className="lg:col-span-4 flex flex-col items-end justify-end gap-1">
-              {!isWithinObservationPeriod(newDebt.startMonth, newDebt.startYear, selectedPeriodKey) && (
-                <span className="text-red-500 text-xs w-full text-right">{getPeriodGuardMessage(selectedPeriodKey)}</span>
-              )}
-              <Button onClick={handleAdd} disabled={!isWithinObservationPeriod(newDebt.startMonth, newDebt.startYear, selectedPeriodKey)} className="bg-red-600 hover:bg-red-700 text-white w-full md:w-auto">
+              <Button onClick={handleAdd} className="bg-red-600 hover:bg-red-700 text-white w-full md:w-auto mt-2">
                 Lưu Khoản Nợ
               </Button>
             </div>
