@@ -334,7 +334,7 @@ export function runProjection(input: ProjectionEngineInput): ProjectionOutput {
           currentSavingBalance -= t.amount;
        } else if (t.sourceType === 'pool' && t.sourceId === 'debt_reserve') {
           currentDebtReserveBalance -= t.amount;
-       } else if (t.sourceType === 'cashflow' && t.sourceId === 'liquidity') {
+       } else if (t.sourceType === 'cashflow' && (t.sourceId === 'liquidity' || t.sourceId?.startsWith('liquidity_group_'))) {
           currentLiquidityBalance -= t.amount;
        } else if (t.sourceType === 'cashflow' && (!t.sourceId || t.sourceId === 'investable')) {
           totalInvestable -= t.amount;
@@ -342,7 +342,7 @@ export function runProjection(input: ProjectionEngineInput): ProjectionOutput {
 
        // --- 2. DESTINATION ADDITIONS ---
        if (t.destinationType === 'cashflow') {
-          if (t.destinationId === 'liquidity') {
+          if (t.destinationId === 'liquidity' || t.destinationId?.startsWith('liquidity_group_')) {
              currentLiquidityBalance += t.amount;
           } else {
              totalInvestable += t.amount;
@@ -350,7 +350,11 @@ export function runProjection(input: ProjectionEngineInput): ProjectionOutput {
        } else if (t.destinationType === 'investment' || t.destinationType === 'sinking_fund') {
           // Any money that lands in an investment deal/fund must be part of the totalInvestable universe.
           totalInvestable += t.amount;
-       }
+        } else if ((t.destinationType as string) === 'pool' && t.destinationId === 'saving') {
+           currentSavingBalance += t.amount;
+        } else if ((t.destinationType as string) === 'pool' && t.destinationId === 'debt_reserve') {
+           currentDebtReserveBalance += t.amount;
+        }
     });
 
     // We will calculate Active Deal Values up to LAST month, to find unallocated compounding base

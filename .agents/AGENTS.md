@@ -16,3 +16,14 @@
   5. **Kiểm thử hồi quy** → Verify tất cả module bị ảnh hưởng vẫn hoạt động đúng.
 - **Mục đích:** Dự án đang ở giai đoạn pre-release. Không cho phép regression. Mỗi commit phải an toàn và không phá vỡ bất kỳ chức năng nào đang hoạt động ổn định.
 - **Lessons Learned:** Tham khảo bảng "Các Lỗi Đã Từng Xảy Ra" trong Skill để tránh lặp lại sai lầm cũ (VD: dùng `new Date()` thay vì `selectedPeriodKey`, duplicate dropdown, lặp đơn vị tiền tệ...).
+
+## Fund Transfer Rule: Restricted Sources & Destinations
+- **Requirement:** Trong Module Điều chuyển dòng tiền (`TransferForm.tsx` / `FundTransfers.tsx`):
+  1. **Tuyệt đối KHÔNG cho phép chuyển/nhận tiền từ Các Quỹ Tích lũy Mục tiêu (Sinking Funds)** ở mọi màn hình (Tiết kiệm, Dự phòng, Sinh hoạt, Đầu tư). Các Sinking Funds chỉ được nộp/rút nội bộ qua module của chính chúng.
+  2. **Tuyệt đối KHÔNG cho phép chuyển/nhận tiền trực tiếp từ Các Thương vụ Đầu tư (Investment Deals)**.
+  3. **Tuyệt đối KHÔNG cho phép chuyển/nhận tiền trực tiếp từ Các Sổ Tiết kiệm cá nhân (SavingsDeposits - Tất toán / Mở sổ mới)** trong TransferForm.
+  4. **Không hiển thị Tổng Quỹ Thanh khoản Sinh hoạt gộp**, chỉ cho phép chọn các **Quỹ Sinh hoạt nhỏ (Breakdown)** cụ thể.
+  5. **Tuyệt đối KHÔNG cho phép chuyển tiền từ một nguồn vào chính nguồn đó** (`sourceValue !== destinationValue`).
+
+
+

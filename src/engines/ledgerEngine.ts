@@ -78,7 +78,7 @@ export const buildEventLedger = (state: AppState): LedgerEvent[] => {
       const endYear = dep.startYear + Math.floor((dep.startMonth - 1 + dep.termMonths) / 12);
       events.push({
         id: `dep_${dep.id}`,
-        category: 'investment',
+        category: 'savings',
         name: `Gửi tiết kiệm: ${dep.name} (${dep.termMonths} tháng, Lãi suất ${dep.interestRateAnnual}%/năm)`,
         startMonth: dep.startMonth,
         startYear: dep.startYear,
@@ -97,7 +97,7 @@ export const buildEventLedger = (state: AppState): LedgerEvent[] => {
     state.sinkingFunds.forEach(sf => {
       events.push({
         id: `sf_${sf.id}`,
-        category: 'investment',
+        category: 'savings',
         name: `Quỹ tích lũy: ${sf.name}`,
         startMonth: sf.startMonth,
         startYear: sf.startYear,

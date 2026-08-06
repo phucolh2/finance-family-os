@@ -6,7 +6,7 @@ export interface LifecycleProps {
   status?: EventStatus;
 }
 
-export type EventCategory = 'income' | 'budget_allocation' | 'investment' | 'expense' | 'loan' | 'life_event';
+export type EventCategory = 'income' | 'budget_allocation' | 'investment' | 'savings' | 'expense' | 'loan' | 'life_event';
 
 export interface LedgerEvent {
   id: string;

@@ -3,13 +3,13 @@ import { useAppContext } from '../context/AppContext';
 import { buildEventLedger } from '../engines/ledgerEngine';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '../components/ui/Card';
 import { formatTableMoneyVNDMillion } from '../utils/format';
-import { DollarSign, Briefcase, PieChart, Activity, CalendarDays, History, AlertCircle } from 'lucide-react';
+import { DollarSign, Briefcase, PieChart, Activity, CalendarDays, History, AlertCircle, PiggyBank } from 'lucide-react';
 import { HelpTooltip } from '../components/ui/HelpTooltip';
 import type { LedgerEvent } from '../types/ledger';
 
 export const EventLedger: React.FC = () => {
   const { state } = useAppContext();
-  const [filter, setFilter] = useState<'all' | 'income' | 'budget_allocation' | 'investment' | 'life_event'>('all');
+  const [filter, setFilter] = useState<'all' | 'income' | 'budget_allocation' | 'investment' | 'savings' | 'life_event'>('all');
 
   // Build the chronological event ledger
   const rawEvents = useMemo(() => buildEventLedger(state), [state]);
@@ -41,6 +41,7 @@ export const EventLedger: React.FC = () => {
     switch (category) {
       case 'income': return <DollarSign className="w-5 h-5 text-green-400" />;
       case 'investment': return <Briefcase className="w-5 h-5 text-purple-400" />;
+      case 'savings': return <PiggyBank className="w-5 h-5 text-teal-400" />;
       case 'budget_allocation': return <PieChart className="w-5 h-5 text-orange-400" />;
       case 'life_event': return <Activity className="w-5 h-5 text-blue-400" />;
       default: return <CalendarDays className="w-5 h-5 text-family-text" />;
@@ -51,6 +52,7 @@ export const EventLedger: React.FC = () => {
     switch (category) {
       case 'income': return 'border-green-400/30 bg-green-400/5';
       case 'investment': return 'border-purple-400/30 bg-purple-400/5';
+      case 'savings': return 'border-teal-400/30 bg-teal-400/5';
       case 'budget_allocation': return 'border-orange-400/30 bg-orange-400/5';
       case 'life_event': return 'border-blue-400/30 bg-blue-400/5';
       default: return 'border-family-accent/20 bg-family-bgDark/20';
@@ -81,12 +83,12 @@ export const EventLedger: React.FC = () => {
             </div>
             
             {/* Filters */}
-            <div className="flex gap-2 bg-family-bgDeep p-1 rounded-xl border border-family-accent/10">
-              {(['all', 'income', 'budget_allocation', 'investment', 'life_event'] as const).map(f => (
+            <div className="flex flex-wrap md:flex-nowrap gap-2 bg-family-bgDeep p-1 rounded-xl border border-family-accent/10 w-full sm:w-auto overflow-x-auto">
+              {(['all', 'income', 'budget_allocation', 'investment', 'savings', 'life_event'] as const).map(f => (
                 <button
                   key={f}
                   onClick={() => { setFilter(f); }}
-                  className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-all ${
+                  className={`px-3 py-1.5 rounded-lg text-xs font-semibold whitespace-nowrap transition-all ${
                     filter === f 
                       ? 'bg-family-accent text-family-bgDeep shadow-sm' 
                       : 'text-family-textMuted hover:text-family-text hover:bg-family-accent/10'
@@ -95,7 +97,8 @@ export const EventLedger: React.FC = () => {
                   {f === 'all' ? 'Tất cả' :
                    f === 'income' ? 'Thu nhập' :
                    f === 'budget_allocation' ? 'Ngân sách' :
-                   f === 'investment' ? 'Đầu tư' : 'Sự kiện'}
+                   f === 'investment' ? 'Đầu tư' :
+                   f === 'savings' ? 'Tiết kiệm & Quỹ' : 'Sự kiện'}
                 </button>
               ))}
             </div>

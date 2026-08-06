@@ -987,7 +987,7 @@ export const SinkingFundModule_Reserves: React.FC<SinkingFundModule_ReservesProp
                           <input type="radio" name={`mode_${fund.id}`} checked={settleMode === 'partial'} onChange={() => {
                             setSettleMode('partial');
                           }} />
-                          <span className="font-semibold text-family-text text-xs">Giải ngân/Rút từng phần</span>
+                          <span className="font-semibold text-family-text text-xs">Rút từng phần</span>
                         </label>
                       </div>
                     </div>

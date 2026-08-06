@@ -867,17 +867,13 @@ export const Portfolio: React.FC = () => {
               
               <div className="flex flex-col gap-3 mt-2">
                 <div>
-                  <label className="block text-xs font-semibold text-family-text mb-1">Nguồn tiền đầu tư (Tùy chọn giải ngân)</label>
-                  <select
-                    value={dealForm.sourceFundId}
-                    onChange={(e) => { setDealForm({ ...dealForm, sourceFundId: e.target.value }); }}
-                    className="w-full text-xs bg-white rounded-xl border border-family-accent/15 px-3 py-1.5 focus:outline-none focus:ring-1 focus:ring-family-accent"
-                  >
-                    <option value="idle">Ngân sách Đầu tư nhàn rỗi (Từ thẻ "Chưa có kế hoạch") ({formatTableMoneyVNDMillion(getAvailableFundingFor('idle'))})</option>
-                    {state.sinkingFunds?.filter(f => f.status === 'active' && f.fundType === 'investment').map(f => (
-                      <option key={f.id} value={f.id}>Quỹ tích lũy: {f.name} ({formatTableMoneyVNDMillion(getAvailableFundingFor(f.id))})</option>
-                    ))}
-                  </select>
+                  <label className="block text-xs font-semibold text-family-text mb-1">Nguồn tiền đầu tư mặc định</label>
+                  <div className="w-full text-xs bg-gray-50 rounded-xl border border-family-accent/15 px-3 py-2 text-gray-600">
+                    Ngân sách Đầu tư nhàn rỗi ({formatTableMoneyVNDMillion(getAvailableFundingFor('idle'))})
+                  </div>
+                  <p className="text-[10px] text-family-textMuted mt-1 italic">
+                    *Khoản vốn này sẽ được trích trực tiếp từ Ngân sách Đầu tư Nhàn rỗi chưa phân bổ.
+                  </p>
                 </div>
               </div>
               
