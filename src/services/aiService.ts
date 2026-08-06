@@ -184,24 +184,10 @@ export const analyzeAllocationOffline = (
   }
 
   let idealExpense = 50;
-  let idealInvestment = 20;
-  let idealSavings = 0;
-  let idealReserve = 0;
-  let reason = "";
-
-  if (current_liquidity < benchmarks.quy_khan_cap_can) {
-     idealReserve = 30;
-     idealInvestment = 20;
-     reason = "Quỹ khẩn cấp của bạn đang thiếu, nên dồn 30% vào Dự phòng để sớm đạt mức an toàn (3 tháng chi phí). Giữ Đầu tư ở mức tối thiểu 20%.";
-  } else if (current_liquidity < chi_phi_hang_thang * 6) {
-     idealReserve = 10;
-     idealInvestment = 40;
-     reason = "Quỹ khẩn cấp đã đạt mức cơ bản. Bạn có thể tăng tốc Đầu tư lên 40% để mau đạt Tự do tài chính, trích 10% để tiếp tục làm dày Dự phòng.";
-  } else {
-     idealReserve = 10;
-     idealInvestment = 40;
-     reason = "Quỹ khẩn cấp rất an toàn (>6 tháng). Hãy tối đa hóa Đầu tư (40%) để bứt phá tài sản. Dành 10% Dự phòng cho các cơ hội hoặc hưởng thụ.";
-  }
+  let idealInvestment = 30;
+  let idealSavings = 10;
+  let idealReserve = 10;
+  let reason = "Mô hình Tự do Tài chính (FIRE) tối ưu: Giữ chi phí cơ bản ở mức 50%, dành 10% Tiết kiệm phòng rủi ro, 10% Dự phòng hưởng thụ/cơ hội. Quan trọng nhất: Dồn tối đa 30% (thay vì 20% tối thiểu) vào Đầu tư để tăng tốc độ đạt Tự do tài chính.";
 
   const de_xuat_phan_bo = {
     expense: { percent: idealExpense, amount: goc_phan_bo * idealExpense / 100 },
