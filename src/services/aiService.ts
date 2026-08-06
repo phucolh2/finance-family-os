@@ -170,6 +170,34 @@ export const analyzeAllocationOffline = (
     });
   }
 
+  let idealExpense = 50;
+  let idealInvestment = 20;
+  let idealSavings = 0;
+  let idealReserve = 0;
+  let reason = "";
+
+  if (current_liquidity < benchmarks.quy_khan_cap_can) {
+     idealSavings = 30;
+     idealInvestment = 20;
+     reason = "Quỹ khẩn cấp của bạn đang thiếu, nên dồn 30% vào Tiết kiệm/Dự phòng để sớm đạt mức an toàn (3 tháng chi phí). Giữ Đầu tư ở mức tối thiểu 20%.";
+  } else if (current_liquidity < chi_phi_hang_thang * 6) {
+     idealSavings = 10;
+     idealInvestment = 40;
+     reason = "Quỹ khẩn cấp đã đạt mức cơ bản. Bạn có thể tăng tốc Đầu tư lên 40% để mau đạt Tự do tài chính, trích 10% để tiếp tục làm dày Quỹ khẩn cấp.";
+  } else {
+     idealReserve = 10;
+     idealInvestment = 40;
+     reason = "Quỹ khẩn cấp rất an toàn (>6 tháng). Hãy tối đa hóa Đầu tư (40%) để bứt phá tài sản. Dành 10% Dự phòng cho các cơ hội hoặc hưởng thụ.";
+  }
+
+  const de_xuat_phan_bo = {
+    expense: { percent: idealExpense, amount: goc_phan_bo * idealExpense / 100 },
+    investment: { percent: idealInvestment, amount: goc_phan_bo * idealInvestment / 100 },
+    savings: { percent: idealSavings, amount: goc_phan_bo * idealSavings / 100 },
+    reserve: { percent: idealReserve, amount: goc_phan_bo * idealReserve / 100 },
+    ly_do: reason
+  };
+
   return {
     goc_phan_bo,
     thang_du,
@@ -178,6 +206,7 @@ export const analyzeAllocationOffline = (
       const rank = { cao: 0, trung_binh: 1, thong_tin: 2 };
       return rank[a.muc_do as keyof typeof rank] - rank[b.muc_do as keyof typeof rank];
     }).slice(0, 3), // Lấy top 3
+    de_xuat_phan_bo,
     tong_ket: allGood ? 
       "Xin chúc mừng! Cơ cấu phân bổ ngân sách của bạn đang đạt mức tối ưu theo các quy chuẩn tài chính cá nhân. Hãy tiếp tục duy trì kỷ luật này nhé." : 
       "Dựa trên các chuẩn mực tài chính, dòng tiền của bạn cần được tinh chỉnh đôi chút để tối ưu hóa khả năng tích lũy và phòng vệ rủi ro. Hãy xem các cảnh báo bên dưới."

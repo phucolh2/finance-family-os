@@ -22,6 +22,13 @@ export interface AIAllocationResult {
     de_xuat_hanh_dong: string;
   }[];
   tong_ket: string;
+  de_xuat_phan_bo?: {
+    expense: { percent: number; amount: number };
+    investment: { percent: number; amount: number };
+    savings: { percent: number; amount: number };
+    reserve: { percent: number; amount: number };
+    ly_do: string;
+  };
 }
 import { Sparkles, X, BrainCircuit, ShieldAlert, ArrowDownToLine, Target, TrendingUp, CheckCircle2 } from 'lucide-react';
 import { formatTableMoneyVNDMillion } from '../../utils/format';
@@ -306,6 +313,57 @@ export const SmartAllocationAdvisorModal: React.FC<Props> = ({ isOpen, onClose, 
                     <div className="text-lg font-black text-slate-800">{formatTableMoneyVNDMillion(aiResults.benchmarks.chi_phi_toi_da)}</div>
                   </div>
                 </div>
+
+                {aiResults.de_xuat_phan_bo && (
+                  <div className="space-y-4 mt-6 animate-in slide-in-from-bottom-4 duration-500 delay-150 fill-mode-both">
+                    <h4 className="font-bold text-slate-700 flex items-center gap-2">
+                      <TrendingUp className="w-5 h-5 text-indigo-500" /> Mô hình Phân bổ Lý tưởng
+                    </h4>
+                    <div className="bg-gradient-to-br from-indigo-50 to-white p-5 rounded-2xl border border-indigo-100 shadow-sm relative overflow-hidden">
+                      <div className="absolute top-0 right-0 w-32 h-32 bg-indigo-500/5 rounded-full blur-2xl -mr-10 -mt-10"></div>
+                      <p className="text-sm text-slate-600 mb-5 relative z-10">{aiResults.de_xuat_phan_bo.ly_do}</p>
+                      
+                      <div className="grid grid-cols-2 md:grid-cols-4 gap-3 relative z-10">
+                        {/* Expense */}
+                        <div className="bg-white p-3 rounded-xl border border-rose-100 shadow-sm flex flex-col justify-between relative overflow-hidden">
+                          <div className="absolute top-0 left-0 bottom-0 w-1 bg-rose-400"></div>
+                          <div className="text-[10px] text-rose-600 font-bold uppercase tracking-wider mb-1 flex items-center justify-between pl-2">
+                            <span>Chi phí</span>
+                            <span className="bg-rose-50 px-1.5 rounded">{aiResults.de_xuat_phan_bo.expense.percent}%</span>
+                          </div>
+                          <div className="text-lg font-black text-slate-800 pl-2">{formatTableMoneyVNDMillion(aiResults.de_xuat_phan_bo.expense.amount)}</div>
+                        </div>
+                        {/* Investment */}
+                        <div className="bg-white p-3 rounded-xl border border-blue-100 shadow-sm flex flex-col justify-between relative overflow-hidden">
+                          <div className="absolute top-0 left-0 bottom-0 w-1 bg-blue-500"></div>
+                          <div className="text-[10px] text-blue-600 font-bold uppercase tracking-wider mb-1 flex items-center justify-between pl-2">
+                            <span>Đầu tư</span>
+                            <span className="bg-blue-50 px-1.5 rounded">{aiResults.de_xuat_phan_bo.investment.percent}%</span>
+                          </div>
+                          <div className="text-lg font-black text-slate-800 pl-2">{formatTableMoneyVNDMillion(aiResults.de_xuat_phan_bo.investment.amount)}</div>
+                        </div>
+                        {/* Savings */}
+                        <div className="bg-white p-3 rounded-xl border border-emerald-100 shadow-sm flex flex-col justify-between relative overflow-hidden">
+                          <div className="absolute top-0 left-0 bottom-0 w-1 bg-emerald-400"></div>
+                          <div className="text-[10px] text-emerald-600 font-bold uppercase tracking-wider mb-1 flex items-center justify-between pl-2">
+                            <span>Tiết kiệm</span>
+                            <span className="bg-emerald-50 px-1.5 rounded">{aiResults.de_xuat_phan_bo.savings.percent}%</span>
+                          </div>
+                          <div className="text-lg font-black text-slate-800 pl-2">{formatTableMoneyVNDMillion(aiResults.de_xuat_phan_bo.savings.amount)}</div>
+                        </div>
+                        {/* Reserve */}
+                        <div className="bg-white p-3 rounded-xl border border-amber-100 shadow-sm flex flex-col justify-between relative overflow-hidden">
+                          <div className="absolute top-0 left-0 bottom-0 w-1 bg-amber-400"></div>
+                          <div className="text-[10px] text-amber-600 font-bold uppercase tracking-wider mb-1 flex items-center justify-between pl-2">
+                            <span>Dự phòng</span>
+                            <span className="bg-amber-50 px-1.5 rounded">{aiResults.de_xuat_phan_bo.reserve.percent}%</span>
+                          </div>
+                          <div className="text-lg font-black text-slate-800 pl-2">{formatTableMoneyVNDMillion(aiResults.de_xuat_phan_bo.reserve.amount)}</div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                )}
 
                 <div className="space-y-4 mt-6">
                   <h4 className="font-bold text-slate-700 flex items-center gap-2">
