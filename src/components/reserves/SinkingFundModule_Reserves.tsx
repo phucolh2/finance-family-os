@@ -420,7 +420,7 @@ export const SinkingFundModule_Reserves: React.FC<SinkingFundModule_ReservesProp
           <h3 className="text-xl font-serif font-bold text-family-text flex items-center gap-2">
             {title}
             <HelpTooltip text={variant === 'reserves' 
-              ? "Công cụ giúp bạn lên kế hoạch góp tiền đều đặn hàng tháng để chuẩn bị tài chính cho các sự kiện rủi ro (y tế, thất nghiệp) hoặc mục tiêu phòng thủ."
+              ? "Công cụ giúp bạn lên kế hoạch góp tiền đều đặn hàng tháng để chuẩn bị tài chính cho các sự kiện rủi ro (y tế, thất nghiệp) hoặc mục tiêu phòng thủ. Gợi ý: Bạn nên dự phòng tối thiểu từ 3 đến 6 tháng chi phí sinh hoạt thiết yếu của gia đình để đảm bảo an toàn tài chính."
               : variant === 'savings'
               ? "Công cụ giúp bạn lên kế hoạch góp tiền đều đặn hàng tháng để đạt được mục tiêu tích lũy hoặc mua sắm (hưu trí, học vấn, mua xe) trong tương lai."
               : "Công cụ giúp bạn lên kế hoạch góp tiền đều đặn hàng tháng để đạt được mục tiêu mua tài sản lớn (nhà, xe, mở sổ tiết kiệm lớn) trong tương lai mà không bị sốc dòng tiền."} />
