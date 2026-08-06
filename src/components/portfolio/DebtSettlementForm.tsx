@@ -1,5 +1,4 @@
-import React, { useState } from 'react';
-import { Select } from '../ui/Select';
+import React from 'react';
 import { Button } from '../ui/Button';
 import { useAppContext } from '../../context/AppContext';
 import type { DebtLiability } from '../../types/finance';
@@ -11,61 +10,27 @@ interface DebtSettlementFormProps {
 }
 
 export const DebtSettlementForm: React.FC<DebtSettlementFormProps> = ({ debt, onCancel, onSuccess }) => {
-  const { state, settleDebt, disburseSinkingFund, selectedPeriodKey } = useAppContext();
-  const [settleForm, setSettleForm] = useState({ type: 'regular', fundId: '' });
+  const { settleDebt } = useAppContext();
 
   const handleSettleSubmit = () => {
     settleDebt(debt.id);
-    if (settleForm.type === 'early' && settleForm.fundId && disburseSinkingFund) {
-      const currentYear = selectedPeriodKey ? parseInt(selectedPeriodKey.split('-')[0], 10) : new Date().getFullYear();
-      const currentMonth = selectedPeriodKey ? parseInt(selectedPeriodKey.split('-')[1], 10) : new Date().getMonth() + 1;
-      disburseSinkingFund(settleForm.fundId, currentMonth, currentYear);
-    }
     onSuccess();
   };
 
-  const debtPrepFunds = state.sinkingFunds?.filter(f => f.fundType === 'debt_prep' && f.status === 'active') || [];
-
   return (
     <div className="bg-family-bgDeep rounded-xl border border-emerald-500/30 p-4 max-w-3xl mx-auto shadow-sm">
-      <h4 className="text-sm font-bold text-emerald-400 mb-4">Xác nhận Tất toán khoản nợ: {debt.name}</h4>
-      <div className="flex flex-col md:flex-row gap-4 items-end">
-         <div className="flex-1 space-y-2 w-full">
-            <label className="text-xs text-family-textMuted uppercase">Phương thức Tất toán</label>
-            <Select 
-              value={settleForm.type}
-              onChange={e => setSettleForm({...settleForm, type: e.target.value as 'regular' | 'early'})}
-              options={[
-                { value: 'regular', label: 'Trả hết theo tiến độ hàng tháng (Regular)' },
-                { value: 'early', label: 'Tất toán sớm (Early Termination)' }
-              ]}
-              className="bg-family-bgDark border-emerald-500/20"
-            />
-         </div>
-         {settleForm.type === 'early' && (
-           <div className="flex-1 space-y-2 w-full">
-              <label className="text-xs text-family-textMuted uppercase">Nguồn tiền tất toán</label>
-              <Select
-                value={settleForm.fundId}
-                onChange={e => setSettleForm({...settleForm, fundId: e.target.value})}
-                options={[
-                   { value: '', label: '-- Chọn Quỹ Dự phòng --' },
-                   ...debtPrepFunds.map(f => ({ value: f.id, label: `${f.name}` }))
-                ]}
-                className="bg-family-bgDark border-emerald-500/20"
-              />
-           </div>
-         )}
-         <div className="flex gap-2 w-full md:w-auto mt-2 md:mt-0">
-            <Button variant="outline" className="flex-1 md:flex-none border-family-accent/20" onClick={onCancel}>Hủy</Button>
-            <Button 
-               disabled={settleForm.type === 'early' && !settleForm.fundId}
-               className="flex-1 md:flex-none bg-emerald-600 hover:bg-emerald-700 text-white"
-               onClick={handleSettleSubmit}
-            >
-              Xác nhận
-            </Button>
-         </div>
+      <h4 className="text-sm font-bold text-emerald-400 mb-2">Xác nhận Tất toán khoản nợ: {debt.name}</h4>
+      <p className="text-sm text-family-textMuted mb-4">
+        Hành động này sẽ đánh dấu khoản nợ là đã được tất toán (dư nợ bằng 0). Việc này chỉ dùng để ghi nhận trên sổ nợ và không làm thay đổi các quỹ khác của bạn.
+      </p>
+      <div className="flex justify-end gap-2">
+         <Button variant="outline" className="border-family-accent/20" onClick={onCancel}>Hủy</Button>
+         <Button 
+            className="bg-emerald-600 hover:bg-emerald-700 text-white"
+            onClick={handleSettleSubmit}
+         >
+           Xác nhận Tất toán
+         </Button>
       </div>
     </div>
   );
