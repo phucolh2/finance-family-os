@@ -83,8 +83,6 @@ export const DebtManagement: React.FC = () => {
             key: row.period.key,
             label: `T${row.period.month}/${row.period.year}`,
             debtRemaining: safeNumber(row._totalDebtPrincipalRemaining, 0),
-            reserveBalance: safeNumber(row.debtReserveBalance, 0) + safeNumber(row._activeSinkingFundsDebtReserve, 0),
-            netPosition: (safeNumber(row.debtReserveBalance, 0) + safeNumber(row._activeSinkingFundsDebtReserve, 0)) - safeNumber(row._totalDebtPrincipalRemaining, 0),
         }));
     }, [projection.monthlyRows]);
 
@@ -153,7 +151,7 @@ export const DebtManagement: React.FC = () => {
                 </CardContent>
             </Card>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                 <Card className="bg-family-bgDark border-family-accent/10">
                     <CardHeader className="pb-2">
                         <CardTitle className="text-sm font-medium text-family-textMuted flex items-center gap-2">
@@ -195,21 +193,6 @@ export const DebtManagement: React.FC = () => {
                     <CardContent>
                         <div className={`text-2xl font-bold ${totalDTI < 36 ? 'text-emerald-400' : totalDTI <= 50 ? 'text-yellow-400' : 'text-red-400'}`}>
                             {totalDTI.toFixed(1)}%
-                        </div>
-                    </CardContent>
-                </Card>
-
-                <Card className="bg-family-bgDark border-family-accent/10">
-                    <CardHeader className="pb-2">
-                        <CardTitle className="text-sm font-medium text-family-textMuted flex items-center gap-2">
-                            <ShieldCheck className="w-4 h-4 text-amber-400" />
-                            Quỹ Dự phòng Nợ
-                            <HelpTooltip text="Tổng tiền mặt đang có để dự phòng tất toán hoặc thanh toán nợ khi gặp rủi ro." />
-                        </CardTitle>
-                    </CardHeader>
-                    <CardContent>
-                        <div className="text-2xl font-bold text-amber-400">
-                            {formatKpiMoneyVNDMillion(debtReserveBalance)}
                         </div>
                     </CardContent>
                 </Card>
@@ -338,10 +321,6 @@ export const DebtManagement: React.FC = () => {
                                                     <stop offset="5%" stopColor="#ef4444" stopOpacity={0.3}/>
                                                     <stop offset="95%" stopColor="#ef4444" stopOpacity={0}/>
                                                 </linearGradient>
-                                                <linearGradient id="colorReserve" x1="0" y1="0" x2="0" y2="1">
-                                                    <stop offset="5%" stopColor="#f59e0b" stopOpacity={0.3}/>
-                                                    <stop offset="95%" stopColor="#f59e0b" stopOpacity={0}/>
-                                                </linearGradient>
                                             </defs>
                                             <CartesianGrid strokeDasharray="3 3" stroke="#374151" vertical={false} />
                                             <XAxis dataKey="label" stroke="#9ca3af" fontSize={12} tickLine={false} axisLine={false} />
@@ -352,8 +331,6 @@ export const DebtManagement: React.FC = () => {
                                             />
                                             <Legend wrapperStyle={{ fontSize: '12px', paddingTop: '10px' }} />
                                             <Area type="monotone" dataKey="debtRemaining" name="Dư nợ còn lại" stroke="#ef4444" fillOpacity={1} fill="url(#colorDebt)" />
-                                            <Area type="monotone" dataKey="reserveBalance" name="Quỹ dự phòng" stroke="#f59e0b" fillOpacity={1} fill="url(#colorReserve)" />
-                                            <Line type="monotone" dataKey="netPosition" name="Vị thế Ròng" stroke="#3b82f6" strokeDasharray="5 5" dot={false} />
                                         </ComposedChart>
                                     </ResponsiveContainer>
                                 </div>
