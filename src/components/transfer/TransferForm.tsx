@@ -206,10 +206,10 @@ export const TransferForm: React.FC<TransferFormProps> = ({ onSuccess, onCancel 
                       </optgroup>
                       <optgroup label="🎯 Quản lý chi tiêu">
                         {liquidityBreakdownData.map(group => (
-                          <option key={group.id} value={`cashflow:liquidity_group_${group.id}`}>Quỹ Sinh hoạt: {group.name} (+{formatMoneyVNDMillion(group.remaining)})</option>
+                          <option key={group.id} value={`cashflow:liquidity_group_${group.id}`}>Quỹ Sinh hoạt: {group.name} ({formatMoneyVNDMillion(group.remaining)})</option>
                         ))}
                         {state.lifeEvents?.filter(e => e.amount > 0).map(e => (
-                          <option key={e.id} value={`life_event:${e.id}`}>{e.name} (+{formatMoneyVNDMillion(e.amount)})</option>
+                          <option key={e.id} value={`life_event:${e.id}`}>{e.name} ({formatMoneyVNDMillion(e.amount)})</option>
                         ))}
                       </optgroup>
                       <optgroup label="🏦 Tiết kiệm">
@@ -243,10 +243,10 @@ export const TransferForm: React.FC<TransferFormProps> = ({ onSuccess, onCancel 
                       </optgroup>
                       <optgroup label="🎯 Quản lý chi tiêu">
                         {liquidityBreakdownData.map(group => (
-                          <option key={group.id} value={`cashflow:liquidity_group_${group.id}`}>Quỹ Sinh hoạt: {group.name} (+{formatMoneyVNDMillion(group.remaining)})</option>
+                          <option key={group.id} value={`cashflow:liquidity_group_${group.id}`}>Quỹ Sinh hoạt: {group.name} ({formatMoneyVNDMillion(group.remaining)})</option>
                         ))}
                         {state.lifeEvents?.filter(e => e.amount > 0).map(e => (
-                          <option key={e.id} value={`life_event:${e.id}`}>{e.name} (+{formatMoneyVNDMillion(e.amount)})</option>
+                          <option key={e.id} value={`life_event:${e.id}`}>{e.name} ({formatMoneyVNDMillion(e.amount)})</option>
                         ))}
                       </optgroup>
                       <optgroup label="🏦 Tiết kiệm">

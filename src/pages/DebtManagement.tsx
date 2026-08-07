@@ -78,8 +78,26 @@ export const DebtManagement: React.FC = () => {
 
     // Interest Rate Arbitrage
     const maxDebtRate = activeDebts.length > 0 ? Math.max(...activeDebts.map(d => d.interestRateAnnual)) : 0;
-    const activeSavings = (state.savingsDeposits || []).filter(s => s.status === 'active');
-    const maxSavingsRate = activeSavings.length > 0 ? Math.max(...activeSavings.map(s => s.interestRateAnnual)) : (state.assumptions?.savingsInterestRateAnnual || 5.5);
+    
+    // Lấy lãi suất tiết kiệm max từ tất cả các kỳ tiết kiệm của SinkingFunds active
+    const activeSinkingFunds = (state.sinkingFunds || []).filter(f => f.status === 'active');
+    const allSavingsRates: number[] = [];
+    activeSinkingFunds.forEach(fund => {
+      // Lãi suất mặc định của quỹ
+      if (fund.interestRateAnnual > 0) allSavingsRates.push(fund.interestRateAnnual);
+      // Lãi suất từng kỳ tiết kiệm (periodConfigs)
+      if (fund.periodConfigs) {
+        Object.values(fund.periodConfigs).forEach(pc => {
+          if (pc.interestRateAnnual && pc.interestRateAnnual > 0) allSavingsRates.push(pc.interestRateAnnual);
+        });
+      }
+    });
+    // Fallback: nếu không có SinkingFund nào → dùng savingsDeposits active → assumptions
+    if (allSavingsRates.length === 0) {
+      const activeSavings = (state.savingsDeposits || []).filter(s => s.status === 'active');
+      activeSavings.forEach(s => { if (s.interestRateAnnual > 0) allSavingsRates.push(s.interestRateAnnual); });
+    }
+    const maxSavingsRate = allSavingsRates.length > 0 ? Math.max(...allSavingsRates) : (state.assumptions?.savingsInterestRateAnnual || 5.5);
     const rateDiff = maxDebtRate - maxSavingsRate;
 
     const debtReserveBalance = (activeRow?.debtReserveBalance || 0) + (activeRow?._activeSinkingFundsDebtReserve || 0);

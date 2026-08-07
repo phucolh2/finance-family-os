@@ -12,7 +12,6 @@ const EventLedger = lazy(() => import('./pages/EventLedger').then(m => ({ defaul
 const IncomeSchedule = lazy(() => import('./pages/IncomeSchedule').then(m => ({ default: m.IncomeSchedule })));
 const BudgetHistory = lazy(() => import('./pages/BudgetHistory').then(m => ({ default: m.BudgetHistory })));
 const LifeStages = lazy(() => import('./pages/LifeStages').then(m => ({ default: m.LifeStages })));
-const ScenarioBase = lazy(() => import('./pages/ScenarioBase').then(m => ({ default: m.ScenarioBase })));
 const ScenarioChild2031 = lazy(() => import('./pages/ScenarioChild2031').then(m => ({ default: m.ScenarioChild2031 })));
 const ScenarioManagement = lazy(() => import('./pages/ScenarioManagement').then(m => ({ default: m.ScenarioManagement })));
 const Portfolio = lazy(() => import('./pages/Portfolio').then(m => ({ default: m.Portfolio })));
@@ -45,8 +44,6 @@ function AppContent() {
         return <BudgetHistory />;
       case 'life_stages':
         return <LifeStages />;
-      case 'scenario_base':
-        return <ScenarioBase />;
       case 'scenario_child_2031':
         return <ScenarioChild2031 />;
       case 'scenario_mgmt':

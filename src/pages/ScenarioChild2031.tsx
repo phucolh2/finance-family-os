@@ -1,27 +1,38 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { useAppContext } from '../context/AppContext';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '../components/ui/Card';
 import { WarningBox } from '../components/ui/WarningBox';
+import { HelpTooltip } from '../components/ui/HelpTooltip';
 import { calculateChildCost } from '../engines/childEngine';
 import { formatTableMoneyVNDMillion, formatKpiMoneyVNDMillion, formatAxisMoneyVNDMillion, formatTooltipMoneyVNDMillion } from '../utils/format';
 import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
-import { Baby, GraduationCap, Coins } from 'lucide-react';
+import { Baby, GraduationCap, Coins, Settings2 } from 'lucide-react';
 import type { TimelinePeriod } from '../types/finance';
+import type { ChildLifestyle } from '../types/child';
+
+const LIFESTYLE_OPTIONS: { value: ChildLifestyle; label: string; description: string }[] = [
+  { value: 'basic', label: 'Cơ bản', description: 'Trường công, chi phí tối thiểu' },
+  { value: 'comfortable', label: 'Thoải mái', description: 'Trường bán công, ngoại ngữ vừa phải' },
+  { value: 'premium', label: 'Cao cấp', description: 'Trường tư thục chất lượng cao, ngoại ngữ chuyên sâu' },
+  { value: 'international', label: 'Quốc tế', description: 'Trường quốc tế, du học, lối sống cao cấp' },
+];
 
 export const ScenarioChild2031: React.FC = () => {
   const { state } = useAppContext();
 
-  const birthMonth = 10;
-  const birthYear = 2031;
+  // --- Biến số nhập vào (thay vì hardcode) ---
+  const [birthMonth, setBirthMonth] = useState<number>(10);
+  const [birthYear, setBirthYear] = useState<number>(2031);
+  const [lifestyle, setLifestyle] = useState<ChildLifestyle>('premium');
+  const [budgetCapMonthly, setBudgetCapMonthly] = useState<number>(35);
 
   // 1. Calculate dynamic child cost timeline from age 0 to 22
   const childAgeRange = Array.from({ length: 23 }, (_, i) => i); // 0 to 22
   
   const childCostData = childAgeRange.map((age) => {
-    // Generate a mock period for this age (using month 10 of birthYear + age)
     const mockPeriod: TimelinePeriod = {
       index: age * 12,
-      key: `${birthYear + age}-10`,
+      key: `${birthYear + age}-${String(birthMonth).padStart(2, '0')}`,
       month: birthMonth,
       year: birthYear + age,
       husbandAge: state.profile.husbandAgeAtStart + (birthYear - state.profile.planningStartYear) + age,
@@ -32,8 +43,8 @@ export const ScenarioChild2031: React.FC = () => {
       period: mockPeriod,
       childBirthMonth: birthMonth,
       childBirthYear: birthYear,
-      lifestyle: 'premium',
-      budgetCapMonthly: 35,
+      lifestyle,
+      budgetCapMonthly,
       educationInflationAnnual: state.assumptions.educationInflationRateAnnual,
       healthInflationAnnual: state.assumptions.medicalInflationRateAnnual,
       generalInflationAnnual: state.assumptions.generalInflationRateAnnual,
@@ -56,24 +67,98 @@ export const ScenarioChild2031: React.FC = () => {
     };
   });
 
-  // Calculate cumulative child cost up to age 22 (exclusive of age 23)
   const totalCumulativeCost = childCostData.reduce((sum, item) => sum + item['Chi phí năm'], 0);
-
-  // University cost at age 18-21
   const universityTotal = childCostData
     .filter((d) => d.age >= 18 && d.age <= 21)
     .reduce((sum, item) => sum + item['Chi phí năm'], 0);
+
+  const selectedLifestyleLabel = LIFESTYLE_OPTIONS.find(o => o.value === lifestyle)?.label || lifestyle;
 
   return (
     <div className="space-y-6">
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
-          <h1 className="text-3xl font-serif font-bold text-family-text">Kịch bản có con 2031</h1>
+          <h1 className="text-3xl font-serif font-bold text-family-text flex items-center gap-3">
+            Kịch bản Nuôi Con
+            <HelpTooltip text="Tùy chỉnh tháng/năm sinh, lối sống, và trần chi phí để mô phỏng tổng chi phí nuôi con từ 0 đến 22 tuổi. Tất cả số liệu đã tính gộp lạm phát theo giả định hệ thống." />
+          </h1>
           <p className="text-sm text-family-textMuted mt-1">
-            Kế hoạch chuẩn bị và phân tách chi phí nuôi con sinh năm Tân Hợi (10/2031) đến tuổi trưởng thành.
+            Mô phỏng chi phí nuôi con theo các biến số đầu vào tùy chỉnh — từ sơ sinh đến trưởng thành.
           </p>
         </div>
       </div>
+
+      {/* --- Input Panel --- */}
+      <Card className="border-blue-500/20 bg-gradient-to-br from-blue-50/50 to-indigo-50/30">
+        <CardHeader className="pb-3">
+          <CardTitle className="text-base flex items-center gap-2 text-blue-800">
+            <Settings2 className="w-5 h-5" /> Biến số đầu vào
+            <HelpTooltip text="Thay đổi các tham số bên dưới để thấy kết quả mô phỏng cập nhật theo thời gian thực." />
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+            {/* Tháng sinh */}
+            <div className="space-y-1.5">
+              <label className="text-xs font-bold text-slate-600 uppercase tracking-wider">Tháng sinh</label>
+              <select
+                value={birthMonth}
+                onChange={e => setBirthMonth(Number(e.target.value))}
+                className="w-full bg-white border border-blue-200 rounded-lg px-3 py-2.5 text-sm font-medium text-slate-800 focus:outline-none focus:ring-2 focus:ring-blue-400/50 focus:border-blue-400"
+              >
+                {Array.from({ length: 12 }, (_, i) => i + 1).map(m => (
+                  <option key={m} value={m}>Tháng {m}</option>
+                ))}
+              </select>
+            </div>
+
+            {/* Năm sinh */}
+            <div className="space-y-1.5">
+              <label className="text-xs font-bold text-slate-600 uppercase tracking-wider">Năm sinh</label>
+              <input
+                type="number"
+                value={birthYear}
+                onChange={e => setBirthYear(Number(e.target.value))}
+                min={2024}
+                max={2045}
+                className="w-full bg-white border border-blue-200 rounded-lg px-3 py-2.5 text-sm font-medium text-slate-800 focus:outline-none focus:ring-2 focus:ring-blue-400/50 focus:border-blue-400"
+              />
+            </div>
+
+            {/* Lối sống */}
+            <div className="space-y-1.5">
+              <label className="text-xs font-bold text-slate-600 uppercase tracking-wider">Lối sống nuôi con</label>
+              <select
+                value={lifestyle}
+                onChange={e => setLifestyle(e.target.value as ChildLifestyle)}
+                className="w-full bg-white border border-blue-200 rounded-lg px-3 py-2.5 text-sm font-medium text-slate-800 focus:outline-none focus:ring-2 focus:ring-blue-400/50 focus:border-blue-400"
+              >
+                {LIFESTYLE_OPTIONS.map(opt => (
+                  <option key={opt.value} value={opt.value}>{opt.label} — {opt.description}</option>
+                ))}
+              </select>
+            </div>
+
+            {/* Trần chi phí */}
+            <div className="space-y-1.5">
+              <label className="text-xs font-bold text-slate-600 uppercase tracking-wider">Trần chi phí (triệu/tháng)</label>
+              <input
+                type="number"
+                value={budgetCapMonthly}
+                onChange={e => setBudgetCapMonthly(Number(e.target.value))}
+                min={5}
+                max={200}
+                step={5}
+                className="w-full bg-white border border-blue-200 rounded-lg px-3 py-2.5 text-sm font-medium text-slate-800 focus:outline-none focus:ring-2 focus:ring-blue-400/50 focus:border-blue-400"
+              />
+            </div>
+          </div>
+          <div className="mt-3 text-[11px] text-slate-500 flex items-center gap-1.5">
+            <span>💡</span>
+            <span>Lạm phát Giáo dục: <strong>{state.assumptions.educationInflationRateAnnual}%</strong> · Y tế: <strong>{state.assumptions.medicalInflationRateAnnual}%</strong> · Chung: <strong>{state.assumptions.generalInflationRateAnnual}%</strong> (từ Cài đặt Giả định)</span>
+          </div>
+        </CardContent>
+      </Card>
 
       {/* KPI Highlights */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
@@ -82,7 +167,7 @@ export const ScenarioChild2031: React.FC = () => {
             <CardDescription className="uppercase tracking-wider font-bold text-xs flex items-center gap-1.5">
               <Baby className="w-4 h-4 text-family-accent" /> Mốc sinh con dự kiến
             </CardDescription>
-            <CardTitle className="text-xl mt-1">Tháng 10/2031</CardTitle>
+            <CardTitle className="text-xl mt-1">Tháng {birthMonth}/{birthYear}</CardTitle>
           </CardHeader>
         </Card>
 
@@ -107,13 +192,16 @@ export const ScenarioChild2031: React.FC = () => {
 
       <WarningBox
         type="info"
-        message="Giả định mặc định nuôi con theo lối sống Cao vừa phải (Premium), đã tính gộp tỷ lệ lạm phát giáo dục & y tế 6%/năm và lạm phát chung 4%/năm. Tổng chi phí tháng được khống chế ở trần 35 triệu/tháng."
+        message={`Giả định nuôi con theo lối sống ${selectedLifestyleLabel}, đã tính gộp tỷ lệ lạm phát giáo dục & y tế ${state.assumptions.educationInflationRateAnnual}%/năm và lạm phát chung ${state.assumptions.generalInflationRateAnnual}%/năm. Tổng chi phí tháng được khống chế ở trần ${budgetCapMonthly} triệu/tháng.`}
       />
 
       {/* Chart Child Cost Over Time */}
       <Card>
         <CardHeader>
-          <CardTitle>Biểu đồ Chi phí nuôi con theo tuổi</CardTitle>
+          <CardTitle className="flex items-center gap-2">
+            Biểu đồ Chi phí nuôi con theo tuổi
+            <HelpTooltip text="Biểu đồ area thể hiện chi phí hàng tháng theo từng độ tuổi, bao gồm các chi phí ăn uống, giáo dục, y tế, kỹ năng, và đại học." />
+          </CardTitle>
           <CardDescription>Biến động chi phí hàng tháng qua các cấp học và đại học (Đã điều chỉnh lạm phát).</CardDescription>
         </CardHeader>
         <CardContent className="h-64">
@@ -138,7 +226,10 @@ export const ScenarioChild2031: React.FC = () => {
       {/* Child cost breakdown table */}
       <Card>
         <CardHeader>
-          <CardTitle>Chi tiết phân rã chi phí nuôi con hàng năm</CardTitle>
+          <CardTitle className="flex items-center gap-2">
+            Chi tiết phân rã chi phí nuôi con hàng năm
+            <HelpTooltip text="Bảng phân rã chi tiết theo từng cấu phần: ăn uống, giáo dục, ngoại ngữ, y tế, du lịch, và lập nghiệp. Đơn vị: triệu VND/tháng." />
+          </CardTitle>
           <CardDescription>
             Định mức chi tiêu hàng tháng cho từng cấu phần chi tiết (Đơn vị: triệu VND/tháng).
           </CardDescription>

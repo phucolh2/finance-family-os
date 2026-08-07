@@ -485,6 +485,7 @@ export function runProjection(input: ProjectionEngineInput): ProjectionOutput {
     let activeSinkingFundsBalance_unallocated = 0;
     let activeSinkingFundsBalance_saving = 0;
     let activeSinkingFundsBalance_debtReserve = 0;
+    let activeSinkingFundsBalance_expenseSurplus = 0;
     let activeSinkingFundsContrib_saving = 0;
     
     let sinkingFundMaturedThisMonth_saving = 0;
@@ -585,7 +586,7 @@ export function runProjection(input: ProjectionEngineInput): ProjectionOutput {
                sinkingFundMaturedThisMonth_saving += maturingAmount;
            } else if (source === 'debt_reserve') {
                sinkingFundMaturedThisMonth_debtReserve += maturingAmount;
-           } else if (source === 'expense_surplus') {
+           } else if (source?.startsWith('expense_surplus')) {
                currentLiquidityBalance += maturingAmount;
            } else {
                sinkingFundMaturedThisMonth_unallocated += maturingAmount;
@@ -600,7 +601,8 @@ export function runProjection(input: ProjectionEngineInput): ProjectionOutput {
         } else if (source === 'debt_reserve') {
           activeSinkingFundsBalance_debtReserve += state.balance;
           if (current < end) currentDebtReserveBalance -= newContrib;
-        } else if (source === 'expense_surplus') {
+        } else if (source?.startsWith('expense_surplus')) {
+          activeSinkingFundsBalance_expenseSurplus += state.balance;
           if (current < end) currentLiquidityBalance -= newContrib;
         }
       }
@@ -871,7 +873,7 @@ export function runProjection(input: ProjectionEngineInput): ProjectionOutput {
     };
 
     // Calculate Net Worth
-    const nominalNetWorth = portfolioOutput.totalEndingBalance + currentSavingBalance + activeSinkingFundsBalance_saving + currentLiquidityBalance;
+    const nominalNetWorth = portfolioOutput.totalEndingBalance + currentSavingBalance + activeSinkingFundsBalance_saving + currentLiquidityBalance + currentDebtReserveBalance + activeSinkingFundsBalance_expenseSurplus;
 
     // Calculate Real Value Today
     const inflationRate = safeNumber(assumptions.generalInflationRateAnnual, 0);
@@ -879,9 +881,9 @@ export function runProjection(input: ProjectionEngineInput): ProjectionOutput {
     const years = period.index / 12;
     const realNetWorth = nominalNetWorth / Math.pow(1 + inflationRateRate, years);
 
-    // Calculate FIRE Target using fireEngine
+    // Calculate FIRE Target using fireEngine (Luôn dùng ngân sách phân bổ, không dùng thực tế để tránh sai lệch mục tiêu dài hạn)
     const fireRes = calculateFire({
-      expensesMonthly: cashflowRes.expensesMonthly,
+      expensesMonthly: budgetRes.totalExpenseMonthly,
       netWorth: nominalNetWorth,
       withdrawalRate: 4,
       yearlyRows: [], // resolved at year aggregate step
@@ -931,10 +933,19 @@ export function runProjection(input: ProjectionEngineInput): ProjectionOutput {
     const savedMonthlyBudget = { ...budgetByCategory };
     const savedMonthlyActual = { ...realActualByCategory };
 
+    const savedSinkingFundBalances: Record<string, number> = {};
+    sinkingFunds.forEach(sf => {
+      const state = sinkingFundStates[sf.id];
+      if (state && state.balance > 0) {
+        savedSinkingFundBalances[sf.name] = state.balance;
+      }
+    });
+
     monthlyRows.push({
       period,
       incomeMonthly: incomeRes.incomeMonthly,
       expensesMonthly: cashflowRes.expensesMonthly,
+      budgetedExpensesMonthly: budgetRes.totalExpenseMonthly,
       investmentMonthly: cashflowRes.investmentMonthly,
       savingMonthly: cashflowRes.savingMonthly,
       debtReserveMonthly: cashflowRes.debtReserveMonthly,
@@ -963,6 +974,7 @@ export function runProjection(input: ProjectionEngineInput): ProjectionOutput {
       _groupBalances: savedGroupBalances,
       _monthlyBudget: savedMonthlyBudget,
       _monthlyActual: savedMonthlyActual,
+      _sinkingFundBalances: savedSinkingFundBalances,
     });
     
     // Attach additional runtime metrics to the row for aggregation later
@@ -986,7 +998,8 @@ export function runProjection(input: ProjectionEngineInput): ProjectionOutput {
 
     const totalIncome = yearRows.reduce((sum, r) => sum + r.incomeMonthly, 0);
     const totalExpenses = yearRows.reduce((sum, r) => sum + r.expensesMonthly, 0);
-    const totalDebtPayment = yearRows.reduce((sum, r) => sum + r.debtPaymentMonthly, 0);
+    const totalBudgetedExpenses = yearRows.reduce((sum, r) => sum + (r.budgetedExpensesMonthly || 0), 0);
+    const totalDebtPayment = yearRows.reduce((sum, r) => sum + (r.debtPaymentMonthly || 0), 0);
     const avgInvestment = yearRows.reduce((sum, r) => sum + r.investmentMonthly, 0) / yearRows.length;
     const avgSaving = yearRows.reduce((sum, r) => sum + r.savingMonthly, 0) / yearRows.length;
     const avgDebtReserve = yearRows.reduce((sum, r) => sum + r.debtReserveMonthly, 0) / yearRows.length;
@@ -1022,7 +1035,7 @@ export function runProjection(input: ProjectionEngineInput): ProjectionOutput {
 
     // Calculate FIRE details for the end-of-year row
     const _yearlyFireRes = calculateFire({
-      expensesMonthly: lastRow.expensesMonthly,
+      expensesMonthly: lastRow.budgetedExpensesMonthly || lastRow.expensesMonthly,
       netWorth: lastRow.nominalNetWorth,
       withdrawalRate: 4,
       yearlyRows, // pass in accumulated rows so far to calculate expectedFireYear
@@ -1035,6 +1048,7 @@ export function runProjection(input: ProjectionEngineInput): ProjectionOutput {
       monthlyIncomeEndYear: lastRow.incomeMonthly,
       totalIncomeYearly: totalIncome,
       totalExpensesYearly: totalExpenses,
+      budgetedExpensesMonthly: totalBudgetedExpenses / 12,
       totalDebtPaymentYearly: totalDebtPayment,
       averageInvestmentMonthly: avgInvestment,
       averageSavingMonthly: avgSaving,
@@ -1064,7 +1078,7 @@ export function runProjection(input: ProjectionEngineInput): ProjectionOutput {
   // 5. Run a final pass to evaluate crossing year across the fully populated yearly list
   yearlyRows.forEach((row) => {
     const finalFireRes = calculateFire({
-      expensesMonthly: row.totalExpensesYearly / 12,
+      expensesMonthly: row.budgetedExpensesMonthly || (row.totalExpensesYearly / 12),
       netWorth: row.nominalNetWorth,
       withdrawalRate: 4,
       yearlyRows,

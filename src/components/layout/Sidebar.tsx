@@ -11,7 +11,6 @@ import {
   BookOpen,
   Settings,
   X,
-  Map,
   History,
   Activity,
   ShieldCheck,
@@ -31,7 +30,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ activeTab, setActiveTab, onClo
       title: 'Tổng quan',
       items: [
         { id: 'dashboard', name: 'Tổng quan tài chính gia đình', icon: Home },
-        { id: 'cashflow', name: 'Báo cáo Dòng tiền (RDPD)', icon: Activity },
+        { id: 'cashflow', name: 'Bức tranh Tài chính (RDPD)', icon: Activity },
         { id: 'event_ledger', name: 'Nhật ký sự kiện (Ledger)', icon: History },
       ],
     },
@@ -51,7 +50,6 @@ export const Sidebar: React.FC<SidebarProps> = ({ activeTab, setActiveTab, onClo
     {
       title: 'Công cụ hữu ích',
       items: [
-        { id: 'scenario_base', name: 'Kịch bản cơ sở', icon: Map },
         { id: 'fire_center', name: 'FIRE Center', icon: Flame },
         { id: 'health_rest', name: 'Bệnh tật & hậu sự', icon: HeartPulse },
         { id: 'scenario_child_2031', name: 'Kịch bản có con 2031', icon: GitBranch },

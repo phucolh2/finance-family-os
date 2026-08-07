@@ -61,7 +61,7 @@ const IncomeCategoriesSettings: React.FC = () => {
     <Card className="lg:col-span-3">
       <CardHeader>
         <CardTitle>Cấu hình Danh mục Thu nhập</CardTitle>
-        <CardDescription>Quản lý các loại thu nhập và phân loại Chủ động/Thụ động để phục vụ báo cáo Dòng tiền.</CardDescription>
+        <CardDescription>Quản lý các loại thu nhập và phân loại Chủ động/Thụ động để phục vụ Bức tranh Tài chính.</CardDescription>
       </CardHeader>
       <CardContent className="space-y-4">
         <div className="bg-family-bgDark/20 p-4 rounded-xl border border-family-accent/10">

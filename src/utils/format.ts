@@ -75,12 +75,9 @@ export function formatMoneyVNDMillion(
     if (absNum < 1000) {
       scaledValue = num;
       unit = shortUnit ? 'triệu' : (isTooltip ? 'triệu đồng' : 'triệu');
-    } else if (absNum < 1000000) {
+    } else {
       scaledValue = num / 1000;
       unit = shortUnit ? 'tỷ' : (isTooltip ? 'tỷ đồng' : 'tỷ');
-    } else {
-      scaledValue = num / 1000000;
-      unit = shortUnit ? 'nghìn tỷ' : (isTooltip ? 'nghìn tỷ đồng' : 'nghìn tỷ');
     }
   } else if (mode === 'million') {
     scaledValue = num;
@@ -88,9 +85,6 @@ export function formatMoneyVNDMillion(
   } else if (mode === 'billion') {
     scaledValue = num / 1000;
     unit = shortUnit ? 'tỷ' : (isTooltip ? 'tỷ đồng' : 'tỷ');
-  } else if (mode === 'trillion') {
-    scaledValue = num / 1000000;
-    unit = shortUnit ? 'k tỷ' : (isTooltip ? 'nghìn tỷ đồng' : 'nghìn tỷ');
   }
 
   // Format decimal precision

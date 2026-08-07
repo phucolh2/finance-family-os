@@ -23,12 +23,21 @@ import {
   CartesianGrid,
   Tooltip,
   Legend,
-  ResponsiveContainer
+  ResponsiveContainer,
+  AreaChart,
+  Area,
+  ComposedChart,
+  BarChart,
+  Bar
 } from 'recharts';
 import { HelpTooltip } from '../components/ui/HelpTooltip';
+import { useLiquidityBreakdown } from '../hooks/useLiquidityBreakdown';
+import { simulateSinkingFund } from '../engines/sinkingFundEngine';
 
 export const CashflowQuadrant: React.FC = () => {
   const { state, selectedPeriodKey } = useAppContext();
+  const [activeChartTab, setActiveChartTab] = React.useState<'fire' | 'wealth' | 'outflow'>('fire');
+  const [wealthViewMode, setWealthViewMode] = React.useState<'value' | 'percent'>('percent');
 
   // Run projection engine purely
   const projection = runProjection({
@@ -45,6 +54,7 @@ export const CashflowQuadrant: React.FC = () => {
     projectionAdjustments: state.projectionAdjustments,
     lifeStages: state.lifeStages,
     fundTransfers: state.fundTransfers,
+    expenseSchedule: state.expenseSchedule,
   });
 
   const hasData = projection.monthlyRows.length > 0;
@@ -105,30 +115,63 @@ export const CashflowQuadrant: React.FC = () => {
   const totalIncome = activeRow.incomeMonthly + realizedPassiveIncome;
 
   // --- 2. EXPENSE QUADRANT ---
-  const totalExpenses = activeRow.expensesMonthly;
+  // Trả nợ thực tế trong tháng
+  const debtExpenses = activeRow.debtPaymentMonthly || 0;
   
-  // Try to find debt/liability related expenses
-  let debtExpenses = 0;
+  // Chi phí sinh hoạt thực tế trong tháng
   let livingExpenses = 0;
   
-  if (budgetDetails.categories && budgetDetails.categories.length > 0) {
-    budgetDetails.categories.forEach(item => {
-      const nameLower = item.categoryName.toLowerCase();
-      if (nameLower.includes('nợ') || nameLower.includes('debt') || nameLower.includes('vay')) {
-        debtExpenses += (item.ratioPercent / 100) * activeRow.incomeMonthly;
-      } else if (item.group !== 'safety_reserve' && item.group !== 'future_investing') {
-        livingExpenses += (item.ratioPercent / 100) * activeRow.incomeMonthly;
+  // Sử dụng ngân sách kế hoạch (budget) thay vì thực tế (actual) để Bức tranh Tài chính luôn phản ánh đúng hệ thống mục tiêu.
+  if (activeRow._monthlyBudget && Object.keys(activeRow._monthlyBudget).length > 0) {
+    Object.entries(activeRow._monthlyBudget).forEach(([groupId, amount]) => {
+      if (groupId !== 'safety_reserve' && groupId !== 'future_investing' && groupId !== 'debt_optim') {
+        livingExpenses += amount as number;
       }
     });
   } else {
-    livingExpenses = totalExpenses; // Fallback
+    livingExpenses = activeRow.expensesMonthly; // Fallback
   }
 
+  // Tổng chi phí = Sinh hoạt + Trả nợ
+  const totalExpenses = livingExpenses + debtExpenses;
+
   // --- 3. ASSET QUADRANT ---
-  // Assets = Things that put money in your pocket (Investments, Savings, Real Estate)
-  const totalAssets = activeRow.portfolio?.totalEndingBalance || 0;
-  const savingAssets = activeRow.portfolio?.savingsBalance || 0;
-  const investmentAssets = totalAssets - savingAssets;
+  // Assets = Things that put money in your pocket (Investments, Savings, Real Estate) + Cash balances
+  const totalAssets = activeRow.nominalNetWorth || 0;
+  
+  // Đầu tư dài hạn = Tổng số dư các tài sản thực tế (BĐS, Cổ phiếu, Crypto, Vàng, Ngoại tệ)
+  const investmentAssets = activeRow.portfolio?.assets
+    ? Object.values(activeRow.portfolio.assets).reduce((sum, a) => sum + a.endingBalance, 0)
+    : 0;
+
+  // Quỹ thanh khoản = Phần còn lại (bao gồm mọi Sinking Funds active, Tiền mặt, Sổ tiết kiệm, Quỹ dự phòng)
+  const savingAssets = Math.max(0, totalAssets - investmentAssets);
+
+  // Use the exact UI hook to match "Dự phòng / Sự kiện" screen
+  const { totalRemainingSum } = useLiquidityBreakdown('cumulative', activeRow?.period.key);
+  const displayLiquidityBalance = totalRemainingSum;
+
+  // Tính chi tiết Quỹ thanh khoản
+  const basicCash = (activeRow.savingBalance || 0) 
+    + displayLiquidityBalance 
+    + (activeRow.debtReserveBalance || 0) 
+    + (activeRow.portfolio?.unallocatedEndingBalance || 0) 
+    + (activeRow.portfolio?.savingsBalance || 0);
+  const activeSinkingFundsCash = Math.max(0, savingAssets - basicCash);
+
+  // Compute exact breakdown of sinking funds for UI
+  const sinkingFundBreakdown: Record<string, number> = {};
+  if (state.sinkingFunds) {
+    state.sinkingFunds.forEach(sf => {
+      if (sf.status === 'active' || (sf.status === 'disbursed' && sf.disbursedYear && sf.disbursedMonth && (sf.disbursedYear * 12 + sf.disbursedMonth >= activeRow.period.year * 12 + activeRow.period.month))) {
+        const { totalPrincipal, nonTermCash } = simulateSinkingFund(sf, activeRow.period.month, activeRow.period.year);
+        const bal = totalPrincipal + nonTermCash;
+        if (bal > 0) {
+          sinkingFundBreakdown[sf.name] = bal;
+        }
+      }
+    });
+  }
 
   // --- 4. LIABILITY QUADRANT ---
   // Currently, the system doesn't explicitly track Debt Principal (Liabilities).
@@ -141,22 +184,78 @@ export const CashflowQuadrant: React.FC = () => {
 
   // --- TIMELINE CHART DATA ---
   const timelineData = projection.monthlyRows.map(row => {
-    // Need to calculate income details for each row to get accurate passive income from schedule
+    // 1. Income calculation
     const rowIncDetails = calculateIncome({
       period: row.period,
       incomeSchedule: state.incomeSchedule
     });
     
-    const rowSchedPassive = rowIncDetails.breakdown.passive_income || 0;
+    let activeIncome = 0;
+    let scheduledPassiveIncome = 0;
+    Object.entries(rowIncDetails.breakdown).forEach(([catId, amount]) => {
+      const category = state.incomeCategories?.find(c => c.id === catId);
+      if (category?.type === 'passive') {
+        scheduledPassiveIncome += amount;
+      } else {
+        activeIncome += amount;
+      }
+    });
+
     const rowInvPnl = row.portfolio?.totalPnl || 0;
-    const rowPassive = rowSchedPassive + (rowInvPnl > 0 ? rowInvPnl : 0);
+    const passiveIncome = scheduledPassiveIncome + (rowInvPnl > 0 ? rowInvPnl : 0);
+    const totalIncome = activeIncome + passiveIncome;
+    
+    // 2. Expenses calculation
+    const debtExpenses = row.debtPaymentMonthly || 0;
+    let livingExpenses = 0;
+    if (row._monthlyActual && Object.keys(row._monthlyActual).length > 0) {
+      Object.entries(row._monthlyActual).forEach(([groupId, amount]) => {
+        if (groupId !== 'safety_reserve' && groupId !== 'future_investing' && groupId !== 'debt_optim') {
+          livingExpenses += amount;
+        }
+      });
+    } else {
+      livingExpenses = row.expensesMonthly;
+    }
+    const totalExpenses = livingExpenses + debtExpenses;
+
+    // 3. Asset Classification
+    const netWorth = row.nominalNetWorth || 0;
+    const investmentAssets = row.portfolio?.assets
+      ? Object.values(row.portfolio.assets).reduce((sum, a) => sum + a.endingBalance, 0)
+      : 0;
+    const liquidityAssets = (row.portfolio?.unallocatedEndingBalance || 0) + (row.liquidityBalance || 0) + (row.debtReserveBalance || 0) + (row.portfolio?.savingsBalance || 0);
+    const sinkingFundAssets = (row.savingBalance || 0) + Math.max(0, netWorth - investmentAssets - liquidityAssets - (row.savingBalance || 0));
+
+    // 4. Outflow Contributions
+    const investmentContrib = row.investmentMonthly || 0;
+    const savingContrib = row.savingMonthly || 0;
     
     return {
       periodKey: row.period.key,
-      passiveIncome: Math.round(rowPassive * 10) / 10,
-      expenses: Math.round(row.expensesMonthly * 10) / 10,
+      activeIncome: Math.round(activeIncome * 10) / 10,
+      passiveIncome: Math.round(passiveIncome * 10) / 10,
+      totalIncome: Math.round(totalIncome * 10) / 10,
+      livingExpenses: Math.round(livingExpenses * 10) / 10,
+      debtExpenses: Math.round(debtExpenses * 10) / 10,
+      totalExpenses: Math.round(totalExpenses * 10) / 10,
+      investmentContrib: Math.round(investmentContrib * 10) / 10,
+      savingContrib: Math.round(savingContrib * 10) / 10,
+      liquidityAssets: Math.round(liquidityAssets * 10) / 10,
+      sinkingFundAssets: Math.round(sinkingFundAssets * 10) / 10,
+      investmentAssets: Math.round(investmentAssets * 10) / 10,
+      netWorth: Math.round(netWorth * 10) / 10,
     };
   });
+
+  const lastRow = timelineData[timelineData.length - 1];
+  const finalLiquidity = lastRow?.liquidityAssets || 0;
+  const finalInvestment = lastRow?.investmentAssets || 0;
+  const finalTotal = finalLiquidity + finalInvestment + (lastRow?.sinkingFundAssets || 0);
+  const investmentRatio = finalTotal > 0 ? (finalInvestment / finalTotal) : 0;
+  const wealthInsightText = investmentRatio < 0.25
+    ? "* Tiền mặt và Tiết kiệm (cam) đang chiếm tỷ trọng áp đảo. Để tối ưu hóa lãi kép, bạn có thể cân nhắc nâng tỷ lệ phân bổ vào Đầu tư dài hạn (tím)."
+    : "* Sự chuyển dịch tỷ trọng lớn sang Đầu tư dài hạn (tím) cho thấy chiến lược nhân giống tài sản đang được phát huy hiệu quả.";
 
   return (
     <div className="space-y-6">
@@ -164,7 +263,7 @@ export const CashflowQuadrant: React.FC = () => {
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
           <h1 className="text-3xl font-serif font-bold text-family-text flex items-center gap-2">
-            <ArrowRightLeft className="w-8 h-8 text-family-accent" /> Báo cáo Dòng tiền
+            <ArrowRightLeft className="w-8 h-8 text-family-accent" /> Bức tranh Tài chính
           </h1>
           <p className="text-sm text-family-textMuted mt-1">
             Góc nhìn Cashflow Quadrant theo triết lý Cha Giàu Cha Nghèo (Robert Kiyosaki).
@@ -213,17 +312,17 @@ export const CashflowQuadrant: React.FC = () => {
             </div>
             
             <div className="w-full md:w-auto shrink-0 bg-family-bgDark/40 p-4 rounded-xl border border-family-accent/10 flex flex-col gap-2 min-w-[200px]">
-              <div className="flex justify-between items-center">
+              <div className="flex justify-between items-center gap-4">
                 <span className="text-xs font-bold uppercase text-family-textMuted">Thu nhập thụ động</span>
-                <span className="font-bold text-emerald-500">{formatTableMoneyVNDMillion(totalPassiveIncome)}</span>
+                <span className="font-bold text-emerald-500 whitespace-nowrap">{formatTableMoneyVNDMillion(totalPassiveIncome)}</span>
               </div>
-              <div className="flex justify-between items-center border-b border-family-accent/10 pb-2">
+              <div className="flex justify-between items-center border-b border-family-accent/10 pb-2 gap-4">
                 <span className="text-xs font-bold uppercase text-family-textMuted">Tổng chi phí</span>
-                <span className="font-bold text-red-400">{formatTableMoneyVNDMillion(totalExpenses)}</span>
+                <span className="font-bold text-red-400 whitespace-nowrap">{formatTableMoneyVNDMillion(totalExpenses)}</span>
               </div>
-              <div className="flex justify-between items-center pt-1">
-                <span className="text-[10px] uppercase text-family-textMuted">Net Cashflow</span>
-                <span className={`font-bold text-sm ${totalPassiveIncome - totalExpenses >= 0 ? 'text-emerald-500' : 'text-red-400'}`}>
+              <div className="flex justify-between items-center pt-1 gap-4">
+                <span className="text-[10px] uppercase text-family-textMuted">Khoảng cách FIRE</span>
+                <span className={`font-bold text-sm whitespace-nowrap ${totalPassiveIncome - totalExpenses >= 0 ? 'text-emerald-500' : 'text-red-400'}`}>
                   {totalPassiveIncome - totalExpenses >= 0 ? '+' : ''}{formatTableMoneyVNDMillion(totalPassiveIncome - totalExpenses)}
                 </span>
               </div>
@@ -246,7 +345,14 @@ export const CashflowQuadrant: React.FC = () => {
         <Card className="border-t-4 border-t-emerald-500 bg-family-bgDeep shadow-sm hover:shadow-md transition-all">
           <CardHeader className="pb-2 border-b border-family-accent/5">
             <CardTitle className="text-emerald-500 flex items-center justify-between">
-              <span className="flex items-center gap-2"><Wallet className="w-5 h-5" /> THU NHẬP (INCOME)</span>
+              <div className="flex flex-col gap-0.5">
+                <span className="flex items-center gap-2">
+                  <Wallet className="w-5 h-5" /> THU NHẬP (INCOME)
+                </span>
+                <span className="text-[10px] font-normal text-family-textMuted normal-case tracking-wide">
+                  Tổng phát sinh trong tháng
+                </span>
+              </div>
               <span>{formatTableMoneyVNDMillion(totalIncome)}</span>
             </CardTitle>
           </CardHeader>
@@ -274,7 +380,14 @@ export const CashflowQuadrant: React.FC = () => {
         <Card className="border-t-4 border-t-red-500 bg-family-bgDeep shadow-sm hover:shadow-md transition-all">
           <CardHeader className="pb-2 border-b border-family-accent/5">
             <CardTitle className="text-red-400 flex items-center justify-between">
-              <span className="flex items-center gap-2"><TrendingUp className="w-5 h-5 rotate-[135deg]" /> CHI PHÍ (EXPENSES)</span>
+              <div className="flex flex-col gap-0.5">
+                <span className="flex items-center gap-2">
+                  <TrendingUp className="w-5 h-5 rotate-[135deg]" /> CHI PHÍ (EXPENSES)
+                </span>
+                <span className="text-[10px] font-normal text-family-textMuted normal-case tracking-wide">
+                  Tổng phát sinh trong tháng
+                </span>
+              </div>
               <span>{formatTableMoneyVNDMillion(totalExpenses)}</span>
             </CardTitle>
           </CardHeader>
@@ -302,7 +415,14 @@ export const CashflowQuadrant: React.FC = () => {
         <Card className="border-b-4 border-b-emerald-500 bg-family-bgDeep shadow-sm hover:shadow-md transition-all">
           <CardHeader className="pb-2 border-b border-family-accent/5">
             <CardTitle className="text-emerald-500 flex items-center justify-between">
-              <span className="flex items-center gap-2"><Briefcase className="w-5 h-5" /> TÀI SẢN (ASSETS)</span>
+              <div className="flex flex-col gap-0.5">
+                <span className="flex items-center gap-2">
+                  <Briefcase className="w-5 h-5" /> TÀI SẢN (ASSETS)
+                </span>
+                <span className="text-[10px] font-normal text-family-textMuted normal-case tracking-wide">
+                  Lũy kế đến cuối tháng
+                </span>
+              </div>
               <span>{formatTableMoneyVNDMillion(totalAssets)}</span>
             </CardTitle>
           </CardHeader>
@@ -311,19 +431,107 @@ export const CashflowQuadrant: React.FC = () => {
               "Tài sản là những thứ bỏ tiền vào túi bạn."
             </p>
             <div className="space-y-3">
-              <div className="flex justify-between items-center p-2 rounded-lg bg-family-bgDark/30">
-                <div>
-                  <div className="text-sm font-bold text-family-text">Đầu tư dài hạn</div>
-                  <div className="text-[10px] text-family-textMuted">BĐS, Cổ phiếu, Crypto...</div>
+              <div className="p-2 rounded-lg bg-family-bgDark/30 space-y-2">
+                <div className="flex justify-between items-center">
+                  <div>
+                    <div className="text-sm font-bold text-family-text">Đầu tư dài hạn</div>
+                    <div className="text-[10px] text-family-textMuted">BĐS, Cổ phiếu, Crypto...</div>
+                  </div>
+                  <div className="font-bold text-family-text">{formatTableMoneyVNDMillion(investmentAssets)}</div>
                 </div>
-                <div className="font-bold text-family-text">{formatTableMoneyVNDMillion(investmentAssets)}</div>
+                
+                {investmentAssets > 0 && activeRow.portfolio?.assets && (
+                  <div className="pt-2 border-t border-family-accent/10">
+                    <ul className="space-y-1 text-[11px] text-family-textMuted">
+                      {Object.entries(activeRow.portfolio.assets).map(([key, asset]) => {
+                        if (asset.endingBalance <= 0) return null;
+                        const labels: Record<string, string> = { real_estate: 'Bất động sản', stocks: 'Cổ phiếu', crypto: 'Crypto', gold: 'Vàng', fx_reserve_usd: 'Ngoại tệ' };
+                        const percent = ((asset.endingBalance / investmentAssets) * 100).toFixed(1);
+                        return (
+                          <li key={key} className="flex justify-between items-center">
+                            <span>{labels[key] || key}</span>
+                            <span className="font-semibold text-emerald-500/80">{percent}% ({formatTableMoneyVNDMillion(asset.endingBalance)})</span>
+                          </li>
+                        );
+                      })}
+                    </ul>
+                  </div>
+                )}
               </div>
-              <div className="flex justify-between items-center p-2 rounded-lg bg-family-bgDark/30">
-                <div>
-                  <div className="text-sm font-bold text-family-text">Quỹ thanh khoản</div>
-                  <div className="text-[10px] text-family-textMuted">Sổ tiết kiệm, tiền mặt sinh lời</div>
+              
+              <div className="p-2 rounded-lg bg-family-bgDark/30 space-y-2">
+                <div className="flex justify-between items-center">
+                  <div>
+                    <div className="text-sm font-bold text-family-text">Quỹ thanh khoản</div>
+                    <div className="text-[10px] text-family-textMuted">Sổ tiết kiệm, tiền mặt sinh lời</div>
+                  </div>
+                  <div className="font-bold text-family-text">{formatTableMoneyVNDMillion(savingAssets)}</div>
                 </div>
-                <div className="font-bold text-family-text">{formatTableMoneyVNDMillion(savingAssets)}</div>
+
+                {savingAssets > 0 && (
+                  <div className="pt-2 border-t border-family-accent/10">
+                    <ul className="space-y-1 text-[11px] text-family-textMuted">
+                      {(activeRow.savingBalance || 0) > 0 && (
+                        <li className="flex justify-between items-center"><span>Tiết kiệm mục tiêu</span> <span className="font-semibold">{formatTableMoneyVNDMillion(activeRow.savingBalance || 0)}</span></li>
+                      )}
+                      {displayLiquidityBalance > 0 && (
+                        <li className="flex justify-between items-center"><span>Quỹ sinh hoạt / Dư thừa</span> <span className="font-semibold">{formatTableMoneyVNDMillion(displayLiquidityBalance)}</span></li>
+                      )}
+                      {(activeRow.debtReserveBalance || 0) > 0 && (
+                        <li className="flex justify-between items-center"><span>Dự phòng trả nợ</span> <span className="font-semibold">{formatTableMoneyVNDMillion(activeRow.debtReserveBalance || 0)}</span></li>
+                      )}
+                      {(activeRow.portfolio?.unallocatedEndingBalance || 0) > 0 && (
+                        <li className="flex flex-col gap-1">
+                          <div className="flex justify-between items-center">
+                            <span>Tiền mặt</span> 
+                            <span className="font-semibold">{formatTableMoneyVNDMillion(activeRow.portfolio?.unallocatedEndingBalance || 0)}</span>
+                          </div>
+                          {(activeRow.unallocatedCashBalance || 0) > 0 && (
+                            <ul className="pl-4 border-l border-zinc-200/20 text-[10px] opacity-70 space-y-1">
+                              <li className="flex justify-between items-center">
+                                <span>Tiền dôi ra (chưa phân bổ)</span>
+                                <span>{formatTableMoneyVNDMillion(activeRow.unallocatedCashBalance)}</span>
+                              </li>
+                              <li className="flex justify-between items-center">
+                                <span>Vốn gốc chờ đầu tư</span>
+                                <span>{formatTableMoneyVNDMillion(Math.max(0, (activeRow.portfolio?.unallocatedEndingBalance || 0) - activeRow.unallocatedCashBalance))}</span>
+                              </li>
+                            </ul>
+                          )}
+                        </li>
+                      )}
+                      {(activeRow.portfolio?.savingsBalance || 0) > 0 && (
+                        <li className="flex justify-between items-center"><span>Sổ tiết kiệm (Portfolio)</span> <span className="font-semibold">{formatTableMoneyVNDMillion(activeRow.portfolio?.savingsBalance || 0)}</span></li>
+                      )}
+                        <li className="flex justify-between items-center text-emerald-400/90 pt-1">
+                          <span className="flex items-center gap-1">
+                            Đang tích lũy trong các Quỹ
+                            <HelpTooltip 
+                              position="top"
+                              text={
+                                <div className="space-y-2 min-w-[200px]">
+                                  <div className="font-semibold text-family-text border-b border-zinc-200/20 pb-1 mb-2">Chi tiết các quỹ (Sinking Funds)</div>
+                                  {Object.keys(sinkingFundBreakdown).length > 0 ? (
+                                    <ul className="space-y-1">
+                                      {Object.entries(sinkingFundBreakdown).map(([name, balance]) => (
+                                        <li key={name} className="flex justify-between items-center text-xs">
+                                          <span>{name}</span>
+                                          <span className="font-medium text-emerald-400">{formatTableMoneyVNDMillion(balance)}</span>
+                                        </li>
+                                      ))}
+                                    </ul>
+                                  ) : (
+                                    <div className="text-xs opacity-70 italic">Chưa có quỹ nào phát sinh số dư.</div>
+                                  )}
+                                </div>
+                              }
+                            />
+                          </span>
+                          <span className="font-semibold">{formatTableMoneyVNDMillion(activeSinkingFundsCash)}</span>
+                        </li>
+                    </ul>
+                  </div>
+                )}
               </div>
             </div>
             {totalAssets > 0 && (
@@ -338,7 +546,14 @@ export const CashflowQuadrant: React.FC = () => {
         <Card className="border-b-4 border-b-red-500 bg-family-bgDeep shadow-sm hover:shadow-md transition-all">
           <CardHeader className="pb-2 border-b border-family-accent/5">
             <CardTitle className="text-red-400 flex items-center justify-between">
-              <span className="flex items-center gap-2"><Home className="w-5 h-5" /> TIÊU SẢN (LIABILITIES)</span>
+              <div className="flex flex-col gap-0.5">
+                <span className="flex items-center gap-2">
+                  <Home className="w-5 h-5" /> TIÊU SẢN (LIABILITIES)
+                </span>
+                <span className="text-[10px] font-normal text-family-textMuted normal-case tracking-wide">
+                  Lũy kế đến cuối tháng
+                </span>
+              </div>
               <span>{hasLiabilities ? 'Đang theo dõi' : '0 triệu VND'}</span>
             </CardTitle>
           </CardHeader>
@@ -348,7 +563,7 @@ export const CashflowQuadrant: React.FC = () => {
             </p>
             {!hasLiabilities ? (
               <div className="flex items-center justify-center p-6 border border-dashed border-family-accent/20 rounded-xl bg-family-bgDark/20 text-family-textMuted text-xs text-center">
-                Bạn chưa ghi nhận khoản vay/nợ nào trong mục Phân Bổ Ngân Sách (tên chứa chữ "nợ").
+                Bạn chưa ghi nhận khoản vay/nợ nào trong màn hình "Quản lý Công nợ".
               </div>
             ) : (
               <div className="space-y-3">
@@ -370,55 +585,165 @@ export const CashflowQuadrant: React.FC = () => {
         </Card>
       </div>
 
-      {/* Cashflow Timeline Trend */}
+      {/* Cashflow Financial Insights */}
       <Card className="border border-family-accent/10 bg-family-bgDark/5 shadow-sm">
-        <CardHeader>
-          <CardTitle className="text-lg">Xu hướng Dòng tiền thụ động vs Chi phí</CardTitle>
-          <p className="text-xs text-family-textMuted">Điểm giao cắt (Crossover Point) là thời điểm Thu nhập thụ động vượt Tổng chi phí.</p>
+        <CardHeader className="pb-4">
+          <div className="flex flex-col md:flex-row justify-between md:items-center gap-4">
+            <div>
+              <CardTitle className="text-lg text-emerald-400">Phân tích Dòng tiền & Tài sản (Insights)</CardTitle>
+              <p className="text-xs text-family-textMuted mt-1">Góc nhìn chuyên sâu về hành trình xây dựng tài sản và tự do tài chính.</p>
+            </div>
+            
+            <div className="flex bg-family-bgDeep p-1 rounded-lg border border-family-accent/10 w-fit">
+              <button 
+                onClick={() => setActiveChartTab('fire')}
+                className={`px-3 py-1.5 rounded-md text-xs font-semibold transition-all ${activeChartTab === 'fire' ? 'bg-emerald-500/20 text-emerald-400 shadow-sm' : 'text-family-textMuted hover:text-family-text hover:bg-family-bgDark/50'}`}
+              >
+                Hành trình FIRE
+              </button>
+              <button 
+                onClick={() => setActiveChartTab('wealth')}
+                className={`px-3 py-1.5 rounded-md text-xs font-semibold transition-all ${activeChartTab === 'wealth' ? 'bg-amber-500/20 text-amber-400 shadow-sm' : 'text-family-textMuted hover:text-family-text hover:bg-family-bgDark/50'}`}
+              >
+                Cơ cấu Tài sản
+              </button>
+              <button 
+                onClick={() => setActiveChartTab('outflow')}
+                className={`px-3 py-1.5 rounded-md text-xs font-semibold transition-all ${activeChartTab === 'outflow' ? 'bg-rose-500/20 text-rose-400 shadow-sm' : 'text-family-textMuted hover:text-family-text hover:bg-family-bgDark/50'}`}
+              >
+                Phân bổ Chi tiêu
+              </button>
+            </div>
+          </div>
         </CardHeader>
+        
         <CardContent>
-          <div className="h-[350px] w-full bg-family-bgDeep rounded-xl p-4 border border-family-accent/5">
-            <ResponsiveContainer width="100%" height="100%">
-              <LineChart data={timelineData} margin={{ top: 20, right: 30, left: 10, bottom: 5 }}>
-                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="rgba(226, 180, 76, 0.05)" />
-                <XAxis 
-                  dataKey="periodKey" 
-                  stroke="#6b7280" 
-                  fontSize={10} 
-                  tickFormatter={(val) => {
-                    const [y, m] = val.split('-');
-                    return `${m}/${y}`;
-                  }}
-                />
-                <YAxis stroke="#6b7280" fontSize={11} unit=" tr" />
-                <Tooltip
-                  contentStyle={{ backgroundColor: '#1e293b', border: '1px solid rgba(226, 180, 76, 0.15)', borderRadius: '12px' }}
-                  itemStyle={{ fontSize: 12, fontWeight: 'bold' }}
-                  labelStyle={{ color: '#94a3b8', fontSize: 11, marginBottom: '4px' }}
-                  formatter={(value: any) => [`${Number(value).toFixed(1)} Triệu`, '']}
-                />
-                <Legend wrapperStyle={{ fontSize: 12, paddingTop: '10px' }} />
-                
-                <Line
-                  type="monotone"
-                  name={BUDGET_PILLARS.expense.label}
-                  dataKey="expenses"
-                  stroke={BUDGET_PILLARS.expense.colorHex}
-                  strokeWidth={2}
-                  dot={{ r: 3, fill: BUDGET_PILLARS.expense.colorHex, strokeWidth: 0 }}
-                  activeDot={{ r: 6, fill: BUDGET_PILLARS.expense.colorHex, strokeWidth: 0 }}
-                />
-                <Line
-                  type="monotone"
-                  name={BUDGET_PILLARS.savings.label}
-                  dataKey="passiveIncome"
-                  stroke={BUDGET_PILLARS.savings.colorHex}
-                  strokeWidth={2}
-                  dot={{ r: 3, fill: BUDGET_PILLARS.savings.colorHex, strokeWidth: 0 }}
-                  activeDot={{ r: 6, fill: BUDGET_PILLARS.savings.colorHex, strokeWidth: 0 }}
-                />
-              </LineChart>
-            </ResponsiveContainer>
+          <div className="h-[380px] w-full bg-family-bgDeep/50 rounded-xl p-4 border border-family-accent/5 relative overflow-hidden">
+            
+            {activeChartTab === 'fire' && (
+              <div className="absolute inset-0 flex flex-col animation-fade-in p-4 gap-2">
+                <div className="flex justify-between items-start gap-4">
+                  <div className="text-xs text-family-textMuted italic bg-family-bgDark/40 px-3 py-2 rounded-lg border-l-2 border-emerald-500/50 flex-1">
+                    * Lưu ý: Biểu đồ dùng 2 trục Y (trục phải cho Thu nhập thụ động). Khoảng cách giữa các đường chỉ mang tính tương đối, không phải thời điểm tự do tài chính tuyệt đối.
+                  </div>
+                </div>
+                <div className="flex-1 min-h-0">
+                  <ResponsiveContainer width="100%" height="100%">
+                  <ComposedChart data={timelineData} margin={{ top: 20, right: 30, left: 10, bottom: 20 }}>
+                    <defs>
+                      <linearGradient id="colorActiveIncome" x1="0" y1="0" x2="0" y2="1">
+                        <stop offset="5%" stopColor="#3b82f6" stopOpacity={0.15}/>
+                        <stop offset="95%" stopColor="#3b82f6" stopOpacity={0}/>
+                      </linearGradient>
+                    </defs>
+                    <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="rgba(255, 255, 255, 0.05)" />
+                    <XAxis dataKey="periodKey" stroke="#6b7280" fontSize={10} tickFormatter={(v) => { const [y,m] = v.split('-'); return `${m}/${y}`; }} dy={10} />
+                    <YAxis yAxisId="left" stroke="#6b7280" fontSize={10} width={65} tickFormatter={(v) => formatTableMoneyVNDMillion(v)} />
+                    <YAxis yAxisId="right" orientation="right" stroke="#10b981" fontSize={10} width={65} tickFormatter={(v) => formatTableMoneyVNDMillion(v)} />
+                    <Tooltip
+                      contentStyle={{ backgroundColor: '#0f172a', border: '1px solid rgba(59, 130, 246, 0.3)', borderRadius: '12px', boxShadow: '0 10px 15px -3px rgba(0,0,0,0.5)' }}
+                      itemStyle={{ fontSize: 12, fontWeight: 'bold' }}
+                      labelStyle={{ color: '#94a3b8', fontSize: 11, marginBottom: '6px' }}
+                      formatter={(value: any, name: any) => [formatTableMoneyVNDMillion(value), name]}
+                    />
+                    <Legend wrapperStyle={{ fontSize: 12, bottom: 0 }} />
+                    
+                    <Area yAxisId="left" type="monotone" name="Thu nhập chủ động" dataKey="activeIncome" fill="url(#colorActiveIncome)" stroke="#3b82f6" strokeWidth={1} strokeOpacity={0.5} />
+                    <Bar yAxisId="left" name="Tổng Chi phí" dataKey="totalExpenses" fill="#ef4444" opacity={0.7} barSize={20} radius={[4, 4, 0, 0]} />
+                    <Line yAxisId="right" type="monotone" name="Thu nhập thụ động" dataKey="passiveIncome" stroke="#10b981" strokeWidth={3} dot={{ r: 0 }} activeDot={{ r: 6, fill: "#10b981", stroke: "#fff", strokeWidth: 2 }} />
+                  </ComposedChart>
+                </ResponsiveContainer>
+                </div>
+              </div>
+            )}
+
+            {activeChartTab === 'wealth' && (
+              <div className="absolute inset-0 flex flex-col animation-fade-in p-4 gap-2">
+                <div className="flex justify-between items-start gap-4">
+                  <div className="text-xs text-family-textMuted italic bg-family-bgDark/40 px-3 py-2 rounded-lg border-l-2 border-amber-500/50 flex-1">
+                    {wealthInsightText}
+                  </div>
+                  <div className="flex bg-family-bgDeep p-1 rounded-lg border border-family-accent/10 shrink-0">
+                    <button 
+                      onClick={() => setWealthViewMode('percent')}
+                      className={`px-2 py-1 rounded text-[10px] font-semibold transition-all ${wealthViewMode === 'percent' ? 'bg-amber-500/20 text-amber-400' : 'text-family-textMuted hover:text-family-text'}`}
+                    >
+                      Tỷ trọng (%)
+                    </button>
+                    <button 
+                      onClick={() => setWealthViewMode('value')}
+                      className={`px-2 py-1 rounded text-[10px] font-semibold transition-all ${wealthViewMode === 'value' ? 'bg-amber-500/20 text-amber-400' : 'text-family-textMuted hover:text-family-text'}`}
+                    >
+                      Giá trị thực
+                    </button>
+                  </div>
+                </div>
+                <div className="flex-1 min-h-0">
+                  <ResponsiveContainer width="100%" height="100%">
+                  <AreaChart data={timelineData} margin={{ top: 20, right: 30, left: 10, bottom: 20 }} stackOffset={wealthViewMode === 'percent' ? 'expand' : 'none'}>
+                    <defs>
+                      <linearGradient id="colorInvest" x1="0" y1="0" x2="0" y2="1">
+                        <stop offset="5%" stopColor="#8b5cf6" stopOpacity={0.4}/>
+                        <stop offset="95%" stopColor="#8b5cf6" stopOpacity={0.05}/>
+                      </linearGradient>
+                      <linearGradient id="colorSinking" x1="0" y1="0" x2="0" y2="1">
+                        <stop offset="5%" stopColor="#0ea5e9" stopOpacity={0.4}/>
+                        <stop offset="95%" stopColor="#0ea5e9" stopOpacity={0.05}/>
+                      </linearGradient>
+                      <linearGradient id="colorLiquid" x1="0" y1="0" x2="0" y2="1">
+                        <stop offset="5%" stopColor="#f59e0b" stopOpacity={0.4}/>
+                        <stop offset="95%" stopColor="#f59e0b" stopOpacity={0.05}/>
+                      </linearGradient>
+                    </defs>
+                    <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="rgba(255, 255, 255, 0.05)" />
+                    <XAxis dataKey="periodKey" stroke="#6b7280" fontSize={10} tickFormatter={(v) => { const [y,m] = v.split('-'); return `${m}/${y}`; }} dy={10} />
+                    <YAxis stroke="#6b7280" fontSize={10} width={65} tickFormatter={(v) => wealthViewMode === 'percent' ? `${(v * 100).toFixed(0)}%` : formatTableMoneyVNDMillion(v)} />
+                    <Tooltip
+                      contentStyle={{ backgroundColor: '#0f172a', border: '1px solid rgba(139, 92, 246, 0.3)', borderRadius: '12px', boxShadow: '0 10px 15px -3px rgba(0,0,0,0.5)' }}
+                      itemStyle={{ fontSize: 12, fontWeight: 'bold' }}
+                      labelStyle={{ color: '#94a3b8', fontSize: 11, marginBottom: '6px' }}
+                      formatter={(value: any, name: any) => [formatTableMoneyVNDMillion(value), name]}
+                    />
+                    <Legend wrapperStyle={{ fontSize: 12, bottom: 0 }} />
+                    
+                    <Area type="monotone" name="Đầu tư dài hạn" dataKey="investmentAssets" stackId="1" stroke="#8b5cf6" fill="url(#colorInvest)" strokeWidth={2} />
+                    <Area type="monotone" name="Các Quỹ mục tiêu (Sinking Funds)" dataKey="sinkingFundAssets" stackId="1" stroke="#0ea5e9" fill="url(#colorSinking)" strokeWidth={2} />
+                    <Area type="monotone" name="Quỹ thanh khoản & Tiền mặt" dataKey="liquidityAssets" stackId="1" stroke="#f59e0b" fill="url(#colorLiquid)" strokeWidth={2} />
+                  </AreaChart>
+                </ResponsiveContainer>
+                </div>
+              </div>
+            )}
+
+            {activeChartTab === 'outflow' && (
+              <div className="absolute inset-0 flex flex-col animation-fade-in p-4 gap-2">
+                <div className="text-xs text-family-textMuted italic bg-family-bgDark/40 px-3 py-2 rounded-lg border-l-2 border-rose-500/50">
+                  * Tỷ trọng xanh lá/xanh dương càng lớn, tốc độ làm giàu của bạn càng nhanh. (Savings Rate)
+                </div>
+                <div className="flex-1 min-h-0">
+                  <ResponsiveContainer width="100%" height="100%">
+                  <BarChart data={timelineData} margin={{ top: 20, right: 30, left: 10, bottom: 20 }}>
+                    <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="rgba(255, 255, 255, 0.05)" />
+                    <XAxis dataKey="periodKey" stroke="#6b7280" fontSize={10} tickFormatter={(v) => { const [y,m] = v.split('-'); return `${m}/${y}`; }} dy={10} />
+                    <YAxis stroke="#6b7280" fontSize={10} width={65} tickFormatter={(v) => formatTableMoneyVNDMillion(v)} />
+                    <Tooltip
+                      contentStyle={{ backgroundColor: '#0f172a', border: '1px solid rgba(244, 63, 94, 0.3)', borderRadius: '12px', boxShadow: '0 10px 15px -3px rgba(0,0,0,0.5)' }}
+                      itemStyle={{ fontSize: 12, fontWeight: 'bold' }}
+                      labelStyle={{ color: '#94a3b8', fontSize: 11, marginBottom: '6px' }}
+                      formatter={(value: any, name: any) => [formatTableMoneyVNDMillion(value), name]}
+                    />
+                    <Legend wrapperStyle={{ fontSize: 12, bottom: 0 }} />
+                    
+                    <Bar name="Đầu tư sinh lời" dataKey="investmentContrib" stackId="a" fill="#10b981" radius={[0, 0, 0, 0]} />
+                    <Bar name="Tiết kiệm mục tiêu" dataKey="savingContrib" stackId="a" fill="#0ea5e9" radius={[0, 0, 0, 0]} />
+                    <Bar name="Trả nợ" dataKey="debtExpenses" stackId="a" fill="#f59e0b" radius={[0, 0, 0, 0]} />
+                    <Bar name="Chi phí sinh hoạt" dataKey="livingExpenses" stackId="a" fill="#f43f5e" radius={[4, 4, 0, 0]} />
+                  </BarChart>
+                </ResponsiveContainer>
+                </div>
+              </div>
+            )}
+
           </div>
         </CardContent>
       </Card>

@@ -17,6 +17,7 @@ export interface ProjectionMonthlyRow {
   period: TimelinePeriod;
   incomeMonthly: number;
   expensesMonthly: number;
+  budgetedExpensesMonthly?: number;
   investmentMonthly: number;
   savingMonthly: number;
   debtReserveMonthly: number;
@@ -66,6 +67,7 @@ export interface ProjectionMonthlyRow {
   _groupBalances?: Record<string, number>;
   _monthlyBudget?: Record<string, number>;
   _monthlyActual?: Record<string, number>;
+  _sinkingFundBalances?: Record<string, number>;
 }
 
 export interface ProjectionYearlyRow {
@@ -75,6 +77,7 @@ export interface ProjectionYearlyRow {
   monthlyIncomeEndYear: number;
   totalIncomeYearly: number;
   totalExpensesYearly: number;
+  budgetedExpensesMonthly?: number;
   totalDebtPaymentYearly: number;
   averageInvestmentMonthly: number;
   averageSavingMonthly: number;
