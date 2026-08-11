@@ -863,7 +863,7 @@ export function runProjection(input: ProjectionEngineInput): ProjectionOutput {
     };
 
     // Calculate Net Worth
-    const nominalNetWorth = portfolioOutput.totalEndingBalance + currentSavingBalance + activeSinkingFundsBalance_saving + currentLiquidityBalance + currentDebtReserveBalance + activeSinkingFundsBalance_expenseSurplus + currentUnallocatedCashBalance;
+    const nominalNetWorth = portfolioOutput.totalEndingBalance + currentSavingBalance + activeSinkingFundsBalance_saving + currentLiquidityBalance + currentDebtReserveBalance + activeSinkingFundsBalance_expenseSurplus + activeSinkingFundsBalance_debtReserve + currentUnallocatedCashBalance;
 
     // Calculate Real Value Today
     const inflationRate = safeNumber(assumptions.generalInflationRateAnnual, 0);

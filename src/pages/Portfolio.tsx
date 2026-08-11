@@ -938,6 +938,30 @@ export const Portfolio: React.FC = () => {
                         const isOriginallyEarmarked = deal.isEarmarked || deal.isConverted;
                         const dealStart = deal.startYear * 12 + deal.startMonth;
                         const hasStarted = current >= dealStart;
+
+                        let latestEventYear = deal.startYear;
+                        let latestEventMonth = deal.startMonth;
+                        if (deal.withdrawals) {
+                          deal.withdrawals.forEach(w => {
+                            if (w.year > latestEventYear || (w.year === latestEventYear && w.month > latestEventMonth)) {
+                              latestEventYear = w.year;
+                              latestEventMonth = w.month;
+                            }
+                          });
+                        }
+                        if (deal.cashflowEvents) {
+                          deal.cashflowEvents.forEach(c => {
+                            if (c.year > latestEventYear || (c.year === latestEventYear && c.month > latestEventMonth)) {
+                              latestEventYear = c.year;
+                              latestEventMonth = c.month;
+                            }
+                          });
+                        }
+                        const latestEventAbsolute = latestEventYear * 12 + latestEventMonth;
+                        const isLockedFromPastEdits = current > 0 && current < latestEventAbsolute;
+                        
+                        const hasTransactions = (deal.withdrawals && deal.withdrawals.length > 0) || (deal.cashflowEvents && deal.cashflowEvents.length > 0);
+
                         return (
                           <React.Fragment key={deal.id}>
                             <tr className="border-b border-family-accent/5 hover:bg-family-bgDark/5">
@@ -980,89 +1004,101 @@ export const Portfolio: React.FC = () => {
                                 {deal.notes || '---'}
                               </td>
                               <td className="p-3 text-right space-x-2">
-                                {hasStarted && (
+                                {deal.status === 'settled' ? (
+                                  <span className="text-family-textMuted/50 text-[10px] font-medium italic">Đã chốt ({deal.endMonth}/{deal.endYear})</span>
+                                ) : isLockedFromPastEdits ? (
+                                  <span className="text-orange-500/80 text-[10px] font-medium italic">Đã có GD ở tương lai</span>
+                                ) : (
                                   <>
-                                    <button
-                                      type="button"
-                                      onClick={() => {
-                                        if (cashflowDealId === deal.id) {
-                                          setCashflowDealId(null);
-                                        } else {
-                                          setCashflowDealId(deal.id);
-                                          setSettlingDealId(null);
-                                          setCashflowForm({
-                                            month: activeRow ? activeRow.period.month : deal.startMonth,
-                                            year: activeRow ? activeRow.period.year : deal.startYear,
-                                            amount: 0,
-                                            type: 'cash_dividend',
-                                            note: ''
-                                          });
-                                        }
-                                      }}
-                                      className={`text-[10px] font-bold py-1 px-2.5 rounded-lg text-white transition-all shadow-sm ${cashflowDealId === deal.id ? 'bg-slate-500' : 'bg-blue-600 hover:bg-blue-700'}`}
-                                      title="Nhận cổ tức / Dòng tiền đột xuất"
-                                    >
-                                      {cashflowDealId === deal.id ? 'Hủy' : 'Nhận tiền'}
-                                    </button>
-                                    <button
-                                      type="button"
-                                      onClick={() => {
-                                        if (isSettling) {
-                                          setSettlingDealId(null);
-                                        } else {
-                                          setSettlingDealId(deal.id);
-                                          setSettleForm({
-                                            endMonth: activeRow ? activeRow.period.month : 12,
-                                            endYear: activeRow ? activeRow.period.year : 2026,
-                                            realizedProfit: 0,
-                                            reinvestAsUnallocated: false,
-                                            reinvestAssetType: deal.assetType,
-                                            settleMode: 'full',
-                                            partialWithdrawType: 'amount',
-                                            partialWithdrawValue: 0,
-                                          });
-                                        }
-                                      }}
-                                      className={`text-[10px] font-bold py-1 px-2.5 rounded-lg text-white transition-all shadow-sm ${isSettling ? 'bg-slate-500' : 'bg-green-700 hover:bg-green-800'}`}
-                                    >
-                                      {isSettling ? 'Hủy' : 'Tất toán'}
-                                    </button>
+                                    {hasStarted && (
+                                      <>
+                                        <button
+                                          type="button"
+                                          onClick={() => {
+                                            if (cashflowDealId === deal.id) {
+                                              setCashflowDealId(null);
+                                            } else {
+                                              setCashflowDealId(deal.id);
+                                              setSettlingDealId(null);
+                                              setCashflowForm({
+                                                month: activeRow ? activeRow.period.month : deal.startMonth,
+                                                year: activeRow ? activeRow.period.year : deal.startYear,
+                                                amount: 0,
+                                                type: 'cash_dividend',
+                                                note: ''
+                                              });
+                                            }
+                                          }}
+                                          className={`text-[10px] font-bold py-1 px-2.5 rounded-lg text-white transition-all shadow-sm ${cashflowDealId === deal.id ? 'bg-slate-500' : 'bg-blue-600 hover:bg-blue-700'}`}
+                                          title="Nhận cổ tức / Dòng tiền đột xuất"
+                                        >
+                                          {cashflowDealId === deal.id ? 'Hủy' : 'Nhận tiền'}
+                                        </button>
+                                        <button
+                                          type="button"
+                                          onClick={() => {
+                                            if (isSettling) {
+                                              setSettlingDealId(null);
+                                            } else {
+                                              setSettlingDealId(deal.id);
+                                              setSettleForm({
+                                                endMonth: activeRow ? activeRow.period.month : 12,
+                                                endYear: activeRow ? activeRow.period.year : 2026,
+                                                realizedProfit: 0,
+                                                reinvestAsUnallocated: false,
+                                                reinvestAssetType: deal.assetType,
+                                                settleMode: 'full',
+                                                partialWithdrawType: 'amount',
+                                                partialWithdrawValue: 0,
+                                              });
+                                            }
+                                          }}
+                                          className={`text-[10px] font-bold py-1 px-2.5 rounded-lg text-white transition-all shadow-sm ${isSettling ? 'bg-slate-500' : 'bg-green-700 hover:bg-green-800'}`}
+                                        >
+                                          {isSettling ? 'Hủy' : 'Tất toán'}
+                                        </button>
+                                      </>
+                                    )}
+                                    {!hasTransactions && (
+                                      <>
+                                        <button
+                                          type="button"
+                                          onClick={() => { 
+                                            setEditDealId(deal.id);
+                                            setDealForm({
+                                              name: deal.name,
+                                              assetType: deal.assetType,
+                                              capital: deal.capital,
+                                              startMonth: deal.startMonth,
+                                              startYear: deal.startYear,
+                                              notes: deal.notes || '',
+                                              sourceFundId: 'idle',
+                                              dealType: deal.dealType || deal.realEstateType || 'capital_gain',
+                                              cashflowYieldAnnual: deal.cashflowYieldAnnual || 5,
+                                              createPassiveIncome: false,
+                                              quantity: deal.quantity || '',
+                                              purchasePrice: deal.purchasePrice || '',
+                                            });
+                                            setShowAddDealForm(true);
+                                            window.scrollTo({ top: 0, behavior: 'smooth' });
+                                          }}
+                                          className="text-blue-500 hover:text-blue-700 p-1 ml-1"
+                                          title="Chỉnh sửa thương vụ"
+                                        >
+                                          Sửa
+                                        </button>
+                                        <button
+                                          type="button"
+                                          onClick={() => { deleteInvestmentDeal(deal.id); }}
+                                          className="text-red-500 hover:text-red-700 p-1"
+                                          title="Xóa thương vụ"
+                                        >
+                                          <Trash2 className="w-4 h-4 inline" />
+                                        </button>
+                                      </>
+                                    )}
                                   </>
                                 )}
-                                <button
-                                  type="button"
-                                  onClick={() => { 
-                                    setEditDealId(deal.id);
-                                    setDealForm({
-                                      name: deal.name,
-                                      assetType: deal.assetType,
-                                      capital: deal.capital,
-                                      startMonth: deal.startMonth,
-                                      startYear: deal.startYear,
-                                      notes: deal.notes || '',
-                                      sourceFundId: 'idle',
-                                      dealType: deal.dealType || deal.realEstateType || 'capital_gain',
-                                      cashflowYieldAnnual: deal.cashflowYieldAnnual || 5,
-                                      createPassiveIncome: false,
-                                      quantity: deal.quantity || '',
-                                      purchasePrice: deal.purchasePrice || '',
-                                    });
-                                    setShowAddDealForm(true);
-                                    window.scrollTo({ top: 0, behavior: 'smooth' });
-                                  }}
-                                  className="text-blue-500 hover:text-blue-700 p-1 ml-1"
-                                  title="Chỉnh sửa thương vụ"
-                                >
-                                  Sửa
-                                </button>
-                                <button
-                                  type="button"
-                                  onClick={() => { deleteInvestmentDeal(deal.id); }}
-                                  className="text-red-500 hover:text-red-700 p-1"
-                                  title="Xóa thương vụ"
-                                >
-                                  <Trash2 className="w-4 h-4 inline" />
-                                </button>
                               </td>
                             </tr>
                             {isSettling && (
@@ -1372,14 +1408,7 @@ export const Portfolio: React.FC = () => {
                               {annualizedRoi >= 0 ? '+' : ''}{annualizedRoi.toFixed(1)}%/năm
                             </td>
                             <td className="p-3 text-right">
-                              <button
-                                type="button"
-                                onClick={() => { deleteInvestmentDeal(deal.id); }}
-                                className="text-red-500 hover:text-red-700 p-1"
-                                title="Xóa lịch sử"
-                              >
-                                <Trash2 className="w-4 h-4 inline" />
-                              </button>
+                              <span className="text-family-textMuted/50 font-normal">---</span>
                             </td>
                           </tr>
                         );
