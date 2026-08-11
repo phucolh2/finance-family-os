@@ -151,6 +151,34 @@ export const Portfolio: React.FC = () => {
     setFormError(null);
   }, [activeRow?.period.key]);
 
+  const globalObservedDeals = state.investmentDeals?.filter((deal) => {
+    if (!activeRow) return false;
+    const isStarted = (deal.startYear < activeRow.period.year) || 
+                      (deal.startYear === activeRow.period.year && deal.startMonth <= activeRow.period.month);
+    const isNotEnded = deal.status === 'active' || 
+                       (deal.endYear !== undefined && deal.endMonth !== undefined && (deal.endYear > activeRow.period.year || 
+                       (deal.endYear === activeRow.period.year && deal.endMonth > activeRow.period.month)));
+    return isStarted && isNotEnded;
+  }) || [];
+
+  const globalSettledDeals = state.investmentDeals?.filter((deal) => {
+    if (!activeRow) return deal.status === 'settled';
+    if (deal.status !== 'settled') return false;
+    const isEnded = (deal.endYear! < activeRow.period.year) || 
+                    (deal.endYear! === activeRow.period.year && deal.endMonth! <= activeRow.period.month);
+    return isEnded;
+  }) || [];
+
+  const globalObservedSinkingFunds = state.sinkingFunds?.filter((sf) => {
+    if (!activeRow) return false;
+    const isStarted = (sf.startYear < activeRow.period.year) || 
+                      (sf.startYear === activeRow.period.year && sf.startMonth <= activeRow.period.month);
+    const isNotDisbursed = sf.status === 'active' || 
+                       (sf.disbursedYear !== undefined && sf.disbursedMonth !== undefined && (sf.disbursedYear > activeRow.period.year || 
+                       (sf.disbursedYear === activeRow.period.year && sf.disbursedMonth > activeRow.period.month)));
+    return isStarted && isNotDisbursed;
+  }) || [];
+
   // Recharts parameters
   const COLORS = ['#d97706', '#eab308', '#4d7c0f', '#8b5cf6', '#0f766e', '#64748b'];
   
@@ -404,29 +432,6 @@ export const Portfolio: React.FC = () => {
 
       {/* Tổng quan nhanh + Biểu đồ */}
       <div className="space-y-6">
-        {/* Helper calculations for observed items */}
-        {(() => {
-          const globalObservedDeals = state.investmentDeals?.filter((deal) => {
-            if (!activeRow) return false;
-            const isStarted = (deal.startYear < activeRow.period.year) || 
-                              (deal.startYear === activeRow.period.year && deal.startMonth <= activeRow.period.month);
-            const isNotEnded = deal.status === 'active' || 
-                               (deal.endYear !== undefined && deal.endMonth !== undefined && (deal.endYear > activeRow.period.year || 
-                               (deal.endYear === activeRow.period.year && deal.endMonth > activeRow.period.month)));
-            return isStarted && isNotEnded;
-          }) || [];
-
-          const globalObservedSinkingFunds = state.sinkingFunds?.filter((sf) => {
-            if (!activeRow) return false;
-            const isStarted = (sf.startYear < activeRow.period.year) || 
-                              (sf.startYear === activeRow.period.year && sf.startMonth <= activeRow.period.month);
-            const isNotDisbursed = sf.status === 'active' || 
-                               (sf.disbursedYear !== undefined && sf.disbursedMonth !== undefined && (sf.disbursedYear > activeRow.period.year || 
-                               (sf.disbursedYear === activeRow.period.year && sf.disbursedMonth > activeRow.period.month)));
-            return isStarted && isNotDisbursed;
-          }) || [];
-
-          return (
             <>
               {/* Assets summary table */}
               <Card>
@@ -574,8 +579,6 @@ export const Portfolio: React.FC = () => {
               </Card>
             </div>
           </>
-        );
-      })()}
       </div>
 
       {/* Sinking Funds */}
@@ -906,7 +909,7 @@ export const Portfolio: React.FC = () => {
           {/* Active Deals Table */}
           <div className="space-y-2">
             <h4 className="text-xs font-bold text-family-accent flex items-center gap-1.5">
-              <span>🟢</span> Thương vụ đang hoạt động ({state.investmentDeals?.filter(d => d.status === 'active').length || 0})
+              <span>🟢</span> Thương vụ đang hoạt động ({globalObservedDeals.length})
             </h4>
             <div className="overflow-x-auto border border-family-accent/10 rounded-xl">
               <table className="w-full text-left text-xs border-collapse">
@@ -921,15 +924,14 @@ export const Portfolio: React.FC = () => {
                   </tr>
                 </thead>
                 <tbody>
-                  {(!state.investmentDeals || state.investmentDeals.filter(d => d.status === 'active').length === 0) ? (
+                  {(!globalObservedDeals || globalObservedDeals.length === 0) ? (
                     <tr>
                       <td colSpan={6} className="p-6 text-center text-family-textMuted font-medium italic bg-family-bgDark/5">
                         Không có thương vụ nào đang hoạt động. Hãy thêm thương vụ đầu tiên!
                       </td>
                     </tr>
                   ) : (
-                    state.investmentDeals
-                      .filter((deal) => deal.status === 'active')
+                    globalObservedDeals
                       .map((deal) => {
                         const isSettling = settlingDealId === deal.id;
                         const current = activeRow ? activeRow.period.year * 12 + activeRow.period.month : 0;
@@ -1316,7 +1318,7 @@ export const Portfolio: React.FC = () => {
           {/* Settled Deals Table */}
           <div className="space-y-2">
             <h4 className="text-xs font-bold text-family-textMuted flex items-center gap-1.5">
-              <span>🏁</span> Nhật ký thương vụ đã tất toán ({state.investmentDeals?.filter(d => d.status === 'settled').length || 0})
+              <span>🏁</span> Nhật ký thương vụ đã tất toán ({globalSettledDeals.length})
             </h4>
             <div className="overflow-x-auto border border-family-accent/5 rounded-xl">
               <table className="w-full text-left text-xs border-collapse">
@@ -1333,15 +1335,14 @@ export const Portfolio: React.FC = () => {
                   </tr>
                 </thead>
                 <tbody>
-                  {(!state.investmentDeals || state.investmentDeals.filter(d => d.status === 'settled').length === 0) ? (
+                  {(!globalSettledDeals || globalSettledDeals.length === 0) ? (
                     <tr>
                       <td colSpan={9} className="p-6 text-center text-family-textMuted font-medium italic bg-family-bgDark/5">
                         Chưa có lịch sử thương vụ tất toán. Lợi nhuận chốt lời sẽ được tự động cộng vào tài sản lũy kế.
                       </td>
                     </tr>
                   ) : (
-                    state.investmentDeals
-                      .filter((deal) => deal.status === 'settled')
+                    globalSettledDeals
                       .map((deal) => {
                         const roi = deal.capital > 0 ? (deal.realizedProfit ?? 0) / deal.capital * 100 : 0;
                         const holdingMonths = Math.max(1, (deal.endYear! - deal.startYear) * 12 + (deal.endMonth! - deal.startMonth) + 1);

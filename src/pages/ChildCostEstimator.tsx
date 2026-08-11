@@ -17,7 +17,7 @@ const LIFESTYLE_OPTIONS: { value: ChildLifestyle; label: string; description: st
   { value: 'international', label: 'Quốc tế', description: 'Trường quốc tế, du học, lối sống cao cấp' },
 ];
 
-export const ScenarioChild2031: React.FC = () => {
+export const ChildCostEstimator: React.FC = () => {
   const { state } = useAppContext();
 
   // --- Biến số nhập vào (thay vì hardcode) ---

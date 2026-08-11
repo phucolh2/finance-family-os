@@ -16,6 +16,7 @@ import {
   ShieldCheck,
   ArrowRightLeft,
   Scale,
+  Baby,
 } from 'lucide-react';
 
 interface SidebarProps {
@@ -52,7 +53,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ activeTab, setActiveTab, onClo
       items: [
         { id: 'fire_center', name: 'FIRE Center', icon: Flame },
         { id: 'health_rest', name: 'Bệnh tật & hậu sự', icon: HeartPulse },
-        { id: 'scenario_child_2031', name: 'Kịch bản có con 2031', icon: GitBranch },
+        { id: 'child_estimator', name: 'Công cụ tính phí Nuôi con', icon: Baby },
       ],
     },
     {

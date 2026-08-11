@@ -23,7 +23,7 @@ export interface ProjectionMonthlyRow {
   debtReserveMonthly: number;
   liquidityMonthly: number;
   healthMonthly: number;
-  childCostMonthly: number;
+
   lifeEventImpactMonthly: number;
   debtPaymentMonthly: number;
   netCashflowMonthly: number;
@@ -60,9 +60,7 @@ export interface ProjectionMonthlyRow {
   _customProfit?: number;
   _hasManualInvestmentAdj?: boolean;
   _savingPnl?: number;
-  _childCost1?: number;
-  _childCost2?: number;
-  _childCostOther?: number;
+
   _activeSinkingFundsDebtReserve?: number;
   _groupBalances?: Record<string, number>;
   _monthlyBudget?: Record<string, number>;
@@ -84,7 +82,7 @@ export interface ProjectionYearlyRow {
   averageDebtReserveMonthly: number;
   investmentReturnRateAnnual: number;
   savingInterestRateAnnual: number;
-  averageChildCostMonthly: number;
+
   passiveCashFlowMonthly: number;
   endingInvestmentBalance: number;
   endingSavingBalance: number;
@@ -96,10 +94,7 @@ export interface ProjectionYearlyRow {
   fireProgress: number;
   notes: string[];
 
-  // Runtime child cost breakdown
-  _childCost1?: number;
-  _childCost2?: number;
-  _childCostOther?: number;
+
 }
 
 export interface ProjectionOutput {

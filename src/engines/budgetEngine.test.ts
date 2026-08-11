@@ -41,7 +41,6 @@ describe('budgetEngine', () => {
         incomeMonthly: 100,
         budgetSchedule: budgetSchedule,
         period: period,
-        childCost: { isActive: false, totalMonthly: 0 } as any
       });
 
       // Verify the ratios and amounts were updated

@@ -105,15 +105,23 @@ export const Dashboard: React.FC = () => {
   let cumulativeSaving = 0;
   let cumulativeInvestment = 0;
   let cumulativeLiquidity = 0;
-  let cumulativeEventOutflows = 0;
+  let cumulativeDebtReserve = 0;
+  let cumulativeUnallocated = 0;
+  let cumulativeEventOutflows = 0; // For UI display purposes
+  let cumulativePrincipalConsumed = 0; // For math purposes (debt payments)
 
   rowsUpToActive.forEach((row) => {
     cumulativeSaving += row.savingMonthly;
     cumulativeInvestment += row.investmentMonthly;
-    cumulativeLiquidity += row.liquidityMonthly;
+    cumulativeLiquidity += row.liquidityMonthly; // includes unspent (-) life events
+    cumulativeDebtReserve += row.debtReserveMonthly || 0;
+    const unallocated = row.incomeMonthly - row.savingMonthly - row.investmentMonthly - (row.budgetedExpensesMonthly || row.expensesMonthly) - (row.debtReserveMonthly || 0);
+    cumulativeUnallocated += unallocated;
+    
+    cumulativePrincipalConsumed += row.debtPaymentMonthly || 0;
   });
 
-  // Calculate cumulative life events up to active month/year
+  // Calculate cumulative life events just for UI display (since it's already in liquidityMonthly)
   if (activeRow) {
     const activeDate = { year: activeRow.period.year, month: activeRow.period.month };
     state.lifeEvents.forEach((e) => {
@@ -126,9 +134,10 @@ export const Dashboard: React.FC = () => {
     });
   }
 
-  // Calculate cumulative returns (residual growth)
+  // Cumulative Returns = Current Net Worth - Net Principal Contributed
+  const netPrincipal = startingNetWorth + cumulativeSaving + cumulativeInvestment + cumulativeLiquidity + cumulativeDebtReserve + cumulativeUnallocated - cumulativePrincipalConsumed;
   const cumulativeReturns = activeRow 
-    ? Math.max(0, activeRow.nominalNetWorth - startingNetWorth - cumulativeSaving - cumulativeInvestment - cumulativeLiquidity + cumulativeEventOutflows)
+    ? activeRow.nominalNetWorth - netPrincipal
     : 0;
 
   // Calculate Dynamic Financial Health Score (Khoa học, Chuẩn Quốc tế)
@@ -231,7 +240,7 @@ export const Dashboard: React.FC = () => {
       </div>
 
       {/* KPI & Health Score Row */}
-      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
+      <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
         {/* Income Card */}
         <Card isKpi className="border-l-family-accent bg-white/70 backdrop-blur-md shadow-sm transition-all hover:-translate-y-0.5">
           <CardContent className="p-4 flex flex-col justify-between h-24">
@@ -494,29 +503,41 @@ export const Dashboard: React.FC = () => {
                 <span className="flex items-center gap-1">🟣 Quỹ tiết kiệm:</span>
                 <span>+{formatTableMoneyVNDMillion(currentSaving)}</span>
               </div>
+              {(activeRow && activeRow.debtReserveMonthly > 0) && (
+                <div className="flex justify-between items-center text-[11px] font-semibold text-amber-700">
+                  <span className="flex items-center gap-1">🟠 Dự phòng nợ:</span>
+                  <span>+{formatTableMoneyVNDMillion(activeRow.debtReserveMonthly)}</span>
+                </div>
+              )}
+              {(activeRow && Math.max(0, currentIncome - currentExpenses - currentInvestment - currentSaving - (activeRow.debtReserveMonthly || 0)) > 0) && (
+                <div className="flex justify-between items-center text-[11px] font-semibold text-blue-700">
+                  <span className="flex items-center gap-1">🔵 Chưa phân bổ:</span>
+                  <span>+{formatTableMoneyVNDMillion(Math.max(0, currentIncome - currentExpenses - currentInvestment - currentSaving - (activeRow.debtReserveMonthly || 0)))}</span>
+                </div>
+              )}
             </div>
 
             {/* Accounting Formula equation */}
             <div className="bg-family-bgDark/30 border border-family-accent/5 p-3 rounded-2xl mt-auto">
               <div className="flex justify-between items-center text-[10px] text-family-textMuted">
-                <span className="font-bold">Phương trình ngân sách:</span>
-                <span>Khoản thu = Khoản chi + Đầu tư + Tiết kiệm</span>
+                <span className="font-bold">Phương trình:</span>
+                <span>Thu = Chi + ĐT + TK + Nợ + Dư</span>
               </div>
             </div>
           </CardContent>
         </Card>
       </div>
 
-      {/* Point-in-Time Net Worth Explanation Card */}
+      {/* Point-in-Time Net Worth Structure Card */}
       {activeRow && (
         <Card className="border border-family-accent/15 bg-family-bgDark/35 shadow-sm p-5">
           <div className="border-b border-family-accent/10 pb-3 mb-4 flex flex-col sm:flex-row sm:items-center justify-between gap-2">
             <div>
-              <h4 className="font-bold text-sm text-family-text uppercase tracking-wider">
-                Bản Giải Trình Tích Lũy Tài Sản Ròng
+              <h4 className="font-bold text-sm text-family-text uppercase tracking-wider flex items-center gap-2">
+                Cấu trúc Tài sản ròng <HelpTooltip text="Giá trị hiện tại của các tài sản bạn đang nắm giữ, bao gồm tiền mặt, tiết kiệm, các quỹ mục tiêu và khoản đầu tư." />
               </h4>
               <p className="text-xs text-family-textMuted mt-0.5">
-                Phân rã lũy tiến các nguồn dòng tiền từ mốc bắt đầu đến tháng quan sát ({activeRow.period.month < 10 ? `0${activeRow.period.month}` : activeRow.period.month}/{activeRow.period.year}).
+                Phân rã các loại tài sản đang sở hữu tại tháng quan sát ({activeRow.period.month < 10 ? `0${activeRow.period.month}` : activeRow.period.month}/{activeRow.period.year}).
               </p>
             </div>
             <div className="bg-family-accent/10 border border-family-accent/25 px-3 py-1 rounded-xl text-center">
@@ -527,40 +548,48 @@ export const Dashboard: React.FC = () => {
 
           <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-5 gap-3">
             <div className="bg-family-bgDark/20 p-3 rounded-xl border border-family-accent/5">
-              <span className="text-[10px] text-family-textMuted font-bold uppercase tracking-wider block">1. Vốn khởi điểm</span>
-              <span className="text-[15px] font-extrabold text-family-text block mt-1">{formatKpiMoneyVNDMillion(startingNetWorth)}</span>
-              <span className="text-[9px] text-family-textMuted mt-0.5 block italic">Tổng số dư ban đầu</span>
-            </div>
-            <div className="bg-family-bgDark/20 p-3 rounded-xl border border-family-accent/5">
-              <span className="text-[10px] text-family-textMuted font-bold uppercase tracking-wider block">2. Đã phân bổ</span>
-              <span className="text-[15px] font-extrabold text-green-700 block mt-1">+{formatKpiMoneyVNDMillion(cumulativeSaving + cumulativeInvestment)}</span>
-              <span className="text-[9px] text-family-textMuted mt-0.5 block italic">Gồm: {formatKpiMoneyVNDMillion(cumulativeSaving)} TK + {formatKpiMoneyVNDMillion(cumulativeInvestment)} ĐT</span>
-            </div>
-            <div className="bg-family-bgDark/20 p-3 rounded-xl border border-family-accent/5">
-              <span className="text-[10px] text-family-textMuted font-bold uppercase tracking-wider block">3. Dư sinh hoạt</span>
-              <span className="text-[15px] font-extrabold text-blue-700 block mt-1">
-                {cumulativeLiquidity >= 0 ? '+' : ''}{formatKpiMoneyVNDMillion(cumulativeLiquidity)}
+              <span className="text-[10px] text-family-textMuted font-bold uppercase tracking-wider block">1. Đầu tư dài hạn</span>
+              <span className="text-[15px] font-extrabold text-purple-600 block mt-1">
+                {formatKpiMoneyVNDMillion(activeRow.portfolio?.assets ? Object.values(activeRow.portfolio.assets).reduce((sum, a) => sum + a.endingBalance, 0) : 0)}
               </span>
-              <span className="text-[9px] text-family-textMuted mt-0.5 block italic">Tiền dư để ở ví Tiền mặt</span>
+              <span className="text-[9px] text-family-textMuted mt-0.5 block italic">BĐS, Cổ phiếu, Vàng...</span>
             </div>
             <div className="bg-family-bgDark/20 p-3 rounded-xl border border-family-accent/5">
-              <span className="text-[10px] text-family-textMuted font-bold uppercase tracking-wider block">4. Lợi nhuận gộp</span>
-              <span className="text-[15px] font-extrabold text-teal-700 block mt-1">+{formatKpiMoneyVNDMillion(cumulativeReturns)}</span>
-              <span className="text-[9px] text-family-textMuted mt-0.5 block italic">Lãi kép từ các khoản đầu tư</span>
+              <span className="text-[10px] text-family-textMuted font-bold uppercase tracking-wider block">2. Tiền mặt & Lưu động</span>
+              <span className="text-[15px] font-extrabold text-teal-600 block mt-1">
+                {formatKpiMoneyVNDMillion((activeRow.portfolio?.unallocatedEndingBalance || 0) + (activeRow.liquidityBalance || 0))}
+              </span>
+              <span className="text-[9px] text-family-textMuted mt-0.5 block italic">Tiền mặt rảnh rỗi chưa phân bổ</span>
             </div>
             <div className="bg-family-bgDark/20 p-3 rounded-xl border border-family-accent/5">
-              <span className="text-[10px] text-family-textMuted font-bold uppercase tracking-wider block">5. Chi tiêu sự kiện</span>
-              <span className="text-[15px] font-extrabold text-red-600 block mt-1">-{formatKpiMoneyVNDMillion(cumulativeEventOutflows)}</span>
-              <span className="text-[9px] text-family-textMuted mt-0.5 block italic">Mua nhà, mua xe, sinh con...</span>
+              <span className="text-[10px] text-family-textMuted font-bold uppercase tracking-wider block">3. Tiết kiệm mục tiêu</span>
+              <span className="text-[15px] font-extrabold text-amber-600 block mt-1">
+                {formatKpiMoneyVNDMillion(activeRow.portfolio?.savingsBalance || 0)}
+              </span>
+              <span className="text-[9px] text-family-textMuted mt-0.5 block italic">Các sổ tiết kiệm cố định</span>
+            </div>
+            <div className="bg-family-bgDark/20 p-3 rounded-xl border border-family-accent/5">
+              <span className="text-[10px] text-family-textMuted font-bold uppercase tracking-wider block">4. Quỹ sinh hoạt</span>
+              <span className="text-[15px] font-extrabold text-blue-600 block mt-1">
+                {formatKpiMoneyVNDMillion((activeRow.savingBalance || 0) + Math.max(0, currentNetWorth - (activeRow.portfolio?.assets ? Object.values(activeRow.portfolio.assets).reduce((sum, a) => sum + a.endingBalance, 0) : 0) - ((activeRow.portfolio?.unallocatedEndingBalance || 0) + (activeRow.liquidityBalance || 0)) - (activeRow.debtReserveBalance || 0) - (activeRow.portfolio?.savingsBalance || 0) - (activeRow.savingBalance || 0)))}
+              </span>
+              <span className="text-[9px] text-family-textMuted mt-0.5 block italic">Đang tích lũy trong các phong bì</span>
+            </div>
+            <div className="bg-family-bgDark/20 p-3 rounded-xl border border-family-accent/5">
+              <span className="text-[10px] text-family-textMuted font-bold uppercase tracking-wider block">5. Dự phòng nợ</span>
+              <span className="text-[15px] font-extrabold text-rose-600 block mt-1">
+                {formatKpiMoneyVNDMillion(activeRow.debtReserveBalance || 0)}
+              </span>
+              <span className="text-[9px] text-family-textMuted mt-0.5 block italic">Quỹ dự phòng rủi ro / trả nợ</span>
             </div>
           </div>
 
           <div className="mt-4 pt-4 border-t border-family-accent/10 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 bg-family-accent/5 p-4 rounded-xl">
             <div className="text-xs text-family-textMuted">
-              <span className="font-bold text-family-text">Phương trình kế toán:</span> Tài sản ròng = Vốn gốc (1) + Đã phân bổ (2) + Dư sinh hoạt (3) + Lợi nhuận (4) - Chi đột xuất (5)
+              <span className="font-bold text-family-text">Tổng kết:</span> Tài sản ròng = Đầu tư (1) + Tiền mặt (2) + Tiết kiệm (3) + Quỹ sinh hoạt (4) + Dự phòng (5)
             </div>
             <div className="text-right">
-              <span className="text-[10px] text-family-textMuted font-bold uppercase block">Tài sản ròng quan sát</span>
+              <span className="text-[10px] text-family-textMuted font-bold uppercase block">Tổng Tài sản ròng</span>
               <span className="text-lg font-extrabold text-family-accent">
                 {formatKpiMoneyVNDMillion(currentNetWorth)}
               </span>

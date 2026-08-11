@@ -6,7 +6,7 @@ import type {
   MonthlyBudgetOutput,
   BudgetRatioScheduleItem
 } from '../types/budget';
-import type { ChildCostOutput } from '../types/child';
+
 import { isBeforeOrEqual } from '../utils/date';
 import { safeNumber, safeArray } from '../utils/math';
 import { DEFAULT_BUDGET_TREE } from '../data/defaultInputs';
@@ -15,7 +15,6 @@ export interface BudgetEngineInput {
   period: TimelinePeriod;
   incomeMonthly: number;
   budgetSchedule?: BudgetRatioScheduleItem[];
-  childCost?: ChildCostOutput;
 }
 
 /**
@@ -96,8 +95,6 @@ export function calculateBudget(input: BudgetEngineInput): MonthlyBudgetOutput {
   const period = input.period;
   const income = safeNumber(input.incomeMonthly, 0);
   const schedule = safeArray(input.budgetSchedule);
-  const childCost = input.childCost;
-
   let activeTree: BudgetTreeNode[] = DEFAULT_BUDGET_TREE;
   let activeItem: BudgetRatioScheduleItem | null = null;
 
@@ -181,22 +178,7 @@ export function calculateBudget(input: BudgetEngineInput): MonthlyBudgetOutput {
     };
   });
 
-  // 4. Inject Child Cost Category if active (fixed cost)
-  if (childCost?.isActive) {
-    const childCostAmount = safeNumber(childCost.totalMonthly, 0);
-    const childRatioPercent = income > 0 ? (childCostAmount / income) * 100 : 0;
 
-    categories.push({
-      categoryId: 'child-cost-category',
-      categoryName: 'Chi phí nuôi con',
-      group: 'children',
-      ratioPercent: Math.round(childRatioPercent * 10) / 10,
-      amountMonthly: childCostAmount,
-      amountYearly: childCostAmount * 12,
-      ruleType: 'fixed',
-      isActive: true,
-    });
-  }
 
   const totalAllocated = categories.reduce((sum, cat) => sum + cat.amountMonthly, 0);
 

@@ -11,8 +11,6 @@ export const DEFAULT_FAMILY_PROFILE: FamilyProfile = {
   planningStartYear: 2026,
   planningEndMonth: 12,
   planningEndYear: 2060,
-  childBirthMonth: 10,
-  childBirthYear: 2031,
   currency: 'VND_MILLION',
   startingCapital: 100,
 };
@@ -232,9 +230,6 @@ export const DEFAULT_LIFE_STAGES: LifeStage[] = [
     toYear: 2030,
     incomeMonthly: 80,
     parentsMonthly: 10,
-    hasChild: false,
-    childLifestyle: 'premium',
-    childBudgetCapMonthly: 35,
     notes: 'Hai vợ chồng son tích lũy, sắm sửa ô tô gia đình.',
   },
   {
@@ -244,9 +239,6 @@ export const DEFAULT_LIFE_STAGES: LifeStage[] = [
     toYear: 2036,
     incomeMonthly: 120,
     parentsMonthly: 10,
-    hasChild: true,
-    childLifestyle: 'premium',
-    childBudgetCapMonthly: 35,
     notes: 'Bé chào đời năm 2031, gia đình mua nhà chung cư rộng rãi.',
   },
   {
@@ -256,9 +248,6 @@ export const DEFAULT_LIFE_STAGES: LifeStage[] = [
     toYear: 2049,
     incomeMonthly: 180,
     parentsMonthly: 10,
-    hasChild: true,
-    childLifestyle: 'premium',
-    childBudgetCapMonthly: 35,
     notes: 'Con đi học trường tốt và tích lũy học phí đại học.',
   },
   {
@@ -268,9 +257,6 @@ export const DEFAULT_LIFE_STAGES: LifeStage[] = [
     toYear: 2060,
     incomeMonthly: 25,
     parentsMonthly: 0,
-    hasChild: true,
-    childLifestyle: 'premium',
-    childBudgetCapMonthly: 35,
     notes: 'Hai vợ chồng an nhàn nghỉ hưu sớm, con cái tự lập.',
   },
 ];

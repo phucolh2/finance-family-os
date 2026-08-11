@@ -31,7 +31,7 @@ describe('SmartAllocationAdvisor Engine', () => {
       ],
       expenseSchedule: [],
       lifeStages: [
-        { id: 's1', fromYear: 2024, toYear: 2030, name: 'Tích lũy', hasChild: false, incomeMonthly: 0, parentsMonthly: 0, childLifestyle: 'basic', childBudgetCapMonthly: 0 }
+        { id: 's1', fromYear: 2024, toYear: 2030, name: 'Tích lũy', incomeMonthly: 0, parentsMonthly: 0 }
       ],
       lifeEvents: [],
       assets: [],
@@ -100,7 +100,6 @@ describe('SmartAllocationAdvisor Engine', () => {
           debtReserveMonthly: 0,
           liquidityMonthly: 0,
           healthMonthly: 0,
-          childCostMonthly: 0,
           lifeEventImpactMonthly: 0,
           debtPaymentMonthly: 0,
           netCashflowMonthly: 0

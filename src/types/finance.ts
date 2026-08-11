@@ -12,8 +12,6 @@ export interface FamilyProfile {
   planningStartYear: number;
   planningEndMonth: number;   // 1-12
   planningEndYear: number;
-  childBirthMonth?: number;
-  childBirthYear?: number;
   currency: 'VND_MILLION';
   startingCapital?: number;
 }
@@ -53,9 +51,6 @@ export interface LifeStage {
   toYear: number;
   incomeMonthly: number;
   parentsMonthly: number;
-  hasChild: boolean;
-  childLifestyle: 'basic' | 'comfortable' | 'premium' | 'international';
-  childBudgetCapMonthly: number;
   notes?: string;
 }
 

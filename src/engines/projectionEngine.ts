@@ -6,7 +6,7 @@ import { generateTimeline } from './timelineEngine';
 import { calculateIncome } from './incomeEngine';
 import { calculateBudget } from './budgetEngine';
 import { calculateCashflow } from './cashflowEngine';
-import { calculateChildCost } from './childEngine';
+
 import { calculateFire } from './fireEngine';
 import { safeNumber, safeArray, calculatePMT } from '../utils/math';
 
@@ -121,32 +121,12 @@ export function runProjection(input: ProjectionEngineInput): ProjectionOutput {
       }
     });
 
-    // Resolve active stage for childCost parameters
-    const activeStage = lifeStages.find(
-      s => period.year >= s.fromYear && period.year <= s.toYear
-    );
-    const childLifestyle = activeStage ? activeStage.childLifestyle : 'premium';
-    const childBudgetCap = activeStage ? activeStage.childBudgetCapMonthly : 35;
-
-    // Calculate Child Cost
-    const childCostRes = calculateChildCost({
-      period,
-      childBirthMonth: profile.childBirthMonth,
-      childBirthYear: profile.childBirthYear,
-      lifestyle: childLifestyle,
-      budgetCapMonthly: childBudgetCap,
-      educationInflationAnnual: assumptions.educationInflationRateAnnual,
-      healthInflationAnnual: assumptions.medicalInflationRateAnnual,
-      generalInflationAnnual: assumptions.generalInflationRateAnnual,
-    });
-
     // Do NOT deduct debt payment from income before budgeting.
     // The budget should be calculated on full income.
     const budgetRes = calculateBudget({
       period,
       incomeMonthly: incomeRes.incomeMonthly,
       budgetSchedule,
-      childCost: childCostRes,
     });
     warnings.push(...budgetRes.warnings.map(w => `[Ngân sách] ${w}`));
 
@@ -166,7 +146,20 @@ export function runProjection(input: ProjectionEngineInput): ProjectionOutput {
         ? (period.year * 12 + period.month > activeExpenseSchedule.endYear * 12 + activeExpenseSchedule.endMonth)
         : false;
       if (!isEnded) {
-        totalActualExpenseMonthly = Object.values(activeExpenseSchedule.categories).reduce((sum: number, val: any) => sum + safeNumber(val), 0);
+        if (Object.keys(activeExpenseSchedule.categories).length > 0) {
+          totalActualExpenseMonthly = Object.entries(activeExpenseSchedule.categories).reduce((sum: number, [key, val]: [string, any]) => {
+            let numVal = safeNumber(val);
+            if (numVal === -1) {
+              const parts = key.split('/');
+              const itemId = parts[parts.length - 1];
+              const matched = budgetRes.categories.find(c => c.categoryId === itemId || c.group === itemId);
+              numVal = matched ? matched.amountMonthly : 0;
+            }
+            return sum + numVal;
+          }, 0);
+        } else {
+          totalActualExpenseMonthly = undefined;
+        }
       }
     }
 
@@ -185,8 +178,15 @@ export function runProjection(input: ProjectionEngineInput): ProjectionOutput {
         const matched = budgetRes.categories.find(c => c.categoryId === itemId || c.group === itemId);
         const groupId = matched ? matched.group : parts[0];
         
-        actualByCategory[groupId] = (actualByCategory[groupId] || 0) + safeNumber(val);
-        realActualByCategory[groupId] = (realActualByCategory[groupId] || 0) + safeNumber(val);
+        let numVal = safeNumber(val);
+        let realNumVal = numVal;
+        if (numVal === -1) {
+          numVal = matched ? matched.amountMonthly : 0;
+          realNumVal = 0; // -1 means it wasn't tracked, so real actual is 0, but for budget calculation we use the budget amount
+        }
+        
+        actualByCategory[groupId] = (actualByCategory[groupId] || 0) + numVal;
+        realActualByCategory[groupId] = (realActualByCategory[groupId] || 0) + realNumVal;
       });
     } else {
       budgetRes.categories.forEach(c => {
@@ -377,13 +377,6 @@ export function runProjection(input: ProjectionEngineInput): ProjectionOutput {
         }
         
         let acc = 0;
-        if (deal.status === 'settled') {
-          const investStart = deal.isConverted && deal.conversionYear && deal.conversionMonth
-            ? deal.conversionYear * 12 + deal.conversionMonth
-            : start;
-          const duration = end - investStart + 1;
-          acc = (safeNumber(deal.realizedProfit, 0) / duration) * Math.max(0, current - investStart);
-        }
         activeValueUpToLastMonth += Math.max(0, currentCapital) + acc;
       }
     });
@@ -392,6 +385,7 @@ export function runProjection(input: ProjectionEngineInput): ProjectionOutput {
     let activeSavingsContrib_saving = 0;
     let activeSavingsMaturedThisMonth_saving = 0;
     let activeSavingsMaturedThisMonth_unallocated = 0;
+    let activeSavingsMaturedInterestThisMonth = 0;
 
     savingsDeposits.forEach((dep) => {
       if (!savingsStates[dep.id]) {
@@ -408,9 +402,11 @@ export function runProjection(input: ProjectionEngineInput): ProjectionOutput {
 
       if (current >= depStart && current <= depEnd) {
         let maturingAmount = 0;
+        let maturedInterest = 0;
         
         if (current === depEnd && dep.status === 'settled_early') {
            maturingAmount = state.balance + safeNumber(dep.realizedInterest, 0);
+           maturedInterest = safeNumber(dep.realizedInterest, 0);
            state.buckets = [];
            state.interest += safeNumber(dep.realizedInterest, 0);
            state.balance = 0;
@@ -430,6 +426,7 @@ export function runProjection(input: ProjectionEngineInput): ProjectionOutput {
                     }
                  }
                  maturingAmount += w.amount + safeNumber(w.realizedInterest, 0);
+                 maturedInterest += safeNumber(w.realizedInterest, 0);
                  state.interest += safeNumber(w.realizedInterest, 0);
               });
               state.buckets = state.buckets.filter(b => b.principal > 0);
@@ -439,6 +436,7 @@ export function runProjection(input: ProjectionEngineInput): ProjectionOutput {
               if (current - b.termStart === term && current > b.termStart) {
                  const interest = b.principal * ((dep.interestRateAnnual || 0) / 100 / 12) * term;
                  maturingAmount += b.principal + interest;
+                 maturedInterest += interest;
                  state.interest += interest;
                  return false;
               }
@@ -473,6 +471,7 @@ export function runProjection(input: ProjectionEngineInput): ProjectionOutput {
            } else {
                activeSavingsMaturedThisMonth_unallocated += maturingAmount;
            }
+           activeSavingsMaturedInterestThisMonth += maturedInterest;
         }
         
         activeSavingsPrincipalThisMonth += state.balance;
@@ -491,6 +490,7 @@ export function runProjection(input: ProjectionEngineInput): ProjectionOutput {
     let sinkingFundMaturedThisMonth_saving = 0;
     let sinkingFundMaturedThisMonth_debtReserve = 0;
     let sinkingFundMaturedThisMonth_unallocated = 0;
+    let sinkingFundMaturedInterestThisMonth = 0;
 
     sinkingFunds.forEach(sf => {
       if (!sinkingFundStates[sf.id]) {
@@ -511,11 +511,13 @@ export function runProjection(input: ProjectionEngineInput): ProjectionOutput {
       const source = sf.sourceOfFund || (sf.fundType === 'debt_prep' ? 'debt_reserve' : (sf.fundType === 'lifestyle_savings' ? 'expense_surplus' : 'unallocated'));
       
       if (current >= start && current <= end) {
-        let maturingAmount = 0;
+        let withdrawnAmount = 0;
+        let rolloverAmount = 0;
+        let maturedInterest = 0;
         let newContrib = 0;
         
         if (current === end && sf.status === 'disbursed') {
-            maturingAmount = state.balance;
+            withdrawnAmount = state.balance;
             state.buckets = [];
             state.balance = 0;
         } else {
@@ -533,7 +535,8 @@ export function runProjection(input: ProjectionEngineInput): ProjectionOutput {
                         state.buckets[i].principal = 0;
                      }
                   }
-                  maturingAmount += w.amount + safeNumber(w.realizedInterest, 0);
+                  withdrawnAmount += w.amount + safeNumber(w.realizedInterest, 0);
+                  maturedInterest += safeNumber(w.realizedInterest, 0);
                   state.interest += safeNumber(w.realizedInterest, 0);
                });
                state.buckets = state.buckets.filter(b => b.principal > 0);
@@ -544,7 +547,8 @@ export function runProjection(input: ProjectionEngineInput): ProjectionOutput {
                 const bRate = b.interestRateAnnual ?? (sf.interestRateAnnual || 0);
                 if (current - b.termStart === bTerm && current > b.termStart) {
                    const interest = b.principal * (bRate / 100 / 12) * bTerm;
-                   maturingAmount += b.principal + interest;
+                   rolloverAmount += b.principal + interest;
+                   maturedInterest += interest;
                    state.interest += interest;
                    return false;
                 }
@@ -575,23 +579,25 @@ export function runProjection(input: ProjectionEngineInput): ProjectionOutput {
              
              state.contribution += newContrib;
              
-             if (newContrib > 0 || maturingAmount > 0) {
-                state.buckets.push({ principal: newContrib + maturingAmount, termStart: current, termMonths: bTerm, interestRateAnnual: bRate, contribAmount: periodContrib } as any);
+             if (newContrib > 0 || rolloverAmount > 0) {
+                state.buckets.push({ principal: newContrib + rolloverAmount, termStart: current, termMonths: bTerm, interestRateAnnual: bRate, contribAmount: periodContrib } as any);
              }
             
             state.balance = state.buckets.reduce((sum, b) => sum + b.principal, 0);
         }
-        if (maturingAmount > 0) {
+        if (withdrawnAmount > 0) {
            if (source === 'saving') {
-               sinkingFundMaturedThisMonth_saving += maturingAmount;
+               sinkingFundMaturedThisMonth_saving += withdrawnAmount;
            } else if (source === 'debt_reserve') {
-               sinkingFundMaturedThisMonth_debtReserve += maturingAmount;
+               sinkingFundMaturedThisMonth_debtReserve += withdrawnAmount;
            } else if (source?.startsWith('expense_surplus')) {
-               currentLiquidityBalance += maturingAmount;
+               currentLiquidityBalance += withdrawnAmount;
            } else {
-               sinkingFundMaturedThisMonth_unallocated += maturingAmount;
+               sinkingFundMaturedThisMonth_unallocated += withdrawnAmount;
            }
         }
+        
+        sinkingFundMaturedInterestThisMonth += maturedInterest;
         
         if (source === 'unallocated' || source === 'investment') {
           activeSinkingFundsBalance_unallocated += state.balance;
@@ -665,15 +671,7 @@ export function runProjection(input: ProjectionEngineInput): ProjectionOutput {
         : Infinity;
 
       if (current >= start && current <= end) {
-        if (deal.status === 'settled') {
-          const investStart = (deal as any).isConverted && (deal as any).conversionYear && (deal as any).conversionMonth
-            ? (deal as any).conversionYear * 12 + (deal as any).conversionMonth
-            : start;
-          if (current >= investStart && current <= end) {
-            const duration = end - investStart + 1;
-            totalDealPnlThisMonth += safeNumber(deal.realizedProfit, 0) / duration;
-          }
-        }
+        // (Linear interpolation of realizedProfit removed per user request)
         
         // --- NEW: Handle Cash Flow ---
         if ((deal.dealType === 'cash_flow' || deal.realEstateType === 'cash_flow') && deal.cashflowYieldAnnual && current > start) {
@@ -711,6 +709,7 @@ export function runProjection(input: ProjectionEngineInput): ProjectionOutput {
       if (deal.status === 'settled' && deal.endMonth === period.month && deal.endYear === period.year) {
         const profit = safeNumber(deal.realizedProfit, 0);
         dealSettleNotes.push(`Tất toán toàn bộ ${deal.name}: ${profit >= 0 ? `Lãi +` : `Lỗ `}${String(profit)}M`);
+        totalDealPnlThisMonth += profit;
       }
       
       if (deal.withdrawals) {
@@ -758,16 +757,7 @@ export function runProjection(input: ProjectionEngineInput): ProjectionOutput {
       
       if (current >= start && current < end) {
         let accumulatedPnl = 0;
-        if (deal.status === 'settled') {
-          const investStart = (deal as any).isConverted && (deal as any).conversionYear && (deal as any).conversionMonth
-            ? (deal as any).conversionYear * 12 + (deal as any).conversionMonth
-            : start;
-          if (current >= investStart) {
-            const duration = end - investStart + 1;
-            const monthsActiveSoFar = current - investStart + 1;
-            accumulatedPnl = (safeNumber(deal.realizedProfit, 0) / duration) * monthsActiveSoFar;
-          }
-        }
+        // (Linear interpolation of realizedProfit removed per user request)
 
         let currentCapital = safeNumber(deal.capital, 0);
         if (deal.withdrawals) {
@@ -846,7 +836,7 @@ export function runProjection(input: ProjectionEngineInput): ProjectionOutput {
     });
 
     // Savings/Sinking interests are now naturally handled by matured amounts flowing into respective pools
-    const totalYieldThisMonth = activeSavingsMaturedThisMonth_saving + activeSavingsMaturedThisMonth_unallocated + sinkingFundMaturedThisMonth_saving + sinkingFundMaturedThisMonth_unallocated + sinkingFundMaturedThisMonth_debtReserve;
+    const totalYieldThisMonth = activeSavingsMaturedInterestThisMonth + sinkingFundMaturedInterestThisMonth;
     
     cumulativeContribution += monthlyContribution;
     cumulativePnl += (investmentPnl + totalYieldThisMonth); // Approximate total PnL generated
@@ -873,7 +863,7 @@ export function runProjection(input: ProjectionEngineInput): ProjectionOutput {
     };
 
     // Calculate Net Worth
-    const nominalNetWorth = portfolioOutput.totalEndingBalance + currentSavingBalance + activeSinkingFundsBalance_saving + currentLiquidityBalance + currentDebtReserveBalance + activeSinkingFundsBalance_expenseSurplus;
+    const nominalNetWorth = portfolioOutput.totalEndingBalance + currentSavingBalance + activeSinkingFundsBalance_saving + currentLiquidityBalance + currentDebtReserveBalance + activeSinkingFundsBalance_expenseSurplus + currentUnallocatedCashBalance;
 
     // Calculate Real Value Today
     const inflationRate = safeNumber(assumptions.generalInflationRateAnnual, 0);
@@ -893,15 +883,6 @@ export function runProjection(input: ProjectionEngineInput): ProjectionOutput {
       ...activePeriodEvents.map((e) => e.name),
       ...dealSettleNotes
     ];
-    if (childCostRes.isActive && childCostRes.totalMonthly > 0) {
-      if (childCostRes.childAge === 0 && period.month === profile.childBirthMonth) {
-        notes.push(`Sinh con đầu lòng (${String(profile.childBirthYear)})`);
-      } else if (childCostRes.childAge === 6 && period.month === profile.childBirthMonth) {
-        notes.push('Con vào lớp 1');
-      } else if (childCostRes.childAge === 18 && period.month === profile.childBirthMonth) {
-        notes.push('Con vào Đại học');
-      }
-    }
 
     // First, ensure no expense group has a negative balance (it gets subsidized by general liquidity)
     const activeBudget = budgetSchedule.find(
@@ -951,7 +932,7 @@ export function runProjection(input: ProjectionEngineInput): ProjectionOutput {
       debtReserveMonthly: cashflowRes.debtReserveMonthly,
       liquidityMonthly: cashflowRes.unspentExpense + cashflowRes.lifeEventImpactMonthly,
       healthMonthly: 0,
-      childCostMonthly: childCostRes.totalMonthly,
+
       lifeEventImpactMonthly: cashflowRes.lifeEventImpactMonthly + cashflowRes.oneTimeEventImpact,
       debtPaymentMonthly: activeDebtPaymentMonthly,
       netCashflowMonthly: cashflowRes.netCashflowMonthly,
@@ -983,9 +964,7 @@ export function runProjection(input: ProjectionEngineInput): ProjectionOutput {
     lastRow._customProfit = investmentPnl;
     lastRow._hasManualInvestmentAdj = hasManualInvestmentAdj;
     lastRow._savingPnl = 0;
-    lastRow._childCost1 = childCostRes.totalMonthly;
-    lastRow._childCost2 = 0;
-    lastRow._childCostOther = 0;
+
   });
 
   // 4. Aggregate monthly rows into yearly rows
@@ -1006,13 +985,7 @@ export function runProjection(input: ProjectionEngineInput): ProjectionOutput {
     
     const totalCustomProfit = yearRows.reduce((sum, r) => sum + (r._customProfit ?? 0), 0);
     const avgSavingRate = yearRows.reduce((sum, r) => sum + (r._savingInterestRateAnnual ?? 0), 0) / yearRows.length;
-    
-    // Child Cost details
-    const totalChild1 = yearRows.reduce((sum, r) => sum + (r._childCost1 ?? 0), 0) / yearRows.length;
-    const totalChild2 = yearRows.reduce((sum, r) => sum + (r._childCost2 ?? 0), 0) / yearRows.length;
-    const totalChildOther = yearRows.reduce((sum, r) => sum + (r._childCostOther ?? 0), 0) / yearRows.length;
-    const avgChildCost = yearRows.reduce((sum, r) => sum + r.childCostMonthly, 0) / yearRows.length;
-    
+        
     // PCF derived exactly from user request: PCF = lợi nhuận đầu tư hàng tháng + số dư tiết kiệm * 4%
     const avgMonthlyInvestmentProfit = totalCustomProfit / yearRows.length;
     // We assume 4% is an annual Safe Withdrawal Rate for savings, so divide by 12 for monthly PCF
@@ -1055,7 +1028,7 @@ export function runProjection(input: ProjectionEngineInput): ProjectionOutput {
       averageDebtReserveMonthly: avgDebtReserve,
       investmentReturnRateAnnual: Number(investmentReturnRateAnnualDisplay),
       savingInterestRateAnnual: Number(avgSavingRate.toFixed(2)),
-      averageChildCostMonthly: avgChildCost,
+
       passiveCashFlowMonthly: passiveCashFlowMonthly,
       endingInvestmentBalance: lastRow.portfolio.totalEndingBalance,
       endingSavingBalance: lastRow.savingBalance,
@@ -1068,11 +1041,6 @@ export function runProjection(input: ProjectionEngineInput): ProjectionOutput {
       notes: eventNotes,
     });
     
-    // Store child breakdowns on the yearly row for the UI
-    const lastYearRow = yearlyRows[yearlyRows.length - 1];
-    lastYearRow._childCost1 = totalChild1;
-    lastYearRow._childCost2 = totalChild2;
-    lastYearRow._childCostOther = totalChildOther;
   });
 
   // 5. Run a final pass to evaluate crossing year across the fully populated yearly list

@@ -239,8 +239,6 @@ export const applyGlidePath = (snapshot: AllocationSnapshot, availableAmount: nu
   if (activeStage) {
     if (activeStage.name.toLowerCase().includes('nghỉ hưu') || activeStage.name.toLowerCase().includes('fire')) {
       stageType = 'retirement';
-    } else if (activeStage.hasChild) {
-      stageType = 'child_raising';
     }
   }
   let longTermRatio = 0;

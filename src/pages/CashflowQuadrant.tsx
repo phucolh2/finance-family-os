@@ -120,17 +120,8 @@ export const CashflowQuadrant: React.FC = () => {
   
   // Chi phí sinh hoạt thực tế trong tháng
   let livingExpenses = 0;
-  
   // Sử dụng ngân sách kế hoạch (budget) thay vì thực tế (actual) để Bức tranh Tài chính luôn phản ánh đúng hệ thống mục tiêu.
-  if (activeRow._monthlyBudget && Object.keys(activeRow._monthlyBudget).length > 0) {
-    Object.entries(activeRow._monthlyBudget).forEach(([groupId, amount]) => {
-      if (groupId !== 'safety_reserve' && groupId !== 'future_investing' && groupId !== 'debt_optim') {
-        livingExpenses += amount as number;
-      }
-    });
-  } else {
-    livingExpenses = activeRow.expensesMonthly; // Fallback
-  }
+  livingExpenses = activeRow.budgetedExpensesMonthly ?? activeRow.expensesMonthly;
 
   // Tổng chi phí = Sinh hoạt + Trả nợ
   const totalExpenses = livingExpenses + debtExpenses;
@@ -149,15 +140,7 @@ export const CashflowQuadrant: React.FC = () => {
 
   // Use the exact UI hook to match "Dự phòng / Sự kiện" screen
   const { totalRemainingSum } = useLiquidityBreakdown('cumulative', activeRow?.period.key);
-  const displayLiquidityBalance = totalRemainingSum;
-
-  // Tính chi tiết Quỹ thanh khoản
-  const basicCash = (activeRow.savingBalance || 0) 
-    + displayLiquidityBalance 
-    + (activeRow.debtReserveBalance || 0) 
-    + (activeRow.portfolio?.unallocatedEndingBalance || 0) 
-    + (activeRow.portfolio?.savingsBalance || 0);
-  const activeSinkingFundsCash = Math.max(0, savingAssets - basicCash);
+  let displayLiquidityBalance = totalRemainingSum;
 
   // Compute exact breakdown of sinking funds for UI
   const sinkingFundBreakdown: Record<string, number> = {};
@@ -172,6 +155,19 @@ export const CashflowQuadrant: React.FC = () => {
       }
     });
   }
+
+  // Tính chi tiết Quỹ thanh khoản
+  const savingBalance = activeRow.savingBalance || 0;
+  const debtReserveBalance = activeRow.debtReserveBalance || 0;
+  const portfolioSavingsBalance = activeRow.portfolio?.savingsBalance || 0;
+  const activeSinkingFundsCash = Object.values(sinkingFundBreakdown).reduce((sum, v) => sum + v, 0);
+
+  const portfolioUnallocatedBase = activeRow.portfolio?.unallocatedEndingBalance || 0;
+  const actualUnallocatedIncome = activeRow.unallocatedCashBalance || 0;
+
+  const totalAllocatedFunds = savingBalance + displayLiquidityBalance + debtReserveBalance + activeSinkingFundsCash + portfolioSavingsBalance;
+  const totalCashBalance = Math.max(0, savingAssets - totalAllocatedFunds);
+  const freeCash = Math.max(0, totalCashBalance - portfolioUnallocatedBase - actualUnallocatedIncome);
 
   // --- 4. LIABILITY QUADRANT ---
   // Currently, the system doesn't explicitly track Debt Principal (Liabilities).
@@ -480,22 +476,32 @@ export const CashflowQuadrant: React.FC = () => {
                       {(activeRow.debtReserveBalance || 0) > 0 && (
                         <li className="flex justify-between items-center"><span>Dự phòng trả nợ</span> <span className="font-semibold">{formatTableMoneyVNDMillion(activeRow.debtReserveBalance || 0)}</span></li>
                       )}
-                      {(activeRow.portfolio?.unallocatedEndingBalance || 0) > 0 && (
+                      {totalCashBalance > 0 && (
                         <li className="flex flex-col gap-1">
                           <div className="flex justify-between items-center">
                             <span>Tiền mặt</span> 
-                            <span className="font-semibold">{formatTableMoneyVNDMillion(activeRow.portfolio?.unallocatedEndingBalance || 0)}</span>
+                            <span className="font-semibold">{formatTableMoneyVNDMillion(totalCashBalance)}</span>
                           </div>
-                          {(activeRow.unallocatedCashBalance || 0) > 0 && (
+                          {(portfolioUnallocatedBase > 0 || actualUnallocatedIncome > 0 || freeCash > 0) && (
                             <ul className="pl-4 border-l border-zinc-200/20 text-[10px] opacity-70 space-y-1">
-                              <li className="flex justify-between items-center">
-                                <span>Tiền dôi ra (chưa phân bổ)</span>
-                                <span>{formatTableMoneyVNDMillion(activeRow.unallocatedCashBalance)}</span>
-                              </li>
-                              <li className="flex justify-between items-center">
-                                <span>Vốn gốc chờ đầu tư</span>
-                                <span>{formatTableMoneyVNDMillion(Math.max(0, (activeRow.portfolio?.unallocatedEndingBalance || 0) - activeRow.unallocatedCashBalance))}</span>
-                              </li>
+                              {portfolioUnallocatedBase > 0 && (
+                                <li className="flex justify-between items-center">
+                                  <span>Vốn gốc chờ đầu tư</span>
+                                  <span>{formatTableMoneyVNDMillion(portfolioUnallocatedBase)}</span>
+                                </li>
+                              )}
+                              {actualUnallocatedIncome > 0 && (
+                                <li className="flex justify-between items-center">
+                                  <span>Tiền dôi ra (chưa phân bổ)</span>
+                                  <span>{formatTableMoneyVNDMillion(actualUnallocatedIncome)}</span>
+                                </li>
+                              )}
+                              {freeCash > 0 && (
+                                <li className="flex justify-between items-center">
+                                  <span>Tiền mặt tự do</span>
+                                  <span>{formatTableMoneyVNDMillion(freeCash)}</span>
+                                </li>
+                              )}
                             </ul>
                           )}
                         </li>

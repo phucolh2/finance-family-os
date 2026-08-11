@@ -99,6 +99,7 @@ export const FireCenter: React.FC = () => {
           <CardHeader className="p-4">
             <CardDescription className="uppercase font-bold text-[10px]">Chi phí năm ước tính</CardDescription>
             <CardTitle className="text-lg mt-1">{formatKpiMoneyVNDMillion(currentExpenses * 12)}</CardTitle>
+            <div className="text-[10px] text-family-textMuted/70 font-normal mt-2 leading-tight normal-case">Dựa trên ngân sách sinh hoạt hiện tại.</div>
           </CardHeader>
         </Card>
 
@@ -106,6 +107,7 @@ export const FireCenter: React.FC = () => {
           <CardHeader className="p-4">
             <CardDescription className="uppercase font-bold text-[10px]">Mục tiêu tự do (FIRE)</CardDescription>
             <CardTitle className="text-lg mt-1">{formatKpiMoneyVNDMillion(fireResult.fireTarget)}</CardTitle>
+            <div className="text-[10px] text-family-textMuted/70 font-normal mt-2 leading-tight normal-case">Tài sản cần có để nghỉ hưu (theo Quy tắc 4%).</div>
           </CardHeader>
         </Card>
 
@@ -113,6 +115,7 @@ export const FireCenter: React.FC = () => {
           <CardHeader className="p-4">
             <CardDescription className="uppercase font-bold text-[10px]">Tài sản tích lũy hiện tại</CardDescription>
             <CardTitle className="text-lg mt-1">{formatKpiMoneyVNDMillion(currentNetWorth)}</CardTitle>
+            <div className="text-[10px] text-family-textMuted/70 font-normal mt-2 leading-tight normal-case">Tổng tài sản ròng (Đầu tư & Tiền mặt).</div>
           </CardHeader>
         </Card>
 
@@ -120,6 +123,7 @@ export const FireCenter: React.FC = () => {
           <CardHeader className="p-4">
             <CardDescription className="uppercase font-bold text-[10px]">Tiến trình đạt được</CardDescription>
             <CardTitle className="text-lg mt-1">{fireResult.fireProgress.toFixed(1)}%</CardTitle>
+            <div className="text-[10px] text-family-textMuted/70 font-normal mt-2 leading-tight normal-case">Mức độ hoàn thành so với mục tiêu FIRE.</div>
           </CardHeader>
         </Card>
 
@@ -129,6 +133,7 @@ export const FireCenter: React.FC = () => {
             <CardTitle className="text-lg mt-1 text-purple-800 font-bold">
               {fireResult.expectedFireYear ? `Năm ${fireResult.expectedFireYear}` : 'Chưa đạt mốc'}
             </CardTitle>
+            <div className="text-[10px] text-family-textMuted/70 font-normal mt-2 leading-tight normal-case">Năm tài sản dự kiến vượt mục tiêu (kịch bản cơ sở).</div>
           </CardHeader>
         </Card>
       </div>
@@ -196,12 +201,22 @@ export const FireCenter: React.FC = () => {
                   <div className={`text-2xl font-bold mt-1 ${mcResult.probabilityReachFire >= 85 ? 'text-green-700' : mcResult.probabilityReachFire >= 70 ? 'text-family-accent' : 'text-red-600'}`}>
                     {mcResult.probabilityReachFire.toFixed(1)}%
                   </div>
+                  <div className="text-[10px] text-family-textMuted/70 font-normal mt-2 leading-tight normal-case">
+                    {mcResult.probabilityReachFire === 0 
+                      ? 'Cả 1,000 kịch bản đều không chạm mốc FIRE trước 2060.' 
+                      : 'Xác suất thành công dựa trên 1,000 kịch bản.'}
+                  </div>
                 </div>
 
                 <div className="p-4 bg-white/80 rounded-2xl border border-family-accent/10 text-center">
                   <div className="text-[10px] uppercase font-bold text-family-textMuted">Năm đạt trung vị (Median)</div>
                   <div className="text-xl font-bold mt-1 text-family-text">
                     {mcResult.medianFireYear ? `Năm ${mcResult.medianFireYear}` : '---'}
+                  </div>
+                  <div className="text-[10px] text-family-textMuted/70 font-normal mt-2 leading-tight normal-case">
+                    {mcResult.medianFireYear 
+                      ? '50% số kịch bản đạt mục tiêu vào năm này hoặc sớm hơn.'
+                      : 'Quá nửa số kịch bản chưa thể đạt mục tiêu.'}
                   </div>
                 </div>
 
@@ -210,12 +225,22 @@ export const FireCenter: React.FC = () => {
                   <div className="text-xl font-bold mt-1 text-green-700">
                     {mcResult.p10FireYear ? `Năm ${mcResult.p10FireYear}` : '---'}
                   </div>
+                  <div className="text-[10px] text-family-textMuted/70 font-normal mt-2 leading-tight normal-case">
+                    {mcResult.p10FireYear 
+                      ? 'Kịch bản siêu thuận lợi (thị trường tăng trưởng rất mạnh).'
+                      : 'Kịch bản tốt nhất cũng chưa giúp đạt mục tiêu.'}
+                  </div>
                 </div>
 
                 <div className="p-4 bg-white/80 rounded-2xl border border-family-accent/10 text-center">
                   <div className="text-[10px] uppercase font-bold text-family-textMuted">Mốc muộn nhất (P90)</div>
                   <div className="text-xl font-bold mt-1 text-red-600">
                     {mcResult.p90FireYear ? `Năm ${mcResult.p90FireYear}` : '---'}
+                  </div>
+                  <div className="text-[10px] text-family-textMuted/70 font-normal mt-2 leading-tight normal-case">
+                    {mcResult.p90FireYear 
+                      ? 'Kịch bản kém thuận lợi (thị trường suy thoái dài hạn).'
+                      : 'Trong các kịch bản xấu, kế hoạch bị đổ vỡ hoàn toàn.'}
                   </div>
                 </div>
               </div>

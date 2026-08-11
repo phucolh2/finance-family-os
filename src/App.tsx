@@ -12,8 +12,8 @@ const EventLedger = lazy(() => import('./pages/EventLedger').then(m => ({ defaul
 const IncomeSchedule = lazy(() => import('./pages/IncomeSchedule').then(m => ({ default: m.IncomeSchedule })));
 const BudgetHistory = lazy(() => import('./pages/BudgetHistory').then(m => ({ default: m.BudgetHistory })));
 const LifeStages = lazy(() => import('./pages/LifeStages').then(m => ({ default: m.LifeStages })));
-const ScenarioChild2031 = lazy(() => import('./pages/ScenarioChild2031').then(m => ({ default: m.ScenarioChild2031 })));
-const ScenarioManagement = lazy(() => import('./pages/ScenarioManagement').then(m => ({ default: m.ScenarioManagement })));
+const ChildCostEstimator = lazy(() => import('./pages/ChildCostEstimator').then(m => ({ default: m.ChildCostEstimator })));
+
 const Portfolio = lazy(() => import('./pages/Portfolio').then(m => ({ default: m.Portfolio })));
 const Savings = lazy(() => import('./pages/Savings').then(m => ({ default: m.Savings })));
 const Reserves = lazy(() => import('./pages/Reserves').then(m => ({ default: m.Reserves })));
@@ -44,10 +44,9 @@ function AppContent() {
         return <BudgetHistory />;
       case 'life_stages':
         return <LifeStages />;
-      case 'scenario_child_2031':
-        return <ScenarioChild2031 />;
-      case 'scenario_mgmt':
-        return <ScenarioManagement />;
+      case 'child_estimator':
+        return <ChildCostEstimator />;
+
       case 'portfolio':
         return <Portfolio />;
       case 'savings':
