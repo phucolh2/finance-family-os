@@ -46,6 +46,29 @@ export function calculatePMT(principal: number, annualRatePercent: number, termM
   return num / den;
 }
 
+/**
+ * Calculates the number of months required to pay off an amortizing loan
+ * given a fixed monthly payment amount.
+ * PMT = P * r * (1 + r)^n / ((1 + r)^n - 1)
+ * => n = Math.log(C / (C - 1)) / Math.log(1 + r) where C = PMT / (P * r)
+ */
+export function calculateTermMonths(principal: number, annualRatePercent: number, monthlyPayment: number): number {
+  if (principal <= 0 || monthlyPayment <= 0) return 0;
+  if (annualRatePercent <= 0) return Math.ceil(principal / monthlyPayment);
+  
+  const r = (annualRatePercent / 100) / 12;
+  const minimumInterest = principal * r;
+  
+  // If monthly payment is less than or equal to the interest, it will never be paid off
+  if (monthlyPayment <= minimumInterest) {
+    return Infinity; // or throw error, but returning Infinity handles it safely
+  }
+  
+  const C = monthlyPayment / minimumInterest;
+  const n = Math.log(C / (C - 1)) / Math.log(1 + r);
+  return Math.ceil(n);
+}
+
 export function calculateNonTermInterest(
   principal: number,
   startMonth: number,

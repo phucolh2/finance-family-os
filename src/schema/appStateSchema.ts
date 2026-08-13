@@ -35,6 +35,7 @@ export const AppStateSchema = z.object({
   savingsDeposits: z.array(z.any()).optional().default([]),
   sinkingFunds: z.array(z.any()).optional().default([]),
   debts: z.array(z.any()).optional().default([]),
+  fundTransfers: z.array(z.any()).optional().default([]),
   projectionAdjustments: z.array(z.any()).optional(),
   // Derived state shouldn't be required in backup, but can be passed through
   resolvedMonthlyDb: z.array(z.any()).optional(),

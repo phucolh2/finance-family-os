@@ -322,11 +322,11 @@ export const Portfolio: React.FC = () => {
                     <div className="flex items-center gap-2 mb-1">
                       <span className="text-xl">{cumPnl >= 0 ? '📈' : '📉'}</span>
                       <h3 className={`font-bold text-base uppercase tracking-wide font-serif ${cumPnl >= 0 ? 'text-emerald-500' : 'text-red-500'}`}>
-                        LÃI / LỖ TỔNG (P&L)
+                        LÃI / LỖ ĐÃ CHỐT (REALIZED)
                       </h3>
                     </div>
                     <p className={`text-xs ${cumPnl >= 0 ? 'text-emerald-500/70' : 'text-red-500/70'}`}>
-                      Hiệu suất đầu tư ròng lũy kế
+                      Lợi nhuận từ các thương vụ đã tất toán
                     </p>
                   </div>
                   <div className="text-right">

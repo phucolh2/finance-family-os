@@ -85,7 +85,7 @@ export function analyzeExpense(
   );
 
   windowDb.forEach(dbItem => {
-    const bAmounts = dbItem.budgetAmounts;
+    const bAmounts = dbItem.budgetAmounts || {};
     
     // Only include actual expense groups in the 'all' budget total based on dynamic classification
     let totalExpenseBudget = 0;

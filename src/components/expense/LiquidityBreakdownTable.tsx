@@ -257,8 +257,38 @@ export const LiquidityBreakdownTable: React.FC<LiquidityBreakdownTableProps> = (
                           </div>
                         )}
                       </td>
-                      <td className="p-3 text-right text-orange-500 font-semibold bg-emerald-50/30 border-l border-family-accent/5">
-                        {group.deducted > 0 ? `-${formatTableMoneyVNDMillion(group.deducted)}` : '-'}
+                      <td className="p-3 text-right text-orange-500 font-semibold bg-emerald-50/30 border-l border-family-accent/5 relative"
+                          onClick={(e) => {
+                            if (group.deductedSources && group.deductedSources.length > 0) {
+                              e.stopPropagation();
+                              setActiveDetailId(activeDetailId === group.id + '-deducted' ? null : group.id + '-deducted');
+                            }
+                          }}
+                      >
+                        {group.deducted > 0 ? (
+                          <div className={`flex items-center justify-end gap-1 ${group.deductedSources && group.deductedSources.length > 0 ? 'cursor-pointer hover:text-orange-700 transition-colors' : ''}`}>
+                            -{formatTableMoneyVNDMillion(group.deducted)}
+                            {group.deductedSources && group.deductedSources.length > 0 && <Info className="w-3.5 h-3.5 opacity-80" />}
+                          </div>
+                        ) : '-'}
+
+                        {activeDetailId === group.id + '-deducted' && group.deductedSources && group.deductedSources.length > 0 && (
+                          <div className="absolute top-full right-0 mt-1 w-64 bg-white rounded-lg shadow-xl border border-gray-100 z-50 text-left p-3 animate-in fade-in zoom-in-95" onClick={(e) => e.stopPropagation()}>
+                            <div className="text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-2 border-b border-gray-100 pb-1.5 flex items-center gap-1.5">
+                              <Info className="w-3 h-3" /> Nguồn Tiền Ra (Trích lập Quỹ)
+                            </div>
+                            <div className="space-y-2.5">
+                              {group.deductedSources.map((src: any, idx: number) => (
+                                <div key={idx} className="flex justify-between items-start text-xs gap-3">
+                                  <span className="text-gray-700 font-medium leading-tight">
+                                    {src.name}
+                                  </span>
+                                  <span className="text-orange-500 font-bold shrink-0">-{formatTableMoneyVNDMillion(src.amount)}</span>
+                                </div>
+                              ))}
+                            </div>
+                          </div>
+                        )}
                       </td>
                       <td className={`p-3 text-right font-bold border-l border-family-accent/5 ${group.remaining >= 0 ? 'text-emerald-600 bg-emerald-50/50' : 'text-red-600 bg-red-50/50'}`}>
                         {group.remaining > 0 ? '+' : ''}{formatTableMoneyVNDMillion(group.remaining)}

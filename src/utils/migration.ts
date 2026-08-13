@@ -11,7 +11,7 @@ export function validateAppState(data: unknown): { success: boolean, error?: str
   const result = AppStateSchema.safeParse(data);
   if (!result.success) {
     console.error("State validation failed:", result.error);
-    const errorMsg = (result.error as any).errors.map((e: any) => `${e.path.join('.')}: ${e.message}`).join(', ');
+    const errorMsg = result.error.issues.map((e: any) => `${e.path.join('.')}: ${e.message}`).join(', ');
     return { success: false, error: `Cấu trúc dữ liệu không hợp lệ: ${errorMsg}` };
   }
   return { success: true };
@@ -247,14 +247,14 @@ export function migrateState(stored: unknown, defaultState: AppState): AppState 
           });
         });
         
-        // 3. Ensure test data exists if empty
-        if (funds.length === 0 && defaultState.sinkingFunds) {
-          funds.push(...defaultState.sinkingFunds);
-        }
+
         
         return funds;
       })(),
       savingsDeposits: Array.isArray(data.savingsDeposits) ? data.savingsDeposits : [],
+      debts: Array.isArray(data.debts) ? data.debts : [],
+      fundTransfers: Array.isArray(data.fundTransfers) ? data.fundTransfers : [],
+      projectionAdjustments: Array.isArray(data.projectionAdjustments) ? data.projectionAdjustments : undefined,
       resolvedMonthlyDb: Array.isArray(data.resolvedMonthlyDb) ? data.resolvedMonthlyDb : undefined,
       resolvedMonthlyDbMap: data.resolvedMonthlyDbMap && typeof data.resolvedMonthlyDbMap === 'object' ? data.resolvedMonthlyDbMap as AppState['resolvedMonthlyDbMap'] : undefined,
     };

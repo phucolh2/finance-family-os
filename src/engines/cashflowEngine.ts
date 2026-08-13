@@ -80,10 +80,9 @@ export function calculateCashflow(input: CashflowEngineInput): CashflowOutput {
         endYear += 1;
       }
       // Period must be BEFORE the end boundary
-      return !isBeforeOrEqual(
-        { year: endYear, month: endMonth },
-        { year: period.year, month: period.month }
-      ) || (endYear === period.year && endMonth === period.month);
+      if (period.year > endYear) return false;
+      if (period.year === endYear && period.month >= endMonth) return false;
+      return true;
     }
     
     return true;

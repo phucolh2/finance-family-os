@@ -419,3 +419,17 @@ export const DEFAULT_SINKING_FUNDS: SinkingFund[] = [
     }
   }
 ];
+
+// ========== EMPTY STATE (trạng thái trống khi user xóa dữ liệu) ==========
+// Dùng cho các hàm reset/xóa dữ liệu. KHÔNG dùng INITIAL (sample data) cho mục đích này.
+export const EMPTY_INCOME_CATEGORIES: IncomeCategory[] = [];
+export const EMPTY_INCOME_SCHEDULE: IncomeScheduleItem[] = [];
+export const EMPTY_BUDGET_SCHEDULE: BudgetRatioScheduleItem[] = [];
+export const EMPTY_LIFE_STAGES: LifeStage[] = [];
+export const EMPTY_LIFE_EVENTS: LifeEvent[] = [];
+export const EMPTY_INVESTMENT_DEALS: InvestmentDeal[] = [];
+export const EMPTY_SINKING_FUNDS: SinkingFund[] = [];
+export const EMPTY_ASSETS: AssetConfig[] = DEFAULT_ASSETS.map(a => ({
+  ...a,
+  beginningBalance: 0,
+}));

@@ -141,7 +141,7 @@ export function simulateSinkingFund(fund: SinkingFund, targetMonth?: number, tar
         newContrib += periodContrib;
      }
 
-     const bTerm = periodCfg?.termMonths !== undefined ? periodCfg.termMonths : (fund.termMonths || 1);
+     const bTerm = periodCfg?.termMonths !== undefined ? periodCfg.termMonths : (fund.termMonths !== undefined ? fund.termMonths : 1);
      const bBank = periodCfg?.depositBank !== undefined ? periodCfg.depositBank : (fund.depositBank);
      const bStrategy = periodCfg?.rolloverStrategy !== undefined ? periodCfg.rolloverStrategy : (fund.rolloverStrategy);
      const bRate = periodCfg?.interestRateAnnual !== undefined ? periodCfg.interestRateAnnual : (fund.interestRateAnnual || 5.5);

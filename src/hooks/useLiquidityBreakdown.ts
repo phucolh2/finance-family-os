@@ -52,6 +52,7 @@ export const useLiquidityBreakdown = (mode: 'monthly' | 'cumulative' = 'monthly'
     const pKey = `${selYearStr}-${String(selMonth).padStart(2, '0')}`;
 
     const deductedByGroup: Record<string, number> = {};
+    const deductedSourcesByGroup: Record<string, Array<{name: string, amount: number}>> = {};
     (state.sinkingFunds || []).forEach(fund => {
        if (fund.status !== 'active') return;
        if (!fund.sourceOfFund?.startsWith('expense_surplus_')) return;
@@ -78,6 +79,11 @@ export const useLiquidityBreakdown = (mode: 'monthly' | 'cumulative' = 'monthly'
           }
           
           deductedByGroup[groupId] = (deductedByGroup[groupId] || 0) + deduction;
+          
+          if (deduction > 0) {
+            if (!deductedSourcesByGroup[groupId]) deductedSourcesByGroup[groupId] = [];
+            deductedSourcesByGroup[groupId].push({ name: fund.name, amount: deduction });
+          }
        }
     });
 
@@ -222,6 +228,7 @@ export const useLiquidityBreakdown = (mode: 'monthly' | 'cumulative' = 'monthly'
 
       const rawRemaining = Math.max(0, totalBudget - totalActual - Math.abs(trackA));
       const deducted = deductedByGroup[g.id] || 0;
+      const deductedSources = deductedSourcesByGroup[g.id] || [];
       const remaining = rawRemaining - deducted - oneTimeExpense - Math.abs(trackB) + oneTimeIncome;
       
       const children = (g.children || []).map((child: any) => {
@@ -281,6 +288,7 @@ export const useLiquidityBreakdown = (mode: 'monthly' | 'cumulative' = 'monthly'
         oneTimeIncome,
         trackB,
         flexibleEvents,
+        deductedSources,
         sortOrder: g.sortOrder || 0,
         children
       };

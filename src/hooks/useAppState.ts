@@ -6,6 +6,7 @@ import type { AssetConfig } from '../types/portfolio';
 import { migrateState, validateAppState } from '../utils/migration';
 import { generateResolvedMonthlyDb } from '../engines/databaseResolver';
 import { runProjection } from '../engines/projectionEngine';
+import { isBackupDue, createAutoBackup } from '../utils/scheduledBackup';
 import {
   DEFAULT_FAMILY_PROFILE,
   DEFAULT_INCOME_SCHEDULE,
@@ -17,6 +18,14 @@ import {
   DEFAULT_INVESTMENT_DEALS,
   DEFAULT_INCOME_CATEGORIES,
   DEFAULT_SINKING_FUNDS,
+  EMPTY_INCOME_CATEGORIES,
+  EMPTY_INCOME_SCHEDULE,
+  EMPTY_BUDGET_SCHEDULE,
+  EMPTY_LIFE_STAGES,
+  EMPTY_LIFE_EVENTS,
+  EMPTY_INVESTMENT_DEALS,
+  EMPTY_SINKING_FUNDS,
+  EMPTY_ASSETS,
 } from '../data/defaultInputs';
 
 const LOCAL_STORAGE_KEY = 'family_finance_os_state';
@@ -47,6 +56,33 @@ const INITIAL_APP_STATE: AppState = {
   sinkingFunds: DEFAULT_SINKING_FUNDS,
   resolvedMonthlyDb: initialDb.list,
   resolvedMonthlyDbMap: initialDb.map,
+};
+
+const emptyDb = generateResolvedMonthlyDb(
+  DEFAULT_FAMILY_PROFILE,
+  EMPTY_INCOME_SCHEDULE,
+  EMPTY_BUDGET_SCHEDULE,
+  [],
+  EMPTY_ASSETS,
+  DEFAULT_ASSUMPTIONS,
+  EMPTY_LIFE_STAGES
+);
+
+const EMPTY_APP_STATE: AppState = {
+  profile: DEFAULT_FAMILY_PROFILE,
+  incomeCategories: EMPTY_INCOME_CATEGORIES,
+  incomeSchedule: EMPTY_INCOME_SCHEDULE,
+  budgetSchedule: EMPTY_BUDGET_SCHEDULE,
+  expenseSchedule: [],
+  lifeStages: EMPTY_LIFE_STAGES,
+  lifeEvents: EMPTY_LIFE_EVENTS,
+  assets: EMPTY_ASSETS,
+  assumptions: DEFAULT_ASSUMPTIONS,
+  investmentDeals: EMPTY_INVESTMENT_DEALS,
+  savingsDeposits: [],
+  sinkingFunds: EMPTY_SINKING_FUNDS,
+  resolvedMonthlyDb: emptyDb.list,
+  resolvedMonthlyDbMap: emptyDb.map,
 };
 
 export function useAppState() {
@@ -129,6 +165,11 @@ export function useAppState() {
         };
         localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(persisted));
         setLastSaved(timestamp);
+
+        // Check if scheduled auto-backup is due
+        if (isBackupDue()) {
+          createAutoBackup(persisted);
+        }
       } catch (err) {
         console.error('Failed to write to localStorage:', err);
       }
@@ -144,6 +185,7 @@ export function useAppState() {
       window.removeEventListener('beforeunload', saveToLocalStorage);
     };
   }, [state]);
+
 
   const saveState = (newState: AppState) => {
     const resolvedDb = generateResolvedMonthlyDb(
@@ -703,21 +745,21 @@ export function useAppState() {
   };
 
   const resetToDefault = () => {
-    saveState(INITIAL_APP_STATE);
+    saveState(EMPTY_APP_STATE);
   };
 
   const resetBudgetToDefault = () => {
     saveState({
       ...state,
-      budgetSchedule: INITIAL_APP_STATE.budgetSchedule,
+      budgetSchedule: EMPTY_APP_STATE.budgetSchedule,
     });
   };
 
   const resetIncomeToDefault = () => {
     saveState({
       ...state,
-      incomeSchedule: INITIAL_APP_STATE.incomeSchedule,
-      incomeCategories: INITIAL_APP_STATE.incomeCategories,
+      incomeSchedule: EMPTY_APP_STATE.incomeSchedule,
+      incomeCategories: EMPTY_APP_STATE.incomeCategories,
     });
   };
 
@@ -731,10 +773,10 @@ export function useAppState() {
   const resetPortfolioToDefault = () => {
     saveState({
       ...state,
-      assets: INITIAL_APP_STATE.assets,
-      investmentDeals: INITIAL_APP_STATE.investmentDeals,
-      savingsDeposits: INITIAL_APP_STATE.savingsDeposits,
-      fundTransfers: INITIAL_APP_STATE.fundTransfers,
+      assets: EMPTY_APP_STATE.assets,
+      investmentDeals: EMPTY_APP_STATE.investmentDeals,
+      savingsDeposits: [],
+      fundTransfers: [],
     });
   };
 

@@ -7,7 +7,7 @@ import { Button } from '../ui/Button';
 import { AlertCircle, Plus, Trash2, CheckCircle2, DollarSign, Calendar } from 'lucide-react';
 import { useAppContext } from '../../context/AppContext';
 import { formatMoneyVNDMillion } from '../../utils/format';
-import { calculatePMT } from '../../utils/math';
+import { calculatePMT, calculateTermMonths } from '../../utils/math';
 import { isWithinObservationPeriod, getPeriodGuardMessage } from '../../utils/periodGuard';
 import { DebtSettlementForm } from './DebtSettlementForm';
 
@@ -29,6 +29,7 @@ export const DebtLiabilityModule: React.FC = () => {
     principal: '',
     interestRateAnnual: '',
     termMonths: '',
+    customMonthly: '',
     startMonth: parseInt(currentKey.split('-')[1], 10),
     startYear: parseInt(currentKey.split('-')[0], 10),
   });
@@ -54,6 +55,7 @@ export const DebtLiabilityModule: React.FC = () => {
       principal: '',
       interestRateAnnual: '',
       termMonths: '',
+      customMonthly: '',
       startMonth: parseInt(currentKey.split('-')[1], 10),
       startYear: parseInt(currentKey.split('-')[0], 10),
     });
@@ -139,13 +141,41 @@ export const DebtLiabilityModule: React.FC = () => {
               <Input
                 type="number"
                 value={newDebt.termMonths}
-                onChange={e => { setNewDebt({...newDebt, termMonths: e.target.value}); }}
+                onChange={e => { 
+                  setNewDebt({...newDebt, termMonths: e.target.value, customMonthly: ''}); 
+                }}
                 placeholder="Vd: 240 (20 năm)"
-                className="bg-family-bgDark"
+                className="bg-family-bgDark border-red-500/30"
+              />
+            </div>
+            <div className="space-y-2">
+              <label className="text-xs text-family-textMuted uppercase flex justify-between">
+                Hoặc nhập: Trả hằng tháng
+              </label>
+              <Input
+                type="number"
+                value={newDebt.customMonthly}
+                onChange={e => { 
+                  const val = e.target.value;
+                  const p = Number(newDebt.principal);
+                  const r = Number(newDebt.interestRateAnnual) || 0;
+                  const pmt = Number(val);
+                  
+                  if (p > 0 && pmt > 0) {
+                    const term = calculateTermMonths(p, r, pmt);
+                    if (term > 0 && term !== Infinity) {
+                      setNewDebt({...newDebt, customMonthly: val, termMonths: term.toString()});
+                      return;
+                    }
+                  }
+                  setNewDebt({...newDebt, customMonthly: val}); 
+                }}
+                placeholder="Vd: 20 (triệu VNĐ)"
+                className="bg-family-bgDark border-emerald-500/30 text-emerald-400"
               />
             </div>
 
-            <div className="lg:col-span-4 flex flex-col items-end justify-end gap-1">
+            <div className="lg:col-span-2 flex flex-col items-end justify-end gap-1">
               <Button onClick={handleAdd} className="bg-red-600 hover:bg-red-700 text-white w-full md:w-auto mt-2">
                 Lưu Khoản Nợ
               </Button>

@@ -7,6 +7,14 @@ import { WarningBox } from '../components/ui/WarningBox';
 import { Download, Upload, ShieldAlert, CheckCircle2, Plus, Trash2, Edit2, X, Save } from 'lucide-react';
 import { validateAppState } from '../utils/migration';
 import type { NonTermInterestRatePeriod, IncomeCategory } from '../types/finance';
+import { HelpCircle, Clock, RotateCcw, History, Shield, Timer } from 'lucide-react';
+import { HelpTooltip } from '../components/ui/HelpTooltip';
+import { createDataSummary, formatSummaryLines } from '../utils/dataSummary';
+import type { DataSummary } from '../utils/dataSummary';
+import { addBackupHistoryEntry, getBackupHistory, clearBackupHistory, getActionLabel } from '../utils/backupHistory';
+import type { BackupHistoryEntry } from '../utils/backupHistory';
+import { getAutoBackupConfig, saveAutoBackupConfig, getAutoBackupSlots, deleteAutoBackupSlot, clearAllAutoBackups } from '../utils/scheduledBackup';
+import type { AutoBackupConfig, AutoBackupSlot } from '../utils/scheduledBackup';
 
 const IncomeCategoriesSettings: React.FC = () => {
   const { state, addIncomeCategory, updateIncomeCategory, deleteIncomeCategory } = useAppContext();
@@ -399,7 +407,14 @@ export const Settings: React.FC = () => {
   const [successMsg, setSuccessMsg] = useState<string | null>(null);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
 
-  // 1. Export state to JSON file download
+  // Enhanced backup state
+  const [lastExportSummary, setLastExportSummary] = useState<{ filename: string; summary: DataSummary } | null>(null);
+  const [lastImportSummary, setLastImportSummary] = useState<{ filename: string; summary: DataSummary } | null>(null);
+  const [backupHistory, setBackupHistory] = useState<BackupHistoryEntry[]>(() => getBackupHistory());
+  const [showHistory, setShowHistory] = useState(false);
+  const [autoBackupConfig, setAutoBackupConfig] = useState<AutoBackupConfig>(() => getAutoBackupConfig());
+  const [autoBackupSlots, setAutoBackupSlots] = useState<AutoBackupSlot[]>(() => getAutoBackupSlots());
+
   const handleExport = () => {
     try {
       const backup = {
@@ -412,55 +427,72 @@ export const Settings: React.FC = () => {
       const downloadAnchor = document.createElement('a');
       
       const dateStr = new Date().toISOString().slice(0, 10);
+      const filename = `finance_family_os_backup_${dateStr}.json`;
       downloadAnchor.setAttribute('href', dataStr);
-      downloadAnchor.setAttribute('download', `finance_family_os_backup_${dateStr}.json`);
+      downloadAnchor.setAttribute('download', filename);
       document.body.appendChild(downloadAnchor);
       
       downloadAnchor.click();
       downloadAnchor.remove();
+
+      const summary = createDataSummary(state);
+      setLastExportSummary({ filename, summary });
+      setLastImportSummary(null);
+      addBackupHistoryEntry({ action: 'export', status: 'success', summary, filename });
+      setBackupHistory(getBackupHistory());
       
       setSuccessMsg('Xuất bản tệp sao lưu JSON thành công!');
       setErrorMsg(null);
     } catch (err: any) {
+      addBackupHistoryEntry({ action: 'export', status: 'error', errorMessage: err.message });
+      setBackupHistory(getBackupHistory());
       setErrorMsg(`Lỗi xuất tệp: ${err.message}`);
       setSuccessMsg(null);
     }
   };
 
-  // 2. Import state from JSON file reader
   const handleImport = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
+    const importFilename = file.name;
 
     const reader = new FileReader();
     reader.onload = (event) => {
       try {
         const parsed = JSON.parse(event.target?.result as string);
         
-        // 1. Zod schema validation first
         const validation = validateAppState(parsed.data || parsed);
         if (!validation.success) {
+          addBackupHistoryEntry({ action: 'import', status: 'error', filename: importFilename, errorMessage: validation.error });
+          setBackupHistory(getBackupHistory());
           setErrorMsg(validation.error || 'Dữ liệu JSON không đúng cấu trúc (Zod validation failed).');
           setSuccessMsg(null);
           return;
         }
 
-        // 2. Execute safe import with schema validation
         const result = importState(parsed);
         if (result.success) {
-          setSuccessMsg('Nhập khẩu dữ liệu thành công! Bản sao lưu đã được khôi phục.');
+          const summary = createDataSummary(state);
+          setLastImportSummary({ filename: importFilename, summary });
+          setLastExportSummary(null);
+          addBackupHistoryEntry({ action: 'import', status: 'success', summary, filename: importFilename });
+          setBackupHistory(getBackupHistory());
+          setSuccessMsg('Nhập khẩu dữ liệu thành công!');
           setErrorMsg(null);
         } else {
+          addBackupHistoryEntry({ action: 'import', status: 'error', filename: importFilename, errorMessage: result.error });
+          setBackupHistory(getBackupHistory());
           setErrorMsg(result.error || 'Dữ liệu JSON không đúng cấu trúc.');
           setSuccessMsg(null);
         }
       } catch (err: any) {
+        addBackupHistoryEntry({ action: 'import', status: 'error', filename: importFilename, errorMessage: err.message });
+        setBackupHistory(getBackupHistory());
         setErrorMsg(`Lỗi cú pháp tệp JSON: ${err.message}`);
         setSuccessMsg(null);
       }
     };
     reader.readAsText(file);
-    // Reset file input value to allow re-importing the same file
     if (fileInputRef.current) {
       fileInputRef.current.value = '';
     }
@@ -469,6 +501,10 @@ export const Settings: React.FC = () => {
   const handleResetAll = () => {
     if (window.confirm('CẢNH BÁO ĐỎ: Bạn có chắc chắn muốn xóa toàn bộ dữ liệu Ngân sách, Thu nhập và Tài sản? Hành động này sẽ đưa hệ thống về trạng thái trắng tinh và không thể hoàn tác!')) {
       resetToDefault();
+      addBackupHistoryEntry({ action: 'reset', status: 'success' });
+      setBackupHistory(getBackupHistory());
+      setLastExportSummary(null);
+      setLastImportSummary(null);
       setSuccessMsg('Hệ thống đã được khôi phục về trạng thái trống ban đầu.');
       setErrorMsg(null);
     }
@@ -506,6 +542,45 @@ export const Settings: React.FC = () => {
     }
   };
 
+  const handleToggleAutoBackup = () => {
+    const newConfig = { ...autoBackupConfig, enabled: !autoBackupConfig.enabled };
+    saveAutoBackupConfig(newConfig);
+    setAutoBackupConfig(newConfig);
+  };
+
+  const handleChangeBackupInterval = (hours: number) => {
+    const newConfig = { ...autoBackupConfig, intervalHours: hours };
+    saveAutoBackupConfig(newConfig);
+    setAutoBackupConfig(newConfig);
+  };
+
+  const handleRestoreAutoBackup = (slot: AutoBackupSlot) => {
+    if (window.confirm(`Bạn có chắc chắn muốn khôi phục dữ liệu từ bản sao lưu lúc ${slot.label}? Dữ liệu hiện tại sẽ bị ghi đè.`)) {
+      const result = importState(slot.data);
+      if (result.success) {
+        const summary = createDataSummary(state);
+        addBackupHistoryEntry({ action: 'import', status: 'success', summary });
+        setBackupHistory(getBackupHistory());
+        setSuccessMsg(`Đã khôi phục dữ liệu từ bản sao lưu lúc ${slot.label}.`);
+        setErrorMsg(null);
+      } else {
+        setErrorMsg(result.error || 'Lỗi khôi phục từ bản sao lưu.');
+      }
+    }
+  };
+
+  const handleDeleteAutoBackup = (timestamp: string) => {
+    deleteAutoBackupSlot(timestamp);
+    setAutoBackupSlots(getAutoBackupSlots());
+  };
+
+  const handleClearBackupHistory = () => {
+    if (window.confirm('Xóa toàn bộ lịch sử sao lưu?')) {
+      clearBackupHistory();
+      setBackupHistory([]);
+    }
+  };
+
   // Format timestamp nicely
   const formatSavedTime = (isoString: string) => {
     try {
@@ -532,15 +607,46 @@ export const Settings: React.FC = () => {
         <AssetAllocationSettings />
         <IncomeCategoriesSettings />
         <AssumptionsSettings />
-        {/* Local storage controls */}
+        {/* Backup & Restore */}
         <Card className="lg:col-span-2">
           <CardHeader>
-            <CardTitle>Bảo mật & Sao lưu dữ liệu</CardTitle>
+            <CardTitle className="flex items-center gap-2">
+              Bảo mật & Sao lưu dữ liệu
+              <HelpTooltip text="Xuất/nhập tệp JSON để sao lưu hoặc di chuyển dữ liệu giữa các thiết bị. Hệ thống cũng hỗ trợ sao lưu tự động định kỳ." />
+            </CardTitle>
             <CardDescription>
               Xuất tệp dự phòng JSON để lưu trữ ngoại tuyến hoặc khôi phục dữ liệu từ tệp sao lưu cũ.
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-6">
+            {/* Export/Import feedback banners */}
+            {lastExportSummary && (
+              <div className="p-4 bg-emerald-50/80 border border-emerald-200 rounded-2xl space-y-2">
+                <h4 className="font-bold text-sm text-emerald-800 flex items-center gap-1.5">
+                  <CheckCircle2 className="w-4 h-4" /> Xuất dữ liệu thành công!
+                </h4>
+                <p className="text-[11px] text-emerald-700 font-medium">📁 File: {lastExportSummary.filename}</p>
+                <div className="text-[11px] text-emerald-600 space-y-0.5">
+                  {formatSummaryLines(lastExportSummary.summary).map((line, i) => (
+                    <p key={i}>• {line}</p>
+                  ))}
+                </div>
+              </div>
+            )}
+            {lastImportSummary && (
+              <div className="p-4 bg-blue-50/80 border border-blue-200 rounded-2xl space-y-2">
+                <h4 className="font-bold text-sm text-blue-800 flex items-center gap-1.5">
+                  <CheckCircle2 className="w-4 h-4" /> Nhập dữ liệu thành công!
+                </h4>
+                <p className="text-[11px] text-blue-700 font-medium">📁 File: {lastImportSummary.filename}</p>
+                <div className="text-[11px] text-blue-600 space-y-0.5">
+                  {formatSummaryLines(lastImportSummary.summary).map((line, i) => (
+                    <p key={i}>• {line}</p>
+                  ))}
+                </div>
+              </div>
+            )}
+
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               {/* Export action */}
               <div className="p-4 border border-family-accent/10 rounded-2xl bg-family-bgDark/20 flex flex-col justify-between h-40">
@@ -582,6 +688,132 @@ export const Settings: React.FC = () => {
                   </Button>
                 </div>
               </div>
+            </div>
+
+            {/* Scheduled Auto-Backup Section */}
+            <div className="border-t border-family-accent/10 pt-6">
+              <h4 className="font-bold text-xs text-family-text flex items-center gap-1.5 mb-3">
+                <Timer className="w-4 h-4 text-family-accent" /> Sao lưu tự động (Scheduled Backup)
+                <HelpTooltip text="Hệ thống tự động lưu bản sao dữ liệu theo chu kỳ. Tối đa 3 bản, xoay vòng FIFO. Dữ liệu lưu trong localStorage." />
+              </h4>
+              <div className="flex flex-wrap items-center gap-4 mb-4">
+                <label className="flex items-center gap-2 cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={autoBackupConfig.enabled}
+                    onChange={handleToggleAutoBackup}
+                    className="w-4 h-4 rounded border-family-accent/30 text-family-accent focus:ring-family-accent/30"
+                  />
+                  <span className="text-xs font-semibold text-family-text">Bật sao lưu tự động</span>
+                </label>
+                {autoBackupConfig.enabled && (
+                  <div className="flex items-center gap-2">
+                    <span className="text-[11px] text-family-textMuted">Chu kỳ:</span>
+                    <select
+                      value={autoBackupConfig.intervalHours}
+                      onChange={(e) => handleChangeBackupInterval(Number(e.target.value))}
+                      className="bg-family-bgDeep border border-family-accent/20 rounded-lg px-2 py-1 text-xs text-family-text focus:outline-none focus:border-family-accent/60"
+                    >
+                      <option value={6}>6 giờ</option>
+                      <option value={12}>12 giờ</option>
+                      <option value={24}>24 giờ</option>
+                      <option value={48}>48 giờ</option>
+                    </select>
+                  </div>
+                )}
+                {autoBackupConfig.lastBackupTimestamp && (
+                  <span className="text-[10px] text-family-textMuted">
+                    Lần cuối: {formatSavedTime(autoBackupConfig.lastBackupTimestamp)}
+                  </span>
+                )}
+              </div>
+
+              {autoBackupSlots.length > 0 ? (
+                <div className="space-y-2">
+                  {autoBackupSlots.map((slot, idx) => (
+                    <div key={slot.timestamp} className="flex items-center justify-between p-3 bg-family-bgDark/20 border border-family-accent/10 rounded-xl">
+                      <div className="flex items-center gap-2">
+                        <Shield className="w-3.5 h-3.5 text-emerald-600" />
+                        <span className="text-xs font-semibold text-family-text">Bản #{idx + 1}</span>
+                        <span className="text-[10px] text-family-textMuted">{slot.label}</span>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <Button
+                          onClick={() => handleRestoreAutoBackup(slot)}
+                          variant="secondary"
+                          size="sm"
+                          className="text-[10px] h-7 px-2.5 gap-1"
+                        >
+                          <RotateCcw className="w-3 h-3" /> Khôi phục
+                        </Button>
+                        <button
+                          onClick={() => handleDeleteAutoBackup(slot.timestamp)}
+                          className="text-red-400 hover:text-red-600 transition-colors p-1"
+                          title="Xóa bản sao lưu"
+                        >
+                          <X className="w-3.5 h-3.5" />
+                        </button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <p className="text-[11px] text-family-textMuted italic">Chưa có bản sao lưu tự động nào.</p>
+              )}
+            </div>
+
+            {/* Backup History */}
+            <div className="border-t border-family-accent/10 pt-6">
+              <div className="flex items-center justify-between mb-3">
+                <h4 className="font-bold text-xs text-family-text flex items-center gap-1.5">
+                  <History className="w-4 h-4 text-family-accent" /> Lịch sử thao tác
+                  <HelpTooltip text="Ghi lại các lần xuất, nhập, xóa dữ liệu và sao lưu tự động gần nhất." />
+                </h4>
+                <div className="flex items-center gap-2">
+                  {backupHistory.length > 0 && (
+                    <button
+                      onClick={handleClearBackupHistory}
+                      className="text-[10px] text-red-400 hover:text-red-600 transition-colors"
+                    >
+                      Xóa lịch sử
+                    </button>
+                  )}
+                  <button
+                    onClick={() => setShowHistory(!showHistory)}
+                    className="text-[10px] text-family-accent hover:text-family-text transition-colors font-semibold"
+                  >
+                    {showHistory ? 'Ẩn' : `Hiện (${backupHistory.length})`}
+                  </button>
+                </div>
+              </div>
+              {showHistory && (
+                backupHistory.length > 0 ? (
+                  <div className="max-h-60 overflow-y-auto space-y-1.5 pr-1">
+                    {backupHistory.slice(0, 20).map((entry) => (
+                      <div key={entry.id} className="flex items-center gap-3 p-2.5 bg-family-bgDark/15 rounded-lg text-[11px]">
+                        <span className={`w-1.5 h-1.5 rounded-full shrink-0 ${entry.status === 'success' ? 'bg-emerald-500' : 'bg-red-500'}`} />
+                        <span className="text-family-textMuted w-32 shrink-0">
+                          {formatSavedTime(entry.timestamp)}
+                        </span>
+                        <span className="font-semibold text-family-text w-28 shrink-0">
+                          {getActionLabel(entry.action)}
+                        </span>
+                        <span className="text-family-textMuted truncate">
+                          {entry.status === 'error'
+                            ? `❌ ${entry.errorMessage || 'Lỗi'}`
+                            : entry.filename
+                              ? `📁 ${entry.filename}`
+                              : entry.summary
+                                ? `${entry.summary.incomeScheduleCount} mốc TN · ${entry.summary.budgetScheduleCount} mốc NS · ${entry.summary.assetsCount} tài sản`
+                                : '✅ Thành công'}
+                        </span>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <p className="text-[11px] text-family-textMuted italic">Chưa có lịch sử thao tác nào.</p>
+                )
+              )}
             </div>
 
             {/* Danger Zone: Reset Scopes */}
@@ -668,6 +900,13 @@ export const Settings: React.FC = () => {
             <div className="flex justify-between border-b border-family-accent/5 pb-2">
               <span>Mốc cập nhật cuối:</span>
               <strong className="text-family-text">{formatSavedTime(lastSaved)}</strong>
+            </div>
+            <div className="flex justify-between border-b border-family-accent/5 pb-2">
+              <span>Sao lưu tự động:</span>
+              <span className={`font-bold flex items-center gap-1 ${autoBackupConfig.enabled ? 'text-emerald-700' : 'text-gray-400'}`}>
+                <Clock className="w-3.5 h-3.5" />
+                {autoBackupConfig.enabled ? `Mỗi ${autoBackupConfig.intervalHours}h · ${autoBackupSlots.length} bản` : 'Tắt'}
+              </span>
             </div>
             <div className="p-3 bg-family-bgDark/40 rounded-xl border border-family-accent/5 text-[10px] leading-relaxed">
               *Hệ thống tự động lưu giữ thay đổi của bạn sau mỗi 500ms dừng gõ để tránh nghẽn luồng xử lý và tối ưu hóa thời lượng pin cho thiết bị di động.

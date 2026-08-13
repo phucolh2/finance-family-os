@@ -25,6 +25,7 @@ export interface ProjectionEngineInput {
   projectionAdjustments?: ProjectionAdjustmentRecord[];
   lifeStages?: LifeStage[];
   fundTransfers?: import('../types/finance').FundTransfer[];
+  observationPeriodKey?: string;
 }
 
 /**
@@ -158,7 +159,20 @@ export function runProjection(input: ProjectionEngineInput): ProjectionOutput {
             return sum + numVal;
           }, 0);
         } else {
-          totalActualExpenseMonthly = undefined;
+          let isPastOrCurrent = false;
+          if (input.observationPeriodKey) {
+            const [obsMonthStr, obsYearStr] = input.observationPeriodKey.split('/');
+            const obsMonth = parseInt(obsMonthStr, 10);
+            const obsYear = parseInt(obsYearStr, 10);
+            if (!isNaN(obsMonth) && !isNaN(obsYear)) {
+              isPastOrCurrent = period.year * 12 + period.month <= obsYear * 12 + obsMonth;
+            }
+          }
+          if (isPastOrCurrent) {
+            totalActualExpenseMonthly = 0; // YNAB logic: if no expense recorded for past/current, assume unspent (envelope balance remains)
+          } else {
+            totalActualExpenseMonthly = undefined; // Future: assume budget is perfectly spent
+          }
         }
       }
     }
@@ -418,8 +432,8 @@ export function runProjection(input: ProjectionEngineInput): ProjectionOutput {
                  let amountToDeduct = w.amount;
                  for (let i = 0; i < state.buckets.length && amountToDeduct > 0; i++) {
                     if (state.buckets[i].principal >= amountToDeduct) {
-                       state.buckets[i].principal -= amountToDeduct;
-                       amountToDeduct = 0;
+                      state.buckets[i].principal -= amountToDeduct;
+                      amountToDeduct = 0;
                     } else {
                        amountToDeduct -= state.buckets[i].principal;
                        state.buckets[i].principal = 0;
@@ -839,7 +853,7 @@ export function runProjection(input: ProjectionEngineInput): ProjectionOutput {
     const totalYieldThisMonth = activeSavingsMaturedInterestThisMonth + sinkingFundMaturedInterestThisMonth;
     
     cumulativeContribution += monthlyContribution;
-    cumulativePnl += (investmentPnl + totalYieldThisMonth); // Approximate total PnL generated
+    cumulativePnl += investmentPnl; // Exclude totalYieldThisMonth (Savings interest) from Portfolio Deal PnL
 
     const portfolioOutput = {
       assets: {
@@ -950,6 +964,8 @@ export function runProjection(input: ProjectionEngineInput): ProjectionOutput {
       fireGap: fireRes.fireGap,
       notes,
       _activeSinkingFundsDebtReserve: activeSinkingFundsBalance_debtReserve,
+      _activeSinkingFundsSaving: activeSinkingFundsBalance_saving,
+      _activeSinkingFundsExpenseSurplus: activeSinkingFundsBalance_expenseSurplus,
       _totalDebtPrincipalRemaining: totalDebtPrincipalRemaining,
       _totalDebtInterestPaidMonthly: totalDebtInterestPaidMonthly,
       _groupBalances: savedGroupBalances,

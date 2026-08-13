@@ -55,6 +55,7 @@ export const CashflowQuadrant: React.FC = () => {
     lifeStages: state.lifeStages,
     fundTransfers: state.fundTransfers,
     expenseSchedule: state.expenseSchedule,
+    observationPeriodKey: selectedPeriodKey || undefined,
   });
 
   const hasData = projection.monthlyRows.length > 0;
@@ -127,17 +128,6 @@ export const CashflowQuadrant: React.FC = () => {
   const totalExpenses = livingExpenses + debtExpenses;
 
   // --- 3. ASSET QUADRANT ---
-  // Assets = Things that put money in your pocket (Investments, Savings, Real Estate) + Cash balances
-  const totalAssets = activeRow.nominalNetWorth || 0;
-  
-  // Đầu tư dài hạn = Tổng số dư các tài sản thực tế (BĐS, Cổ phiếu, Crypto, Vàng, Ngoại tệ)
-  const investmentAssets = activeRow.portfolio?.assets
-    ? Object.values(activeRow.portfolio.assets).reduce((sum, a) => sum + a.endingBalance, 0)
-    : 0;
-
-  // Quỹ thanh khoản = Phần còn lại (bao gồm mọi Sinking Funds active, Tiền mặt, Sổ tiết kiệm, Quỹ dự phòng)
-  const savingAssets = Math.max(0, totalAssets - investmentAssets);
-
   // Use the exact UI hook to match "Dự phòng / Sự kiện" screen
   const { totalRemainingSum } = useLiquidityBreakdown('cumulative', activeRow?.period.key);
   let displayLiquidityBalance = totalRemainingSum;
@@ -156,6 +146,11 @@ export const CashflowQuadrant: React.FC = () => {
     });
   }
 
+  // Đầu tư dài hạn = Tổng số dư các tài sản thực tế (BĐS, Cổ phiếu, Crypto, Vàng, Ngoại tệ)
+  const investmentAssets = activeRow.portfolio?.assets
+    ? Object.values(activeRow.portfolio.assets).reduce((sum, a) => sum + a.endingBalance, 0)
+    : 0;
+
   // Tính chi tiết Quỹ thanh khoản
   const savingBalance = activeRow.savingBalance || 0;
   const debtReserveBalance = activeRow.debtReserveBalance || 0;
@@ -164,6 +159,18 @@ export const CashflowQuadrant: React.FC = () => {
 
   const portfolioUnallocatedBase = activeRow.portfolio?.unallocatedEndingBalance || 0;
   const actualUnallocatedIncome = activeRow.unallocatedCashBalance || 0;
+
+  // Compute real dynamic totalAssets to match Dashboard and prevent negative cash components
+  const totalAssets = 
+    investmentAssets +
+    (portfolioUnallocatedBase + actualUnallocatedIncome) +
+    (portfolioSavingsBalance + savingBalance) +
+    (displayLiquidityBalance) +
+    (debtReserveBalance) +
+    (activeSinkingFundsCash);
+    
+  // Quỹ thanh khoản = Phần còn lại (bao gồm mọi Sinking Funds active, Tiền mặt, Sổ tiết kiệm, Quỹ dự phòng)
+  const savingAssets = Math.max(0, totalAssets - investmentAssets);
 
   const totalAllocatedFunds = savingBalance + displayLiquidityBalance + debtReserveBalance + activeSinkingFundsCash + portfolioSavingsBalance;
   const totalCashBalance = Math.max(0, savingAssets - totalAllocatedFunds);

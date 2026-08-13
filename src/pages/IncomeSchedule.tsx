@@ -6,7 +6,6 @@ import { Input } from '../components/ui/Input';
 import { WarningBox } from '../components/ui/WarningBox';
 import { generateTimeline } from '../engines/timelineEngine';
 import { calculateIncome } from '../engines/incomeEngine';
-import { runProjection } from '../engines/projectionEngine';
 import { formatTableMoneyVNDMillion, formatKpiMoneyVNDMillion } from '../utils/format';
 import { isWithinObservationPeriod, getPeriodGuardMessage } from '../utils/periodGuard';
 import { safeNumber } from '../utils/math';
@@ -237,8 +236,6 @@ export const IncomeSchedule: React.FC = () => {
     editType !== (activeVersion.incomeType || 'fulltime_salary')
   ) : false;
 
-  const activeDbItem = selectedPeriodKey ? state.resolvedMonthlyDbMap?.[selectedPeriodKey] : undefined;
-  const flow = activeDbItem?.investmentFlow;
 
   const getIncomeTypeLabel = (type?: string) => {
     const cat = state.incomeCategories?.find(c => c.id === type);
@@ -247,26 +244,6 @@ export const IncomeSchedule: React.FC = () => {
     return `${cat.name} ${typeLabel}`;
   };
 
-  // Run projection dynamically to get actual idle cashflow for the selected period
-  const projection = runProjection({
-    profile: state.profile,
-    incomeSchedule: state.incomeSchedule,
-    budgetSchedule: state.budgetSchedule,
-    lifeEvents: state.lifeEvents,
-    assets: state.assets,
-    assumptions: state.assumptions,
-    investmentDeals: state.investmentDeals,
-    savingsDeposits: state.savingsDeposits,
-    sinkingFunds: state.sinkingFunds,
-    debts: state.debts,
-    projectionAdjustments: state.projectionAdjustments,
-    lifeStages: state.lifeStages,
-    fundTransfers: state.fundTransfers,
-  });
-
-  const currentKey = selectedPeriodKey || `${new Date().getFullYear()}-${String(new Date().getMonth() + 1).padStart(2, '0')}`;
-  const currentRow = projection.monthlyRows.find(r => r.period.key === currentKey);
-  const idleCashflow = currentRow ? currentRow.netCashflowMonthly : 0;
 
   return (
     <div className="space-y-6">
@@ -284,41 +261,6 @@ export const IncomeSchedule: React.FC = () => {
         <ObservationControls />
       </div>
 
-      {idleCashflow > 0 && (
-        <div className="bg-orange-500/10 border-l-4 border-orange-500 p-4 rounded-r-lg shadow-sm">
-           <div className="flex items-start gap-3">
-             <AlertTriangle className="w-5 h-5 text-orange-500 shrink-0 mt-0.5" />
-             <div>
-               <h3 className="font-bold text-orange-400 text-sm">Tiền dư chưa phân bổ kỳ này: {formatTableMoneyVNDMillion(idleCashflow)} VND</h3>
-               <p className="text-family-textMuted text-xs mt-1">
-                 Bạn đang có một khoản tiền nhàn rỗi trong kỳ quan sát này chưa được điều chuyển hay đầu tư sinh lời. 
-                 Lời khuyên: Hãy vào màn hình <strong>Điều chuyển dòng tiền</strong> để đẩy số tiền này vào Sổ Tiết kiệm hoặc Thương vụ đầu tư.
-               </p>
-             </div>
-           </div>
-        </div>
-      )}
-
-      {/* Dynamic Cashflow History Summary Banner */}
-      {flow && (
-        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 p-4 bg-family-accent/5 border border-family-accent/15 rounded-2xl text-xs shadow-sm">
-          <div className="font-bold text-family-text flex items-center gap-1.5 shrink-0">
-            <span>💸</span>
-            Dòng tiền đầu tư tại mốc quan sát ({selectedPeriodKey}):
-          </div>
-          <div className="flex flex-wrap items-center gap-x-6 gap-y-2 text-family-textMuted font-semibold">
-            <div>Số dư đầu: <strong className="text-family-text">{formatTableMoneyVNDMillion(flow.beginningBalance)}</strong></div>
-            <div>+ Phân bổ đầu tư: <strong className="text-emerald-700">+{formatTableMoneyVNDMillion(flow.contribution)}</strong></div>
-            <div>+ Lãi phát sinh: <strong className={flow.pnl >= 0 ? "text-emerald-700" : "text-red-600"}>{flow.pnl >= 0 ? `+` : ``}{formatTableMoneyVNDMillion(flow.pnl)}</strong></div>
-            <div>= Số dư cuối: <strong className="text-family-accent">{formatTableMoneyVNDMillion(flow.endingBalance)}</strong></div>
-            <div className="text-[10px] pl-3 border-l border-family-accent/20 flex gap-3 text-family-text shrink-0">
-              <span className="text-emerald-800">Đã ĐT: {formatTableMoneyVNDMillion(flow.invested)}</span>
-              <span className="text-violet-800">Kế hoạch: {formatTableMoneyVNDMillion(flow.planned)}</span>
-              <span className="text-sky-800">Chưa KH: {formatTableMoneyVNDMillion(flow.idle)}</span>
-            </div>
-          </div>
-        </div>
-      )}
       
       {/* Workspace tab selectors */}
       <div className="flex justify-end pt-1">

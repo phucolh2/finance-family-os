@@ -148,7 +148,7 @@ export function formatTableMoneyVNDMillion(value: unknown): string {
  * 1500 -> 1.5 tỷ
  */
 export function formatKpiMoneyVNDMillion(value: unknown): string {
-  return formatMoneyVNDMillion(value, { mode: 'auto', decimals: 1 });
+  return formatMoneyVNDMillion(value, { mode: 'auto', decimals: 2 });
 }
 
 /**

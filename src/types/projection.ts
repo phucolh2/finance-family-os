@@ -62,6 +62,8 @@ export interface ProjectionMonthlyRow {
   _savingPnl?: number;
 
   _activeSinkingFundsDebtReserve?: number;
+  _activeSinkingFundsSaving?: number;
+  _activeSinkingFundsExpenseSurplus?: number;
   _groupBalances?: Record<string, number>;
   _monthlyBudget?: Record<string, number>;
   _monthlyActual?: Record<string, number>;

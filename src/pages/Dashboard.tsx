@@ -1,8 +1,10 @@
 import React, { useState } from 'react';
 import { useAppContext } from '../context/AppContext';
+import { useLiquidityBreakdown } from '../hooks/useLiquidityBreakdown';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '../components/ui/Card';
 import { EmptyState } from '../components/ui/EmptyState';
 import { runProjection } from '../engines/projectionEngine';
+import { calculateIncome } from '../engines/incomeEngine';
 import { generateAdvisorAlerts } from '../engines/advisorEngine';
 import {
   formatKpiMoneyVNDMillion,
@@ -22,6 +24,9 @@ import {
   ResponsiveContainer,
   BarChart,
   Bar,
+  PieChart,
+  Pie,
+  Cell,
 } from 'recharts';
 import { 
   Sparkles, 
@@ -47,6 +52,7 @@ import { ObservationControls } from '../components/ui/ObservationControls';
 
 export const Dashboard: React.FC = () => {
   const { state, selectedPeriodKey } = useAppContext();
+  const { totalRemainingSum } = useLiquidityBreakdown('cumulative');
 
   // State for explanation modal/box
   const [explanationId, setExplanationId] = useState<string | null>(null);
@@ -66,6 +72,7 @@ export const Dashboard: React.FC = () => {
     projectionAdjustments: state.projectionAdjustments,
     lifeStages: state.lifeStages,
     fundTransfers: state.fundTransfers,
+    observationPeriodKey: selectedPeriodKey || undefined,
   });
 
   const hasData = projection.monthlyRows.length > 0;
@@ -87,13 +94,29 @@ export const Dashboard: React.FC = () => {
     : currentPeriod;
 
   // Extract starting metrics dynamically from the active snapshot
+  const incomeDetails = activeRow ? calculateIncome({ period: activeRow.period, incomeSchedule: state.incomeSchedule }) : null;
+  let scheduledPassiveIncome = 0;
+  if (incomeDetails && state.incomeCategories) {
+    Object.entries(incomeDetails.breakdown).forEach(([catId, amount]) => {
+      const category = state.incomeCategories?.find(c => c.id === catId);
+      if (category?.type === 'passive') {
+        scheduledPassiveIncome += amount;
+      }
+    });
+  }
+  const investmentPnl = activeRow?.portfolio?.totalPnl || 0;
+  const realizedPassiveIncome = investmentPnl > 0 ? investmentPnl : 0;
+  const currentPassiveIncome = scheduledPassiveIncome + realizedPassiveIncome;
+
   const currentIncome = activeRow ? activeRow.incomeMonthly : 0;
   const currentInvestment = activeRow ? activeRow.investmentMonthly : 0;
   const currentSaving = activeRow ? activeRow.savingMonthly : 0;
   const currentNetWorth = activeRow ? activeRow.nominalNetWorth : 0;
-  const currentPcf = (currentNetWorth * 4 / 100) / 12;
   const currentFireProgress = activeRow ? activeRow.fireProgress : 0;
-  const currentExpenses = activeRow ? activeRow.expensesMonthly : 0;
+  
+  const livingExpenses = activeRow ? activeRow.budgetedExpensesMonthly ?? activeRow.expensesMonthly : 0;
+  const debtExpenses = activeRow ? activeRow.debtPaymentMonthly || 0 : 0;
+  const currentExpenses = livingExpenses + debtExpenses;
 
   // Calculate cumulative figures from start month up to the activeRow's index
   const activeIndex = activeRow ? activeRow.period.index : 0;
@@ -141,7 +164,7 @@ export const Dashboard: React.FC = () => {
     : 0;
 
   // Calculate Dynamic Financial Health Score (Khoa học, Chuẩn Quốc tế)
-  const savingsRate = currentIncome > 0 ? ((currentSaving + currentInvestment) / currentIncome) * 100 : 0;
+  const savingsRate = currentIncome > 0 ? ((currentIncome - currentExpenses) / currentIncome) * 100 : 0;
   const savingsRateScore = Math.min(40, savingsRate * 0.8); // 40 points if savingsRate >= 50%
   
   const totalActiveCapital = activeRow 
@@ -222,6 +245,26 @@ export const Dashboard: React.FC = () => {
   const radius = 22;
   const circumference = 2 * Math.PI * radius;
   const strokeDashoffset = circumference - (Math.max(1, Math.min(100, healthScore)) / 100) * circumference;
+
+  // Pre-calculate values for the 6 Net Worth pillars for the current active row
+  const valInvest = activeRow?.portfolio?.assets ? Object.values(activeRow.portfolio.assets).reduce((sum, a) => sum + a.endingBalance, 0) : 0;
+  const valIdle = (activeRow?.portfolio?.unallocatedEndingBalance || 0) + (activeRow?.unallocatedCashBalance || 0);
+  const valSaving = (activeRow?.portfolio?.savingsBalance || 0) + (activeRow?.savingBalance || 0);
+  const valLiving = totalRemainingSum;
+  const valDebtRes = activeRow?.debtReserveBalance || 0;
+  const valSinking = (activeRow?.portfolio?.assets ? Object.values(activeRow.portfolio.assets).reduce((sum, a) => sum + (a.earmarkedEndingBalance || 0), 0) : 0) +
+                     (activeRow?._activeSinkingFundsSaving || 0) +
+                     (activeRow?._activeSinkingFundsExpenseSurplus || 0) +
+                     (activeRow?._activeSinkingFundsDebtReserve || 0);
+
+  const netWorthChartData = [
+    { name: 'Đầu tư dài hạn', value: valInvest, fill: '#9333ea' },
+    { name: 'Tiền rảnh rỗi', value: valIdle, fill: '#0d9488' },
+    { name: 'Tiết kiệm', value: valSaving, fill: '#d97706' },
+    { name: 'Quỹ sinh hoạt', value: valLiving, fill: '#2563eb' },
+    { name: 'Dự phòng nợ', value: valDebtRes, fill: '#e11d48' },
+    { name: 'Quỹ mục tiêu', value: valSinking, fill: '#4f46e5' },
+  ].filter(item => item.value > 0);
 
   return (
     <div className="space-y-6">
@@ -330,8 +373,8 @@ export const Dashboard: React.FC = () => {
               </button>
             </div>
             <div>
-              <div className="text-lg font-bold text-family-text">{formatKpiMoneyVNDMillion(currentPcf)}</div>
-              <div className="text-[9px] text-family-textMuted mt-0.5">Quy đổi từ Net Worth (4%)</div>
+              <div className="text-lg font-bold text-family-text">{formatKpiMoneyVNDMillion(currentPassiveIncome)}</div>
+              <div className="text-[9px] text-family-textMuted mt-0.5">Từ tài sản, đầu tư sinh lời</div>
             </div>
           </CardContent>
         </Card>
@@ -485,7 +528,7 @@ export const Dashboard: React.FC = () => {
             <div className="bg-family-accent/5 border border-family-accent/15 p-3 rounded-2xl">
               <div className="flex justify-between items-center text-xs font-bold text-family-text">
                 <span>Khoản thu (Tiền vào)</span>
-                <span className="text-family-accent">{formatTableMoneyVNDMillion(currentIncome)}</span>
+                <span className="text-family-accent">{formatTableMoneyVNDMillion(activeRow ? activeRow.incomeMonthly : 0)}</span>
               </div>
             </div>
 
@@ -504,15 +547,15 @@ export const Dashboard: React.FC = () => {
                 <span>+{formatTableMoneyVNDMillion(currentSaving)}</span>
               </div>
               {(activeRow && activeRow.debtReserveMonthly > 0) && (
-                <div className="flex justify-between items-center text-[11px] font-semibold text-amber-700">
+                <div className="flex justify-between items-center text-[11px] font-semibold text-amber-600">
                   <span className="flex items-center gap-1">🟠 Dự phòng nợ:</span>
                   <span>+{formatTableMoneyVNDMillion(activeRow.debtReserveMonthly)}</span>
                 </div>
               )}
-              {(activeRow && Math.max(0, currentIncome - currentExpenses - currentInvestment - currentSaving - (activeRow.debtReserveMonthly || 0)) > 0) && (
+              {(activeRow && Math.max(0, activeRow.incomeMonthly - currentExpenses - currentInvestment - currentSaving - (activeRow.debtReserveMonthly || 0)) > 0) && (
                 <div className="flex justify-between items-center text-[11px] font-semibold text-blue-700">
                   <span className="flex items-center gap-1">🔵 Chưa phân bổ:</span>
-                  <span>+{formatTableMoneyVNDMillion(Math.max(0, currentIncome - currentExpenses - currentInvestment - currentSaving - (activeRow.debtReserveMonthly || 0)))}</span>
+                  <span>+{formatTableMoneyVNDMillion(Math.max(0, activeRow.incomeMonthly - currentExpenses - currentInvestment - currentSaving - (activeRow.debtReserveMonthly || 0)))}</span>
                 </div>
               )}
             </div>
@@ -546,126 +589,120 @@ export const Dashboard: React.FC = () => {
             </div>
           </div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-5 gap-3">
-            <div className="bg-family-bgDark/20 p-3 rounded-xl border border-family-accent/5">
-              <span className="text-[10px] text-family-textMuted font-bold uppercase tracking-wider block">1. Đầu tư dài hạn</span>
-              <span className="text-[15px] font-extrabold text-purple-600 block mt-1">
-                {formatKpiMoneyVNDMillion(activeRow.portfolio?.assets ? Object.values(activeRow.portfolio.assets).reduce((sum, a) => sum + a.endingBalance, 0) : 0)}
-              </span>
-              <span className="text-[9px] text-family-textMuted mt-0.5 block italic">BĐS, Cổ phiếu, Vàng...</span>
-            </div>
-            <div className="bg-family-bgDark/20 p-3 rounded-xl border border-family-accent/5">
-              <span className="text-[10px] text-family-textMuted font-bold uppercase tracking-wider block">2. Tiền mặt & Lưu động</span>
-              <span className="text-[15px] font-extrabold text-teal-600 block mt-1">
-                {formatKpiMoneyVNDMillion((activeRow.portfolio?.unallocatedEndingBalance || 0) + (activeRow.liquidityBalance || 0))}
-              </span>
-              <span className="text-[9px] text-family-textMuted mt-0.5 block italic">Tiền mặt rảnh rỗi chưa phân bổ</span>
-            </div>
-            <div className="bg-family-bgDark/20 p-3 rounded-xl border border-family-accent/5">
-              <span className="text-[10px] text-family-textMuted font-bold uppercase tracking-wider block">3. Tiết kiệm mục tiêu</span>
-              <span className="text-[15px] font-extrabold text-amber-600 block mt-1">
-                {formatKpiMoneyVNDMillion(activeRow.portfolio?.savingsBalance || 0)}
-              </span>
-              <span className="text-[9px] text-family-textMuted mt-0.5 block italic">Các sổ tiết kiệm cố định</span>
-            </div>
-            <div className="bg-family-bgDark/20 p-3 rounded-xl border border-family-accent/5">
-              <span className="text-[10px] text-family-textMuted font-bold uppercase tracking-wider block">4. Quỹ sinh hoạt</span>
-              <span className="text-[15px] font-extrabold text-blue-600 block mt-1">
-                {formatKpiMoneyVNDMillion((activeRow.savingBalance || 0) + Math.max(0, currentNetWorth - (activeRow.portfolio?.assets ? Object.values(activeRow.portfolio.assets).reduce((sum, a) => sum + a.endingBalance, 0) : 0) - ((activeRow.portfolio?.unallocatedEndingBalance || 0) + (activeRow.liquidityBalance || 0)) - (activeRow.debtReserveBalance || 0) - (activeRow.portfolio?.savingsBalance || 0) - (activeRow.savingBalance || 0)))}
-              </span>
-              <span className="text-[9px] text-family-textMuted mt-0.5 block italic">Đang tích lũy trong các phong bì</span>
-            </div>
-            <div className="bg-family-bgDark/20 p-3 rounded-xl border border-family-accent/5">
-              <span className="text-[10px] text-family-textMuted font-bold uppercase tracking-wider block">5. Dự phòng nợ</span>
-              <span className="text-[15px] font-extrabold text-rose-600 block mt-1">
-                {formatKpiMoneyVNDMillion(activeRow.debtReserveBalance || 0)}
-              </span>
-              <span className="text-[9px] text-family-textMuted mt-0.5 block italic">Quỹ dự phòng rủi ro / trả nợ</span>
-            </div>
-          </div>
+          <div className="flex flex-col xl:flex-row gap-6 mt-4">
+            {/* Left side: The 6 boxes */}
+            <div className="flex-1 flex flex-col justify-between">
+              <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
+                <div className="bg-family-bgDark/20 p-3 rounded-xl border border-family-accent/5">
+                  <span className="text-[10px] text-family-textMuted font-bold uppercase tracking-wider block">1. Đầu tư dài hạn</span>
+                  <span className="text-[15px] font-extrabold text-purple-600 block mt-1">
+                    {formatKpiMoneyVNDMillion(activeRow.portfolio?.assets ? Object.values(activeRow.portfolio.assets).reduce((sum, a) => sum + a.endingBalance, 0) : 0)}
+                  </span>
+                  <span className="text-[9px] text-family-textMuted mt-0.5 block italic">BĐS, Cổ phiếu, Vàng...</span>
+                </div>
+                <div className="bg-family-bgDark/20 p-3 rounded-xl border border-family-accent/5">
+                  <span className="text-[10px] text-family-textMuted font-bold uppercase tracking-wider block">2. Tiền rảnh rỗi</span>
+                  <span className="text-[15px] font-extrabold text-teal-600 block mt-1">
+                    {formatKpiMoneyVNDMillion((activeRow.portfolio?.unallocatedEndingBalance || 0) + (activeRow.unallocatedCashBalance || 0))}
+                  </span>
+                  <span className="text-[9px] text-family-textMuted mt-0.5 block italic">Chưa phân bổ</span>
+                </div>
+                <div className="bg-family-bgDark/20 p-3 rounded-xl border border-family-accent/5">
+                  <span className="text-[10px] text-family-textMuted font-bold uppercase tracking-wider block">3. Tiết kiệm</span>
+                  <span className="text-[15px] font-extrabold text-amber-600 block mt-1">
+                    {formatKpiMoneyVNDMillion((activeRow.portfolio?.savingsBalance || 0) + (activeRow.savingBalance || 0))}
+                  </span>
+                  <span className="text-[9px] text-family-textMuted mt-0.5 block italic">Sổ tiết kiệm / Tích lũy</span>
+                </div>
+                <div className="bg-family-bgDark/20 p-3 rounded-xl border border-family-accent/5">
+                  <span className="text-[10px] text-family-textMuted font-bold uppercase tracking-wider block">4. Quỹ sinh hoạt</span>
+                  <span className="text-[15px] font-extrabold text-blue-600 block mt-1">
+                    {formatKpiMoneyVNDMillion(totalRemainingSum)}
+                  </span>
+                  <span className="text-[9px] text-family-textMuted mt-0.5 block italic">Dư thừa trong các phong bì</span>
+                </div>
+                <div className="bg-family-bgDark/20 p-3 rounded-xl border border-family-accent/5">
+                  <span className="text-[10px] text-family-textMuted font-bold uppercase tracking-wider block">5. Dự phòng nợ</span>
+                  <span className="text-[15px] font-extrabold text-rose-600 block mt-1">
+                    {formatKpiMoneyVNDMillion(activeRow.debtReserveBalance || 0)}
+                  </span>
+                  <span className="text-[9px] text-family-textMuted mt-0.5 block italic">Quỹ dự phòng gốc</span>
+                </div>
+                <div className="bg-family-bgDark/20 p-3 rounded-xl border border-family-accent/5">
+                  <span className="text-[10px] text-family-textMuted font-bold uppercase tracking-wider block">6. Quỹ mục tiêu</span>
+                  <span className="text-[15px] font-extrabold text-indigo-600 block mt-1">
+                    {formatKpiMoneyVNDMillion(
+                      (activeRow.portfolio?.assets ? Object.values(activeRow.portfolio.assets).reduce((sum, a) => sum + (a.earmarkedEndingBalance || 0), 0) : 0) +
+                      (activeRow._activeSinkingFundsSaving || 0) +
+                      (activeRow._activeSinkingFundsExpenseSurplus || 0) +
+                      (activeRow._activeSinkingFundsDebtReserve || 0)
+                    )}
+                  </span>
+                  <span className="text-[9px] text-family-textMuted mt-0.5 block italic">Sinking Funds</span>
+                </div>
+              </div>
 
-          <div className="mt-4 pt-4 border-t border-family-accent/10 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 bg-family-accent/5 p-4 rounded-xl">
-            <div className="text-xs text-family-textMuted">
-              <span className="font-bold text-family-text">Tổng kết:</span> Tài sản ròng = Đầu tư (1) + Tiền mặt (2) + Tiết kiệm (3) + Quỹ sinh hoạt (4) + Dự phòng (5)
+              <div className="mt-4 pt-4 border-t border-family-accent/10 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 bg-family-accent/5 p-4 rounded-xl">
+                <div className="text-xs text-family-textMuted">
+                  <span className="font-bold text-family-text">Tổng kết:</span> Tài sản ròng = (1) + (2) + (3) + (4) + (5) + (6)
+                </div>
+                <div className="text-right">
+                  <span className="text-[10px] text-family-textMuted font-bold uppercase block">Tổng Tài sản ròng</span>
+                  <span className="text-lg font-extrabold text-family-accent">
+                    {formatKpiMoneyVNDMillion(
+                      (activeRow.portfolio?.assets ? Object.values(activeRow.portfolio.assets).reduce((sum, a) => sum + a.endingBalance, 0) : 0) +
+                      ((activeRow.portfolio?.unallocatedEndingBalance || 0) + (activeRow.unallocatedCashBalance || 0)) +
+                      ((activeRow.portfolio?.savingsBalance || 0) + (activeRow.savingBalance || 0)) +
+                      (totalRemainingSum) +
+                      (activeRow.debtReserveBalance || 0) +
+                      ((activeRow.portfolio?.assets ? Object.values(activeRow.portfolio.assets).reduce((sum, a) => sum + (a.earmarkedEndingBalance || 0), 0) : 0) +
+                      (activeRow._activeSinkingFundsSaving || 0) +
+                      (activeRow._activeSinkingFundsExpenseSurplus || 0) +
+                      (activeRow._activeSinkingFundsDebtReserve || 0))
+                    )}
+                  </span>
+                </div>
+              </div>
             </div>
-            <div className="text-right">
-              <span className="text-[10px] text-family-textMuted font-bold uppercase block">Tổng Tài sản ròng</span>
-              <span className="text-lg font-extrabold text-family-accent">
-                {formatKpiMoneyVNDMillion(currentNetWorth)}
-              </span>
+
+            {/* Right side: The Chart */}
+            <div className="w-full xl:w-[350px] bg-white/40 rounded-xl border border-family-accent/10 p-4 flex flex-col items-center justify-center">
+              <span className="text-[10px] font-bold text-family-text uppercase tracking-wider mb-2">Tỷ trọng Phân bổ</span>
+              <div className="h-48 w-full">
+                <ResponsiveContainer width="100%" height="100%">
+                  <PieChart>
+                    <Pie
+                      data={netWorthChartData}
+                      cx="50%"
+                      cy="50%"
+                      innerRadius={55}
+                      outerRadius={80}
+                      paddingAngle={3}
+                      dataKey="value"
+                      stroke="none"
+                    >
+                      {netWorthChartData.map((entry, index) => (
+                        <Cell key={`cell-${index}`} fill={entry.fill} />
+                      ))}
+                    </Pie>
+                    <Tooltip 
+                      formatter={(value: any) => formatTooltipMoneyVNDMillion(value as number)} 
+                      contentStyle={{ borderRadius: '8px', border: 'none', boxShadow: '0 4px 12px rgba(0,0,0,0.05)', fontSize: '11px' }}
+                    />
+                    <Legend 
+                      layout="vertical" 
+                      verticalAlign="middle" 
+                      align="right"
+                      wrapperStyle={{ fontSize: 10 }}
+                    />
+                  </PieChart>
+                </ResponsiveContainer>
+              </div>
             </div>
           </div>
         </Card>
       )}
 
-      {/* Charts Section */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {/* Net Worth Chart */}
-        <Card className="border-family-accent/10 shadow-sm bg-white/70 backdrop-blur-md">
-          <CardHeader>
-            <CardTitle className="text-base font-serif font-bold text-family-text flex items-center gap-2">
-              Dự phóng Tài sản ròng dài hạn
-              <HelpTooltip text="Bức tranh toàn cảnh về sự tăng trưởng tài sản (Net Worth) của gia đình từ nay đến 2060." />
-            </CardTitle>
-            <CardDescription className="text-xs text-family-textMuted">Tích lũy danh nghĩa vs Sức mua thực tế (đã chiết khấu lạm phát {state.assumptions.generalInflationRateAnnual}%).</CardDescription>
-          </CardHeader>
-          <CardContent className="h-72">
-            {hasData ? (
-              <ResponsiveContainer width="100%" height="100%">
-                <AreaChart data={yearlyChartData} margin={{ top: 16, right: 30, left: 10, bottom: 20 }}>
-                  <defs>
-                    <linearGradient id="colorNominal" x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="5%" stopColor="#d97706" stopOpacity={0.25}/>
-                      <stop offset="95%" stopColor="#d97706" stopOpacity={0}/>
-                    </linearGradient>
-                    <linearGradient id="colorReal" x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="5%" stopColor="#4d7c0f" stopOpacity={0.25}/>
-                      <stop offset="95%" stopColor="#4d7c0f" stopOpacity={0}/>
-                    </linearGradient>
-                  </defs>
-                  <CartesianGrid strokeDasharray="3 3" stroke="rgba(125, 83, 45, 0.08)" />
-                  <XAxis dataKey="year" stroke="#6f5d50" fontSize={10} tick={{ fontSize: 9, angle: -45, textAnchor: 'end' }} height={60} />
-                  <YAxis stroke="#6f5d50" fontSize={10} tickFormatter={formatAxisMoneyVNDMillion} />
-                  <Tooltip formatter={(value) => formatTooltipMoneyVNDMillion(value)} />
-                  <Legend wrapperStyle={{ fontSize: 10 }} />
-                  <Area type="monotone" name="Tài sản ròng (Danh nghĩa)" dataKey="Tài sản ròng (Danh nghĩa)" stroke="#d97706" fillOpacity={1} fill="url(#colorNominal)" strokeWidth={2} />
-                  <Area type="monotone" name="Tài sản ròng (Thực tế)" dataKey="Tài sản ròng (Thực tế)" stroke="#4d7c0f" fillOpacity={1} fill="url(#colorReal)" strokeWidth={2} />
-                </AreaChart>
-              </ResponsiveContainer>
-            ) : (
-              <EmptyState />
-            )}
-          </CardContent>
-        </Card>
-
-        {/* Yearly Cashflow Chart */}
-        <Card className="border-family-accent/10 shadow-sm bg-white/70 backdrop-blur-md">
-          <CardHeader>
-            <CardTitle className="text-base font-serif font-bold text-family-text flex items-center gap-2">
-              Khoản thu vs Khoản chi hàng năm
-              <HelpTooltip text="So sánh tổng thu và chi theo từng năm, giúp đánh giá thặng dư dòng tiền dài hạn." />
-            </CardTitle>
-            <CardDescription className="text-xs text-family-textMuted">Mô phỏng tích lũy dòng tiền hàng năm qua các giai đoạn.</CardDescription>
-          </CardHeader>
-          <CardContent className="h-72">
-            {hasData ? (
-              <ResponsiveContainer width="100%" height="100%">
-                <BarChart data={yearlyChartData} margin={{ top: 16, right: 30, left: 10, bottom: 20 }}>
-                  <CartesianGrid strokeDasharray="3 3" stroke="rgba(125, 83, 45, 0.08)" />
-                  <XAxis dataKey="year" stroke="#6f5d50" fontSize={10} tick={{ fontSize: 9, angle: -45, textAnchor: 'end' }} height={60} />
-                  <YAxis stroke="#6f5d50" fontSize={10} tickFormatter={formatAxisMoneyVNDMillion} />
-                  <Tooltip formatter={(value) => formatTooltipMoneyVNDMillion(value)} />
-                  <Legend wrapperStyle={{ fontSize: 10 }} />
-                  <Bar name="Tổng khoản thu" dataKey="Tổng thu nhập" fill="#d97706" radius={[4, 4, 0, 0]} />
-                  <Bar name="Tổng khoản chi" dataKey="Tổng chi phí" fill="#dc2626" radius={[4, 4, 0, 0]} />
-                </BarChart>
-              </ResponsiveContainer>
-            ) : (
-              <EmptyState />
-            )}
-          </CardContent>
-        </Card>
-      </div>
     </div>
   );
 };

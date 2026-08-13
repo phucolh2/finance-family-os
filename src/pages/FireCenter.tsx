@@ -16,9 +16,10 @@ import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, Responsi
 import { Flame, BookOpen, Play, CheckCircle2, AlertTriangle } from 'lucide-react';
 import type { MonteCarloOutput } from '../engines/monteCarloEngine';
 import { HelpTooltip } from '../components/ui/HelpTooltip';
+import { useLiquidityBreakdown } from '../hooks/useLiquidityBreakdown';
 
 export const FireCenter: React.FC = () => {
-  const { state } = useAppContext();
+  const { state, selectedPeriodKey } = useAppContext();
 
   // Run base projection dynamically (pure engine call)
   const projection = runProjection({
@@ -35,13 +36,21 @@ export const FireCenter: React.FC = () => {
     projectionAdjustments: state.projectionAdjustments,
     lifeStages: state.lifeStages,
     fundTransfers: state.fundTransfers,
+    observationPeriodKey: selectedPeriodKey || undefined,
   });
 
   const hasData = projection.monthlyRows.length > 0;
-  const startRow = hasData ? projection.monthlyRows[0] : null;
 
-  const currentExpenses = startRow ? startRow.expensesMonthly : 0;
-  const currentNetWorth = startRow ? startRow.nominalNetWorth : 0;
+  const resolvedPeriodKey = selectedPeriodKey || `${new Date().getFullYear()}-${String(new Date().getMonth() + 1).padStart(2, '0')}`;
+  
+  // Liquidity breakdown calculation for the unspent envelopes
+  const { totalRemainingSum } = useLiquidityBreakdown('cumulative', resolvedPeriodKey);
+
+  const activeRowIndex = projection.monthlyRows.findIndex(r => r.period.key === resolvedPeriodKey);
+  const activeRow = activeRowIndex >= 0 ? projection.monthlyRows[activeRowIndex] : (hasData ? projection.monthlyRows[0] : null);
+
+  const currentExpenses = activeRow ? activeRow.expensesMonthly : 0;
+  const currentNetWorth = activeRow ? activeRow.nominalNetWorth + totalRemainingSum : 0;
 
   // Run basic fireEngine on start state
   const fireResult = calculateFire({
