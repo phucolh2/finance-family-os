@@ -1,0 +1,1 @@
+import{Q as e,Y as t}from"./index-g0hmY89T.js";import{rt as n}from"./CategoricalChart-C38oORyz.js";import{t as r}from"./CartesianChart-pvZSisPe.js";var i=e(t()),a=[`axis`],o=(0,i.forwardRef)((e,t)=>i.createElement(r,{chartName:`ComposedChart`,defaultTooltipEventType:`axis`,validateTooltipEventTypes:a,tooltipPayloadSearcher:n,categoricalChartProps:e,ref:t}));export{o as t};
