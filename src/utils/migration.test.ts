@@ -12,13 +12,14 @@ import {
   DEFAULT_INVESTMENT_DEALS,
   DEFAULT_SINKING_FUNDS
 } from '../data/defaultInputs';
-import { AppState } from '../types/finance';
+import type { AppState } from '../types/finance';
 
 const mockDefaultState: AppState = {
   profile: DEFAULT_FAMILY_PROFILE,
   incomeCategories: DEFAULT_INCOME_CATEGORIES,
   incomeSchedule: DEFAULT_INCOME_SCHEDULE,
   budgetSchedule: DEFAULT_BUDGET_SCHEDULE,
+  expenseSchedule: [],
   assumptions: DEFAULT_ASSUMPTIONS,
   lifeStages: DEFAULT_LIFE_STAGES,
   assets: DEFAULT_ASSETS,
@@ -140,13 +141,13 @@ describe('migration utilities', () => {
       const migrated = migrateState(stateWithEarmarkedDeals, mockDefaultState);
       
       // Earmarked deals should be removed from investmentDeals
-      expect(migrated.investmentDeals.length).toBe(1);
-      expect(migrated.investmentDeals[0].id).toBe('deal2');
+      expect(migrated.investmentDeals!.length).toBe(1);
+      expect(migrated.investmentDeals![0].id).toBe('deal2');
 
       // They should appear in sinkingFunds
-      expect(migrated.sinkingFunds.length).toBeGreaterThan(0);
-      expect(migrated.sinkingFunds[0].id).toBe('sf_deal1');
-      expect(migrated.sinkingFunds[0].targetAmount).toBe(500);
+      expect(migrated.sinkingFunds!.length).toBeGreaterThan(0);
+      expect(migrated.sinkingFunds![0].id).toBe('sf_deal1');
+      expect(migrated.sinkingFunds![0].targetAmount).toBe(500);
     });
 
     it('should catch exceptions and return default state safely', () => {

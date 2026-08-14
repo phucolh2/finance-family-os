@@ -6,7 +6,7 @@ describe('sinkingFundEngine', () => {
   const baseFund: SinkingFund = {
     id: 'fund1',
     name: 'Test Fund',
-    type: 'sinking',
+    fundType: 'savings',
     status: 'active',
     startMonth: 1,
     startYear: 2026,
@@ -15,7 +15,9 @@ describe('sinkingFundEngine', () => {
     termMonths: 3,
     interestRateAnnual: 6, // 0.5% per month
     rolloverStrategy: 'principal_and_interest',
-    depositBank: 'VCB'
+    depositBank: 'VCB',
+    targetAssetType: 'gold',
+    targetAmount: 1000
   };
 
   it('should create initial bucket and calculate correct nonTermCash if termMonths = 0', () => {
@@ -77,7 +79,7 @@ describe('sinkingFundEngine', () => {
       initialDeposit: 1000, 
       monthlyContribution: 0,
       withdrawals: [
-        { month: 2, year: 2026, amount: 200 } // withdrawal before maturity
+        { id: 'w1', month: 2, year: 2026, amount: 200 } // withdrawal before maturity
       ]
     };
     

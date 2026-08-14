@@ -15,7 +15,7 @@ describe('databaseResolver', () => {
   } as any;
 
   const incomeSchedule: IncomeScheduleItem[] = [
-    { id: 'inc1', effectiveMonth: 1, effectiveYear: 2026, incomeMonthly: 100, incomeType: 'fulltime_salary', status: 'active', name: '', note: '' }
+    { id: 'inc1', effectiveMonth: 1, effectiveYear: 2026, incomeMonthly: 100, incomeType: 'fulltime_salary', status: 'active', note: '' }
   ];
 
   const budgetSchedule: BudgetRatioScheduleItem[] = [
@@ -23,10 +23,10 @@ describe('databaseResolver', () => {
       id: 'bud1', effectiveMonth: 1, effectiveYear: 2026, status: 'active',
       rootGroups: [
         {
-          id: 'g1', groupId: 'housing_basic', name: 'Nhà cửa', ratioPercent: 100, isActive: true,
+          id: 'g1', parentId: null, level: 0, nodeType: 'group', sortOrder: 0, groupId: 'housing_basic', name: 'Nhà cửa', ratioPercent: 100, isActive: true,
           children: [
-            { id: 'housing-basic', groupId: 'housing_basic', name: 'Nhà', ratioPercent: 40, isActive: true, classification: 'expense' },
-            { id: 'food', groupId: 'housing_basic', name: 'Ăn uống', ratioPercent: 60, isActive: true, classification: 'expense' }
+            { id: 'housing-basic', parentId: 'g1', level: 1, nodeType: 'item', sortOrder: 0, groupId: 'housing_basic', name: 'Nhà', ratioPercent: 40, isActive: true, classification: 'expense' },
+            { id: 'food', parentId: 'g1', level: 1, nodeType: 'item', sortOrder: 1, groupId: 'housing_basic', name: 'Ăn uống', ratioPercent: 60, isActive: true, classification: 'expense' }
           ]
         }
       ],
@@ -47,7 +47,7 @@ describe('databaseResolver', () => {
   ];
 
   const assets: AssetConfig[] = [
-    { type: 'stocks', targetAllocationPercent: 100, expectedReturnRateAnnual: 10, name: '' }
+    { id: 'a1', beginningBalance: 0, type: 'stocks', targetAllocationPercent: 100, expectedReturnRateAnnual: 10, name: '' }
   ];
 
   const assumptions: Assumptions = {} as any;
@@ -66,16 +66,16 @@ describe('databaseResolver', () => {
     // c2 = 60% -> 60
     expect(jan.budgetRatios['housing_basic']).toBe(100); // 40 + 60
     expect(jan.budgetAmounts['housing_basic']).toBe(100);
-    expect(jan.budgetAmountsByCategory['housing-basic']).toBe(40);
-    expect(jan.budgetAmountsByCategory['food']).toBe(60);
+    expect(jan.budgetAmountsByCategory!['housing-basic']).toBe(40);
+    expect(jan.budgetAmountsByCategory!['food']).toBe(60);
 
     // Actual expenses
     // c1 is fixed 30
     // c2 is dynamic (-1), so it maps to budget amount = 60
     // Total actual = 90
-    expect(jan.actualExpenseCategories['housing-basic']).toBe(30);
-    expect(jan.actualExpenseCategories['food']).toBe(60);
-    expect(jan.actualExpenseByGroup['housing_basic']).toBe(90);
+    expect(jan.actualExpenseCategories!['housing-basic']).toBe(30);
+    expect(jan.actualExpenseCategories!['food']).toBe(60);
+    expect(jan.actualExpenseByGroup!['housing_basic']).toBe(90);
     expect(jan.totalActualExpenseMonthly).toBe(90);
   });
 
@@ -93,7 +93,7 @@ describe('databaseResolver', () => {
     
     // Ended in Jan, so Feb should be 0 since no other schedule applies
     expect(map['2026-02'].totalActualExpenseMonthly).toBe(0);
-    expect(Object.keys(map['2026-02'].actualExpenseCategories).length).toBe(0);
+    expect(Object.keys(map['2026-02'].actualExpenseCategories!).length).toBe(0);
   });
 
   it('should handle zero assets for weighted return calculation', () => {
@@ -109,7 +109,7 @@ describe('databaseResolver', () => {
       }
     ];
     const { list } = generateResolvedMonthlyDb(profile, incomeSchedule, budgetSchedule, localExp, assets, assumptions);
-    expect(list[0].actualExpenseCategories['c_missing']).toBe(0); // defaults to 0
+    expect(list[0].actualExpenseCategories!['c_missing']).toBe(0); // defaults to 0
     expect(list[0].totalActualExpenseMonthly).toBe(0);
   });
 });

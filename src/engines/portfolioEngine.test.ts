@@ -22,10 +22,10 @@ describe('portfolioEngine', () => {
   };
 
   const defaultAssets: AssetConfig[] = [
-    { type: 'stocks', name: 'Stocks', targetAllocationPercent: 60, expectedReturnRateAnnual: 12 },
-    { type: 'crypto', name: 'Crypto', targetAllocationPercent: 20, expectedReturnRateAnnual: 24 },
-    { type: 'gold', name: 'Gold', targetAllocationPercent: 10, expectedReturnRateAnnual: 6 },
-    { type: 'real_estate', name: 'Real Estate', targetAllocationPercent: 10, expectedReturnRateAnnual: 8 }
+    { id: '1', beginningBalance: 0, type: 'stocks', name: 'Stocks', targetAllocationPercent: 60, expectedReturnRateAnnual: 12 },
+    { id: '2', beginningBalance: 0, type: 'crypto', name: 'Crypto', targetAllocationPercent: 20, expectedReturnRateAnnual: 24 },
+    { id: '3', beginningBalance: 0, type: 'gold', name: 'Gold', targetAllocationPercent: 10, expectedReturnRateAnnual: 6 },
+    { id: '4', beginningBalance: 0, type: 'real_estate', name: 'Real Estate', targetAllocationPercent: 10, expectedReturnRateAnnual: 8 }
   ];
 
   it('should allocate monthly investment based on targetAllocationPercent', () => {

@@ -36,10 +36,10 @@ describe('budgetEngine', () => {
     it('should return active children for a valid group', () => {
       const activeGroup: BudgetTreeNode = {
         id: 'group1', parentId: null, level: 0, nodeType: 'group', groupId: 'g1',
-        name: 'G1', ratioPercent: 100, isActive: true, classification: 'expense',
+        name: 'G1', ratioPercent: 100, isActive: true, classification: 'expense', sortOrder: 0,
         children: [
-          { id: 'c1', parentId: 'group1', level: 1, nodeType: 'item', groupId: 'g1', name: 'C1', ratioPercent: 60, isActive: true },
-          { id: 'c2', parentId: 'group1', level: 1, nodeType: 'item', groupId: 'g1', name: 'C2', ratioPercent: 40, isActive: false }, // inactive
+          { id: 'c1', parentId: 'group1', level: 1, nodeType: 'item', groupId: 'g1', name: 'C1', ratioPercent: 60, isActive: true, sortOrder: 0 },
+          { id: 'c2', parentId: 'group1', level: 1, nodeType: 'item', groupId: 'g1', name: 'C2', ratioPercent: 40, isActive: false, sortOrder: 0 }, // inactive
         ]
       };
       
@@ -52,7 +52,7 @@ describe('budgetEngine', () => {
     it('should return the group itself if no active children exist', () => {
       const emptyGroup: BudgetTreeNode = {
         id: 'group2', parentId: null, level: 0, nodeType: 'group', groupId: 'g2',
-        name: 'G2', ratioPercent: 100, isActive: true, classification: 'savings'
+        name: 'G2', ratioPercent: 100, isActive: true, classification: 'savings', sortOrder: 0
       };
       
       const leaves = collectLeafNodes(emptyGroup);
@@ -63,7 +63,7 @@ describe('budgetEngine', () => {
     it('should return empty array if node is inactive', () => {
       const inactiveGroup: BudgetTreeNode = {
         id: 'group3', parentId: null, level: 0, nodeType: 'group', groupId: 'g3',
-        name: 'G3', ratioPercent: 100, isActive: false
+        name: 'G3', ratioPercent: 100, isActive: false, sortOrder: 0
       };
       
       const leaves = collectLeafNodes(inactiveGroup);

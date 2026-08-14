@@ -14,9 +14,9 @@ describe('incomeEngine', () => {
 
   it('should sum all active incomes for the current period', () => {
     const schedule: IncomeScheduleItem[] = [
-      { id: '1', effectiveMonth: 1, effectiveYear: 2026, incomeMonthly: 100, incomeType: 'fulltime_salary', status: 'active', name: 'Job 1', note: '' },
-      { id: '2', effectiveMonth: 5, effectiveYear: 2026, incomeMonthly: 50, incomeType: 'freelance', status: 'active', name: 'Job 2', note: '' },
-      { id: '3', effectiveMonth: 6, effectiveYear: 2026, incomeMonthly: 30, incomeType: 'business_profit', status: 'active', name: 'Job 3', note: '' } // future
+      { id: '1', effectiveMonth: 1, effectiveYear: 2026, incomeMonthly: 100, incomeType: 'fulltime_salary', status: 'active', note: '' },
+      { id: '2', effectiveMonth: 5, effectiveYear: 2026, incomeMonthly: 50, incomeType: 'freelance', status: 'active', note: '' },
+      { id: '3', effectiveMonth: 6, effectiveYear: 2026, incomeMonthly: 30, incomeType: 'business_profit', status: 'active', note: '' } // future
     ];
 
     const result = calculateIncome({
@@ -34,8 +34,8 @@ describe('incomeEngine', () => {
 
   it('should ignore cancelled or planned incomes', () => {
     const schedule: IncomeScheduleItem[] = [
-      { id: '1', effectiveMonth: 1, effectiveYear: 2026, incomeMonthly: 100, incomeType: 'fulltime_salary', status: 'cancelled', name: 'Job 1', note: '' },
-      { id: '2', effectiveMonth: 1, effectiveYear: 2026, incomeMonthly: 50, incomeType: 'freelance', status: 'planned', name: 'Job 2', note: '' }
+      { id: '1', effectiveMonth: 1, effectiveYear: 2026, incomeMonthly: 100, incomeType: 'fulltime_salary', status: 'cancelled', note: '' },
+      { id: '2', effectiveMonth: 1, effectiveYear: 2026, incomeMonthly: 50, incomeType: 'freelance', status: 'planned', note: '' }
     ];
 
     const result = calculateIncome({
@@ -49,9 +49,9 @@ describe('incomeEngine', () => {
 
   it('should respect end dates of income schedules', () => {
     const schedule: IncomeScheduleItem[] = [
-      { id: '1', effectiveMonth: 1, effectiveYear: 2025, endMonth: 4, endYear: 2026, incomeMonthly: 100, incomeType: 'fulltime_salary', status: 'active', name: 'Job 1', note: '' }, // ended
-      { id: '2', effectiveMonth: 1, effectiveYear: 2025, endMonth: 5, endYear: 2026, incomeMonthly: 50, incomeType: 'freelance', status: 'active', name: 'Job 2', note: '' }, // active exactly at end
-      { id: '3', effectiveMonth: 1, effectiveYear: 2025, endMonth: 6, endYear: 2026, incomeMonthly: 30, incomeType: 'business_profit', status: 'active', name: 'Job 3', note: '' } // still active
+      { id: '1', effectiveMonth: 1, effectiveYear: 2025, endMonth: 4, endYear: 2026, incomeMonthly: 100, incomeType: 'fulltime_salary', status: 'active', note: '' }, // ended
+      { id: '2', effectiveMonth: 1, effectiveYear: 2025, endMonth: 5, endYear: 2026, incomeMonthly: 50, incomeType: 'freelance', status: 'active', note: '' }, // active exactly at end
+      { id: '3', effectiveMonth: 1, effectiveYear: 2025, endMonth: 6, endYear: 2026, incomeMonthly: 30, incomeType: 'business_profit', status: 'active', note: '' } // still active
     ];
 
     const result = calculateIncome({
@@ -65,7 +65,7 @@ describe('incomeEngine', () => {
 
   it('should fallback to fulltime_salary if incomeType is missing', () => {
     const schedule = [
-      { id: '1', effectiveMonth: 1, effectiveYear: 2026, incomeMonthly: 100, status: 'active', name: 'Job 1', note: '' } as IncomeScheduleItem
+      { id: '1', effectiveMonth: 1, effectiveYear: 2026, incomeMonthly: 100, status: 'active', note: '' } as IncomeScheduleItem
     ];
 
     const result = calculateIncome({

@@ -5,8 +5,8 @@ import type { AppState } from '../types/finance';
 describe('ledgerEngine', () => {
   const mockState: Partial<AppState> = {
     incomeSchedule: [
-      { id: 'inc1', effectiveMonth: 1, effectiveYear: 2026, incomeMonthly: 100, incomeType: 'fulltime_salary', status: 'active', name: 'Job', note: '' },
-      { id: 'inc2', effectiveMonth: 5, effectiveYear: 2026, incomeMonthly: 50, incomeType: 'freelance', status: 'active', name: 'Freelance', note: 'Design' }
+      { id: 'inc1', effectiveMonth: 1, effectiveYear: 2026, incomeMonthly: 100, incomeType: 'fulltime_salary', status: 'active', note: '' },
+      { id: 'inc2', effectiveMonth: 5, effectiveYear: 2026, incomeMonthly: 50, incomeType: 'freelance', status: 'active', note: 'Design' }
     ],
     budgetSchedule: [
       { id: 'bud1', effectiveMonth: 2, effectiveYear: 2026, status: 'active', rootGroups: [], ratios: [], note: 'New budget' }
@@ -69,10 +69,10 @@ describe('ledgerEngine', () => {
   it('should test getIncomeTypeLabel all branches', () => {
     const state: Partial<AppState> = {
       incomeSchedule: [
-        { id: '1', effectiveMonth: 1, effectiveYear: 2026, incomeMonthly: 0, incomeType: 'parttime_salary', status: 'active', name: '', note: '' },
-        { id: '2', effectiveMonth: 2, effectiveYear: 2026, incomeMonthly: 0, incomeType: 'self_employed', status: 'active', name: '', note: '' },
-        { id: '3', effectiveMonth: 3, effectiveYear: 2026, incomeMonthly: 0, incomeType: 'passive_income', status: 'active', name: '', note: '' },
-        { id: '4', effectiveMonth: 4, effectiveYear: 2026, incomeMonthly: 0, incomeType: 'irregular_income', status: 'active', name: '', note: '' }
+        { id: '1', effectiveMonth: 1, effectiveYear: 2026, incomeMonthly: 0, incomeType: 'parttime_salary', status: 'active', note: '' },
+        { id: '2', effectiveMonth: 2, effectiveYear: 2026, incomeMonthly: 0, incomeType: 'self_employed', status: 'active', note: '' },
+        { id: '3', effectiveMonth: 3, effectiveYear: 2026, incomeMonthly: 0, incomeType: 'passive_income', status: 'active', note: '' },
+        { id: '4', effectiveMonth: 4, effectiveYear: 2026, incomeMonthly: 0, incomeType: 'irregular_income', status: 'active', note: '' }
       ]
     };
     

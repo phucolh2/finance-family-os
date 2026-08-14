@@ -87,6 +87,7 @@ describe('projectionEngine', () => {
         {
            id: 'debt_1',
            name: 'Mortgage',
+           type: 'mortgage',
            principal: 1000,
            interestRateAnnual: 8,
            termMonths: 120,
@@ -105,8 +106,7 @@ describe('projectionEngine', () => {
            sourceId: 'saving',
            destinationType: 'cashflow',
            destinationId: 'investable',
-           type: 'withdrawal',
-           date: '2026-11-01',
+           createdAt: 1234567890,
            note: ''
         }
       ],
