@@ -5,10 +5,11 @@ import type { TimelinePeriod, IncomeScheduleItem } from '../types/finance';
 describe('incomeEngine', () => {
   const mockPeriod: TimelinePeriod = {
     index: 0,
+    key: '2026-05',
     month: 5,
     year: 2026,
-    yearOffset: 0,
-    isFirstMonthOfYear: false
+    husbandAge: 30,
+    wifeAge: 28
   };
 
   it('should sum all active incomes for the current period', () => {

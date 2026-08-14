@@ -6,10 +6,11 @@ import type { MonthlyBudgetOutput } from '../types/budget';
 describe('cashflowEngine', () => {
   const mockPeriod: TimelinePeriod = {
     index: 0,
+    key: '2026-05',
     month: 5,
     year: 2026,
-    yearOffset: 0,
-    isFirstMonthOfYear: false
+    husbandAge: 30,
+    wifeAge: 28
   };
 
   const mockBudget: MonthlyBudgetOutput = {

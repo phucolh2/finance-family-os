@@ -7,10 +7,11 @@ import type { TimelinePeriod } from '../types/finance';
 describe('budgetEngine', () => {
   const mockPeriod: TimelinePeriod = {
     index: 0,
+    key: '2026-01',
     month: 1,
     year: 2026,
-    yearOffset: 0,
-    isFirstMonthOfYear: true
+    husbandAge: 30,
+    wifeAge: 28
   };
 
   describe('rebuildTreeFromFlatRatios', () => {

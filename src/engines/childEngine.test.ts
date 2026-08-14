@@ -4,7 +4,7 @@ import type { ChildEngineInput } from './childEngine';
 
 describe('childEngine', () => {
   const baseInput: ChildEngineInput = {
-    period: { year: 2030, month: 1, index: 0, yearOffset: 0, isFirstMonthOfYear: true, key: '2030-01' },
+    period: { year: 2030, month: 1, index: 0, key: '2030-01', husbandAge: 30, wifeAge: 28 },
     childBirthMonth: 1,
     childBirthYear: 2026,
     lifestyle: 'comfortable',
@@ -26,7 +26,7 @@ describe('childEngine', () => {
   it('should return inactive if period is before birth', () => {
     const result = calculateChildCost({
       ...baseInput,
-      period: { year: 2025, month: 1, index: 0, yearOffset: 0, isFirstMonthOfYear: true, key: '2025-01' }
+      period: { year: 2025, month: 1, index: 0, key: '2025-01', husbandAge: 30, wifeAge: 28 }
     });
     expect(result.isActive).toBe(false);
   });
@@ -34,7 +34,7 @@ describe('childEngine', () => {
   it('should return 0 cost if child is >= 25', () => {
     const result = calculateChildCost({
       ...baseInput,
-      period: { year: 2055, month: 1, index: 0, yearOffset: 0, isFirstMonthOfYear: true, key: '2055-01' } // age 29
+      period: { year: 2055, month: 1, index: 0, key: '2055-01', husbandAge: 30, wifeAge: 28 } // age 29
     });
     expect(result.isActive).toBe(true);
     expect(result.totalMonthly).toBe(0);
@@ -44,7 +44,7 @@ describe('childEngine', () => {
   it('should calculate infant cost without inflation', () => {
     const result = calculateChildCost({
       ...baseInput,
-      period: { year: 2026, month: 6, index: 0, yearOffset: 0, isFirstMonthOfYear: true, key: '2026-06' } // 5 months old -> age 0
+      period: { year: 2026, month: 6, index: 0, key: '2026-06', husbandAge: 30, wifeAge: 28 } // 5 months old -> age 0
     });
     expect(result.childAge).toBe(0);
     // Base cost: food(4) + health(2) + clothes(3) + travel(1) = 10
@@ -58,7 +58,7 @@ describe('childEngine', () => {
   it('should apply compounding inflation for older child', () => {
     const result = calculateChildCost({
       ...baseInput,
-      period: { year: 2036, month: 1, index: 0, yearOffset: 0, isFirstMonthOfYear: true, key: '2036-01' } // age 10 -> primary school
+      period: { year: 2036, month: 1, index: 0, key: '2036-01', husbandAge: 30, wifeAge: 28 } // age 10 -> primary school
     });
     expect(result.childAge).toBe(10);
     
@@ -75,7 +75,7 @@ describe('childEngine', () => {
   it('should apply budget cap', () => {
     const result = calculateChildCost({
       ...baseInput,
-      period: { year: 2046, month: 1, index: 0, yearOffset: 0, isFirstMonthOfYear: true, key: '2046-01' }, // age 20 -> university
+      period: { year: 2046, month: 1, index: 0, key: '2046-01', husbandAge: 30, wifeAge: 28 }, // age 20 -> university
       budgetCapMonthly: 15 // Very low cap
     });
     
@@ -87,7 +87,7 @@ describe('childEngine', () => {
   it('should calculate age groups correctly', () => {
     const testAge = (age: number) => calculateChildCost({
       ...baseInput,
-      period: { year: 2026 + age, month: 1, index: 0, yearOffset: 0, isFirstMonthOfYear: true, key: 'test' },
+      period: { year: 2026 + age, month: 1, index: 0, key: 'test', husbandAge: 30, wifeAge: 28 },
       educationInflationAnnual: 0, healthInflationAnnual: 0, generalInflationAnnual: 0
     });
 

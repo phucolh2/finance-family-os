@@ -6,11 +6,11 @@ import type { AssetConfig, AssetType } from '../types/portfolio';
 describe('portfolioEngine', () => {
   const mockPeriod: TimelinePeriod = {
     index: 0,
+    key: '2026-05',
     month: 5,
     year: 2026,
-    yearOffset: 0,
-    isFirstMonthOfYear: false,
-    key: '2026-05'
+    husbandAge: 30,
+    wifeAge: 28
   };
 
   const emptyPrevBalances: Record<AssetType, number> = {
