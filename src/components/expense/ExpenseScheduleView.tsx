@@ -4,13 +4,13 @@ import { Card, CardHeader, CardTitle, CardContent, CardDescription } from '../ui
 import { Button } from '../../components/ui/Button';
 import { Input } from '../../components/ui/Input';
 import { WarningBox } from '../../components/ui/WarningBox';
-import { Calendar, Save, Trash2, RefreshCw, AlertCircle, TrendingUp, Info, Zap, Plus, ChevronDown, ChevronRight, CheckCircle2, Wallet, PiggyBank, CircleDollarSign } from 'lucide-react';
+import { Calendar, Save, Trash2, RefreshCw, Zap, Plus, ChevronDown, ChevronRight, CheckCircle2 } from 'lucide-react';
 import { safeNumber } from '../../utils/math';
 import { formatTableMoneyVNDMillion } from '../../utils/format';
 import { rebuildTreeFromFlatRatios, collectLeafNodes } from '../../engines/budgetEngine';
 import { isWithinObservationPeriod, getPeriodGuardMessage } from '../../utils/periodGuard';
 
-import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip as RechartsTooltip, Legend } from 'recharts';
+import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip as RechartsTooltip } from 'recharts';
 
 const CHART_COLORS = ['#10b981', '#f59e0b', '#3b82f6', '#8b5cf6', '#ec4899', '#06b6d4', '#f43f5e', '#f97316', '#14b8a6'];
 
@@ -381,7 +381,7 @@ export const ExpenseScheduleView: React.FC = () => {
                       </span>
                       <button
                         type="button"
-                        onClick={() => setIsSettled(!isSettled)}
+                        onClick={() => { setIsSettled(!isSettled); }}
                         title="Khóa dữ liệu tháng này để không bị vô tình chỉnh sửa"
                         className={`w-10 h-5 flex items-center rounded-full p-0.5 transition-colors duration-200 focus:outline-none shrink-0 ${
                           isSettled ? 'bg-emerald-500' : 'bg-gray-300'
@@ -508,7 +508,7 @@ export const ExpenseScheduleView: React.FC = () => {
                                 ))}
                               </Pie>
                               <RechartsTooltip 
-                                formatter={(value: any) => [`${formatTableMoneyVNDMillion(value as number)}`, 'Thực chi']}
+                                formatter={(value: any) => [formatTableMoneyVNDMillion(value as number), 'Thực chi']}
                                 contentStyle={{ borderRadius: '12px', border: '1px solid rgba(0,0,0,0.05)', boxShadow: '0 8px 24px rgba(0,0,0,0.12)' }}
                                 itemStyle={{ fontWeight: 600 }}
                               />

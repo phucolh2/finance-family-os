@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import { runProjection } from '../projectionEngine';
-import type { AppState, SinkingFund } from '../../types/finance';
+import type { SinkingFund } from '../../types/finance';
 
 describe('projectionEngine', () => {
   it('should decrease sinking fund balances correctly with Track B events', () => {
@@ -60,6 +60,6 @@ describe('projectionEngine', () => {
     expect(month10).toBeDefined();
     // Event impact is 5 per month starting in Feb. Jan to Oct is 10 months, so it deducts 5 for 9 months (Feb to Oct).
     // The balance at month 10 should be -45.
-    expect(month10!._groupBalances!['fund1']).toBe(-45);
+    expect(month10!._groupBalances!.fund1).toBe(-45);
   });
 });

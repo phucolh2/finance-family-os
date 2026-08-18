@@ -123,7 +123,7 @@ export const ReservesFundCard: React.FC<FundCardProps> = ({
         </div>
 
         <button 
-           onClick={() => setExpandedFundId(expandedFundId === fund.id ? null : fund.id)}
+           onClick={() => { setExpandedFundId(expandedFundId === fund.id ? null : fund.id); }}
            className="mt-3 text-[11px] text-rose-600 hover:text-rose-700 font-semibold flex items-center justify-center w-full py-1.5 bg-rose-100/30 hover:bg-rose-100/50 rounded transition-colors"
          >
            {expandedFundId === fund.id ? 'Đóng chi tiết' : 'Kiểm tra chi tiết & Dòng tiền'}

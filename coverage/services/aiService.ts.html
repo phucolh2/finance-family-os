@@ -1,0 +1,745 @@
+
+<!doctype html>
+<html lang="en">
+
+<head>
+    <title>Code coverage report for services/aiService.ts</title>
+    <meta charset="utf-8" />
+    <link rel="stylesheet" href="../prettify.css" />
+    <link rel="stylesheet" href="../base.css" />
+    <link rel="shortcut icon" type="image/x-icon" href="../favicon.png" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <style type='text/css'>
+        .coverage-summary .sorter {
+            background-image: url(../sort-arrow-sprite.png);
+        }
+    </style>
+</head>
+    
+<body>
+<div class='wrapper'>
+    <div class='pad1'>
+        <h1><a href="../index.html">All files</a> / <a href="index.html">services</a> aiService.ts</h1>
+        <div class='clearfix'>
+            
+            <div class='fl pad1y space-right2'>
+                <span class="strong">4.1% </span>
+                <span class="quiet">Statements</span>
+                <span class='fraction'>3/73</span>
+            </div>
+        
+            
+            <div class='fl pad1y space-right2'>
+                <span class="strong">0% </span>
+                <span class="quiet">Branches</span>
+                <span class='fraction'>0/64</span>
+            </div>
+        
+            
+            <div class='fl pad1y space-right2'>
+                <span class="strong">0% </span>
+                <span class="quiet">Functions</span>
+                <span class='fraction'>0/9</span>
+            </div>
+        
+            
+            <div class='fl pad1y space-right2'>
+                <span class="strong">4.41% </span>
+                <span class="quiet">Lines</span>
+                <span class='fraction'>3/68</span>
+            </div>
+        
+            
+        </div>
+        <p class="quiet">
+            Press <em>n</em> or <em>j</em> to go to the next uncovered block, <em>b</em>, <em>p</em> or <em>k</em> for the previous block.
+        </p>
+        <template id="filterTemplate">
+            <div class="quiet">
+                Filter:
+                <input type="search" id="fileSearch">
+            </div>
+        </template>
+    </div>
+    <div class='status-line low'></div>
+    <pre><table class="coverage">
+<tr><td class="line-count quiet"><a name='L1'></a><a href='#L1'>1</a>
+<a name='L2'></a><a href='#L2'>2</a>
+<a name='L3'></a><a href='#L3'>3</a>
+<a name='L4'></a><a href='#L4'>4</a>
+<a name='L5'></a><a href='#L5'>5</a>
+<a name='L6'></a><a href='#L6'>6</a>
+<a name='L7'></a><a href='#L7'>7</a>
+<a name='L8'></a><a href='#L8'>8</a>
+<a name='L9'></a><a href='#L9'>9</a>
+<a name='L10'></a><a href='#L10'>10</a>
+<a name='L11'></a><a href='#L11'>11</a>
+<a name='L12'></a><a href='#L12'>12</a>
+<a name='L13'></a><a href='#L13'>13</a>
+<a name='L14'></a><a href='#L14'>14</a>
+<a name='L15'></a><a href='#L15'>15</a>
+<a name='L16'></a><a href='#L16'>16</a>
+<a name='L17'></a><a href='#L17'>17</a>
+<a name='L18'></a><a href='#L18'>18</a>
+<a name='L19'></a><a href='#L19'>19</a>
+<a name='L20'></a><a href='#L20'>20</a>
+<a name='L21'></a><a href='#L21'>21</a>
+<a name='L22'></a><a href='#L22'>22</a>
+<a name='L23'></a><a href='#L23'>23</a>
+<a name='L24'></a><a href='#L24'>24</a>
+<a name='L25'></a><a href='#L25'>25</a>
+<a name='L26'></a><a href='#L26'>26</a>
+<a name='L27'></a><a href='#L27'>27</a>
+<a name='L28'></a><a href='#L28'>28</a>
+<a name='L29'></a><a href='#L29'>29</a>
+<a name='L30'></a><a href='#L30'>30</a>
+<a name='L31'></a><a href='#L31'>31</a>
+<a name='L32'></a><a href='#L32'>32</a>
+<a name='L33'></a><a href='#L33'>33</a>
+<a name='L34'></a><a href='#L34'>34</a>
+<a name='L35'></a><a href='#L35'>35</a>
+<a name='L36'></a><a href='#L36'>36</a>
+<a name='L37'></a><a href='#L37'>37</a>
+<a name='L38'></a><a href='#L38'>38</a>
+<a name='L39'></a><a href='#L39'>39</a>
+<a name='L40'></a><a href='#L40'>40</a>
+<a name='L41'></a><a href='#L41'>41</a>
+<a name='L42'></a><a href='#L42'>42</a>
+<a name='L43'></a><a href='#L43'>43</a>
+<a name='L44'></a><a href='#L44'>44</a>
+<a name='L45'></a><a href='#L45'>45</a>
+<a name='L46'></a><a href='#L46'>46</a>
+<a name='L47'></a><a href='#L47'>47</a>
+<a name='L48'></a><a href='#L48'>48</a>
+<a name='L49'></a><a href='#L49'>49</a>
+<a name='L50'></a><a href='#L50'>50</a>
+<a name='L51'></a><a href='#L51'>51</a>
+<a name='L52'></a><a href='#L52'>52</a>
+<a name='L53'></a><a href='#L53'>53</a>
+<a name='L54'></a><a href='#L54'>54</a>
+<a name='L55'></a><a href='#L55'>55</a>
+<a name='L56'></a><a href='#L56'>56</a>
+<a name='L57'></a><a href='#L57'>57</a>
+<a name='L58'></a><a href='#L58'>58</a>
+<a name='L59'></a><a href='#L59'>59</a>
+<a name='L60'></a><a href='#L60'>60</a>
+<a name='L61'></a><a href='#L61'>61</a>
+<a name='L62'></a><a href='#L62'>62</a>
+<a name='L63'></a><a href='#L63'>63</a>
+<a name='L64'></a><a href='#L64'>64</a>
+<a name='L65'></a><a href='#L65'>65</a>
+<a name='L66'></a><a href='#L66'>66</a>
+<a name='L67'></a><a href='#L67'>67</a>
+<a name='L68'></a><a href='#L68'>68</a>
+<a name='L69'></a><a href='#L69'>69</a>
+<a name='L70'></a><a href='#L70'>70</a>
+<a name='L71'></a><a href='#L71'>71</a>
+<a name='L72'></a><a href='#L72'>72</a>
+<a name='L73'></a><a href='#L73'>73</a>
+<a name='L74'></a><a href='#L74'>74</a>
+<a name='L75'></a><a href='#L75'>75</a>
+<a name='L76'></a><a href='#L76'>76</a>
+<a name='L77'></a><a href='#L77'>77</a>
+<a name='L78'></a><a href='#L78'>78</a>
+<a name='L79'></a><a href='#L79'>79</a>
+<a name='L80'></a><a href='#L80'>80</a>
+<a name='L81'></a><a href='#L81'>81</a>
+<a name='L82'></a><a href='#L82'>82</a>
+<a name='L83'></a><a href='#L83'>83</a>
+<a name='L84'></a><a href='#L84'>84</a>
+<a name='L85'></a><a href='#L85'>85</a>
+<a name='L86'></a><a href='#L86'>86</a>
+<a name='L87'></a><a href='#L87'>87</a>
+<a name='L88'></a><a href='#L88'>88</a>
+<a name='L89'></a><a href='#L89'>89</a>
+<a name='L90'></a><a href='#L90'>90</a>
+<a name='L91'></a><a href='#L91'>91</a>
+<a name='L92'></a><a href='#L92'>92</a>
+<a name='L93'></a><a href='#L93'>93</a>
+<a name='L94'></a><a href='#L94'>94</a>
+<a name='L95'></a><a href='#L95'>95</a>
+<a name='L96'></a><a href='#L96'>96</a>
+<a name='L97'></a><a href='#L97'>97</a>
+<a name='L98'></a><a href='#L98'>98</a>
+<a name='L99'></a><a href='#L99'>99</a>
+<a name='L100'></a><a href='#L100'>100</a>
+<a name='L101'></a><a href='#L101'>101</a>
+<a name='L102'></a><a href='#L102'>102</a>
+<a name='L103'></a><a href='#L103'>103</a>
+<a name='L104'></a><a href='#L104'>104</a>
+<a name='L105'></a><a href='#L105'>105</a>
+<a name='L106'></a><a href='#L106'>106</a>
+<a name='L107'></a><a href='#L107'>107</a>
+<a name='L108'></a><a href='#L108'>108</a>
+<a name='L109'></a><a href='#L109'>109</a>
+<a name='L110'></a><a href='#L110'>110</a>
+<a name='L111'></a><a href='#L111'>111</a>
+<a name='L112'></a><a href='#L112'>112</a>
+<a name='L113'></a><a href='#L113'>113</a>
+<a name='L114'></a><a href='#L114'>114</a>
+<a name='L115'></a><a href='#L115'>115</a>
+<a name='L116'></a><a href='#L116'>116</a>
+<a name='L117'></a><a href='#L117'>117</a>
+<a name='L118'></a><a href='#L118'>118</a>
+<a name='L119'></a><a href='#L119'>119</a>
+<a name='L120'></a><a href='#L120'>120</a>
+<a name='L121'></a><a href='#L121'>121</a>
+<a name='L122'></a><a href='#L122'>122</a>
+<a name='L123'></a><a href='#L123'>123</a>
+<a name='L124'></a><a href='#L124'>124</a>
+<a name='L125'></a><a href='#L125'>125</a>
+<a name='L126'></a><a href='#L126'>126</a>
+<a name='L127'></a><a href='#L127'>127</a>
+<a name='L128'></a><a href='#L128'>128</a>
+<a name='L129'></a><a href='#L129'>129</a>
+<a name='L130'></a><a href='#L130'>130</a>
+<a name='L131'></a><a href='#L131'>131</a>
+<a name='L132'></a><a href='#L132'>132</a>
+<a name='L133'></a><a href='#L133'>133</a>
+<a name='L134'></a><a href='#L134'>134</a>
+<a name='L135'></a><a href='#L135'>135</a>
+<a name='L136'></a><a href='#L136'>136</a>
+<a name='L137'></a><a href='#L137'>137</a>
+<a name='L138'></a><a href='#L138'>138</a>
+<a name='L139'></a><a href='#L139'>139</a>
+<a name='L140'></a><a href='#L140'>140</a>
+<a name='L141'></a><a href='#L141'>141</a>
+<a name='L142'></a><a href='#L142'>142</a>
+<a name='L143'></a><a href='#L143'>143</a>
+<a name='L144'></a><a href='#L144'>144</a>
+<a name='L145'></a><a href='#L145'>145</a>
+<a name='L146'></a><a href='#L146'>146</a>
+<a name='L147'></a><a href='#L147'>147</a>
+<a name='L148'></a><a href='#L148'>148</a>
+<a name='L149'></a><a href='#L149'>149</a>
+<a name='L150'></a><a href='#L150'>150</a>
+<a name='L151'></a><a href='#L151'>151</a>
+<a name='L152'></a><a href='#L152'>152</a>
+<a name='L153'></a><a href='#L153'>153</a>
+<a name='L154'></a><a href='#L154'>154</a>
+<a name='L155'></a><a href='#L155'>155</a>
+<a name='L156'></a><a href='#L156'>156</a>
+<a name='L157'></a><a href='#L157'>157</a>
+<a name='L158'></a><a href='#L158'>158</a>
+<a name='L159'></a><a href='#L159'>159</a>
+<a name='L160'></a><a href='#L160'>160</a>
+<a name='L161'></a><a href='#L161'>161</a>
+<a name='L162'></a><a href='#L162'>162</a>
+<a name='L163'></a><a href='#L163'>163</a>
+<a name='L164'></a><a href='#L164'>164</a>
+<a name='L165'></a><a href='#L165'>165</a>
+<a name='L166'></a><a href='#L166'>166</a>
+<a name='L167'></a><a href='#L167'>167</a>
+<a name='L168'></a><a href='#L168'>168</a>
+<a name='L169'></a><a href='#L169'>169</a>
+<a name='L170'></a><a href='#L170'>170</a>
+<a name='L171'></a><a href='#L171'>171</a>
+<a name='L172'></a><a href='#L172'>172</a>
+<a name='L173'></a><a href='#L173'>173</a>
+<a name='L174'></a><a href='#L174'>174</a>
+<a name='L175'></a><a href='#L175'>175</a>
+<a name='L176'></a><a href='#L176'>176</a>
+<a name='L177'></a><a href='#L177'>177</a>
+<a name='L178'></a><a href='#L178'>178</a>
+<a name='L179'></a><a href='#L179'>179</a>
+<a name='L180'></a><a href='#L180'>180</a>
+<a name='L181'></a><a href='#L181'>181</a>
+<a name='L182'></a><a href='#L182'>182</a>
+<a name='L183'></a><a href='#L183'>183</a>
+<a name='L184'></a><a href='#L184'>184</a>
+<a name='L185'></a><a href='#L185'>185</a>
+<a name='L186'></a><a href='#L186'>186</a>
+<a name='L187'></a><a href='#L187'>187</a>
+<a name='L188'></a><a href='#L188'>188</a>
+<a name='L189'></a><a href='#L189'>189</a>
+<a name='L190'></a><a href='#L190'>190</a>
+<a name='L191'></a><a href='#L191'>191</a>
+<a name='L192'></a><a href='#L192'>192</a>
+<a name='L193'></a><a href='#L193'>193</a>
+<a name='L194'></a><a href='#L194'>194</a>
+<a name='L195'></a><a href='#L195'>195</a>
+<a name='L196'></a><a href='#L196'>196</a>
+<a name='L197'></a><a href='#L197'>197</a>
+<a name='L198'></a><a href='#L198'>198</a>
+<a name='L199'></a><a href='#L199'>199</a>
+<a name='L200'></a><a href='#L200'>200</a>
+<a name='L201'></a><a href='#L201'>201</a>
+<a name='L202'></a><a href='#L202'>202</a>
+<a name='L203'></a><a href='#L203'>203</a>
+<a name='L204'></a><a href='#L204'>204</a>
+<a name='L205'></a><a href='#L205'>205</a>
+<a name='L206'></a><a href='#L206'>206</a>
+<a name='L207'></a><a href='#L207'>207</a>
+<a name='L208'></a><a href='#L208'>208</a>
+<a name='L209'></a><a href='#L209'>209</a>
+<a name='L210'></a><a href='#L210'>210</a>
+<a name='L211'></a><a href='#L211'>211</a>
+<a name='L212'></a><a href='#L212'>212</a>
+<a name='L213'></a><a href='#L213'>213</a>
+<a name='L214'></a><a href='#L214'>214</a>
+<a name='L215'></a><a href='#L215'>215</a>
+<a name='L216'></a><a href='#L216'>216</a>
+<a name='L217'></a><a href='#L217'>217</a>
+<a name='L218'></a><a href='#L218'>218</a>
+<a name='L219'></a><a href='#L219'>219</a>
+<a name='L220'></a><a href='#L220'>220</a>
+<a name='L221'></a><a href='#L221'>221</a></td><td class="line-coverage quiet"><span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">2x</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">2x</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">2x</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span></td><td class="text"><pre class="prettyprint lang-js">import { GoogleGenerativeAI } from '@google/generative-ai';
+import type { AppState } from '../types/finance';
+&nbsp;
+// Hàm dịch toàn bộ dữ liệu AppContext thành Markdown Prompt
+export const <span class="fstat-no" title="function not covered" >buildSystemContext = (s</span>tate: AppState): string =&gt; {
+  const { profile, incomeSchedule, budgetSchedule, lifeEvents, investmentDeals, assumptions } = <span class="cstat-no" title="statement not covered" >state;</span>
+&nbsp;
+  const currentIncome = <span class="cstat-no" title="statement not covered" >incomeSchedule.length &gt; 0 ? incomeSchedule[0].incomeMonthly : 0;</span>
+  const currentBudget = <span class="cstat-no" title="statement not covered" >budgetSchedule.length &gt; 0 ? budgetSchedule[0] : null;</span>
+&nbsp;
+  let budgetText = <span class="cstat-no" title="statement not covered" >'';</span>
+<span class="cstat-no" title="statement not covered" >  if (currentBudget &amp;&amp; currentBudget.rootGroups) {</span>
+<span class="cstat-no" title="statement not covered" >    budgetText = currentBudget.rootGroups</span>
+      .<span class="fstat-no" title="function not covered" >map(g</span>roup =&gt; <span class="cstat-no" title="statement not covered" >`- ${group.name}: ${group.ratioPercent}%`)</span>
+      .join('\n');
+  }
+&nbsp;
+<span class="cstat-no" title="statement not covered" >  return `Bạn là "Finance Family OS Copilot" - một trợ lý tài chính AI thông minh được nhúng trực tiếp vào phần mềm quản lý gia đình.</span>
+Nhiệm vụ của bạn là trả lời các câu hỏi tài chính dựa trên DỮ LIỆU HIỆN TẠI của người dùng.
+Luôn trả lời bằng tiếng Việt, ngắn gọn, súc tích, chuyên nghiệp và có sự đồng cảm.
+Khi tính toán, hãy cẩn thận và chỉ ra các con số rõ ràng. Dùng Markdown để định dạng câu trả lời cho đẹp (in đậm số tiền, dùng danh sách).
+&nbsp;
+DƯỚI ĐÂY LÀ DỮ LIỆU HIỆN TẠI CỦA GIA ĐÌNH:
+&nbsp;
+--- 1. TỔNG QUAN ---
+- Vốn khởi điểm: ${profile.startingCapital || 0} triệu VND
+- Lạm phát dự kiến: ${assumptions.generalInflationRateAnnual}% / năm
+- Lãi tiết kiệm dự kiến: ${assumptions.savingsInterestRateAnnual}% / năm
+- Thu nhập mỗi tháng hiện tại: ${currentIncome} triệu VND
+&nbsp;
+--- 2. PHÂN BỔ NGÂN SÁCH ---
+(Tỷ trọng phân bổ dòng tiền hàng tháng:)
+${budgetText}
+&nbsp;
+--- 3. SỰ KIỆN CUỘC ĐỜI (Tương lai) ---
+${!lifeEvents || lifeEvents.length === 0 ? 'Chưa có sự kiện nào.' : lifeEvents.<span class="fstat-no" title="function not covered" >map(e</span> =&gt; <span class="cstat-no" title="statement not covered" >`- Tháng ${e.month}/${e.year}: [${e.type}] ${e.name}. Tác động 1 lần: ${e.amount} triệu. Tác động dòng tiền: ${e.recurringMonthlyImpact || 0} triệu/tháng. Nguồn: ${e.source}`)</span>.join('\n')}
+&nbsp;
+--- 4. THƯƠNG VỤ ĐẦU TƯ ---
+${!investmentDeals || investmentDeals.length === 0 ? 'Chưa có khoản đầu tư nào.' : investmentDeals.<span class="fstat-no" title="function not covered" >map(d</span> =&gt; <span class="cstat-no" title="statement not covered" >`- [${d.assetType}] ${d.name}. Vốn: ${d.capital} triệu. Tình trạng: ${d.status === 'settled' ? 'Đã tất toán' : 'Đang chạy'}. Lãi đã chốt: ${d.realizedProfit || 0} triệu.`)</span>.join('\n')}
+&nbsp;
+HƯỚNG DẪN TRẢ LỜI:
+1. Luôn ưu tiên dùng dữ liệu ở trên để trả lời.
+2. Trừ khi được yêu cầu, hãy luôn dùng dữ liệu TỔNG QUAN và SỰ KIỆN CUỘC ĐỜI để nhẩm tính tình hình tài chính trong tương lai.
+3. Không khuyên những thứ sáo rỗng, hãy nói thẳng vào con số của người dùng.`;
+};
+&nbsp;
+// Hàm gửi tin nhắn tới Gemini API
+export const sendChatMessage = <span class="fstat-no" title="function not covered" >async (</span>
+  apiKey: string,
+  message: string,
+  chatHistory: { role: 'user' | 'model'; parts: { text: string }[] }[],
+  state: AppState
+) =&gt; {
+<span class="cstat-no" title="statement not covered" >  if (!apiKey) <span class="cstat-no" title="statement not covered" >throw new Error("Chưa cấu hình Gemini API Key.");</span></span>
+&nbsp;
+  const genAI = <span class="cstat-no" title="statement not covered" >new GoogleGenerativeAI(apiKey);</span>
+  // Dùng gemini-2.5-flash để hỗ trợ hạn mức Free Tier tốt nhất
+  const model = <span class="cstat-no" title="statement not covered" >genAI.getGenerativeModel({ </span>
+    model: 'gemini-2.5-flash',
+    systemInstruction: buildSystemContext(state)
+  });
+&nbsp;
+  const chat = <span class="cstat-no" title="statement not covered" >model.startChat({</span>
+    history: chatHistory,
+    generationConfig: {
+      maxOutputTokens: 1000,
+      temperature: 0.7,
+    },
+  });
+&nbsp;
+  const result = <span class="cstat-no" title="statement not covered" >await chat.sendMessage(message);</span>
+  const response = <span class="cstat-no" title="statement not covered" >await result.response;</span>
+<span class="cstat-no" title="statement not covered" >  return response.text();</span>
+};
+&nbsp;
+export const <span class="fstat-no" title="function not covered" >analyzeAllocationOffline = (</span>
+  inputData: {
+    thu_nhap_du_phong: number;
+    goc_phan_bo: number;
+    cay_ngan_sach: { ten_muc: string; ty_le_phan_tram: number; so_tien: number; classification?: string }[];
+    chi_phi_hang_thang: number;
+    current_liquidity: number;
+  }
+) =&gt; {
+  const { thu_nhap_du_phong, goc_phan_bo, cay_ngan_sach, chi_phi_hang_thang, current_liquidity } = <span class="cstat-no" title="statement not covered" >inputData;</span>
+  const thang_du = <span class="cstat-no" title="statement not covered" >Math.max(0, thu_nhap_du_phong - goc_phan_bo);</span>
+&nbsp;
+  const benchmarks = <span class="cstat-no" title="statement not covered" >{</span>
+    muc_tieu_tu_do_tai_chinh: thu_nhap_du_phong * 300,
+    dau_tu_toi_thieu: goc_phan_bo * 0.20,
+    quy_khan_cap_can: chi_phi_hang_thang * 3,
+    chi_phi_toi_da: goc_phan_bo * 0.50
+  };
+&nbsp;
+  const canh_bao: any[] = <span class="cstat-no" title="statement not covered" >[];</span>
+  let totalPercent = <span class="cstat-no" title="statement not covered" >0;</span>
+  let allGood = <span class="cstat-no" title="statement not covered" >true;</span>
+&nbsp;
+  let totalExpense = <span class="cstat-no" title="statement not covered" >0;</span>
+  let totalInvestment = <span class="cstat-no" title="statement not covered" >0;</span>
+&nbsp;
+  let totalSavings = <span class="cstat-no" title="statement not covered" >0;</span>
+  let totalReserve = <span class="cstat-no" title="statement not covered" >0;</span>
+&nbsp;
+<span class="cstat-no" title="statement not covered" >  cay_ngan_sach.<span class="fstat-no" title="function not covered" >forEach(i</span>tem =&gt; {</span>
+    const percent = <span class="cstat-no" title="statement not covered" >item.ty_le_phan_tram;</span>
+<span class="cstat-no" title="statement not covered" >    totalPercent += percent;</span>
+    
+    // Nếu không có phân loại cứng thì tự đoán dựa trên tên
+    const cls = <span class="cstat-no" title="statement not covered" >item.classification || (</span>
+      item.ten_muc.toLowerCase().includes('sinh hoạt') || item.ten_muc.toLowerCase().includes('thiết yếu') ? 'expense' :
+      item.ten_muc.toLowerCase().includes('đầu tư') || item.ten_muc.toLowerCase().includes('tích lũy') ? 'investment' :
+      item.ten_muc.toLowerCase().includes('tiết kiệm') ? 'savings' : 'debt_reserve'
+    );
+&nbsp;
+<span class="cstat-no" title="statement not covered" >    if (cls === 'expense') <span class="cstat-no" title="statement not covered" >totalExpense += percent;</span></span>
+<span class="cstat-no" title="statement not covered" >    if (cls === 'investment') <span class="cstat-no" title="statement not covered" >totalInvestment += percent;</span></span>
+<span class="cstat-no" title="statement not covered" >    if (cls === 'savings') <span class="cstat-no" title="statement not covered" >totalSavings += percent;</span></span>
+<span class="cstat-no" title="statement not covered" >    if (cls === 'debt_reserve') <span class="cstat-no" title="statement not covered" >totalReserve += percent;</span></span>
+  });
+&nbsp;
+<span class="cstat-no" title="statement not covered" >  if (totalExpense &gt; 50) {</span>
+<span class="cstat-no" title="statement not covered" >    allGood = false;</span>
+<span class="cstat-no" title="statement not covered" >    canh_bao.push({</span>
+      muc_do: 'cao',
+      tieu_de: 'Chi phí sinh hoạt quá cao',
+      noi_dung: `Chi phí thiết yếu đang phân bổ chiếm ${totalExpense.toFixed(1)}%, vượt ngưỡng an toàn khuyến nghị 50%.`,
+      de_xuat_hanh_dong: 'Cân nhắc cắt giảm các khoản chi tiêu không cần thiết hoặc tối ưu hóa chi phí cố định.'
+    });
+  }
+&nbsp;
+<span class="cstat-no" title="statement not covered" >  if (totalInvestment &lt; 20) {</span>
+<span class="cstat-no" title="statement not covered" >    allGood = false;</span>
+<span class="cstat-no" title="statement not covered" >    canh_bao.push({</span>
+      muc_do: 'trung_binh',
+      tieu_de: 'Tỷ lệ đầu tư thấp',
+      noi_dung: `Đầu tư hiện tại chỉ phân bổ ${totalInvestment.toFixed(1)}%, dưới mức tối thiểu 20% để đạt tự do tài chính đúng lộ trình.`,
+      de_xuat_hanh_dong: 'Cố gắng trích lập thêm quỹ đầu tư ngay khi nhận lương (Pay Yourself First).'
+    });
+  }
+&nbsp;
+<span class="cstat-no" title="statement not covered" >  if (Math.abs(totalPercent - 100) &gt; 0.1) {</span>
+<span class="cstat-no" title="statement not covered" >    allGood = false;</span>
+<span class="cstat-no" title="statement not covered" >    canh_bao.push({</span>
+      muc_do: 'cao',
+      tieu_de: 'Cấu hình tỷ lệ lỗi',
+      noi_dung: `Cây ngân sách đang phân bổ ${totalPercent.toFixed(1)}%, chưa khớp 100% Gốc phân bổ.`,
+      de_xuat_hanh_dong: 'Vào cấu hình Cây ngân sách để điều chỉnh lại tổng tỷ lệ các quỹ về chuẩn 100%.'
+    });
+  }
+&nbsp;
+<span class="cstat-no" title="statement not covered" >  if (current_liquidity &lt; benchmarks.quy_khan_cap_can) {</span>
+<span class="cstat-no" title="statement not covered" >    allGood = false;</span>
+<span class="cstat-no" title="statement not covered" >    canh_bao.push({</span>
+      muc_do: 'trung_binh',
+      tieu_de: 'Số dư quỹ khẩn cấp thấp',
+      noi_dung: `Thanh khoản thực tế tích lũy của bạn là ${formatTableMoneyVNDMillionOffline(current_liquidity)}, chưa đạt mức tối thiểu an toàn (${formatTableMoneyVNDMillionOffline(benchmarks.quy_khan_cap_can)} - 3 tháng chi phí).`,
+      de_xuat_hanh_dong: 'Ưu tiên dùng tiền dư và tăng tỷ lệ phân bổ vào quỹ Dự phòng trước khi đầu tư rủi ro.'
+    });
+<span class="cstat-no" title="statement not covered" >    if (totalSavings + totalReserve === 0) {</span>
+<span class="cstat-no" title="statement not covered" >      canh_bao.push({</span>
+        muc_do: 'cao',
+        tieu_de: 'Thiếu trích lập dự phòng',
+        noi_dung: `Bạn đang thiếu tiền dự phòng nhưng Cây ngân sách lại đang trích 0% cho Tiết kiệm/Dự phòng.`,
+        de_xuat_hanh_dong: 'Chỉnh sửa Cây ngân sách ngay để tự động chảy tiền vào quỹ Khẩn cấp hàng tháng.'
+      });
+    }
+  } else <span class="cstat-no" title="statement not covered" >if (current_liquidity &lt; chi_phi_hang_thang * 6) {</span>
+<span class="cstat-no" title="statement not covered" >    canh_bao.push({</span>
+      muc_do: 'thong_tin',
+      tieu_de: 'Tối ưu số dư dự phòng',
+      noi_dung: `Quỹ khẩn cấp đã qua mức tối thiểu nhưng chưa đạt mức lý tưởng 6 tháng (${formatTableMoneyVNDMillionOffline(chi_phi_hang_thang * 6)}).`,
+      de_xuat_hanh_dong: 'Nên trích một phần thặng dư để tiếp tục bồi đắp quỹ này cho an tâm tuyệt đối.'
+    });
+  }
+&nbsp;
+<span class="cstat-no" title="statement not covered" >  if (thang_du &gt; 0) {</span>
+<span class="cstat-no" title="statement not covered" >    canh_bao.push({</span>
+      muc_do: 'thong_tin',
+      tieu_de: 'Tối ưu hóa thặng dư',
+      noi_dung: `Bạn đang có dư ${formatTableMoneyVNDMillionOffline(thang_du)}, số tiền này có thể bị hao hụt nếu để không.`,
+      de_xuat_hanh_dong: 'Có thể chuyển ngay thặng dư này sang Quỹ tích lũy hoặc Đầu tư qua chức năng Điều chuyển dòng tiền.'
+    });
+  }
+&nbsp;
+  let idealExpense = <span class="cstat-no" title="statement not covered" >50;</span>
+  let idealInvestment = <span class="cstat-no" title="statement not covered" >30;</span>
+  let idealSavings = <span class="cstat-no" title="statement not covered" >10;</span>
+  let idealReserve = <span class="cstat-no" title="statement not covered" >10;</span>
+  let reason = <span class="cstat-no" title="statement not covered" >"Mô hình Tự do Tài chính (FIRE) tối ưu: Giữ chi phí cơ bản ở mức 50%, dành 10% Tiết kiệm phòng rủi ro, 10% Dự phòng hưởng thụ/cơ hội. Quan trọng nhất: Dồn tối đa 30% (thay vì 20% tối thiểu) vào Đầu tư để tăng tốc độ đạt Tự do tài chính.";</span>
+&nbsp;
+  const de_xuat_phan_bo = <span class="cstat-no" title="statement not covered" >{</span>
+    expense: { percent: idealExpense, amount: goc_phan_bo * idealExpense / 100 },
+    investment: { percent: idealInvestment, amount: goc_phan_bo * idealInvestment / 100 },
+    savings: { percent: idealSavings, amount: goc_phan_bo * idealSavings / 100 },
+    reserve: { percent: idealReserve, amount: goc_phan_bo * idealReserve / 100 },
+    ly_do: reason
+  };
+&nbsp;
+<span class="cstat-no" title="statement not covered" >  return {</span>
+    goc_phan_bo,
+    thang_du,
+    benchmarks,
+    canh_bao: canh_bao.<span class="fstat-no" title="function not covered" >sort((a</span>, b) =&gt; {
+      const rank = <span class="cstat-no" title="statement not covered" >{ cao: 0, trung_binh: 1, thong_tin: 2 };</span>
+<span class="cstat-no" title="statement not covered" >      return rank[a.muc_do as keyof typeof rank] - rank[b.muc_do as keyof typeof rank];</span>
+    }).slice(0, 3), // Lấy top 3
+    de_xuat_phan_bo,
+    tong_ket: allGood ? 
+      "Xin chúc mừng! Cơ cấu phân bổ ngân sách của bạn đang đạt mức tối ưu theo các quy chuẩn tài chính cá nhân. Hãy tiếp tục duy trì kỷ luật này nhé." : 
+      "Dựa trên các chuẩn mực tài chính, dòng tiền của bạn cần được tinh chỉnh đôi chút để tối ưu hóa khả năng tích lũy và phòng vệ rủi ro. Hãy xem các cảnh báo bên dưới."
+  };
+};
+&nbsp;
+function <span class="fstat-no" title="function not covered" >formatTableMoneyVNDMillionOffline(a</span>mount: number): string {
+<span class="cstat-no" title="statement not covered" >  if (amount &gt;= 1000) {</span>
+<span class="cstat-no" title="statement not covered" >    return (amount / 1000).toLocaleString('en-US', { minimumFractionDigits: 1, maximumFractionDigits: 2 }) + ' Tỷ';</span>
+  }
+<span class="cstat-no" title="statement not covered" >  return amount.toLocaleString('en-US', { minimumFractionDigits: 1, maximumFractionDigits: 2 }) + ' Tr';</span>
+}
+&nbsp;</pre></td></tr></table></pre>
+
+                <div class='push'></div><!-- for sticky footer -->
+            </div><!-- /wrapper -->
+            <div class='footer quiet pad2 space-top1 center small'>
+                Code coverage generated by
+                <a href="https://istanbul.js.org/" target="_blank" rel="noopener noreferrer">istanbul</a>
+                at 2026-08-18T08:28:46.931Z
+            </div>
+        <script src="../prettify.js"></script>
+        <script>
+            window.onload = function () {
+                prettyPrint();
+            };
+        </script>
+        <script src="../sorter.js"></script>
+        <script src="../block-navigation.js"></script>
+    </body>
+</html>
+    

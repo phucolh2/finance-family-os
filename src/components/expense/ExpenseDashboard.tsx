@@ -5,7 +5,7 @@ import { Card, CardHeader, CardTitle, CardContent } from '../ui/Card';
 import { HelpTooltip } from '../ui/HelpTooltip';
 import { formatTableMoneyVNDMillion } from '../../utils/format';
 import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip as RechartsTooltip, Legend, Bar, Line, XAxis, YAxis, CartesianGrid, ComposedChart } from 'recharts';
-import { PieChart as PieChartIcon, ChevronRight, ChevronDown } from 'lucide-react';
+import { PieChart as PieChartIcon } from 'lucide-react';
 import type { BudgetGroup } from '../../types/budget';
 
 export interface ExpenseDashboardProps {
@@ -43,13 +43,13 @@ export const ExpenseDashboard: React.FC<ExpenseDashboardProps> = ({ filter, setF
     
     const groups: { value: BudgetGroup | 'all'; label: string }[] = [{ value: 'all', label: 'Tất cả' }];
     expenseTree.forEach(g => {
-      groups.push({ value: g.groupId as BudgetGroup, label: `TỔNG ${g.name}` });
+      groups.push({ value: g.groupId, label: `TỔNG ${g.name}` });
     });
     return groups;
   }, [activeBudget]);
 
   const expenseGroupIds = useMemo(() => {
-    return FILTER_GROUPS.filter(f => f.value !== 'all').map(f => f.value as string);
+    return FILTER_GROUPS.filter(f => f.value !== 'all').map(f => f.value);
   }, [FILTER_GROUPS]);
 
   const expenseData = useMemo(() => {

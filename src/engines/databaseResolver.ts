@@ -131,18 +131,18 @@ export function generateResolvedMonthlyDb(
       totalActualExpenseMonthly: Math.round(totalActualExpenseMonthly * 100) / 100,
       actualExpenseCategories,
       actualExpenseByGroup,
-      budgetRatios: Object.keys(ratios).reduce((acc, key) => {
+      budgetRatios: Object.keys(ratios).reduce<Record<string, number>>((acc, key) => {
         acc[key] = Math.round(ratios[key] * 100) / 100;
         return acc;
-      }, {} as Record<string, number>),
-      budgetAmounts: Object.keys(amounts).reduce((acc, key) => {
+      }, {}),
+      budgetAmounts: Object.keys(amounts).reduce<Record<string, number>>((acc, key) => {
         acc[key] = Math.round(amounts[key] * 100) / 100;
         return acc;
-      }, {} as Record<string, number>),
-      budgetAmountsByCategory: Object.keys(budgetAmountsByCategory).reduce((acc, key) => {
+      }, {}),
+      budgetAmountsByCategory: Object.keys(budgetAmountsByCategory).reduce<Record<string, number>>((acc, key) => {
         acc[key] = Math.round(budgetAmountsByCategory[key] * 100) / 100;
         return acc;
-      }, {} as Record<string, number>),
+      }, {}),
     };
   });
 

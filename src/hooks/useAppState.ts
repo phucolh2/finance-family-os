@@ -466,7 +466,7 @@ export function useAppState() {
       (s) => s.effectiveMonth === targetMonth && s.effectiveYear === targetYear
     );
 
-    let updatedSchedules = [...currentSchedules];
+    const updatedSchedules = [...currentSchedules];
 
     if (existsIndex === -1) {
       const pastOrActive = currentSchedules.filter(
@@ -926,7 +926,7 @@ export function useAppState() {
     
     undoSinkingFundDisbursement: (fundId: string, withdrawalId: string) => {
       const fund = state.sinkingFunds?.find(f => f.id === fundId);
-      if (!fund || !fund.withdrawals) return;
+      if (!fund?.withdrawals) return;
       
       const withdrawal = fund.withdrawals.find(w => w.id === withdrawalId);
       if (!withdrawal) return;
@@ -1134,7 +1134,7 @@ export function useAppState() {
     updateProjectionAdjustment,
     deleteProjectionAdjustment,
     resetToDefault,
-    updateAppState: (newState: import('../types/finance').AppState) => saveState(newState),
+    updateAppState: (newState: import('../types/finance').AppState) => { saveState(newState); },
     resetBudgetToDefault,
     resetIncomeToDefault,
     resetPortfolioToDefault,

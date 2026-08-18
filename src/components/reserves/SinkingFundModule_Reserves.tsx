@@ -8,11 +8,10 @@ import { PortfolioFundCard } from '../portfolio/fund-cards/PortfolioFundCard';
 import { SavingsFundCard } from '../portfolio/fund-cards/SavingsFundCard';
 import { ReservesFundCard } from '../portfolio/fund-cards/ReservesFundCard';
 import { HelpTooltip } from '../ui/HelpTooltip';
-import { Target, Plus, Trash2, ArrowRightCircle, Edit, CheckCircle, RotateCcw, AlertCircle } from 'lucide-react';
+import { Target, Plus, CheckCircle, RotateCcw, AlertCircle } from 'lucide-react';
 import { formatTableMoneyVNDMillion, formatKpiMoneyVNDMillion } from '../../utils/format';
 import { safeNumber, calculateNonTermInterest } from '../../utils/math';
 import { runProjection } from '../../engines/projectionEngine';
-import { simulateSinkingFund } from '../../engines/sinkingFundEngine';
 import type { AssetType } from '../../types/portfolio';
 import { FUNDING_SOURCES, SCREEN_FUNDING_CONSTRAINTS } from '../../constants/fundingSources';
 import type { FundingSourceId } from '../../constants/fundingSources';
@@ -105,7 +104,7 @@ export const SinkingFundModule_Reserves: React.FC<SinkingFundModule_ReservesProp
     monthlyContribution: 0,
     interestRateAnnual: 5.5,
     termMonths: 1,
-    sourceOfFund: activeSources[0] as string,
+    sourceOfFund: activeSources[0],
     startMonth: initMonth,
     startYear: initYear,
     rolloverStrategy: 'principal_and_interest' as 'principal_and_interest' | 'principal_only' | 'none' | 'return_to_source',
@@ -191,7 +190,7 @@ export const SinkingFundModule_Reserves: React.FC<SinkingFundModule_ReservesProp
     
     if (current >= start) {
        for (let m = start; m <= current; m++) {
-          let maturingBuckets: { principal: number; parentId: string; rolledOverPrincipal?: number; rolledOverInterest?: number }[] = [];
+          const maturingBuckets: { principal: number; parentId: string; rolledOverPrincipal?: number; rolledOverInterest?: number }[] = [];
           
           const mo = ((m - 1) % 12) + 1;
           const yr = Math.floor((m - 1) / 12);
@@ -204,7 +203,7 @@ export const SinkingFundModule_Reserves: React.FC<SinkingFundModule_ReservesProp
             .find(s => (s.startYear * 12 + s.startMonth) <= (yr * 12 + mo))?.rateAnnual || 0.1;
           nonTermCash += nonTermCash * (monthlyNonTermRate / 100 / 12);
 
-          let maturedCashPool: { 
+          const maturedCashPool: { 
              id: string; 
              principal: number; 
              interestAccrued: number; 
@@ -267,7 +266,7 @@ export const SinkingFundModule_Reserves: React.FC<SinkingFundModule_ReservesProp
                 // 2.3 Rút từ các sổ đang gửi chưa đáo hạn, ưu tiên sổ mới gửi nhất (termStart lớn nhất)
                 if (amountToDeduct > 0) {
                    buckets.sort((a, b) => b.termStart - a.termStart);
-                   let newResidualBuckets: typeof buckets = [];
+                   const newResidualBuckets: typeof buckets = [];
                    for (let i = 0; i < buckets.length && amountToDeduct > 0; i++) {
                       if (buckets[i].principal >= amountToDeduct) {
                          const residual = buckets[i].principal - amountToDeduct;
@@ -355,7 +354,7 @@ export const SinkingFundModule_Reserves: React.FC<SinkingFundModule_ReservesProp
              let totalRolledOverPrincipal = 0;
              let totalRolledOverInterest = 0;
              let hasRollover = false;
-             let parentIds: string[] = [];
+             const parentIds: string[] = [];
 
              maturingBuckets.forEach((mb) => {
                  combinedPrincipal += mb.principal;
@@ -481,7 +480,7 @@ export const SinkingFundModule_Reserves: React.FC<SinkingFundModule_ReservesProp
                 disabled={activeSources.length === 1}
                 className={`block w-full rounded-xl border border-family-accent/20 py-2.5 px-3 pr-8 text-sm text-family-text text-ellipsis overflow-hidden whitespace-nowrap focus:border-family-accent focus:outline-none focus:ring-1 focus:ring-family-accent transition-colors ${activeSources.length === 1 ? 'bg-gray-50 cursor-not-allowed opacity-80' : 'bg-white/60 focus:bg-white'}`}
                 value={form.sourceOfFund}
-                onChange={e => { setForm({...form, sourceOfFund: e.target.value as any}); }}
+                onChange={e => { setForm({...form, sourceOfFund: e.target.value}); }}
               >
                 {activeSources.map(sourceId => (
                   <option key={sourceId} value={sourceId}>{getSourceLabelWithBalance(sourceId)}</option>
@@ -1060,7 +1059,7 @@ export const SinkingFundModule_Reserves: React.FC<SinkingFundModule_ReservesProp
                              const sim = getFundBalance(fund.id);
                              const targetM = disburseForm.disbursedYear * 12 + disburseForm.disbursedMonth;
 
-                             let simNonTerm = sim.nonTermCash || 0;
+                             const simNonTerm = sim.nonTermCash || 0;
                              
                              // 1. Phân loại các bucket tại tháng chốt
                              const maturedBuckets: any[] = [];
@@ -1282,7 +1281,7 @@ export const SinkingFundModule_Reserves: React.FC<SinkingFundModule_ReservesProp
                      monthlyContribution: fund.monthlyContribution,
                      interestRateAnnual: fund.interestRateAnnual || 5.5,
                      termMonths: fund.termMonths || 1,
-                     sourceOfFund: (fund.sourceOfFund || activeSources[0]) as string,
+                     sourceOfFund: (fund.sourceOfFund || activeSources[0]),
                      startMonth: fund.startMonth,
                      startYear: fund.startYear,
                      rolloverStrategy: fund.rolloverStrategy || 'principal_and_interest',

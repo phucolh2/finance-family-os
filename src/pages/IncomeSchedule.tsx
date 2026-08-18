@@ -9,7 +9,7 @@ import { calculateIncome } from '../engines/incomeEngine';
 import { formatTableMoneyVNDMillion, formatKpiMoneyVNDMillion } from '../utils/format';
 import { isWithinObservationPeriod, getPeriodGuardMessage } from '../utils/periodGuard';
 import { safeNumber } from '../utils/math';
-import { Trash2, Plus, Save, RotateCcw, BarChart2, Check, Sliders, AlertTriangle } from 'lucide-react';
+import { Trash2, Plus, Save, BarChart2, Check, Sliders, AlertTriangle } from 'lucide-react';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
 import { IncomePassiveActiveChart, IncomeCumulativeChart } from '../components/income/IncomeAreaCharts';
 import { ObservationControls } from '../components/ui/ObservationControls';

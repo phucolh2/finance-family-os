@@ -103,7 +103,7 @@ export const ChildCostEstimator: React.FC = () => {
               <label className="text-xs font-bold text-slate-600 uppercase tracking-wider">Tháng sinh</label>
               <select
                 value={birthMonth}
-                onChange={e => setBirthMonth(Number(e.target.value))}
+                onChange={e => { setBirthMonth(Number(e.target.value)); }}
                 className="w-full bg-white border border-blue-200 rounded-lg px-3 py-2.5 text-sm font-medium text-slate-800 focus:outline-none focus:ring-2 focus:ring-blue-400/50 focus:border-blue-400"
               >
                 {Array.from({ length: 12 }, (_, i) => i + 1).map(m => (
@@ -118,7 +118,7 @@ export const ChildCostEstimator: React.FC = () => {
               <input
                 type="number"
                 value={birthYear}
-                onChange={e => setBirthYear(Number(e.target.value))}
+                onChange={e => { setBirthYear(Number(e.target.value)); }}
                 min={2024}
                 max={2045}
                 className="w-full bg-white border border-blue-200 rounded-lg px-3 py-2.5 text-sm font-medium text-slate-800 focus:outline-none focus:ring-2 focus:ring-blue-400/50 focus:border-blue-400"
@@ -130,7 +130,7 @@ export const ChildCostEstimator: React.FC = () => {
               <label className="text-xs font-bold text-slate-600 uppercase tracking-wider">Lối sống nuôi con</label>
               <select
                 value={lifestyle}
-                onChange={e => setLifestyle(e.target.value as ChildLifestyle)}
+                onChange={e => { setLifestyle(e.target.value as ChildLifestyle); }}
                 className="w-full bg-white border border-blue-200 rounded-lg px-3 py-2.5 text-sm font-medium text-slate-800 focus:outline-none focus:ring-2 focus:ring-blue-400/50 focus:border-blue-400"
               >
                 {LIFESTYLE_OPTIONS.map(opt => (
@@ -145,7 +145,7 @@ export const ChildCostEstimator: React.FC = () => {
               <input
                 type="number"
                 value={budgetCapMonthly}
-                onChange={e => setBudgetCapMonthly(Number(e.target.value))}
+                onChange={e => { setBudgetCapMonthly(Number(e.target.value)); }}
                 min={5}
                 max={200}
                 step={5}

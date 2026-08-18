@@ -8,11 +8,10 @@ import { PortfolioFundCard } from '../portfolio/fund-cards/PortfolioFundCard';
 import { SavingsFundCard } from '../portfolio/fund-cards/SavingsFundCard';
 import { ReservesFundCard } from '../portfolio/fund-cards/ReservesFundCard';
 import { HelpTooltip } from '../ui/HelpTooltip';
-import { Target, Plus, Trash2, ArrowRightCircle, Edit, CheckCircle, RotateCcw, AlertCircle } from 'lucide-react';
+import { Target, Plus, CheckCircle, RotateCcw, AlertCircle } from 'lucide-react';
 import { formatTableMoneyVNDMillion } from '../../utils/format';
 import { safeNumber, calculateNonTermInterest } from '../../utils/math';
 import { runProjection } from '../../engines/projectionEngine';
-import { simulateSinkingFund } from '../../engines/sinkingFundEngine';
 import type { AssetType } from '../../types/portfolio';
 import { FUNDING_SOURCES, SCREEN_FUNDING_CONSTRAINTS } from '../../constants/fundingSources';
 import type { FundingSourceId } from '../../constants/fundingSources';
@@ -107,7 +106,7 @@ export const SinkingFundModule_Liquidity: React.FC<SinkingFundModule_LiquidityPr
     monthlyContribution: 0,
     interestRateAnnual: 5.5,
     termMonths: 1,
-    sourceOfFund: activeSources[0] as string,
+    sourceOfFund: activeSources[0],
     startMonth: initMonth,
     startYear: initYear,
     rolloverStrategy: 'principal_and_interest' as 'principal_and_interest' | 'principal_only' | 'none' | 'return_to_source',
@@ -178,7 +177,7 @@ export const SinkingFundModule_Liquidity: React.FC<SinkingFundModule_LiquidityPr
 
   // Helper to find latest state of a fund from projection
   const handlePeriodicContributionChange = (fund: any, pKey: string | null, value: number) => {
-     let newContrib = Math.max(0, safeNumber(value, 0));
+     const newContrib = Math.max(0, safeNumber(value, 0));
      
      if (pKey) {
          const updatedConfigs = {
@@ -216,7 +215,7 @@ export const SinkingFundModule_Liquidity: React.FC<SinkingFundModule_LiquidityPr
     
     if (current >= start) {
        for (let m = start; m <= current; m++) {
-          let maturingBuckets: { principal: number; parentId: string; rolledOverPrincipal?: number; rolledOverInterest?: number }[] = [];
+          const maturingBuckets: { principal: number; parentId: string; rolledOverPrincipal?: number; rolledOverInterest?: number }[] = [];
           
           const mo = ((m - 1) % 12) + 1;
           const yr = Math.floor((m - 1) / 12);
@@ -229,7 +228,7 @@ export const SinkingFundModule_Liquidity: React.FC<SinkingFundModule_LiquidityPr
             .find(s => (s.startYear * 12 + s.startMonth) <= (yr * 12 + mo))?.rateAnnual || 0.1;
           nonTermCash += nonTermCash * (monthlyNonTermRate / 100 / 12);
 
-          let maturedCashPool: { 
+          const maturedCashPool: { 
              id: string; 
              principal: number; 
              interestAccrued: number; 
@@ -292,7 +291,7 @@ export const SinkingFundModule_Liquidity: React.FC<SinkingFundModule_LiquidityPr
                 // 2.3 Rút từ các sổ đang gửi chưa đáo hạn, ưu tiên sổ mới gửi nhất (termStart lớn nhất)
                 if (amountToDeduct > 0) {
                    buckets.sort((a, b) => b.termStart - a.termStart);
-                   let newResidualBuckets: typeof buckets = [];
+                   const newResidualBuckets: typeof buckets = [];
                    for (let i = 0; i < buckets.length && amountToDeduct > 0; i++) {
                       if (buckets[i].principal >= amountToDeduct) {
                          const residual = buckets[i].principal - amountToDeduct;
@@ -380,7 +379,7 @@ export const SinkingFundModule_Liquidity: React.FC<SinkingFundModule_LiquidityPr
              let totalRolledOverPrincipal = 0;
              let totalRolledOverInterest = 0;
              let hasRollover = false;
-             let parentIds: string[] = [];
+             const parentIds: string[] = [];
 
              maturingBuckets.forEach((mb) => {
                  combinedPrincipal += mb.principal;
@@ -502,7 +501,7 @@ export const SinkingFundModule_Liquidity: React.FC<SinkingFundModule_LiquidityPr
                 disabled={activeSources.length === 1}
                 className={`block w-full rounded-xl border border-family-accent/20 py-2.5 px-3 pr-8 text-sm text-family-text text-ellipsis overflow-hidden whitespace-nowrap focus:border-family-accent focus:outline-none focus:ring-1 focus:ring-family-accent transition-colors ${activeSources.length === 1 ? 'bg-gray-50 cursor-not-allowed opacity-80' : 'bg-white/60 focus:bg-white'}`}
                 value={form.sourceOfFund}
-                onChange={e => { setForm({...form, sourceOfFund: e.target.value as any}); }}
+                onChange={e => { setForm({...form, sourceOfFund: e.target.value}); }}
               >
                 {activeSources.map(sourceId => (
                   <option key={sourceId} value={sourceId}>{getSourceLabelWithBalance(sourceId)}</option>
@@ -876,7 +875,7 @@ export const SinkingFundModule_Liquidity: React.FC<SinkingFundModule_LiquidityPr
                                                           <div className="flex items-center gap-1 bg-white px-1.5 py-0.5 rounded border border-slate-200 shadow-sm">
                                                              <input type="number" step="0.1" min="0" disabled={isPast}
                                                                 value={fund.periodConfigs?.[pKey]?.contribution !== undefined ? fund.periodConfigs[pKey].contribution : fund.monthlyContribution}
-                                                                onChange={(e) => handlePeriodicContributionChange(fund, pKey, Number(e.target.value))}
+                                                                onChange={(e) => { handlePeriodicContributionChange(fund, pKey, Number(e.target.value)); }}
                                                                 className="w-10 text-right text-[11px] font-bold text-family-accent bg-transparent focus:outline-none disabled:opacity-50 disabled:cursor-not-allowed"
                                                              />
                                                              <span className="text-family-accent font-bold text-[11px]">triệu định kỳ</span>
@@ -886,7 +885,7 @@ export const SinkingFundModule_Liquidity: React.FC<SinkingFundModule_LiquidityPr
                                                        <div className="flex items-center gap-1.5 bg-slate-50 px-2 py-1 rounded-md border border-slate-100">
                                                           <input type="number" step="0.1" min="0" disabled={isPast}
                                                              value={fund.periodConfigs?.[pKey]?.contribution !== undefined ? fund.periodConfigs[pKey].contribution : fund.monthlyContribution}
-                                                             onChange={(e) => handlePeriodicContributionChange(fund, pKey, Number(e.target.value))}
+                                                             onChange={(e) => { handlePeriodicContributionChange(fund, pKey, Number(e.target.value)); }}
                                                              className="w-14 text-right text-[11px] bg-white border border-family-accent/30 rounded px-1.5 py-0.5 font-bold text-family-accent focus:outline-none focus:ring-1 focus:ring-family-accent disabled:opacity-50 disabled:cursor-not-allowed disabled:bg-gray-50"
                                                           />
                                                           <span className="font-bold text-family-accent text-[11px]">triệu định kỳ</span>
@@ -1055,7 +1054,7 @@ export const SinkingFundModule_Liquidity: React.FC<SinkingFundModule_LiquidityPr
                              const sim = getFundBalance(fund.id);
                              const targetM = disburseForm.disbursedYear * 12 + disburseForm.disbursedMonth;
 
-                             let simNonTerm = sim.nonTermCash || 0;
+                             const simNonTerm = sim.nonTermCash || 0;
                              
                              // 1. Phân loại các bucket tại tháng chốt
                              const maturedBuckets: any[] = [];
@@ -1295,7 +1294,7 @@ export const SinkingFundModule_Liquidity: React.FC<SinkingFundModule_LiquidityPr
                      monthlyContribution: fund.monthlyContribution,
                      interestRateAnnual: fund.interestRateAnnual || 5.5,
                      termMonths: fund.termMonths || 1,
-                     sourceOfFund: (fund.sourceOfFund || activeSources[0]) as string,
+                     sourceOfFund: (fund.sourceOfFund || activeSources[0]),
                      startMonth: fund.startMonth,
                      startYear: fund.startYear,
                      rolloverStrategy: fund.rolloverStrategy || 'principal_and_interest',

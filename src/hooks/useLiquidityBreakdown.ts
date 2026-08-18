@@ -52,7 +52,7 @@ export const useLiquidityBreakdown = (mode: 'monthly' | 'cumulative' = 'monthly'
     const pKey = `${selYearStr}-${String(selMonth).padStart(2, '0')}`;
 
     const deductedByGroup: Record<string, number> = {};
-    const deductedSourcesByGroup: Record<string, Array<{name: string, amount: number}>> = {};
+    const deductedSourcesByGroup: Record<string, {name: string, amount: number}[]> = {};
     (state.sinkingFunds || []).forEach(fund => {
        if (fund.status !== 'active') return;
        if (!fund.sourceOfFund?.startsWith('expense_surplus_')) return;
@@ -88,7 +88,7 @@ export const useLiquidityBreakdown = (mode: 'monthly' | 'cumulative' = 'monthly'
     });
 
     const flexibleByGroup: Record<string, { oneTime: number, trackA: number, trackB: number }> = {};
-    const flexibleEventsByGroup: Record<string, Array<{id: string, name: string, impact: number, type: 'oneTime' | 'trackA' | 'trackB'}>> = {};
+    const flexibleEventsByGroup: Record<string, {id: string, name: string, impact: number, type: 'oneTime' | 'trackA' | 'trackB'}[]> = {};
 
     const addFlexibleEvent = (groupId: string, event: any, impact: number, type: 'oneTime' | 'trackA' | 'trackB') => {
       if (!groupId || impact === 0) return;
@@ -114,12 +114,12 @@ export const useLiquidityBreakdown = (mode: 'monthly' | 'cumulative' = 'monthly'
       if (!sourceId) return '';
       
       const fund = state.sinkingFunds?.find(f => f.id === sourceId);
-      if (fund && fund.fundGroup) {
+      if (fund?.fundGroup) {
         return fund.fundGroup;
       }
       
       const expenseGroup = activeBudget?.rootGroups?.find((g: any) => g.id === sourceId);
-      if (expenseGroup && expenseGroup.groupId) {
+      if (expenseGroup?.groupId) {
         return expenseGroup.groupId;
       }
       

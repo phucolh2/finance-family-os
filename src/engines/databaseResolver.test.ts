@@ -64,18 +64,18 @@ describe('databaseResolver', () => {
 
     // c1 = 40% -> 40
     // c2 = 60% -> 60
-    expect(jan.budgetRatios['housing_basic']).toBe(100); // 40 + 60
-    expect(jan.budgetAmounts['housing_basic']).toBe(100);
+    expect(jan.budgetRatios.housing_basic).toBe(100); // 40 + 60
+    expect(jan.budgetAmounts.housing_basic).toBe(100);
     expect(jan.budgetAmountsByCategory!['housing-basic']).toBe(40);
-    expect(jan.budgetAmountsByCategory!['food']).toBe(60);
+    expect(jan.budgetAmountsByCategory!.food).toBe(60);
 
     // Actual expenses
     // c1 is fixed 30
     // c2 is dynamic (-1), so it maps to budget amount = 60
     // Total actual = 90
     expect(jan.actualExpenseCategories!['housing-basic']).toBe(30);
-    expect(jan.actualExpenseCategories!['food']).toBe(60);
-    expect(jan.actualExpenseByGroup!['housing_basic']).toBe(90);
+    expect(jan.actualExpenseCategories!.food).toBe(60);
+    expect(jan.actualExpenseByGroup!.housing_basic).toBe(90);
     expect(jan.totalActualExpenseMonthly).toBe(90);
   });
 
@@ -109,7 +109,7 @@ describe('databaseResolver', () => {
       }
     ];
     const { list } = generateResolvedMonthlyDb(profile, incomeSchedule, budgetSchedule, localExp, assets, assumptions);
-    expect(list[0].actualExpenseCategories!['c_missing']).toBe(0); // defaults to 0
+    expect(list[0].actualExpenseCategories!.c_missing).toBe(0); // defaults to 0
     expect(list[0].totalActualExpenseMonthly).toBe(0);
   });
 });

@@ -1,5 +1,5 @@
 import React, { useMemo } from 'react';
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '../components/ui/Card';
+import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/Card';
 import { Scale, ShieldCheck, AlertTriangle, Wallet, TrendingDown, CalendarCheck, Lightbulb, ArrowRightLeft, Heart, Target, Percent } from 'lucide-react';
 import { useAppContext } from '../context/AppContext';
 import { formatKpiMoneyVNDMillion, formatMoneyVNDMillion } from '../utils/format';
@@ -8,7 +8,7 @@ import { calculatePMT, safeNumber } from '../utils/math';
 import { HelpTooltip } from '../components/ui/HelpTooltip';
 import { ObservationControls } from '../components/ui/ObservationControls';
 import { runProjection } from '../engines/projectionEngine';
-import { Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, ComposedChart, Line, Legend } from 'recharts';
+import { Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, ComposedChart, Legend } from 'recharts';
 
 export const DebtManagement: React.FC = () => {
     const { state, selectedPeriodKey } = useAppContext();

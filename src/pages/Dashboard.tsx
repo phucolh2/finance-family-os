@@ -2,28 +2,19 @@ import React, { useState } from 'react';
 import { useAppContext } from '../context/AppContext';
 import { useLiquidityBreakdown } from '../hooks/useLiquidityBreakdown';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '../components/ui/Card';
-import { EmptyState } from '../components/ui/EmptyState';
 import { runProjection } from '../engines/projectionEngine';
 import { calculateIncome } from '../engines/incomeEngine';
 import { generateAdvisorAlerts } from '../engines/advisorEngine';
 import {
   formatKpiMoneyVNDMillion,
   formatTooltipMoneyVNDMillion,
-  formatAxisMoneyVNDMillion,
   formatTableMoneyVNDMillion,
 } from '../utils/format';
 import { KNOWLEDGE_ITEMS } from '../data/knowledgeItems';
 import {
-  AreaChart,
-  Area,
-  XAxis,
-  YAxis,
-  CartesianGrid,
   Tooltip,
   Legend,
   ResponsiveContainer,
-  BarChart,
-  Bar,
   PieChart,
   Pie,
   Cell,
@@ -32,7 +23,6 @@ import {
   Sparkles, 
   TrendingUp, 
   Wallet, 
-  ShieldAlert, 
   BadgeDollarSign, 
   Info, 
   X, 

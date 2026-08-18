@@ -1,5 +1,5 @@
 // READ-ONLY SIMULATION — does not mutate system state
-import type { AppState, SinkingFund } from '../types/finance';
+import type { AppState } from '../types/finance';
 import type { ProjectionOutput } from '../types/projection';
 import type { BudgetRatioScheduleItem } from '../types/budget';
 
@@ -95,7 +95,7 @@ export const checkBudgetPressure = (snapshot: AllocationSnapshot, availableAmoun
 
   if (!snapshot.appState.resolvedMonthlyDbMap) return { suggestions, remaining };
   const currentDb = snapshot.appState.resolvedMonthlyDbMap[snapshot.currentPeriodKey];
-  if (!currentDb || !currentDb.budgetAmounts || !currentDb.actualExpenseByGroup) return { suggestions, remaining };
+  if (!currentDb?.budgetAmounts || !currentDb.actualExpenseByGroup) return { suggestions, remaining };
 
   // Collect groups under pressure
   const pressuredGroups = [];
@@ -146,7 +146,7 @@ export const checkBudgetPressure = (snapshot: AllocationSnapshot, availableAmoun
     const allocation = Math.min(group.gap, remaining);
     remaining -= allocation;
     
-    let levelStr = group.ratio > 1.0 ? 'Cấp 3 (>100%)' : 'Cấp 2 (>85%)';
+    const levelStr = group.ratio > 1.0 ? 'Cấp 3 (>100%)' : 'Cấp 2 (>85%)';
     
     suggestions.push({
       tier: 1,
@@ -263,7 +263,7 @@ export const applyGlidePath = (snapshot: AllocationSnapshot, availableAmount: nu
   const shortTermAmount = remaining * shortTermRatio;
 
   if (longTermAmount > 0) {
-    let duration = Math.min(12, Math.max(1, Math.ceil(longTermAmount / 10))); // Assume max 10M per month for smoothing
+    const duration = Math.min(12, Math.max(1, Math.ceil(longTermAmount / 10))); // Assume max 10M per month for smoothing
     
     suggestions.push({
       tier: 3,
@@ -277,7 +277,7 @@ export const applyGlidePath = (snapshot: AllocationSnapshot, availableAmount: nu
   }
 
   if (shortTermAmount > 0) {
-    let duration = Math.min(12, Math.max(1, Math.ceil(shortTermAmount / 10)));
+    const duration = Math.min(12, Math.max(1, Math.ceil(shortTermAmount / 10)));
     suggestions.push({
       tier: 3,
       targetId: 'short_term_goals',

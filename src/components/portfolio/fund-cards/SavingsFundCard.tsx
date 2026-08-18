@@ -137,7 +137,7 @@ export const SavingsFundCard: React.FC<FundCardProps> = ({
         </div>
 
         <button 
-           onClick={() => setExpandedFundId(expandedFundId === fund.id ? null : fund.id)}
+           onClick={() => { setExpandedFundId(expandedFundId === fund.id ? null : fund.id); }}
            className="mt-3 text-[11px] text-emerald-600 hover:text-emerald-800 font-bold flex justify-center w-full py-2 bg-emerald-50/50 rounded-lg hover:bg-emerald-50 transition-colors"
          >
            {expandedFundId === fund.id ? 'Đóng sổ phụ' : 'Mở sổ phụ (Lịch sử & Cashflow)'}

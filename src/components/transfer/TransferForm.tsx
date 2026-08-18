@@ -195,7 +195,7 @@ export const TransferForm: React.FC<TransferFormProps> = ({ onSuccess, onCancel 
                     <label className="text-xs text-family-textMuted mb-1 block">Tài sản / Khoản mục Nguồn</label>
                     <select 
                       value={sourceValue}
-                      onChange={e => setSourceValue(e.target.value)}
+                      onChange={e => { setSourceValue(e.target.value); }}
                       className="w-full bg-family-bg border border-family-accent/20 rounded p-2 text-sm text-family-text focus:outline-none focus:border-blue-500"
                     >
                       <optgroup label="💵 Dôi dư Ngân sách">
@@ -232,7 +232,7 @@ export const TransferForm: React.FC<TransferFormProps> = ({ onSuccess, onCancel 
                     <label className="text-xs text-family-textMuted mb-1 block">Tài sản / Khoản mục Đích</label>
                     <select 
                       value={destinationValue}
-                      onChange={e => setDestinationValue(e.target.value)}
+                      onChange={e => { setDestinationValue(e.target.value); }}
                       className="w-full bg-family-bg border border-family-accent/20 rounded p-2 text-sm text-family-text focus:outline-none focus:border-blue-500"
                     >
                       <optgroup label="💵 Dôi dư Ngân sách">
@@ -261,8 +261,8 @@ export const TransferForm: React.FC<TransferFormProps> = ({ onSuccess, onCancel 
            </div>
 
            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-6">
-              <Input label="Số tiền điều chuyển (triệu VND)" type="number" value={amount} onChange={e => setAmount(e.target.value)} placeholder="VD: 50" required />
-              <Input label="Ghi chú giao dịch" value={note} onChange={e => setNote(e.target.value)} placeholder="VD: Chuyển tiền tiết kiệm sang mua chứng khoán" />
+              <Input label="Số tiền điều chuyển (triệu VND)" type="number" value={amount} onChange={e => { setAmount(e.target.value); }} placeholder="VD: 50" required />
+              <Input label="Ghi chú giao dịch" value={note} onChange={e => { setNote(e.target.value); }} placeholder="VD: Chuyển tiền tiết kiệm sang mua chứng khoán" />
            </div>
 
            {/* Live Interactive Simulation Banner */}

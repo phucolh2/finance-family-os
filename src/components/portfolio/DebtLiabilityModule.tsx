@@ -8,7 +8,6 @@ import { AlertCircle, Plus, Trash2, CheckCircle2, DollarSign, Calendar } from 'l
 import { useAppContext } from '../../context/AppContext';
 import { formatMoneyVNDMillion } from '../../utils/format';
 import { calculatePMT, calculateTermMonths } from '../../utils/math';
-import { isWithinObservationPeriod, getPeriodGuardMessage } from '../../utils/periodGuard';
 import { DebtSettlementForm } from './DebtSettlementForm';
 
 export const DebtLiabilityModule: React.FC = () => {
@@ -277,8 +276,8 @@ export const DebtLiabilityModule: React.FC = () => {
                            <td colSpan={7} className="p-4 bg-family-bgDark/30 border-b border-family-accent/10">
                               <DebtSettlementForm 
                                 debt={debt} 
-                                onCancel={() => setSettlingDebtId(null)} 
-                                onSuccess={() => setSettlingDebtId(null)} 
+                                onCancel={() => { setSettlingDebtId(null); }} 
+                                onSuccess={() => { setSettlingDebtId(null); }} 
                               />
                            </td>
                         </tr>

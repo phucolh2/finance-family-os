@@ -13,16 +13,16 @@ export function simulateSinkingFund(fund: SinkingFund, targetMonth?: number, tar
   const autoRefundsByMonth: Record<number, number> = {};
   let totalDeposited = 0;
 
-  let currentBank = fund.depositBank;
-  let currentStrategy = fund.rolloverStrategy;
+  const currentBank = fund.depositBank;
+  const currentStrategy = fund.rolloverStrategy;
 
   for (let m = start; m <= end; m++) {
      const yr = Math.floor((m - 1) / 12);
      const mo = ((m - 1) % 12) + 1;
      const periodKey = `${yr}-${String(mo).padStart(2, '0')}`;
      const periodCfg = fund.periodConfigs?.[periodKey];
-     let maturingBuckets: any[] = [];
-     let maturedCashPool: any[] = [];
+     const maturingBuckets: any[] = [];
+     const maturedCashPool: any[] = [];
 
      // 1. Kiểm tra đáo hạn trước khi rút tiền
      buckets = buckets.filter(b => {
@@ -71,7 +71,7 @@ export function simulateSinkingFund(fund: SinkingFund, targetMonth?: number, tar
            // 2.3 Rút từ các sổ đang gửi chưa đáo hạn, ưu tiên sổ mới gửi nhất (termStart lớn nhất)
            if (amountToDeduct > 0) {
               buckets.sort((a, b) => b.termStart - a.termStart);
-              let newResidualBuckets: any[] = [];
+              const newResidualBuckets: any[] = [];
               for (let i = 0; i < buckets.length && amountToDeduct > 0; i++) {
                  if (buckets[i].principal >= amountToDeduct) {
                     const residual = buckets[i].principal - amountToDeduct;
@@ -136,7 +136,7 @@ export function simulateSinkingFund(fund: SinkingFund, targetMonth?: number, tar
      let newContrib = 0;
      if (m === start) newContrib += (fund.initialDeposit || 0);
 
-     let periodContrib = periodCfg?.contribution !== undefined ? periodCfg.contribution : (fund.monthlyContribution || 0);
+     const periodContrib = periodCfg?.contribution !== undefined ? periodCfg.contribution : (fund.monthlyContribution || 0);
      if (m >= start) {
         newContrib += periodContrib;
      }
@@ -152,7 +152,7 @@ export function simulateSinkingFund(fund: SinkingFund, targetMonth?: number, tar
         let totalMaturing = 0;
         let totalRolledOverPrincipal = 0;
         let totalRolledOverInterest = 0;
-        let parentIds: string[] = [];
+        const parentIds: string[] = [];
 
         maturingBuckets.forEach(mb => {
            totalMaturing += mb.principal;

@@ -126,7 +126,7 @@ export const PortfolioFundCard: React.FC<FundCardProps> = ({
             </p>
           </div>
           <button 
-             onClick={() => setExpandedFundId(expandedFundId === fund.id ? null : fund.id)}
+             onClick={() => { setExpandedFundId(expandedFundId === fund.id ? null : fund.id); }}
              className="text-[11px] text-slate-600 hover:text-blue-600 font-medium transition-colors"
            >
              {expandedFundId === fund.id ? 'Đóng chi tiết' : 'Xem Cashflow'}

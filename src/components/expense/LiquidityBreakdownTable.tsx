@@ -34,13 +34,13 @@ export const LiquidityBreakdownTable: React.FC<LiquidityBreakdownTableProps> = (
       }
     };
     document.addEventListener('mousedown', handleClickOutside);
-    return () => document.removeEventListener('mousedown', handleClickOutside);
+    return () => { document.removeEventListener('mousedown', handleClickOutside); };
   }, []);
 
   const toggleExpand = (id: string) => {
     setExpandedNodes(prev => ({
       ...prev,
-      [id]: prev[id] === false ? true : false
+      [id]: !prev[id] ? true : false
     }));
   };
 
@@ -97,7 +97,7 @@ export const LiquidityBreakdownTable: React.FC<LiquidityBreakdownTableProps> = (
             </thead>
             <tbody>
               {liquidityBreakdownData.map((group: any) => {
-                const isExpanded = expandedNodes[group.id] !== false;
+                const isExpanded = expandedNodes[group.id];
                 const hasChildren = group.children && group.children.length > 0;
                 const hasFlexibleDetails = group.flexibleEvents && group.flexibleEvents.length > 0;
 
@@ -138,7 +138,7 @@ export const LiquidityBreakdownTable: React.FC<LiquidityBreakdownTableProps> = (
                         ) : '-'}
 
                         {activeDetailId === group.id + '-A' && group.flexibleEvents.some((evt: any) => evt.type === 'trackA') && (
-                          <div className="absolute top-full right-0 mt-1 w-64 bg-white rounded-lg shadow-xl border border-gray-100 z-50 text-left p-3 animate-in fade-in zoom-in-95" onClick={(e) => e.stopPropagation()}>
+                          <div className="absolute top-full right-0 mt-1 w-64 bg-white rounded-lg shadow-xl border border-gray-100 z-50 text-left p-3 animate-in fade-in zoom-in-95" onClick={(e) => { e.stopPropagation(); }}>
                             <div className="text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-2 border-b border-gray-100 pb-1.5 flex items-center gap-1.5">
                               <Info className="w-3 h-3" /> Chi tiết Linh hoạt
                             </div>
@@ -174,7 +174,7 @@ export const LiquidityBreakdownTable: React.FC<LiquidityBreakdownTableProps> = (
                         ) : '-'}
 
                         {activeDetailId === group.id + '-1' && group.flexibleEvents.some((evt: any) => evt.type === 'oneTime' && evt.impact < 0) && (
-                          <div className="absolute top-full right-0 mt-1 w-64 bg-white rounded-lg shadow-xl border border-gray-100 z-50 text-left p-3 animate-in fade-in zoom-in-95" onClick={(e) => e.stopPropagation()}>
+                          <div className="absolute top-full right-0 mt-1 w-64 bg-white rounded-lg shadow-xl border border-gray-100 z-50 text-left p-3 animate-in fade-in zoom-in-95" onClick={(e) => { e.stopPropagation(); }}>
                             <div className="text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-2 border-b border-gray-100 pb-1.5 flex items-center gap-1.5">
                               <Info className="w-3 h-3" /> Chi tiết Linh hoạt
                             </div>
@@ -207,7 +207,7 @@ export const LiquidityBreakdownTable: React.FC<LiquidityBreakdownTableProps> = (
                         ) : '-'}
 
                         {activeDetailId === group.id + '-B' && group.flexibleEvents.some((evt: any) => evt.type === 'trackB') && (
-                          <div className="absolute top-full right-0 mt-1 w-64 bg-white rounded-lg shadow-xl border border-gray-100 z-50 text-left p-3 animate-in fade-in zoom-in-95" onClick={(e) => e.stopPropagation()}>
+                          <div className="absolute top-full right-0 mt-1 w-64 bg-white rounded-lg shadow-xl border border-gray-100 z-50 text-left p-3 animate-in fade-in zoom-in-95" onClick={(e) => { e.stopPropagation(); }}>
                             <div className="text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-2 border-b border-gray-100 pb-1.5 flex items-center gap-1.5">
                               <Info className="w-3 h-3" /> Chi tiết Trừ quỹ định kì
                             </div>
@@ -240,7 +240,7 @@ export const LiquidityBreakdownTable: React.FC<LiquidityBreakdownTableProps> = (
                         ) : '-'}
 
                         {activeDetailId === group.id + '-income' && group.flexibleEvents.some((evt: any) => evt.type === 'oneTime' && evt.impact > 0) && (
-                          <div className="absolute top-full right-0 mt-1 w-64 bg-white rounded-lg shadow-xl border border-gray-100 z-50 text-left p-3 animate-in fade-in zoom-in-95" onClick={(e) => e.stopPropagation()}>
+                          <div className="absolute top-full right-0 mt-1 w-64 bg-white rounded-lg shadow-xl border border-gray-100 z-50 text-left p-3 animate-in fade-in zoom-in-95" onClick={(e) => { e.stopPropagation(); }}>
                             <div className="text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-2 border-b border-gray-100 pb-1.5 flex items-center gap-1.5">
                               <Info className="w-3 h-3" /> Nguồn Tiền Vào
                             </div>
@@ -273,7 +273,7 @@ export const LiquidityBreakdownTable: React.FC<LiquidityBreakdownTableProps> = (
                         ) : '-'}
 
                         {activeDetailId === group.id + '-deducted' && group.deductedSources && group.deductedSources.length > 0 && (
-                          <div className="absolute top-full right-0 mt-1 w-64 bg-white rounded-lg shadow-xl border border-gray-100 z-50 text-left p-3 animate-in fade-in zoom-in-95" onClick={(e) => e.stopPropagation()}>
+                          <div className="absolute top-full right-0 mt-1 w-64 bg-white rounded-lg shadow-xl border border-gray-100 z-50 text-left p-3 animate-in fade-in zoom-in-95" onClick={(e) => { e.stopPropagation(); }}>
                             <div className="text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-2 border-b border-gray-100 pb-1.5 flex items-center gap-1.5">
                               <Info className="w-3 h-3" /> Nguồn Tiền Ra (Trích lập Quỹ)
                             </div>
@@ -308,7 +308,7 @@ export const LiquidityBreakdownTable: React.FC<LiquidityBreakdownTableProps> = (
                           {formatTableMoneyVNDMillion(child.totalActual)}
                         </td>
                         <td className="p-2 text-right text-orange-400 bg-slate-50/50 border-l border-family-accent/5">
-                          {Math.abs(child.trackA) > 0 ? `${formatTableMoneyVNDMillion(Math.abs(child.trackA))}` : '-'}
+                          {Math.abs(child.trackA) > 0 ? formatTableMoneyVNDMillion(Math.abs(child.trackA)) : '-'}
                         </td>
                         <td className="p-2 text-right font-semibold border-l border-family-accent/5 text-family-text bg-blue-50/30">
                           {formatTableMoneyVNDMillion(child.rawRemaining)}

@@ -183,11 +183,11 @@ export const analyzeAllocationOffline = (
     });
   }
 
-  let idealExpense = 50;
-  let idealInvestment = 30;
-  let idealSavings = 10;
-  let idealReserve = 10;
-  let reason = "Mô hình Tự do Tài chính (FIRE) tối ưu: Giữ chi phí cơ bản ở mức 50%, dành 10% Tiết kiệm phòng rủi ro, 10% Dự phòng hưởng thụ/cơ hội. Quan trọng nhất: Dồn tối đa 30% (thay vì 20% tối thiểu) vào Đầu tư để tăng tốc độ đạt Tự do tài chính.";
+  const idealExpense = 50;
+  const idealInvestment = 30;
+  const idealSavings = 10;
+  const idealReserve = 10;
+  const reason = "Mô hình Tự do Tài chính (FIRE) tối ưu: Giữ chi phí cơ bản ở mức 50%, dành 10% Tiết kiệm phòng rủi ro, 10% Dự phòng hưởng thụ/cơ hội. Quan trọng nhất: Dồn tối đa 30% (thay vì 20% tối thiểu) vào Đầu tư để tăng tốc độ đạt Tự do tài chính.";
 
   const de_xuat_phan_bo = {
     expense: { percent: idealExpense, amount: goc_phan_bo * idealExpense / 100 },

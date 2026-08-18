@@ -4,7 +4,6 @@ import {
   Wallet,
   Calendar,
   Milestone,
-  GitBranch,
   Briefcase,
   Flame,
   HeartPulse,

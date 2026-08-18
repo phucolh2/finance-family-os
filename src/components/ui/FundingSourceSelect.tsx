@@ -53,7 +53,7 @@ export const FundingSourceSelect: React.FC<FundingSourceSelectProps> = ({
       <Select
         label={label}
         value={value}
-        onChange={(e) => onChange(e.target.value)}
+        onChange={(e) => { onChange(e.target.value); }}
         options={sourceOptions}
         disabled={disabled}
       />

@@ -116,8 +116,8 @@ export const ObservationControls: React.FC = () => {
           ).sort((a,b) => (b.effectiveYear * 12 + b.effectiveMonth) - (a.effectiveYear * 12 + a.effectiveMonth))[0];
           
           let housingBasicBudget = 0;
-          if (activeBudget && state.resolvedMonthlyDbMap && state.resolvedMonthlyDbMap[effectivePeriodKey]) {
-            housingBasicBudget = state.resolvedMonthlyDbMap[effectivePeriodKey].budgetAmounts?.['housing_basic'] || 0;
+          if (activeBudget && state.resolvedMonthlyDbMap?.[effectivePeriodKey]) {
+            housingBasicBudget = state.resolvedMonthlyDbMap[effectivePeriodKey].budgetAmounts?.housing_basic || 0;
           }
           
           setAdvisorSnapshot({
@@ -139,7 +139,7 @@ export const ObservationControls: React.FC = () => {
       {/* Advisor Modal */}
       <SmartAllocationAdvisorModal 
         isOpen={isAdvisorOpen}
-        onClose={() => setIsAdvisorOpen(false)}
+        onClose={() => { setIsAdvisorOpen(false); }}
         snapshot={advisorSnapshot}
       />
     </div>

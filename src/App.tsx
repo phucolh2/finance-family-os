@@ -153,7 +153,7 @@ function ErrorFallback({ error, resetErrorBoundary }: FallbackProps) {
 
 export default function App() {
   return (
-    <ErrorBoundary FallbackComponent={ErrorFallback} onReset={() => window.location.reload()}>
+    <ErrorBoundary FallbackComponent={ErrorFallback} onReset={() => { window.location.reload(); }}>
       <AppProvider>
         <AppContent />
       </AppProvider>

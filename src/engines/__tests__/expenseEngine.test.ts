@@ -32,8 +32,8 @@ describe('expenseEngine', () => {
       );
 
       // Total housing group actual should be 7
-      expect(result.summaryByGroup['housing'].totalActual).toBe(7);
-      expect(result.summaryByGroup['food'].totalActual).toBe(7);
+      expect(result.summaryByGroup.housing.totalActual).toBe(7);
+      expect(result.summaryByGroup.food.totalActual).toBe(7);
     });
 
     it('should strip Track A impacts from base actual', () => {
@@ -79,9 +79,9 @@ describe('expenseEngine', () => {
 
       // The regular actual is 6. The flexible is 1 (Math.abs(-1)).
       // Total actual is 6 + 1 = 7
-      expect(result.summaryByGroup['housing'].totalActual).toBe(7);
-      expect(result.summaryByGroup['housing'].totalRegularActual).toBe(6);
-      expect(result.monthlySeries['housing'][0].flexibleActual).toBe(1);
+      expect(result.summaryByGroup.housing.totalActual).toBe(7);
+      expect(result.summaryByGroup.housing.totalRegularActual).toBe(6);
+      expect(result.monthlySeries.housing[0].flexibleActual).toBe(1);
     });
 
     it('should include OneTime events in totalActual but keep regularActual clean', () => {
@@ -121,9 +121,9 @@ describe('expenseEngine', () => {
       );
 
       // Total actual = 7 (base) + 3 (one time) = 10
-      expect(result.summaryByGroup['housing'].totalActual).toBe(10);
-      expect(result.summaryByGroup['housing'].totalRegularActual).toBe(7);
-      expect(result.monthlySeries['housing'][0].flexibleActual).toBe(3);
+      expect(result.summaryByGroup.housing.totalActual).toBe(10);
+      expect(result.summaryByGroup.housing.totalRegularActual).toBe(7);
+      expect(result.monthlySeries.housing[0].flexibleActual).toBe(3);
     });
   });
 });

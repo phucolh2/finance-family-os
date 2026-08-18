@@ -11,13 +11,11 @@ import { HelpTooltip } from '../components/ui/HelpTooltip';
 import { formatTableMoneyVNDMillion } from '../utils/format';
 import { isWithinObservationPeriod, getPeriodGuardMessage } from '../utils/periodGuard';
 import { safeNumber } from '../utils/math';
-import { useAppState } from '../hooks/useAppState';
-import { analyzeExpense } from '../engines/expenseEngine';
 import { EmptyState } from '../components/ui/EmptyState';
 import { 
   Milestone, CalendarRange, Plus, Trash2, Edit3, 
-  Home, Car, Baby, HeartPulse, Gift, Briefcase, Plane, Wallet, TrendingUp, TrendingDown, AlertTriangle,
-  Smartphone, Tv, BookOpen, Sparkles, Wrench, Heart, Activity, PiggyBank, CreditCard, ArrowDownRight, ArrowUpRight, Receipt, Landmark, Filter, Banknote, BrainCircuit
+  Home, Car, Baby, HeartPulse, Gift, Briefcase, Plane, TrendingUp, TrendingDown, AlertTriangle,
+  Smartphone, Tv, BookOpen, Sparkles, Wrench, Heart, Activity, PiggyBank, CreditCard, ArrowDownRight, ArrowUpRight, Landmark, Filter, Banknote
 } from 'lucide-react';
 import { ExpenseDashboard } from '../components/expense/ExpenseDashboard';
 import { ExpenseScheduleView } from '../components/expense/ExpenseScheduleView';
@@ -27,8 +25,6 @@ import { ObservationControls } from '../components/ui/ObservationControls';
 
 import type { BudgetGroup } from '../types/budget';
 import type { LifeEvent } from '../types/finance';
-import { SmartAllocationAdvisorModal } from '../components/ui/SmartAllocationAdvisorModal';
-import { runProjection } from '../engines/projectionEngine';
 import type { AllocationSnapshot } from '../engines/SmartAllocationAdvisor';
 
 export const LifeStages: React.FC = () => {
@@ -618,13 +614,13 @@ export const LifeStages: React.FC = () => {
             </p>
             <div className="flex justify-end gap-3">
               <button 
-                onClick={() => setShowWarningDialog(false)}
+                onClick={() => { setShowWarningDialog(false); }}
                 className="px-4 py-2 rounded-lg text-sm font-semibold border border-family-accent/20 text-family-textMuted hover:bg-family-accent/5 transition-colors"
               >
                 Hủy bỏ (Để sửa)
               </button>
               <button 
-                onClick={() => executeSave(pendingEventData)}
+                onClick={() => { executeSave(pendingEventData); }}
                 className="px-4 py-2 rounded-lg text-sm font-semibold bg-red-600 text-white hover:bg-red-700 shadow-md transition-all"
               >
                 Vẫn tiếp tục lưu
@@ -826,7 +822,7 @@ export const LifeStages: React.FC = () => {
                   <FundingSourceSelect
                     label="Nguồn chi trả"
                     value={formData.source}
-                    onChange={(value) => { setFormData({ ...formData, source: value as any }); }}
+                    onChange={(value) => { setFormData({ ...formData, source: value }); }}
                     targetPeriodKey={`${formData.year}-${String(formData.month).padStart(2, '0')}`}
                   />
                 </div>
@@ -1073,7 +1069,7 @@ export const LifeStages: React.FC = () => {
                       <FundingSourceSelect
                         label="Nguồn Quỹ dư"
                         value={formData.recurringFundingSource || ''}
-                        onChange={(value) => { setFormData({ ...formData, recurringFundingSource: value as any }); }}
+                        onChange={(value) => { setFormData({ ...formData, recurringFundingSource: value }); }}
                         targetPeriodKey={`${formData.year}-${String(formData.month).padStart(2, '0')}`}
                         allowEmpty={true}
                         emptyLabel="-- Chọn quỹ --"
@@ -1147,7 +1143,7 @@ export const LifeStages: React.FC = () => {
                           let simulatedCash = cashAfterOneTime;
                           let coveredPeriods = 0;
                           let totalSurplusOverDuration = 0;
-                          let traceLines: string[] = [];
+                          const traceLines: string[] = [];
 
                           for (let i = 1; i <= duration; i++) {
                               let m = formData.month + i;
@@ -1168,7 +1164,7 @@ export const LifeStages: React.FC = () => {
                                   let oldTrackAImpact = 0;
                                   if (editingId) {
                                       const oldEvent = state.lifeEvents.find(ev => ev.id === editingId);
-                                      if (oldEvent && oldEvent.spendingCategory && oldEvent.recurringMonthlyImpact) {
+                                      if (oldEvent?.spendingCategory && oldEvent.recurringMonthlyImpact) {
                                           const oldGroup = oldEvent.spendingCategory.split('/')[0];
                                           if (oldGroup === lookupGroupId) {
                                               let evStartMonth = oldEvent.month + 1;
@@ -1257,7 +1253,7 @@ export const LifeStages: React.FC = () => {
                               let oldTrackAImpact = 0;
                               if (editingId) {
                                   const oldEvent = state.lifeEvents.find(ev => ev.id === editingId);
-                                  if (oldEvent && oldEvent.spendingCategory && oldEvent.recurringMonthlyImpact) {
+                                  if (oldEvent?.spendingCategory && oldEvent.recurringMonthlyImpact) {
                                       const oldGroup = oldEvent.spendingCategory.split('/')[0];
                                       if (oldGroup === lookupGroupId) {
                                           let evStartMonth = oldEvent.month + 1;
@@ -1320,7 +1316,7 @@ export const LifeStages: React.FC = () => {
                           }
                           text1 += traceLines.join('\n');
 
-                          let text2 = '';
+                          const text2 = '';
                           let adviceType: 'safe' | 'warning' | 'critical' | 'error' = 'safe';
                           const totalCashPool = availableRemaining + totalSurplusOverDuration;
                           const trueTotalCost = totalCost + (isSameSource ? oneTimeAmount : 0);
@@ -1329,7 +1325,7 @@ export const LifeStages: React.FC = () => {
                           let conclusionTitle = '';
                           let conclusionText = '';
                           if (coveredPeriods >= duration) {
-                              let survivalText = `Nguồn tiền kết hợp (Vốn đệm + Thực dư) dư sức gánh trọn vẹn đủ ${duration} kỳ.`;
+                              const survivalText = `Nguồn tiền kết hợp (Vốn đệm + Thực dư) dư sức gánh trọn vẹn đủ ${duration} kỳ.`;
                               if (impactRatio < 30) {
                                   adviceType = 'safe';
                                   conclusionTitle = 'Cấp độ 1 (An toàn tuyệt đối)';
@@ -1359,7 +1355,7 @@ export const LifeStages: React.FC = () => {
                           const subduedClass = isSafe ? 'text-emerald-600/90' : isWarn ? 'text-yellow-700/90' : isCrit ? 'text-orange-700/90' : 'text-red-700/90';
 
                           expertAdvice = {
-                              type: adviceType as any,
+                              type: adviceType,
                               content: (
                                   <div className={`mt-2 border rounded-lg px-3 py-3 ${bgClass}`}>
                                       <p className={`text-xs font-bold mb-2 flex items-center gap-1.5 ${titleClass}`}>
@@ -1559,7 +1555,7 @@ export const LifeStages: React.FC = () => {
               let hasBudgetWarning = false;
               
               if (state.resolvedMonthlyDb) {
-                let sM = event.month; let sY = event.year;
+                const sM = event.month; const sY = event.year;
                 
                 if (event.recurringFundingSource && safeNumber(event.recurringMonthlyImpactFund) !== 0) {
                   const fundId = event.recurringFundingSource;
@@ -1606,7 +1602,7 @@ export const LifeStages: React.FC = () => {
                     <span className="text-sm font-semibold text-gray-500 mr-2 flex items-center gap-1.5"><Filter className="w-4 h-4"/> Lọc hiển thị:</span>
                     <Select 
                       value={timelineFilterType} 
-                      onChange={e => setTimelineFilterType(e.target.value)} 
+                      onChange={e => { setTimelineFilterType(e.target.value); }} 
                       className="w-full sm:w-[220px] h-9 text-sm"
                       options={[
                         {value: 'all', label: 'Tất cả phân loại'},
@@ -1615,7 +1611,7 @@ export const LifeStages: React.FC = () => {
                     />
                     <Select 
                       value={timelineFilterSource} 
-                      onChange={e => setTimelineFilterSource(e.target.value)} 
+                      onChange={e => { setTimelineFilterSource(e.target.value); }} 
                       className="w-full sm:w-[260px] h-9 text-sm"
                       options={[
                         {value: 'all', label: 'Tất cả Nguồn tiền / Quỹ'},

@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Card, CardHeader, CardTitle, CardContent, CardDescription } from '../components/ui/Card';
+import { Card, CardHeader, CardTitle, CardContent } from '../components/ui/Card';
 import { Button } from '../components/ui/Button';
 import { ArrowRightLeft, Plus, History, Lightbulb, ChevronDown, ChevronUp, RotateCcw } from 'lucide-react';
 import { useAppContext } from '../context/AppContext';
@@ -114,13 +114,13 @@ export const FundTransfers: React.FC = () => {
 
       {showTransferForm && (
          <div className="mb-8">
-            <TransferForm onSuccess={() => setShowTransferForm(false)} onCancel={() => setShowTransferForm(false)} />
+            <TransferForm onSuccess={() => { setShowTransferForm(false); }} onCancel={() => { setShowTransferForm(false); }} />
          </div>
       )}
 
       {/* Scenarios Guide */}
       <Card className="border border-amber-300/30 bg-gradient-to-br from-amber-50/80 to-orange-50/50 overflow-hidden">
-        <CardHeader className="pb-2 cursor-pointer select-none" onClick={() => setShowGuide(!showGuide)}>
+        <CardHeader className="pb-2 cursor-pointer select-none" onClick={() => { setShowGuide(!showGuide); }}>
           <CardTitle className="text-sm flex items-center justify-between">
             <span className="flex items-center gap-2 text-amber-700">
               <Lightbulb className="w-4 h-4" />
@@ -246,7 +246,7 @@ export const FundTransfers: React.FC = () => {
             <History className="w-5 h-5 text-emerald-500" /> Lịch sử Điều chuyển dòng tiền
           </CardTitle>
           {!showTransferForm && (
-            <Button onClick={() => setShowTransferForm(true)} className="bg-blue-600 hover:bg-blue-700 text-white gap-2 shrink-0">
+            <Button onClick={() => { setShowTransferForm(true); }} className="bg-blue-600 hover:bg-blue-700 text-white gap-2 shrink-0">
               <Plus className="w-4 h-4" /> Thực hiện Điều chuyển
             </Button>
           )}
@@ -311,7 +311,7 @@ export const FundTransfers: React.FC = () => {
                 <p className="text-family-textMuted text-sm max-w-sm mx-auto">
                    Mô phỏng các luồng tiền thực tế của gia đình bạn bằng cách thực hiện các Lệnh điều chuyển giữa Tài sản, Dòng tiền và Công nợ.
                 </p>
-                <Button onClick={() => setShowTransferForm(true)} variant="outline" className="mt-4 border-blue-500/30 text-blue-400 hover:bg-blue-500/10">
+                <Button onClick={() => { setShowTransferForm(true); }} variant="outline" className="mt-4 border-blue-500/30 text-blue-400 hover:bg-blue-500/10">
                    Thực hiện lệnh đầu tiên
                 </Button>
              </div>

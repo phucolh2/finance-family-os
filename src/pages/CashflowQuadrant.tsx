@@ -6,7 +6,6 @@ import { runProjection } from '../engines/projectionEngine';
 import { calculateIncome } from '../engines/incomeEngine';
 import { calculateBudget } from '../engines/budgetEngine';
 import { formatTableMoneyVNDMillion } from '../utils/format';
-import { BUDGET_PILLARS } from '../constants/pillars';
 import { 
   ArrowUpRight, 
   ArrowRightLeft,
@@ -16,7 +15,6 @@ import {
   Wallet
 } from 'lucide-react';
 import {
-  LineChart,
   Line,
   XAxis,
   YAxis,
@@ -130,7 +128,7 @@ export const CashflowQuadrant: React.FC = () => {
   // --- 3. ASSET QUADRANT ---
   // Use the exact UI hook to match "Dự phòng / Sự kiện" screen
   const { totalRemainingSum } = useLiquidityBreakdown('cumulative', activeRow?.period.key);
-  let displayLiquidityBalance = totalRemainingSum;
+  const displayLiquidityBalance = totalRemainingSum;
 
   // Compute exact breakdown of sinking funds for UI
   const sinkingFundBreakdown: Record<string, number> = {};
@@ -609,19 +607,19 @@ export const CashflowQuadrant: React.FC = () => {
             
             <div className="flex bg-family-bgDeep p-1 rounded-lg border border-family-accent/10 w-fit">
               <button 
-                onClick={() => setActiveChartTab('fire')}
+                onClick={() => { setActiveChartTab('fire'); }}
                 className={`px-3 py-1.5 rounded-md text-xs font-semibold transition-all ${activeChartTab === 'fire' ? 'bg-emerald-500/20 text-emerald-400 shadow-sm' : 'text-family-textMuted hover:text-family-text hover:bg-family-bgDark/50'}`}
               >
                 Hành trình FIRE
               </button>
               <button 
-                onClick={() => setActiveChartTab('wealth')}
+                onClick={() => { setActiveChartTab('wealth'); }}
                 className={`px-3 py-1.5 rounded-md text-xs font-semibold transition-all ${activeChartTab === 'wealth' ? 'bg-amber-500/20 text-amber-400 shadow-sm' : 'text-family-textMuted hover:text-family-text hover:bg-family-bgDark/50'}`}
               >
                 Cơ cấu Tài sản
               </button>
               <button 
-                onClick={() => setActiveChartTab('outflow')}
+                onClick={() => { setActiveChartTab('outflow'); }}
                 className={`px-3 py-1.5 rounded-md text-xs font-semibold transition-all ${activeChartTab === 'outflow' ? 'bg-rose-500/20 text-rose-400 shadow-sm' : 'text-family-textMuted hover:text-family-text hover:bg-family-bgDark/50'}`}
               >
                 Phân bổ Chi tiêu
@@ -678,13 +676,13 @@ export const CashflowQuadrant: React.FC = () => {
                   </div>
                   <div className="flex bg-family-bgDeep p-1 rounded-lg border border-family-accent/10 shrink-0">
                     <button 
-                      onClick={() => setWealthViewMode('percent')}
+                      onClick={() => { setWealthViewMode('percent'); }}
                       className={`px-2 py-1 rounded text-[10px] font-semibold transition-all ${wealthViewMode === 'percent' ? 'bg-amber-500/20 text-amber-400' : 'text-family-textMuted hover:text-family-text'}`}
                     >
                       Tỷ trọng (%)
                     </button>
                     <button 
-                      onClick={() => setWealthViewMode('value')}
+                      onClick={() => { setWealthViewMode('value'); }}
                       className={`px-2 py-1 rounded text-[10px] font-semibold transition-all ${wealthViewMode === 'value' ? 'bg-amber-500/20 text-amber-400' : 'text-family-textMuted hover:text-family-text'}`}
                     >
                       Giá trị thực

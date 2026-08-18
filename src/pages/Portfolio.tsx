@@ -11,7 +11,7 @@ import { safeNumber } from '../utils/math';
 import { ExpertPortfolioCharts } from '../components/portfolio/ExpertPortfolioCharts';
 import { PieChart, Pie, Cell, ResponsiveContainer, Legend, Tooltip } from 'recharts';
 import { PortfolioRadarChart } from '../components/portfolio/PortfolioRadarChart';
-import { Briefcase, RotateCcw, PlusCircle, Trash2 } from 'lucide-react';
+import { Briefcase, PlusCircle, Trash2 } from 'lucide-react';
 import type { AssetType } from '../types/portfolio';
 import { ObservationControls } from '../components/ui/ObservationControls';
 import { HelpTooltip } from '../components/ui/HelpTooltip';

@@ -316,7 +316,7 @@ export function runProjection(input: ProjectionEngineInput): ProjectionOutput {
       else if (event.source === 'debt') classification = 'debt_reserve';
       
       const matchedCategory = budgetRes.categories.find(c => c.group === event.source);
-      if (matchedCategory && matchedCategory.classification) {
+      if (matchedCategory?.classification) {
           classification = matchedCategory.classification;
       }
 
@@ -390,7 +390,7 @@ export function runProjection(input: ProjectionEngineInput): ProjectionOutput {
            });
         }
         
-        let acc = 0;
+        const acc = 0;
         activeValueUpToLastMonth += Math.max(0, currentCapital) + acc;
       }
     });
@@ -594,7 +594,7 @@ export function runProjection(input: ProjectionEngineInput): ProjectionOutput {
              state.contribution += newContrib;
              
              if (newContrib > 0 || rolloverAmount > 0) {
-                state.buckets.push({ principal: newContrib + rolloverAmount, termStart: current, termMonths: bTerm, interestRateAnnual: bRate, contribAmount: periodContrib } as any);
+                state.buckets.push({ principal: newContrib + rolloverAmount, termStart: current, termMonths: bTerm, interestRateAnnual: bRate, contribAmount: periodContrib });
              }
             
             state.balance = state.buckets.reduce((sum, b) => sum + b.principal, 0);
@@ -770,7 +770,7 @@ export function runProjection(input: ProjectionEngineInput): ProjectionOutput {
         : Infinity;
       
       if (current >= start && current < end) {
-        let accumulatedPnl = 0;
+        const accumulatedPnl = 0;
         // (Linear interpolation of realizedProfit removed per user request)
 
         let currentCapital = safeNumber(deal.capital, 0);

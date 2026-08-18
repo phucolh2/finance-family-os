@@ -1,13 +1,10 @@
-import React, { useMemo, useState } from 'react';
+import React from 'react';
 import { useAppContext } from '../../context/AppContext';
 import { useLiquidityBreakdown } from '../../hooks/useLiquidityBreakdown';
 
-import { Card, CardContent, CardHeader, CardTitle } from '../ui/Card';
-import { Wallet, ChevronDown, ChevronRight } from 'lucide-react';
+import { Wallet, ChevronDown } from 'lucide-react';
 import { formatTableMoneyVNDMillion } from '../../utils/format';
-import { HelpTooltip } from '../ui/HelpTooltip';
 import { runProjection } from '../../engines/projectionEngine';
-import { analyzeExpense } from '../../engines/expenseEngine';
 import { SinkingFundModule_Liquidity } from './SinkingFundModule_Liquidity';
 
 export const SavingsAndLiquidityView: React.FC = () => {

@@ -4,8 +4,7 @@ import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '../co
 import { Button } from '../components/ui/Button';
 import { Input } from '../components/ui/Input';
 import { WarningBox } from '../components/ui/WarningBox';
-import { Trash2, Plus, Save, RotateCcw, BarChart2, Check, Sliders, AlertTriangle } from 'lucide-react';
-import { formatTableMoneyVNDMillion } from '../utils/format';
+import { Trash2, Plus, Save, BarChart2, Check, Sliders, AlertTriangle } from 'lucide-react';
 import type { BudgetTreeNode } from '../types/budget';
 import { BudgetVersionCompareChart } from '../components/budget/BudgetVersionCompareChart';
 import { BudgetHistoryTrendChart } from '../components/budget/BudgetHistoryTrendChart';

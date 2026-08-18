@@ -223,7 +223,7 @@ export const SmartAllocationAdvisorModal: React.FC<Props> = ({ isOpen, onClose, 
             {/* Input Section */}
             <div className="flex bg-slate-200/50 p-1 rounded-xl w-full max-w-sm mx-auto mb-2">
               <button
-                onClick={() => setMode('income')}
+                onClick={() => { setMode('income'); }}
                 className={`flex-1 py-2 text-sm font-bold rounded-lg transition-all duration-200 ${
                   mode === 'income' 
                     ? 'bg-white text-indigo-700 shadow-sm ring-1 ring-slate-200/50' 
@@ -233,7 +233,7 @@ export const SmartAllocationAdvisorModal: React.FC<Props> = ({ isOpen, onClose, 
                 💰 Phân bổ Thu nhập
               </button>
               <button
-                onClick={() => setMode('expense')}
+                onClick={() => { setMode('expense'); }}
                 className={`flex-1 py-2 text-sm font-bold rounded-lg transition-all duration-200 ${
                   mode === 'expense' 
                     ? 'bg-white text-rose-700 shadow-sm ring-1 ring-slate-200/50' 
@@ -255,7 +255,7 @@ export const SmartAllocationAdvisorModal: React.FC<Props> = ({ isOpen, onClose, 
                       type="number" 
                       placeholder="VD: 100" 
                       value={amountInput}
-                      onChange={(e) => setAmountInput(e.target.value)}
+                      onChange={(e) => { setAmountInput(e.target.value); }}
                       className="text-lg font-semibold h-12 shadow-inner bg-slate-50 border-slate-200 focus-visible:ring-indigo-500/30"
                     />
                   </div>

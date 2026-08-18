@@ -1,4 +1,4 @@
-import type { AppState, DebtLiability, SavingsDeposit } from '../types/finance';
+import type { AppState } from '../types/finance';
 import type { ProjectionOutput } from '../types/projection';
 
 export type AlertType = 'danger' | 'warning' | 'info' | 'success';

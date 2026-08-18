@@ -1,6 +1,6 @@
-import { describe, it, expect, vi } from 'vitest';
+import { describe, it, expect } from 'vitest';
 import { computeSmartAllocation, checkBufferFund, checkBudgetPressure, checkSinkingFundProgress, applyGlidePath } from '../SmartAllocationAdvisor';
-import type { AllocationSnapshot, AllocationSuggestion } from '../SmartAllocationAdvisor';
+import type { AllocationSnapshot } from '../SmartAllocationAdvisor';
 
 describe('SmartAllocationAdvisor Engine', () => {
   const createMockSnapshot = (overrides: Partial<AllocationSnapshot> = {}): AllocationSnapshot => ({

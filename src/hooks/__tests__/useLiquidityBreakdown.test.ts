@@ -43,7 +43,7 @@ describe('useLiquidityBreakdown', () => {
         budgetAmountsByCategory: { 'housing/rent': 10 },
         actualExpenseCategories: { 'housing/rent': 7 },
         periodKey: '2026-10',
-      } as any
+      }
     ],
     lifeEvents: [],
     sinkingFunds: []
@@ -84,7 +84,7 @@ describe('useLiquidityBreakdown', () => {
     ];
     // In actual tracking, the user input might include the impact or it might just be the base actual.
     // Assuming user input regular expense as 6 (base actual), the engine would see 6
-    if (mockState.resolvedMonthlyDb && mockState.resolvedMonthlyDb[0]) {
+    if (mockState.resolvedMonthlyDb?.[0]) {
       mockState.resolvedMonthlyDb[0].budgetAmountsByCategory = { 'housing/rent': 6 };
       mockState.resolvedMonthlyDb[0].actualExpenseCategories = { 'housing/rent': 6 };
     }
@@ -135,7 +135,7 @@ describe('useLiquidityBreakdown', () => {
         budgetAmountsByCategory: { 'housing/rent': 10 },
         actualExpenseCategories: { 'housing/rent': 6 },
         periodKey: '2026-10',
-      } as any
+      }
     ];
     mockState.lifeEvents = [
       {

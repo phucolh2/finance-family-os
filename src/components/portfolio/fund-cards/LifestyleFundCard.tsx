@@ -134,7 +134,7 @@ export const LifestyleFundCard: React.FC<FundCardProps> = ({
 
         <div className="flex flex-col gap-2 mt-4 pt-3 border-t border-orange-200/50">
            <button 
-             onClick={() => setExpandedFundId(expandedFundId === fund.id ? null : fund.id)}
+             onClick={() => { setExpandedFundId(expandedFundId === fund.id ? null : fund.id); }}
              className="text-[11px] text-green-600 hover:text-green-700 font-semibold flex items-center justify-center gap-1 w-full bg-white/60 border border-green-200/50 py-1.5 rounded-lg transition-colors"
            >
              {expandedFundId === fund.id ? 'Thu gọn chi tiết' : '⊕ Sử dụng quỹ / Chi tiết dòng tiền'}

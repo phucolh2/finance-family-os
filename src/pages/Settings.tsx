@@ -7,13 +7,13 @@ import { WarningBox } from '../components/ui/WarningBox';
 import { Download, Upload, ShieldAlert, CheckCircle2, Plus, Trash2, Edit2, X, Save } from 'lucide-react';
 import { validateAppState } from '../utils/migration';
 import type { NonTermInterestRatePeriod, IncomeCategory } from '../types/finance';
-import { HelpCircle, Clock, RotateCcw, History, Shield, Timer } from 'lucide-react';
+import { Clock, RotateCcw, History, Shield, Timer } from 'lucide-react';
 import { HelpTooltip } from '../components/ui/HelpTooltip';
 import { createDataSummary, formatSummaryLines } from '../utils/dataSummary';
 import type { DataSummary } from '../utils/dataSummary';
 import { addBackupHistoryEntry, getBackupHistory, clearBackupHistory, getActionLabel } from '../utils/backupHistory';
 import type { BackupHistoryEntry } from '../utils/backupHistory';
-import { getAutoBackupConfig, saveAutoBackupConfig, getAutoBackupSlots, deleteAutoBackupSlot, clearAllAutoBackups } from '../utils/scheduledBackup';
+import { getAutoBackupConfig, saveAutoBackupConfig, getAutoBackupSlots, deleteAutoBackupSlot } from '../utils/scheduledBackup';
 import type { AutoBackupConfig, AutoBackupSlot } from '../utils/scheduledBackup';
 
 const IncomeCategoriesSettings: React.FC = () => {
@@ -110,7 +110,7 @@ const IncomeCategoriesSettings: React.FC = () => {
                       <input 
                         type="text" 
                         value={editingCat.name} 
-                        onChange={(e) => setEditingCat({...editingCat, name: e.target.value})}
+                        onChange={(e) => { setEditingCat({...editingCat, name: e.target.value}); }}
                         className="w-full bg-family-bg border border-family-accent/30 rounded px-2 py-1 text-xs outline-none"
                       />
                     ) : (
@@ -124,7 +124,7 @@ const IncomeCategoriesSettings: React.FC = () => {
                     {editingId === cat.id && editingCat ? (
                       <select 
                         value={editingCat.type}
-                        onChange={(e) => setEditingCat({...editingCat, type: e.target.value as 'active' | 'passive'})}
+                        onChange={(e) => { setEditingCat({...editingCat, type: e.target.value as 'active' | 'passive'}); }}
                         className="bg-family-bg border border-family-accent/30 rounded px-2 py-1 text-xs outline-none"
                       >
                         <option value="active">Chủ động</option>
@@ -149,10 +149,10 @@ const IncomeCategoriesSettings: React.FC = () => {
                           </>
                         ) : (
                           <>
-                            <Button variant="outline" size="sm" onClick={() => handleEditClick(cat)} className="text-blue-500 hover:text-blue-700 hover:bg-blue-50 px-2 h-8">
+                            <Button variant="outline" size="sm" onClick={() => { handleEditClick(cat); }} className="text-blue-500 hover:text-blue-700 hover:bg-blue-50 px-2 h-8">
                               <Edit2 className="w-4 h-4" />
                             </Button>
-                            <Button variant="outline" size="sm" onClick={() => handleDelete(cat.id)} className="text-red-500 hover:text-red-700 hover:bg-red-50 px-2 h-8">
+                            <Button variant="outline" size="sm" onClick={() => { handleDelete(cat.id); }} className="text-red-500 hover:text-red-700 hover:bg-red-50 px-2 h-8">
                               <Trash2 className="w-4 h-4" />
                             </Button>
                           </>
@@ -256,9 +256,9 @@ const AssumptionsSettings: React.FC = () => {
                   <td className="py-3">
                     {editingIndex === idx && editingPeriod ? (
                        <div className="flex gap-2">
-                         <input type="number" min={1} max={12} value={editingPeriod.startMonth} onChange={e => setEditingPeriod({...editingPeriod, startMonth: Number(e.target.value)})} className="w-16 bg-family-bg border border-family-accent/30 rounded px-2 py-1 text-xs outline-none" />
+                         <input type="number" min={1} max={12} value={editingPeriod.startMonth} onChange={e => { setEditingPeriod({...editingPeriod, startMonth: Number(e.target.value)}); }} className="w-16 bg-family-bg border border-family-accent/30 rounded px-2 py-1 text-xs outline-none" />
                          <span>/</span>
-                         <input type="number" min={2000} max={2060} value={editingPeriod.startYear} onChange={e => setEditingPeriod({...editingPeriod, startYear: Number(e.target.value)})} className="w-20 bg-family-bg border border-family-accent/30 rounded px-2 py-1 text-xs outline-none" />
+                         <input type="number" min={2000} max={2060} value={editingPeriod.startYear} onChange={e => { setEditingPeriod({...editingPeriod, startYear: Number(e.target.value)}); }} className="w-20 bg-family-bg border border-family-accent/30 rounded px-2 py-1 text-xs outline-none" />
                        </div>
                     ) : (
                       `Từ Tháng ${p.startMonth}/${p.startYear}`
@@ -266,7 +266,7 @@ const AssumptionsSettings: React.FC = () => {
                   </td>
                   <td className="py-3 text-emerald-500 font-semibold">
                     {editingIndex === idx && editingPeriod ? (
-                       <input type="number" step="0.1" value={editingPeriod.rateAnnual} onChange={e => setEditingPeriod({...editingPeriod, rateAnnual: Number(e.target.value)})} className="w-20 bg-family-bg border border-family-accent/30 rounded px-2 py-1 text-xs outline-none text-emerald-500" />
+                       <input type="number" step="0.1" value={editingPeriod.rateAnnual} onChange={e => { setEditingPeriod({...editingPeriod, rateAnnual: Number(e.target.value)}); }} className="w-20 bg-family-bg border border-family-accent/30 rounded px-2 py-1 text-xs outline-none text-emerald-500" />
                     ) : (
                       `${p.rateAnnual}%`
                     )}
@@ -278,7 +278,7 @@ const AssumptionsSettings: React.FC = () => {
                           <Button variant="outline" size="sm" onClick={handleSaveEdit} className="text-green-600 hover:text-green-800 hover:bg-green-50 px-2 h-8">
                             <Save className="w-4 h-4" />
                           </Button>
-                          <Button variant="outline" size="sm" onClick={() => setEditingIndex(null)} className="text-gray-500 hover:text-gray-700 hover:bg-gray-50 px-2 h-8">
+                          <Button variant="outline" size="sm" onClick={() => { setEditingIndex(null); }} className="text-gray-500 hover:text-gray-700 hover:bg-gray-50 px-2 h-8">
                             <X className="w-4 h-4" />
                           </Button>
                         </>
@@ -388,7 +388,7 @@ const AssetAllocationSettings: React.FC = () => {
               <Button onClick={handleSave} disabled={!isValid}>Lưu cấu hình</Button>
             </>
           ) : (
-            <Button onClick={() => setIsEditing(true)}>Chỉnh sửa tỷ trọng</Button>
+            <Button onClick={() => { setIsEditing(true); }}>Chỉnh sửa tỷ trọng</Button>
           )}
         </div>
         {!isValid && isEditing && (
@@ -711,7 +711,7 @@ export const Settings: React.FC = () => {
                     <span className="text-[11px] text-family-textMuted">Chu kỳ:</span>
                     <select
                       value={autoBackupConfig.intervalHours}
-                      onChange={(e) => handleChangeBackupInterval(Number(e.target.value))}
+                      onChange={(e) => { handleChangeBackupInterval(Number(e.target.value)); }}
                       className="bg-family-bgDeep border border-family-accent/20 rounded-lg px-2 py-1 text-xs text-family-text focus:outline-none focus:border-family-accent/60"
                     >
                       <option value={6}>6 giờ</option>
@@ -739,7 +739,7 @@ export const Settings: React.FC = () => {
                       </div>
                       <div className="flex items-center gap-2">
                         <Button
-                          onClick={() => handleRestoreAutoBackup(slot)}
+                          onClick={() => { handleRestoreAutoBackup(slot); }}
                           variant="secondary"
                           size="sm"
                           className="text-[10px] h-7 px-2.5 gap-1"
@@ -747,7 +747,7 @@ export const Settings: React.FC = () => {
                           <RotateCcw className="w-3 h-3" /> Khôi phục
                         </Button>
                         <button
-                          onClick={() => handleDeleteAutoBackup(slot.timestamp)}
+                          onClick={() => { handleDeleteAutoBackup(slot.timestamp); }}
                           className="text-red-400 hover:text-red-600 transition-colors p-1"
                           title="Xóa bản sao lưu"
                         >
@@ -779,7 +779,7 @@ export const Settings: React.FC = () => {
                     </button>
                   )}
                   <button
-                    onClick={() => setShowHistory(!showHistory)}
+                    onClick={() => { setShowHistory(!showHistory); }}
                     className="text-[10px] text-family-accent hover:text-family-text transition-colors font-semibold"
                   >
                     {showHistory ? 'Ẩn' : `Hiện (${backupHistory.length})`}

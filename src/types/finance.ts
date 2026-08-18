@@ -1,5 +1,4 @@
 import type { AssetConfig } from './portfolio';
-import type { AssetType } from './portfolio';
 import type { FundingSourceId } from '../constants/fundingSources';
 import type { LifecycleProps } from './ledger';
 

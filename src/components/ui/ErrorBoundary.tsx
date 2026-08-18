@@ -53,7 +53,7 @@ const ErrorFallback: React.FC<FallbackProps> = ({ error, resetErrorBoundary }) =
 
           <div className="flex flex-col gap-3">
             <button 
-              onClick={() => window.location.reload()}
+              onClick={() => { window.location.reload(); }}
               className="w-full flex items-center justify-center gap-2 bg-family-accent text-white py-3 px-4 rounded-xl font-semibold hover:bg-family-accent/90 transition-colors"
             >
               <RefreshCw className="w-5 h-5" /> Tải lại trang

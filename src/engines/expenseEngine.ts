@@ -55,7 +55,7 @@ export function analyzeExpense(
   const monthlySeries: Record<string, ExpenseMonthlyPoint[]> = {};
   
   groups.forEach(g => {
-    summaryByGroup[g] = { groupId: g as any, totalBudget: 0, totalActual: 0, totalRegularActual: 0 };
+    summaryByGroup[g] = { groupId: g, totalBudget: 0, totalActual: 0, totalRegularActual: 0 };
     monthlySeries[g] = [];
   });
 
