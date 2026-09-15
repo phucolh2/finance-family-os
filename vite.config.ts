@@ -4,7 +4,7 @@ import react from '@vitejs/plugin-react'
 // https://vite.dev/config/
 export default defineConfig(({ command }) => ({
   plugins: [react()],
-  base: command === 'build' ? '/finance-family-os/' : '/',
+  base: '/',
   test: {
     globals: true,
     environment: 'jsdom',

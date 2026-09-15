@@ -18,8 +18,8 @@ export function generateResolvedMonthlyDb(
   budgetSchedule: BudgetRatioScheduleItem[],
   expenseSchedule: ExpenseScheduleItem[],
   assets: AssetConfig[],
-  assumptions: Assumptions,
-  lifeStages?: LifeStage[]
+  _assumptions: Assumptions,
+  _lifeStages?: LifeStage[]
 ): ResolvedMonthlyDbResult {
   // Generate the timeline periods
   const timelineResult = generateTimeline({

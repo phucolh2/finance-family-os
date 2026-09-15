@@ -11,12 +11,21 @@ import { formatMoneyVNDMillion } from '../utils/format';
 import { useLiquidityBreakdown } from '../hooks/useLiquidityBreakdown';
 
 export const FundTransfers: React.FC = () => {
-  const { state, deleteFundTransfer, selectedPeriodKey } = useAppContext();
+  const { state, deleteFundTransfer, selectedPeriodKey, pushSystemLog } = useAppContext();
   const { fundTransfers = [] } = state;
   const { liquidityBreakdownData } = useLiquidityBreakdown('cumulative', selectedPeriodKey);
   
   const [showTransferForm, setShowTransferForm] = useState(false);
   const [showGuide, setShowGuide] = useState(false);
+
+  const handleDelete = (id: string, amount: number) => {
+    if (window.confirm('Rút lại quyết định chia sẻ/điều chuyển này? Mọi tính toán liên quan sẽ được tự động điều chỉnh lại tương ứng.')) {
+      deleteFundTransfer(id);
+      if (pushSystemLog) {
+        pushSystemLog('XÓA', 'Điều chuyển', `Đã rút lại một khoản điều chuyển (${amount} tr)`);
+      }
+    }
+  };
 
   const getSourceLabel = (type: string, id?: string) => {
     if (type === 'cashflow') {
@@ -258,9 +267,9 @@ export const FundTransfers: React.FC = () => {
                 <thead>
                   <tr className="bg-family-bgDark/50 border-b border-family-accent/10 text-family-textMuted text-xs uppercase">
                     <th className="px-6 py-4 font-semibold whitespace-nowrap">Thời gian</th>
-                    <th className="px-6 py-4 font-semibold">Giao dịch</th>
+                    <th className="px-6 py-4 font-semibold">Nội dung chia sẻ</th>
                     <th className="px-6 py-4 font-semibold text-right whitespace-nowrap">Số tiền (triệu VND)</th>
-                    <th className="px-6 py-4 font-semibold text-right">Thao tác</th>
+                    <th className="px-6 py-4 font-semibold text-right">Tùy chọn</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-family-accent/10">
@@ -291,10 +300,10 @@ export const FundTransfers: React.FC = () => {
                         <Button 
                           variant="outline" 
                           size="sm" 
-                          onClick={() => { if(window.confirm('Bạn có chắc chắn muốn hoàn tác lệnh điều chuyển dòng tiền này?')) deleteFundTransfer(tf.id); }}
+                          onClick={() => handleDelete(tf.id, tf.amount)}
                           className="text-amber-400 hover:text-amber-300 border-amber-500/20 hover:bg-amber-500/10 h-7 text-xs gap-1"
                         >
-                          <RotateCcw className="w-3.5 h-3.5" /> Hoàn tác
+                          <RotateCcw className="w-3.5 h-3.5" /> Rút lại
                         </Button>
                       </td>
                     </tr>
@@ -307,12 +316,12 @@ export const FundTransfers: React.FC = () => {
                 <div className="inline-flex items-center justify-center w-12 h-12 rounded-full bg-blue-500/10 text-blue-400 mb-4">
                   <ArrowRightLeft className="w-6 h-6" />
                 </div>
-                <h3 className="text-family-text font-semibold mb-1">Chưa có giao dịch điều chuyển nào</h3>
+                <h3 className="text-family-text font-semibold mb-1">Chưa có khoản điều chuyển nào</h3>
                 <p className="text-family-textMuted text-sm max-w-sm mx-auto">
-                   Mô phỏng các luồng tiền thực tế của gia đình bạn bằng cách thực hiện các Lệnh điều chuyển giữa Tài sản, Dòng tiền và Công nợ.
+                   Mô phỏng các luồng tiền thực tế của gia đình bằng cách ghi nhận những khoản chuyển tiền qua lại giữa các nguồn tài sản.
                 </p>
                 <Button onClick={() => { setShowTransferForm(true); }} variant="outline" className="mt-4 border-blue-500/30 text-blue-400 hover:bg-blue-500/10">
-                   Thực hiện lệnh đầu tiên
+                   Ghi nhận khoản đầu tiên
                 </Button>
              </div>
           )}

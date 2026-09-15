@@ -12,8 +12,23 @@ export const Input: React.FC<InputProps> = ({
   error,
   className = '',
   id,
+  type,
   ...props
 }) => {
+  // Hide number spinners using Tailwind arbitrary variants
+  const hideSpinnersClass = type === 'number' 
+    ? '[appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none'
+    : '';
+
+  // Determine padding based on suffix length to prevent text overlap
+  let paddingRightClass = '';
+  if (suffix) {
+    if (suffix.length >= 12) paddingRightClass = 'pr-32';
+    else if (suffix.length > 8) paddingRightClass = 'pr-24';
+    else if (suffix.length > 4) paddingRightClass = 'pr-20';
+    else paddingRightClass = 'pr-12';
+  }
+
   return (
     <div className="space-y-1 w-full">
       {label && (
@@ -24,9 +39,8 @@ export const Input: React.FC<InputProps> = ({
       <div className="relative rounded-xl shadow-sm">
         <input
           id={id}
-          className={`block w-full rounded-xl border border-family-accent/20 bg-white/60 py-2.5 px-3 text-sm text-family-text placeholder-family-textLight/50 focus:border-family-accent focus:bg-white focus:outline-none focus:ring-1 focus:ring-family-accent ${
-            suffix ? 'pr-12' : ''
-          } ${error ? 'border-red-500 focus:border-red-500 focus:ring-red-500' : ''} ${className}`}
+          type={type}
+          className={`block w-full rounded-xl border border-family-accent/20 bg-white/60 py-2.5 px-3 text-sm text-family-text placeholder-family-textLight/50 focus:border-family-accent focus:bg-white focus:outline-none focus:ring-1 focus:ring-family-accent ${paddingRightClass} ${hideSpinnersClass} ${error ? 'border-red-500 focus:border-red-500 focus:ring-red-500' : ''} ${className}`}
           {...props}
         />
         {suffix && (

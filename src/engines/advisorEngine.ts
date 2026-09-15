@@ -29,7 +29,7 @@ export function generateAdvisorAlerts(
   
   // Rule 1: Liquidity Deficit (Khô máu dòng tiền)
   // Quét 24 tháng tới xem có tháng nào netCashflow âm nặng (dưới -5 triệu) do chi phí đột xuất / mua sắm / nợ.
-  let liquidityDeficitFound = false;
+  
   for (let i = startIdx; i < Math.min(startIdx + 24, projection.monthlyRows.length); i++) {
     const row = projection.monthlyRows[i];
     // Check projection warnings for "Quỹ Dự Phòng Nợ thiếu hụt" or similar cashflow issues
@@ -41,12 +41,12 @@ export function generateAdvisorAlerts(
         id: `liq_${row.period.key}`,
         type: 'danger',
         category: 'liquidity',
-        title: 'Cảnh báo Thâm hụt Thanh khoản',
-        message: `Hệ thống dự phóng đến tháng ${row.period.month}/${row.period.year}, gia đình sẽ đối mặt với thâm hụt tiền mặt khoảng ${Math.abs(Math.round(row.netCashflowMonthly))} triệu.`,
-        suggestion: 'Đề xuất: Giảm phân bổ đầu tư rủi ro ngay từ tháng này để bơm vào quỹ tiết kiệm phòng thủ, hoặc lùi kế hoạch chi tiêu lớn lại.',
+        title: 'Lưu ý: Thâm hụt Thanh khoản',
+        message: `Phân tích cho thấy đến tháng ${row.period.month}/${row.period.year}, gia đình có thể đối mặt với thâm hụt tiền mặt khoảng ${Math.abs(Math.round(row.netCashflowMonthly))} triệu.`,
+        suggestion: 'Đề xuất: Chúng ta nên cân nhắc điều chỉnh lại tỷ lệ phân bổ một chút để đảm bảo an toàn hơn nhé.',
         icon: 'droplets'
       });
-      liquidityDeficitFound = true;
+      
       break; // Only show the first nearest deficit
     }
   }
@@ -84,9 +84,9 @@ export function generateAdvisorAlerts(
         id: 'rat_race',
         type: 'danger',
         category: 'rat_race',
-        title: 'Cảnh báo Bẫy Chuột (Rat Race Trap)',
-        message: `Tổng chi trả nợ hàng tháng (${Math.round(currentMonthlyDebtPayment)} tr) đang chiếm ${(debtRatio * 100).toFixed(1)}% thu nhập chủ động. Rủi ro mất thanh khoản cực cao nếu một trong hai vợ chồng đột ngột mất việc.`,
-        suggestion: 'Đề xuất: Hạn chế vay nợ tiêu dùng thêm. Hãy tập trung mọi nguồn lực để tất toán dứt điểm các khoản nợ lãi suất cao trước khi nghĩ đến đầu tư.',
+        title: 'Lưu ý: Bẫy Chuột (Rat Race Trap)',
+        message: `Hiện tại khoản trả nợ hàng tháng (${Math.round(currentMonthlyDebtPayment)} tr) đang chiếm ${(debtRatio * 100).toFixed(1)}% thu nhập chủ động. Tỷ lệ này khá cao và sẽ áp lực nếu có biến động công việc.`,
+        suggestion: 'Đề xuất: Gia đình mình cùng tập trung thanh toán dứt điểm các khoản nợ lãi suất cao trước khi nghĩ đến đầu tư nhé.',
         icon: 'alert-triangle'
       });
     } else if (debtRatio > 0.25) {
@@ -145,9 +145,9 @@ export function generateAdvisorAlerts(
           id: 'fire_offtrack',
           type: 'warning',
           category: 'fire_track',
-          title: 'Cảnh báo Lạm phát lối sống',
-          message: `Chi tiêu thực tế tháng gần nhất (${totalActual} tr) đang vượt ${exceedPercent}% so với ngân sách quy hoạch (${Math.round(totalBudget)} tr).`,
-          suggestion: 'Đề xuất: Việc vỡ kế hoạch chi tiêu liên tục sẽ đẩy lùi thời điểm đạt Tự do tài chính (FIRE). Hãy rà soát lại các khoản chi tiêu không thiết yếu.',
+          title: 'Lưu ý: Lạm phát lối sống',
+          message: `Chi tiêu thực tế tháng gần nhất (${totalActual.toFixed(1).replace(/\.0$/, '')} tr) đang vượt khoảng ${exceedPercent}% so với kế hoạch (${Math.round(totalBudget)} tr).`,
+          suggestion: 'Đề xuất: Chênh lệch một chút không sao, nhưng nếu kéo dài sẽ làm chậm mục tiêu Tự do tài chính (FIRE). Mình cùng rà soát lại một chút nhé!',
           icon: 'trending-down'
         });
       }

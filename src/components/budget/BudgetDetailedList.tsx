@@ -22,7 +22,7 @@ export const BudgetDetailedList: React.FC<BudgetDetailedListProps> = ({ rootGrou
   return (
     <div className="w-full h-auto">
       <div className="columns-1 md:columns-2 xl:columns-3 gap-4 space-y-4">
-        {sortedGroups.map((group, groupIdx) => {
+        {sortedGroups.map((group, _groupIdx) => {
           const groupAmt = (group.ratioPercent / 100) * income;
           return (
             <div key={group.id} className="break-inside-avoid border border-family-accent/10 rounded-xl overflow-hidden bg-family-bgDeep flex flex-col">

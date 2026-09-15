@@ -189,9 +189,45 @@ export const useLiquidityBreakdown = (mode: 'monthly' | 'cumulative' = 'monthly'
       }
     });
 
+    (state.fundTransfers || []).forEach(transfer => {
+      const tMonthValue = transfer.year * 12 + transfer.month;
+      
+      const processTransfer = () => {
+        // Deduction from source
+        if (transfer.sourceType === 'cashflow' && transfer.sourceId?.startsWith('liquidity_group_')) {
+          const rawId = transfer.sourceId.replace('liquidity_group_', '');
+          const groupId = resolveGroupId(rawId);
+          addFlexibleEvent(groupId, { id: transfer.id, name: `Chuyển tiền đi: ${transfer.note || ''}` }, -transfer.amount, 'oneTime');
+        }
+        // Addition to dest
+        if (transfer.destinationType === 'cashflow' && transfer.destinationId?.startsWith('liquidity_group_')) {
+          const rawId = transfer.destinationId.replace('liquidity_group_', '');
+          const groupId = resolveGroupId(rawId);
+          addFlexibleEvent(groupId, { id: transfer.id, name: `Nhận tiền chuyển đến: ${transfer.note || ''}` }, transfer.amount, 'oneTime');
+        }
+      };
+
+      if (mode === 'monthly') {
+        if (transfer.month === selMonth && transfer.year === selYear) {
+          processTransfer();
+        }
+      } else {
+        if (tMonthValue <= selMonthValue) {
+          processTransfer();
+        }
+      }
+    });
+
     const targetDb = (state.resolvedMonthlyDb || []).find(db => db.periodKey === activePeriodKey);
     const cumulativeExpenseData = mode === 'cumulative' 
-      ? analyzeExpense(state.resolvedMonthlyDb || [], state.lifeEvents, activePeriodKey, expenseTree.map((g: any) => (g.groupId || g.id) as string))
+      ? analyzeExpense(
+          state.resolvedMonthlyDb || [], 
+          state.lifeEvents, 
+          activePeriodKey, 
+          expenseTree.map((g: any) => (g.groupId || g.id) as string),
+          state.sinkingFunds || [],
+          activeBudget
+        )
       : null;
 
     return expenseTree.map((g: any) => {

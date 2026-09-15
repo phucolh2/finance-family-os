@@ -1,27 +1,58 @@
 import { useState } from 'react';
 import { ErrorBoundary } from 'react-error-boundary';
 import type { FallbackProps } from 'react-error-boundary';
+import { AuthProvider } from './context/AuthContext';
 import { AppProvider } from './context/AppContext';
+import { AuthGate } from './components/auth/AuthGate';
 import { Layout } from './components/layout/Layout';
 import { Suspense, lazy } from 'react';
 
-const Dashboard = lazy(() => import('./pages/Dashboard').then(m => ({ default: m.Dashboard })));
-const CashflowQuadrant = lazy(() => import('./pages/CashflowQuadrant').then(m => ({ default: m.CashflowQuadrant })));
-const FundTransfers = lazy(() => import('./pages/FundTransfers').then(m => ({ default: m.FundTransfers })));
-const EventLedger = lazy(() => import('./pages/EventLedger').then(m => ({ default: m.EventLedger })));
-const IncomeSchedule = lazy(() => import('./pages/IncomeSchedule').then(m => ({ default: m.IncomeSchedule })));
-const BudgetHistory = lazy(() => import('./pages/BudgetHistory').then(m => ({ default: m.BudgetHistory })));
-const LifeStages = lazy(() => import('./pages/LifeStages').then(m => ({ default: m.LifeStages })));
-const ChildCostEstimator = lazy(() => import('./pages/ChildCostEstimator').then(m => ({ default: m.ChildCostEstimator })));
+const lazyWithRetry = (componentImport: () => Promise<any>) => {
+  return lazy(async () => {
+    const pageHasAlreadyBeenForceRefreshed = JSON.parse(
+      window.sessionStorage.getItem('page-has-been-force-refreshed') || 'false'
+    );
+    try {
+      const component = await componentImport();
+      window.sessionStorage.setItem('page-has-been-force-refreshed', 'false');
+      return component;
+    } catch (error) {
+      if (!pageHasAlreadyBeenForceRefreshed) {
+        window.sessionStorage.setItem('page-has-been-force-refreshed', 'true');
+        window.location.reload();
+        return new Promise(() => {}); // Prevent React from trying to render
+      }
+      throw error;
+    }
+  });
+};
 
-const Portfolio = lazy(() => import('./pages/Portfolio').then(m => ({ default: m.Portfolio })));
-const Savings = lazy(() => import('./pages/Savings').then(m => ({ default: m.Savings })));
-const Reserves = lazy(() => import('./pages/Reserves').then(m => ({ default: m.Reserves })));
-const FireCenter = lazy(() => import('./pages/FireCenter').then(m => ({ default: m.FireCenter })));
-const HealthAndFinalRest = lazy(() => import('./pages/HealthAndFinalRest').then(m => ({ default: m.HealthAndFinalRest })));
-const KnowledgeCenter = lazy(() => import('./pages/KnowledgeCenter').then(m => ({ default: m.KnowledgeCenter })));
-const Settings = lazy(() => import('./pages/Settings').then(m => ({ default: m.Settings })));
-const DebtManagement = lazy(() => import('./pages/DebtManagement').then(m => ({ default: m.DebtManagement })));
+const Dashboard = lazyWithRetry(() => import('./pages/Dashboard').then(m => ({ default: m.Dashboard })));
+const CashflowQuadrant = lazyWithRetry(() => import('./pages/CashflowQuadrant').then(m => ({ default: m.CashflowQuadrant })));
+const FundTransfers = lazyWithRetry(() => import('./pages/FundTransfers').then(m => ({ default: m.FundTransfers })));
+const EventLedger = lazyWithRetry(() => import('./pages/EventLedger').then(m => ({ default: m.EventLedger })));
+const IncomeSchedule = lazyWithRetry(() => import('./pages/IncomeSchedule').then(m => ({ default: m.IncomeSchedule })));
+const BudgetHistory = lazyWithRetry(() => import('./pages/BudgetHistory').then(m => ({ default: m.BudgetHistory })));
+const LifeStages = lazyWithRetry(() => import('./pages/LifeStages').then(m => ({ default: m.LifeStages })));
+const ChildCostEstimator = lazyWithRetry(() => import('./pages/ChildCostEstimator').then(m => ({ default: m.ChildCostEstimator })));
+
+const Portfolio = lazyWithRetry(() => import('./pages/Portfolio').then(m => ({ default: m.Portfolio })));
+const Savings = lazyWithRetry(() => import('./pages/Savings').then(m => ({ default: m.Savings })));
+const Reserves = lazyWithRetry(() => import('./pages/Reserves').then(m => ({ default: m.Reserves })));
+const FireCenter = lazyWithRetry(() => import('./pages/FireCenter').then(m => ({ default: m.FireCenter })));
+const HealthAndFinalRest = lazyWithRetry(() => import('./pages/HealthAndFinalRest').then(m => ({ default: m.HealthAndFinalRest })));
+const KnowledgeCenter = lazyWithRetry(() => import('./pages/KnowledgeCenter').then(m => ({ default: m.KnowledgeCenter })));
+const Settings = lazyWithRetry(() => import('./pages/Settings').then(m => ({ default: m.Settings })));
+const DebtManagement = lazyWithRetry(() => import('./pages/DebtManagement').then(m => ({ default: m.DebtManagement })));
+const TaxCalculator = lazyWithRetry(() => import('./pages/TaxCalculator').then(m => ({ default: m.TaxCalculator })));
+const InsuranceManager = lazyWithRetry(() => import('./pages/InsuranceManager').then(m => ({ default: m.InsuranceManager })));
+const LifestyleAssets = lazyWithRetry(() => import('./pages/LifestyleAssets').then(m => ({ default: m.LifestyleAssets })));
+const LoanSimulator = lazyWithRetry(() => import('./pages/LoanSimulator').then(m => ({ default: m.LoanSimulator })));
+const YearInReview = lazyWithRetry(() => import('./pages/YearInReview').then(m => ({ default: m.YearInReview })));
+const VacationPlanner = lazyWithRetry(() => import('./pages/VacationPlanner').then(m => ({ default: m.VacationPlanner })));
+const DocumentVault = lazyWithRetry(() => import('./pages/DocumentVault').then(m => ({ default: m.DocumentVault })));
+const GivingLedger = lazyWithRetry(() => import('./pages/GivingLedger').then(m => ({ default: m.GivingLedger })));
+const HealthTracker = lazyWithRetry(() => import('./pages/HealthTracker').then(m => ({ default: m.HealthTracker })));
 
 function AppContent() {
   const [activeTab, setActiveTab] = useState<string>('dashboard');
@@ -30,6 +61,8 @@ function AppContent() {
     switch (activeTab) {
       case 'dashboard':
         return <Dashboard />;
+      case 'year_in_review':
+        return <YearInReview />;
       case 'cashflow':
         return <CashflowQuadrant />;
       case 'fund_transfers':
@@ -59,6 +92,22 @@ function AppContent() {
         return <HealthAndFinalRest />;
       case 'knowledge_center':
         return <KnowledgeCenter />;
+      case 'tax_calculator':
+        return <TaxCalculator />;
+      case 'insurance_manager':
+        return <InsuranceManager />;
+      case 'lifestyle_assets':
+        return <LifestyleAssets />;
+      case 'loan_simulator':
+        return <LoanSimulator />;
+      case 'vacation_planner':
+        return <VacationPlanner />;
+      case 'document_vault':
+        return <DocumentVault />;
+      case 'giving_ledger':
+        return <GivingLedger />;
+      case 'health_tracker':
+        return <HealthTracker />;
       case 'settings':
         return <Settings />;
       default:
@@ -68,8 +117,43 @@ function AppContent() {
 
   return (
     <Layout activeTab={activeTab} setActiveTab={setActiveTab}>
-      <Suspense fallback={<div className="p-8 text-center text-gray-500 animate-pulse">Đang tải phân hệ...</div>}>
-        {renderActivePage()}
+      <Suspense fallback={
+        <div className="space-y-6 animate-fade-up">
+          {/* Header skeleton */}
+          <div className="flex justify-between items-center">
+            <div className="space-y-2">
+              <div className="h-8 w-64 rounded-xl skeleton-shimmer bg-family-bgDark/30" />
+              <div className="h-4 w-96 rounded-lg skeleton-shimmer bg-family-bgDark/20" />
+            </div>
+            <div className="h-9 w-40 rounded-xl skeleton-shimmer bg-family-bgDark/20" />
+          </div>
+          {/* KPI cards skeleton */}
+          <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+            {[...Array(6)].map((_, i) => (
+              <div key={i} className="glass-panel rounded-2xl p-4 border-l-4 border-l-family-accent/30 h-24 flex flex-col gap-3">
+                <div className="h-3 w-20 rounded skeleton-shimmer bg-family-bgDark/25" />
+                <div className="h-6 w-28 rounded-lg skeleton-shimmer bg-family-bgDark/30" />
+                <div className="h-2.5 w-16 rounded skeleton-shimmer bg-family-bgDark/20" />
+              </div>
+            ))}
+          </div>
+          {/* Content skeleton */}
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            <div className="lg:col-span-2 glass-panel rounded-2xl p-6 h-64 flex flex-col gap-4">
+              <div className="h-5 w-48 rounded-lg skeleton-shimmer bg-family-bgDark/25" />
+              <div className="h-3 w-64 rounded skeleton-shimmer bg-family-bgDark/20" />
+              <div className="flex-1 rounded-xl skeleton-shimmer bg-family-bgDark/15" />
+            </div>
+            <div className="glass-panel rounded-2xl p-6 h-64 flex flex-col gap-4">
+              <div className="h-5 w-32 rounded-lg skeleton-shimmer bg-family-bgDark/25" />
+              <div className="flex-1 rounded-xl skeleton-shimmer bg-family-bgDark/15" />
+            </div>
+          </div>
+        </div>
+      }>
+        <div key={activeTab} className="animate-fade-up">
+          {renderActivePage()}
+        </div>
       </Suspense>
     </Layout>
   );
@@ -96,7 +180,7 @@ function ErrorFallback({ error, resetErrorBoundary }: FallbackProps) {
   };
 
   const handleClearAndReset = () => {
-    if (window.confirm('Hành động này sẽ xóa toàn bộ dữ liệu tài chính trong thiết bị này và khôi phục về cấu hình mặc định. Bạn đã tải tệp sao lưu cứu hộ về chưa?')) {
+    if (window.confirm('Lưu ý nhỏ: Bạn có chắc chắn muốn làm lại từ đầu không? Toàn bộ dữ liệu sẽ được thiết lập lại. Hãy chắc chắn bạn đã tải file dự phòng nhé!')) {
       localStorage.removeItem('family_finance_os_state');
       window.location.reload();
     }
@@ -112,9 +196,9 @@ function ErrorFallback({ error, resetErrorBoundary }: FallbackProps) {
         </div>
         
         <div className="space-y-2">
-          <h2 className="text-xl font-bold text-white font-serif">Đã xảy ra sự cố không mong muốn</h2>
+          <h2 className="text-xl font-bold text-white font-serif">Trục trặc giao diện</h2>
           <p className="text-xs text-slate-400 leading-relaxed">
-            Hệ thống gặp lỗi render giao diện. Đừng lo lắng, dữ liệu tài chính của bạn vẫn an toàn trong LocalStorage của trình duyệt.
+            Finance Family OS gặp chút trục trặc khi hiển thị. Đừng lo lắng, dữ liệu tài chính của gia đình bạn vẫn an toàn trong thiết bị.
           </p>
         </div>
 
@@ -154,9 +238,13 @@ function ErrorFallback({ error, resetErrorBoundary }: FallbackProps) {
 export default function App() {
   return (
     <ErrorBoundary FallbackComponent={ErrorFallback} onReset={() => { window.location.reload(); }}>
-      <AppProvider>
-        <AppContent />
-      </AppProvider>
+      <AuthProvider>
+        <AppProvider>
+          <AuthGate>
+            <AppContent />
+          </AuthGate>
+        </AppProvider>
+      </AuthProvider>
     </ErrorBoundary>
   );
 }

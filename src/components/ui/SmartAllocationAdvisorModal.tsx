@@ -30,7 +30,7 @@ export interface AIAllocationResult {
     ly_do: string;
   };
 }
-import { Sparkles, X, BrainCircuit, ShieldAlert, ArrowDownToLine, Target, TrendingUp, CheckCircle2 } from 'lucide-react';
+import { Sparkles, X, BrainCircuit, ShieldAlert, Target, TrendingUp, } from 'lucide-react';
 import { formatTableMoneyVNDMillion } from '../../utils/format';
 import { HelpTooltip } from './HelpTooltip';
 
@@ -43,10 +43,10 @@ interface Props {
 export const SmartAllocationAdvisorModal: React.FC<Props> = ({ isOpen, onClose, snapshot }) => {
   const [mode, setMode] = useState<'income' | 'expense'>('income');
   const [amountInput, setAmountInput] = useState<string>('');
-  const [amount, setAmount] = useState<number>(0);
+  const [, setAmount] = useState<number>(0);
   const [aiResults, setAiResults] = useState<AIAllocationResult | null>(null);
   const [isAnalyzing, setIsAnalyzing] = useState(false);
-  const [apiKey, setApiKey] = useState('');
+  const [, setApiKey] = useState('');
   const [expenseResult, setExpenseResult] = useState<ExpenseFinancingResult | null>(null);
 
   useEffect(() => {
@@ -139,17 +139,17 @@ export const SmartAllocationAdvisorModal: React.FC<Props> = ({ isOpen, onClose, 
 
 
 
-  const getTierIcon = (tier: number) => {
+  /* const getTierIcon = (tier: number) => {
     switch(tier) {
       case 0: return <ShieldAlert className="w-5 h-5 text-rose-500 drop-shadow-sm" />;
       case 1: return <ArrowDownToLine className="w-5 h-5 text-amber-500 drop-shadow-sm" />;
       case 2: return <Target className="w-5 h-5 text-blue-500 drop-shadow-sm" />;
       case 3: return <TrendingUp className="w-5 h-5 text-emerald-500 drop-shadow-sm" />;
-      default: return <CheckCircle2 className="w-5 h-5 text-indigo-500 drop-shadow-sm" />;
+      default: return <className="w-5 h-5 text-indigo-500 drop-shadow-sm" />;
     }
-  };
+  }; */
 
-  const getTierBadge = (tier: number) => {
+  /* const getTierBadge = (tier: number) => {
     switch(tier) {
       case 0: return <span className="px-2.5 py-1 text-[10px] uppercase tracking-wider rounded-full bg-rose-50 text-rose-700 font-bold border border-rose-200 shadow-sm flex items-center gap-1.5"><span className="w-1.5 h-1.5 rounded-full bg-rose-500 animate-pulse"></span> Khẩn cấp</span>;
       case 1: return <span className="px-2.5 py-1 text-[10px] uppercase tracking-wider rounded-full bg-amber-50 text-amber-700 font-bold border border-amber-200 shadow-sm flex items-center gap-1.5"><span className="w-1.5 h-1.5 rounded-full bg-amber-500"></span> Nên làm</span>;
@@ -157,7 +157,7 @@ export const SmartAllocationAdvisorModal: React.FC<Props> = ({ isOpen, onClose, 
       case 3: return <span className="px-2.5 py-1 text-[10px] uppercase tracking-wider rounded-full bg-emerald-50 text-emerald-700 font-bold border border-emerald-200 shadow-sm flex items-center gap-1.5"><span className="w-1.5 h-1.5 rounded-full bg-emerald-500"></span> Dài hạn</span>;
       default: return null;
     }
-  };
+  }; */
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/40 backdrop-blur-sm p-4 animate-in fade-in duration-300">

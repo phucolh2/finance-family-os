@@ -3,45 +3,14 @@ import { useAppContext } from '../../context/AppContext';
 import { useLiquidityBreakdown } from '../../hooks/useLiquidityBreakdown';
 
 import { Wallet, ChevronDown } from 'lucide-react';
-import { formatTableMoneyVNDMillion } from '../../utils/format';
-import { runProjection } from '../../engines/projectionEngine';
+import { formatMoneyVNDMillion } from '../../utils/format';
+import { HelpTooltip } from '../ui/HelpTooltip';
 import { SinkingFundModule_Liquidity } from './SinkingFundModule_Liquidity';
 
 export const SavingsAndLiquidityView: React.FC = () => {
-  const { state, selectedPeriodKey } = useAppContext();
+  const { selectedPeriodKey } = useAppContext();
   const { liquidityBreakdownData, totalRemainingSum } = useLiquidityBreakdown('cumulative');
 
-  const projection = runProjection({
-    profile: state.profile,
-    incomeSchedule: state.incomeSchedule,
-    budgetSchedule: state.budgetSchedule,
-    lifeEvents: state.lifeEvents,
-    assets: state.assets,
-    assumptions: state.assumptions,
-    investmentDeals: state.investmentDeals,
-    savingsDeposits: state.savingsDeposits,
-    sinkingFunds: state.sinkingFunds,
-    debts: state.debts,
-    projectionAdjustments: state.projectionAdjustments,
-    lifeStages: state.lifeStages,
-    fundTransfers: state.fundTransfers,
-    expenseSchedule: state.expenseSchedule,
-  });
-
-  const now = new Date();
-  const nowKey = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
-  
-  const currentPeriod = projection.monthlyRows.length > 0
-    ? (projection.monthlyRows.find(r => r.period.key === nowKey) || projection.monthlyRows[0])
-    : null;
-
-  const currentRow = (projection.monthlyRows.length > 0 && selectedPeriodKey)
-    ? (projection.monthlyRows.find(r => r.period.key === selectedPeriodKey) || currentPeriod)
-    : currentPeriod;
-
-  
-  
-  
 
   return (
     <div className="space-y-6">
@@ -59,8 +28,8 @@ export const SavingsAndLiquidityView: React.FC = () => {
               <p className="text-xs font-bold text-emerald-600/80 uppercase tracking-wider mb-1">
                 Tổng Quỹ sinh hoạt dư lũy kế (Tính đến Tháng {selectedPeriodKey ? `${selectedPeriodKey.split('-')[1]}/${selectedPeriodKey.split('-')[0]}` : 'hiện tại'})
               </p>
-              <div className="text-4xl font-black text-emerald-600 drop-shadow-sm">
-                +{formatTableMoneyVNDMillion(totalRemainingSum)}
+              <div className={`text-4xl font-black drop-shadow-sm ${totalRemainingSum < 0 ? 'text-rose-500' : 'text-emerald-600'}`}>
+                {formatMoneyVNDMillion(totalRemainingSum, { mode: 'auto', decimals: 2, signed: true })}
               </div>
             </div>
 
@@ -75,13 +44,52 @@ export const SavingsAndLiquidityView: React.FC = () => {
             {/* Group Remaining Cards */}
             <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
               {liquidityBreakdownData.map((group: any) => (
-                <div key={`kpi-${group.id}`} className="bg-white rounded-xl p-4 shadow-sm border border-emerald-500/15 hover:border-emerald-500/40 transition-colors flex flex-col justify-between h-full relative overflow-hidden group">
-                  <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-emerald-400 to-teal-400 opacity-40 group-hover:opacity-100 transition-opacity"></div>
-                  <p className="text-[11px] font-bold text-family-textMuted uppercase tracking-wider mb-3 line-clamp-2" title={group.name}>
-                    {group.name}
-                  </p>
-                  <div className="text-xl font-bold text-emerald-600">
-                    +{formatTableMoneyVNDMillion(group.remaining)}
+                <div key={`kpi-${group.id}`} className="bg-white rounded-xl p-4 shadow-sm border border-emerald-500/15 hover:border-emerald-500/40 transition-colors flex flex-col justify-between h-full relative group">
+                  <div className="absolute top-0 left-0 right-0 h-1 rounded-t-xl bg-gradient-to-r from-emerald-400 to-teal-400 opacity-40 group-hover:opacity-100 transition-opacity"></div>
+                  <div className="flex items-start justify-between mb-3">
+                    <p className="text-[11px] font-bold text-family-textMuted uppercase tracking-wider line-clamp-2" title={group.name}>
+                      {group.name}
+                    </p>
+                    <HelpTooltip 
+                      position="top-right"
+                      text={
+                        <div className="space-y-1 text-xs">
+                          <div className="flex justify-between gap-4">
+                            <span className="text-gray-500">Ngân sách:</span>
+                            <span className="font-semibold text-emerald-600">+{formatMoneyVNDMillion(group.totalBudget)}</span>
+                          </div>
+                          <div className="flex justify-between gap-4">
+                            <span className="text-gray-500">Chi tiêu thường xuyên:</span>
+                            <span className="font-semibold text-rose-500">-{formatMoneyVNDMillion(group.totalActual)}</span>
+                          </div>
+                          {(Math.abs(group.trackA) + Math.abs(group.trackB) + group.oneTimeExpense) > 0 && (
+                            <div className="flex justify-between gap-4">
+                              <span className="text-gray-500">Chi tiêu linh hoạt / Sự kiện:</span>
+                              <span className="font-semibold text-rose-500">-{formatMoneyVNDMillion(Math.abs(group.trackA) + Math.abs(group.trackB) + group.oneTimeExpense)}</span>
+                            </div>
+                          )}
+                          {group.oneTimeIncome > 0 && (
+                            <div className="flex justify-between gap-4">
+                              <span className="text-gray-500">Thu nhập phụ / Sự kiện:</span>
+                              <span className="font-semibold text-emerald-600">+{formatMoneyVNDMillion(group.oneTimeIncome)}</span>
+                            </div>
+                          )}
+                          {group.deducted > 0 && (
+                            <div className="flex justify-between gap-4">
+                              <span className="text-gray-500">Trích lập Quỹ (Cọc nhà,...):</span>
+                              <span className="font-semibold text-orange-500">-{formatMoneyVNDMillion(group.deducted)}</span>
+                            </div>
+                          )}
+                          <div className="border-t border-dashed pt-1 mt-1 flex justify-between gap-4 font-bold text-gray-800">
+                            <span>Còn lại:</span>
+                            <span className={group.remaining < 0 ? 'text-rose-500' : 'text-emerald-600'}>{formatMoneyVNDMillion(group.remaining, { signed: true })}</span>
+                          </div>
+                        </div>
+                      }
+                    />
+                  </div>
+                  <div className={`text-xl font-bold ${group.remaining < 0 ? 'text-rose-500' : 'text-emerald-600'}`}>
+                    {formatMoneyVNDMillion(group.remaining, { mode: 'auto', decimals: 2, signed: true })}
                   </div>
                 </div>
               ))}

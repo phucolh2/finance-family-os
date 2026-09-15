@@ -99,7 +99,7 @@ export const LiquidityBreakdownTable: React.FC<LiquidityBreakdownTableProps> = (
               {liquidityBreakdownData.map((group: any) => {
                 const isExpanded = expandedNodes[group.id];
                 const hasChildren = group.children && group.children.length > 0;
-                const hasFlexibleDetails = group.flexibleEvents && group.flexibleEvents.length > 0;
+                // const hasFlexibleDetails = group.flexibleEvents && group.flexibleEvents.length > 0;
 
                 return (
                   <React.Fragment key={group.id}>

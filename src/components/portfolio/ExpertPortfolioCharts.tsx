@@ -53,7 +53,7 @@ export const ExpertPortfolioCharts: React.FC<ExpertPortfolioChartsProps> = ({
   genericUnallocatedBalance,
   savBal,
   observedDeals,
-  observedSinkingFunds
+  observedSinkingFunds: _observedSinkingFunds
 }) => {
 
   const hasData = totalObservedBalance > 0 && activeRow;

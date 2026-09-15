@@ -13,8 +13,8 @@ export function simulateSinkingFund(fund: SinkingFund, targetMonth?: number, tar
   const autoRefundsByMonth: Record<number, number> = {};
   let totalDeposited = 0;
 
-  const currentBank = fund.depositBank;
-  const currentStrategy = fund.rolloverStrategy;
+  // const currentBank = fund.depositBank;
+  // const currentStrategy = fund.rolloverStrategy;
 
   for (let m = start; m <= end; m++) {
      const yr = Math.floor((m - 1) / 12);

@@ -1,34 +1,93 @@
 const fs = require('fs');
-const files = [
-    'src/components/expense/SinkingFundModule_Liquidity.tsx',
-    'src/components/portfolio/SinkingFundModule_Portfolio.tsx',
-    'src/components/reserves/SinkingFundModule_Reserves.tsx',
-    'src/components/savings/SinkingFundModule_Savings.tsx'
-];
 
-for (const file of files) {
-    let c = fs.readFileSync(file, 'utf8');
-    
-    // Add isPast definition
-    const pKeyRegex = /const pKey = b\.periodKey \|\| \`\$\{bYr\}-\$\{String\(bMo\)\.padStart\(2, '0'\)\}\`;/g;
-    c = c.replace(pKeyRegex, `const pKey = b.periodKey || \`\${bYr}-\${String(bMo).padStart(2, '0')}\`;\n                                      const isPast = b.termStart < currentObservedYear * 12 + currentObservedMonth;`);
-    
-    // Disable inputs
-    const inputRegex = /<input\s+type="number"\s+step="0\.1"\s+min="0"/g;
-    c = c.replace(inputRegex, '<input type="number" step="0.1" min="0" disabled={isPast}');
-    
-    const selectRegex = /<select\s+value=\{b\.termMonths\}/g;
-    c = c.replace(selectRegex, '<select value={b.termMonths} disabled={isPast}');
-    
-    // Add disabled styles to inputs (opacity-70 cursor-not-allowed)
-    c = c.replace(/className="w-10 text-right text-\[11px\] font-bold text-family-accent bg-transparent focus:outline-none"/g, 'className="w-10 text-right text-[11px] font-bold text-family-accent bg-transparent focus:outline-none disabled:opacity-50 disabled:cursor-not-allowed"');
-    
-    c = c.replace(/className="w-14 text-right text-\[11px\] bg-white border border-family-accent\/30 rounded px-1\.5 py-0\.5 font-bold text-family-accent focus:outline-none focus:ring-1 focus:ring-family-accent"/g, 'className="w-14 text-right text-[11px] bg-white border border-family-accent/30 rounded px-1.5 py-0.5 font-bold text-family-accent focus:outline-none focus:ring-1 focus:ring-family-accent disabled:opacity-50 disabled:cursor-not-allowed disabled:bg-gray-50"');
-    
-    c = c.replace(/className="text-\[10px\] bg-slate-50 border border-slate-200 rounded px-1\.5 py-0\.5 font-medium text-family-text focus:outline-none focus:ring-1 focus:ring-family-accent"/g, 'className="text-[10px] bg-slate-50 border border-slate-200 rounded px-1.5 py-0.5 font-medium text-family-text focus:outline-none focus:ring-1 focus:ring-family-accent disabled:opacity-50 disabled:cursor-not-allowed"');
-    
-    c = c.replace(/className="w-12 text-center text-\[10px\] bg-slate-50 border border-slate-200 rounded px-1 py-0\.5 font-medium text-family-text focus:outline-none focus:ring-1 focus:ring-family-accent"/g, 'className="w-12 text-center text-[10px] bg-slate-50 border border-slate-200 rounded px-1 py-0.5 font-medium text-family-text focus:outline-none focus:ring-1 focus:ring-family-accent disabled:opacity-50 disabled:cursor-not-allowed"');
-    
-    fs.writeFileSync(file, c);
+function replaceInFile(filePath, replacements) {
+    let content = fs.readFileSync(filePath, 'utf8');
+    for (const {search, replace} of replacements) {
+        if (typeof search === 'string') {
+            content = content.split(search).join(replace);
+        } else {
+            content = content.replace(search, replace);
+        }
+    }
+    fs.writeFileSync(filePath, content, 'utf8');
 }
-console.log('done');
+
+// 8. ErrorBoundary
+replaceInFile('src/components/ui/ErrorBoundary.tsx', [
+    { search: '{ error, resetErrorBoundary }', replace: '{ error }' }
+]);
+
+// 9. SmartAllocationAdvisorModal
+replaceInFile('src/components/ui/SmartAllocationAdvisorModal.tsx', [
+    { search: 'const [amount, setAmount]', replace: 'const [, setAmount]' },
+    { search: 'const [apiKey, setApiKey]', replace: 'const [, setApiKey]' },
+    { search: 'const getTierIcon = (tier: number) => {', replace: '/* const getTierIcon = (tier: number) => {' },
+    { search: '    }\n  };\n\n  const getTierBadge', replace: '    }\n  }; */\n\n  const getTierBadge' },
+    { search: 'const getTierBadge = (tier: number) => {', replace: '/* const getTierBadge = (tier: number) => {' },
+    { search: '    }\n  };\n\n  return (', replace: '    }\n  }; */\n\n  return (' }
+]);
+
+// 10. advisorEngine.ts - 'liquidityDeficitFound'
+replaceInFile('src/engines/advisorEngine.ts', [
+    { search: 'const liquidityDeficitFound = ', replace: '// const liquidityDeficitFound = ' },
+    { search: 'let liquidityDeficitFound = ', replace: '// let liquidityDeficitFound = ' }
+]);
+
+// 11. databaseResolver.ts
+replaceInFile('src/engines/databaseResolver.ts', [
+    { search: 'const { budgetSchedule, lifeStages, assumptions } = ', replace: 'const { budgetSchedule } = ' },
+    { search: 'const { budgetSchedule, assumptions, lifeStages } = ', replace: 'const { budgetSchedule } = ' }
+]);
+
+// 12. projectionEngine.ts
+replaceInFile('src/engines/projectionEngine.ts', [
+    { search: 'const { _assets, history } = ', replace: 'const { history } = ' },
+    { search: ', lifeStages: Record<string, any>', replace: '' },
+    { search: ' term,', replace: ' /*term*/,' },
+    { search: ' _unallocatedForCompounding,', replace: '' },
+    { search: ' _actualInvestmentRateMonthly,', replace: '' },
+    { search: ' _safeTotalEndingBalance,', replace: '' },
+    { search: ' _yearlyFireRes,', replace: '' }
+]);
+
+// 13. sinkingFundEngine.ts
+replaceInFile('src/engines/sinkingFundEngine.ts', [
+    { search: 'const currentBank = ', replace: '// const currentBank = ' },
+    { search: 'const currentStrategy = ', replace: '// const currentStrategy = ' }
+]);
+
+// 14. useAppState.ts
+replaceInFile('src/hooks/useAppState.ts', [
+    { search: 'const newMonthValue = ', replace: '// const newMonthValue = ' }
+]);
+
+// 15. BudgetHistory.tsx
+replaceInFile('src/pages/BudgetHistory.tsx', [
+    { search: 'flow, ', replace: '' },
+    { search: ' flow,', replace: '' }
+]);
+
+// 16. CashflowQuadrant.tsx
+replaceInFile('src/pages/CashflowQuadrant.tsx', [
+    { search: 'const budgetDetails = ', replace: '// const budgetDetails = ' }
+]);
+
+// 17. Dashboard.tsx
+replaceInFile('src/pages/Dashboard.tsx', [
+    { search: 'const lastRow = ', replace: '// const lastRow = ' },
+    { search: 'const cumulativeReturns = ', replace: '// const cumulativeReturns = ' },
+    { search: 'const yearlyChartData = ', replace: '// const yearlyChartData = ' },
+    { search: 'const strokeDashoffset = ', replace: '// const strokeDashoffset = ' }
+]);
+
+// 18. DebtManagement.tsx
+replaceInFile('src/pages/DebtManagement.tsx', [
+    { search: 'const debtReserveBalance = ', replace: '// const debtReserveBalance = ' }
+]);
+
+// 19. HealthAndFinalRest.tsx
+replaceInFile('src/pages/HealthAndFinalRest.tsx', [
+    { search: 'const [, setInsuranceMonthly]', replace: 'const [, /*setInsuranceMonthly*/]' },
+    { search: 'const [insuranceMonthly, setInsuranceMonthly]', replace: 'const [insuranceMonthly]' },
+    { search: 'const [bhytMonthly, setBhytMonthly]', replace: 'const [bhytMonthly]' }
+]);

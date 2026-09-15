@@ -1,4 +1,3 @@
-import React from 'react';
 import { render, screen, fireEvent } from '@testing-library/react';
 import { describe, it, expect, vi } from 'vitest';
 import { Sidebar } from './Sidebar';
@@ -22,7 +21,7 @@ describe('Sidebar', () => {
     expect(screen.getByText('Kế hoạch Thu nhập')).toBeInTheDocument();
     expect(screen.getByText('Phân Bổ Ngân Sách')).toBeInTheDocument();
     expect(screen.getByText('FIRE Center')).toBeInTheDocument();
-    expect(screen.getByText('Cấu hình hệ thống')).toBeInTheDocument();
+    expect(screen.getByText('Cài đặt & Đồng bộ')).toBeInTheDocument();
   });
 
   it('highlights the active tab', () => {
@@ -35,7 +34,7 @@ describe('Sidebar', () => {
   it('calls setActiveTab when a navigation item is clicked', () => {
     render(<Sidebar {...defaultProps} />);
     
-    const settingsBtn = screen.getByText('Cấu hình hệ thống');
+    const settingsBtn = screen.getByText('Cài đặt & Đồng bộ');
     fireEvent.click(settingsBtn);
     
     expect(defaultProps.setActiveTab).toHaveBeenCalledWith('settings');

@@ -251,13 +251,13 @@ export const ExpenseScheduleView: React.FC = () => {
   }
   const hasValidationError = validationWarnings.length > 0;
 
-  const totalRemaining = totalBudget - totalActual;
+  // const totalRemaining = totalBudget - totalActual;
   
-  const savingsThisMonth = (state.savingsDeposits || [])
+  /* const savingsThisMonth = (state.savingsDeposits || [])
     .filter(d => activeVersion && d.startMonth === activeVersion.effectiveMonth && d.startYear === activeVersion.effectiveYear)
-    .reduce((sum, d) => sum + d.principal, 0);
+    .reduce((sum, d) => sum + d.principal, 0); */
 
-  const idleMoney = totalRemaining - savingsThisMonth;
+  // const idleMoney = totalRemaining - savingsThisMonth;
 
   return (
     <div className="grid grid-cols-1 xl:grid-cols-4 gap-6 items-start h-full">
@@ -503,7 +503,7 @@ export const ExpenseScheduleView: React.FC = () => {
                                 labelLine={false}
                                 label={renderCustomizedLabel}
                               >
-                                {pieData.map((entry, index) => (
+                                {pieData.map((_entry, index) => (
                                   <Cell key={`cell-${index}`} fill={CHART_COLORS[index % CHART_COLORS.length]} />
                                 ))}
                               </Pie>

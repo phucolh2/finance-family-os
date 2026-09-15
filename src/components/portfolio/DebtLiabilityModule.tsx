@@ -11,7 +11,7 @@ import { calculatePMT, calculateTermMonths } from '../../utils/math';
 import { DebtSettlementForm } from './DebtSettlementForm';
 
 export const DebtLiabilityModule: React.FC = () => {
-  const { state, addDebt, updateDebt, deleteDebt, settleDebt, selectedPeriodKey } = useAppContext();
+  const { state, addDebt, deleteDebt,  selectedPeriodKey } = useAppContext();
   const { debts = [] } = state;
   const [isAdding, setIsAdding] = useState(false);
   const [settlingDebtId, setSettlingDebtId] = useState<string | null>(null);

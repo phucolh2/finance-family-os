@@ -4,6 +4,7 @@ import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '../co
 import { Button } from '../components/ui/Button';
 import { Input } from '../components/ui/Input';
 import { WarningBox } from '../components/ui/WarningBox';
+import { CustomChartTooltip } from '../components/ui/CustomChartTooltip';
 import { generateTimeline } from '../engines/timelineEngine';
 import { calculateIncome } from '../engines/incomeEngine';
 import { formatTableMoneyVNDMillion, formatKpiMoneyVNDMillion } from '../utils/format';
@@ -512,10 +513,7 @@ export const IncomeSchedule: React.FC = () => {
                   />
                   <YAxis stroke="#6b7280" fontSize={11} unit=" tr" />
                   <Tooltip
-                    contentStyle={{ backgroundColor: '#1e293b', border: '1px solid rgba(226, 180, 76, 0.15)', borderRadius: '12px' }}
-                    itemStyle={{ color: '#f8fafc', fontSize: 11 }}
-                    labelStyle={{ color: '#94a3b8', fontWeight: 'bold', fontSize: 11 }}
-                    labelFormatter={(label, items) => items[0]?.payload ? items[0].payload.dateStr : label}
+                    content={<CustomChartTooltip />}
                   />
                   <Legend verticalAlign="top" height={36} wrapperStyle={{ fontSize: 11 }} />
                   {(state.incomeCategories || []).map((cat, idx) => {
@@ -537,47 +535,48 @@ export const IncomeSchedule: React.FC = () => {
                 <HelpTooltip text="Bảng liệt kê chi tiết các mốc thay đổi cấu trúc thu nhập trong suốt thời gian khảo sát." />
               </CardTitle>
             </CardHeader>
-            <CardContent className="overflow-x-auto">
-              <table className="w-full text-left text-xs border-collapse">
+            <CardContent className="overflow-x-auto p-0">
+              <table className="premium-table">
                 <thead>
-                  <tr className="border-b border-family-accent/10 text-family-textMuted font-bold bg-family-bgDark/30">
-                    <th className="p-3">Thời điểm hiệu lực</th>
-                    <th className="p-3">Loại thu nhập</th>
-                    <th className="p-3">Khoản thu tháng khởi điểm</th>
-                    <th className="p-3">Trạng thái/Kết thúc</th>
-                    <th className="p-3">Ghi chú hoàn cảnh</th>
+                  <tr>
+                    <th>Thời điểm hiệu lực</th>
+                    <th>Loại thu nhập</th>
+                    <th>Khoản thu tháng khởi điểm</th>
+                    <th>Trạng thái/Kết thúc</th>
+                    <th>Ghi chú hoàn cảnh</th>
                   </tr>
                 </thead>
                 <tbody>
                   {sortedSchedule.map((item) => (
-                    <tr key={item.id} className="border-b border-family-accent/5 hover:bg-family-bgDark/10">
-                      <td className="p-3 font-semibold text-family-text">
+                    <tr key={item.id}>
+                      <td className="font-semibold text-family-text">
                         Tháng {item.effectiveMonth}/{item.effectiveYear}
                       </td>
-                      <td className="p-3 font-medium text-family-text">
+                      <td className="font-medium text-family-text">
                         {getIncomeTypeLabel(item.incomeType)}
                       </td>
-                      <td className="p-3 font-bold text-family-accent">
+                      <td className="font-bold text-family-accent">
                         {formatTableMoneyVNDMillion(item.incomeMonthly)}
                       </td>
-                      <td className="p-3 text-family-textMuted max-w-sm">
+                      <td className="text-family-textMuted max-w-sm">
                         {item.status === 'cancelled' ? (
-                          <span className="text-red-400 text-xs px-2 py-0.5 rounded-full bg-red-400/10">Đã hủy</span>
+                          <span className="text-red-500 font-medium text-xs px-2.5 py-1 rounded-md bg-red-500/10 border border-red-500/20">Đã hủy</span>
                         ) : item.status === 'planned' ? (
-                          <span className="text-amber-400 text-xs px-2 py-0.5 rounded-full bg-amber-400/10">Dự kiến</span>
+                          <span className="text-amber-600 font-medium text-xs px-2.5 py-1 rounded-md bg-amber-500/10 border border-amber-500/20">Dự kiến</span>
                         ) : item.status === 'settled' && item.endYear ? (
-                          <span className="text-yellow-400 text-xs px-2 py-0.5 rounded-full bg-yellow-400/10">Đến {item.endMonth}/{item.endYear}</span>
+                          <span className="text-yellow-600 font-medium text-xs px-2.5 py-1 rounded-md bg-yellow-500/10 border border-yellow-500/20">Đến {item.endMonth}/{item.endYear}</span>
                         ) : (
-                          <span className="text-green-400 text-xs px-2 py-0.5 rounded-full bg-green-400/10">Đang HĐ</span>
+                          <span className="text-emerald-600 font-medium text-xs px-2.5 py-1 rounded-md bg-emerald-500/10 border border-emerald-500/20">Đang HĐ</span>
                         )}
                       </td>
-                      <td className="p-3 text-family-textMuted max-w-sm truncate">
+                      <td className="text-family-textMuted max-w-sm truncate text-xs">
                         {item.note || '---'}
                       </td>
                     </tr>
                   ))}
                 </tbody>
               </table>
+
             </CardContent>
           </Card>
         </div>

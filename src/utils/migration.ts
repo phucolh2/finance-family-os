@@ -254,7 +254,11 @@ export function migrateState(stored: unknown, defaultState: AppState): AppState 
       savingsDeposits: Array.isArray(data.savingsDeposits) ? data.savingsDeposits : [],
       debts: Array.isArray(data.debts) ? data.debts : [],
       fundTransfers: Array.isArray(data.fundTransfers) ? data.fundTransfers : [],
+      insurancePolicies: Array.isArray(data.insurancePolicies) ? data.insurancePolicies : [],
+      lifestyleAssets: Array.isArray(data.lifestyleAssets) ? data.lifestyleAssets : [],
       projectionAdjustments: Array.isArray(data.projectionAdjustments) ? data.projectionAdjustments : undefined,
+      toolConfigs: data.toolConfigs && typeof data.toolConfigs === 'object' ? data.toolConfigs as Record<string, any> : (defaultState.toolConfigs || {}),
+      systemLogs: Array.isArray(data.systemLogs) ? (data.systemLogs as import('../types/finance').SystemActivityLog[]) : (defaultState.systemLogs || []),
       resolvedMonthlyDb: Array.isArray(data.resolvedMonthlyDb) ? data.resolvedMonthlyDb : undefined,
       resolvedMonthlyDbMap: data.resolvedMonthlyDbMap && typeof data.resolvedMonthlyDbMap === 'object' ? data.resolvedMonthlyDbMap as AppState['resolvedMonthlyDbMap'] : undefined,
     };

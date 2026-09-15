@@ -23,17 +23,11 @@ export const Portfolio: React.FC = () => {
   const { 
     state, 
     updateProfile,
-    updateAssets, 
     selectedPeriodKey, 
-    setSelectedPeriodKey,
-    addInvestmentDeal,
     updateInvestmentDeal,
     deleteInvestmentDeal,
     settleInvestmentDeal,
     withdrawInvestmentDeal,
-    addSavingsDeposit,
-    disburseSinkingFund,
-    updateSinkingFund,
     addIncomeItem,
     updateAppState
   } = useAppContext();
@@ -74,7 +68,7 @@ export const Portfolio: React.FC = () => {
   // Deals Tracking local states
   const [showAddDealForm, setShowAddDealForm] = useState(false);
   const [editDealId, setEditDealId] = useState<string | null>(null);
-  const [editingDealId, setEditingDealId] = useState<string | null>(null);
+  const [, setEditingDealId] = useState<string | null>(null);
   const [settlingDealId, setSettlingDealId] = useState<string | null>(null);
   
   React.useEffect(() => {
@@ -109,14 +103,14 @@ export const Portfolio: React.FC = () => {
     partialWithdrawValue: 0,
   });
 
-  const [convertingDealId, setConvertingDealId] = useState<string | null>(null);
-  const [conversionForm, setConversionForm] = useState({
+  const [, setConvertingDealId] = useState<string | null>(null);
+  /* const [conversionForm] = useState({
     month: 10,
     year: 2026,
     realizedSavingInterest: 0,
     reinvestAsUnallocated: false,
     reinvestAssetType: 'stocks' as AssetType,
-  });
+  }); */
 
   const [cashflowDealId, setCashflowDealId] = useState<string | null>(null);
   const [cashflowForm, setCashflowForm] = useState({
@@ -130,15 +124,15 @@ export const Portfolio: React.FC = () => {
   const [formError, setFormError] = useState<string | null>(null);
 
   // Smart calculation input modes & rates
-  const [settleDealInputMode, setSettleDealInputMode] = useState<'amount' | 'rate'>('amount');
-  const [settleDealCustomRate, setSettleDealCustomRate] = useState<number>(0);
+  /* settleDealInputMode */
+  /* settleDealCustomRate */
 
-  const [convertDealInputMode, setConvertDealInputMode] = useState<'amount' | 'rate'>('amount');
-  const [convertDealCustomRate, setConvertDealCustomRate] = useState<number>(0);
+  /* convertDealInputMode */
+  /* convertDealCustomRate */
 
-  const getMonthsActive = (startMonth: number, startYear: number, endMonth: number, endYear: number) => {
+  /* const getMonthsActive = (startMonth: number, startYear: number, endMonth: number, endYear: number) => {
     return Math.max(0, (endYear * 12 + endMonth) - (startYear * 12 + startMonth));
-  };
+  }; */
 
 
 
@@ -231,9 +225,9 @@ export const Portfolio: React.FC = () => {
   }
 
   const genericUnallocatedBalance = Math.max(0, rawObservedBalance - totalActiveCapital - totalEarmarkedCapital - savBal);
-  const genericUnallocatedPercent = totalObservedBalance > 0
+  /* const genericUnallocatedPercent = totalObservedBalance > 0
     ? (genericUnallocatedBalance / totalObservedBalance) * 100
-    : 100;
+    : 100; */
 
   // Tiền mặt nhàn rỗi chung đã được loại bỏ khỏi biểu đồ theo yêu cầu
 
@@ -285,10 +279,10 @@ export const Portfolio: React.FC = () => {
         }, 0);
         const plannedCapital = totalEarmarkedCapital;
         const savBal = activeRow?.portfolio.savingsBalance || 0;
-        const savInterest = activeRow?.portfolio.savingsInterestAccrued || 0;
+        // const savInterest = activeRow?.portfolio.savingsInterestAccrued || 0;
         const idleCash = activeRow ? (activeRow.portfolio.unallocatedEndingBalance || 0) : genericUnallocatedBalance;
 
-        const cumContribution = activeRow?.portfolio.cumulativeContribution || 0;
+        // const cumContribution = activeRow?.portfolio.cumulativeContribution || 0;
         const cumPnl = activeRow?.portfolio.cumulativePnl || 0;
 
         return (
@@ -547,7 +541,7 @@ export const Portfolio: React.FC = () => {
                           paddingAngle={3}
                           dataKey="value"
                         >
-                          {chartData.map((entry, index) => (
+                          {chartData.map((_entry, index) => (
                             <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
                           ))}
                         </Pie>
@@ -935,7 +929,7 @@ export const Portfolio: React.FC = () => {
                       .map((deal) => {
                         const isSettling = settlingDealId === deal.id;
                         const current = activeRow ? activeRow.period.year * 12 + activeRow.period.month : 0;
-                        const isOriginallyEarmarked = deal.isEarmarked || deal.isConverted;
+                        // const isOriginallyEarmarked = deal.isEarmarked || deal.isConverted;
                         const dealStart = deal.startYear * 12 + deal.startMonth;
                         const hasStarted = current >= dealStart;
 

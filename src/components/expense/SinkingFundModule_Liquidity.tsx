@@ -12,6 +12,7 @@ import { Target, Plus, CheckCircle, RotateCcw, AlertCircle } from 'lucide-react'
 import { formatTableMoneyVNDMillion } from '../../utils/format';
 import { safeNumber, calculateNonTermInterest } from '../../utils/math';
 import { runProjection } from '../../engines/projectionEngine';
+import { useSinkingFundAutoBalancer } from '../../hooks/useSinkingFundAutoBalancer';
 import type { AssetType } from '../../types/portfolio';
 import { FUNDING_SOURCES, SCREEN_FUNDING_CONSTRAINTS } from '../../constants/fundingSources';
 import type { FundingSourceId } from '../../constants/fundingSources';
@@ -54,11 +55,13 @@ export const SinkingFundModule_Liquidity: React.FC<SinkingFundModule_LiquidityPr
     disburseSinkingFundWithEvent,
     updateSinkingFundWithEvent,
     undoSinkingFundDisbursement,
-    addInvestmentDeal,
-    addLifeEvent,
     selectedPeriodKey,
     setSelectedPeriodKey,
   } = useAppContext();
+
+  const [blinkingField, setBlinkingField] = useState<string | null>(null);
+
+  useSinkingFundAutoBalancer(setBlinkingField);
 
   const projection = runProjection({
     profile: state.profile,
@@ -87,8 +90,8 @@ export const SinkingFundModule_Liquidity: React.FC<SinkingFundModule_LiquidityPr
   const [editingFundId, setEditingFundId] = useState<string | null>(null);
   const [expandedFundId, setExpandedFundId] = useState<string | null>(null);
   const [formError, setFormError] = useState<string | null>(null);
-  const [flashWarningFundId, setFlashWarningFundId] = useState<string | null>(null);
-  const [flashWarningMessage, setFlashWarningMessage] = useState<string>('');
+  const [flashWarningFundId] = useState<string | null>(null);
+  const [flashWarningMessage] = useState<string>('');
   
   React.useEffect(() => {
     setShowAddForm(false);
@@ -175,9 +178,9 @@ export const SinkingFundModule_Liquidity: React.FC<SinkingFundModule_LiquidityPr
   const currentObservedMonth = activeRow ? activeRow.period.month : initMonth;
   const currentObservedYear = activeRow ? activeRow.period.year : initYear;
 
-  // Helper to find latest state of a fund from projection
   const handlePeriodicContributionChange = (fund: any, pKey: string | null, value: number) => {
-     const newContrib = Math.max(0, safeNumber(value, 0));
+     let newContrib = Math.max(0, safeNumber(value, 0));
+     setBlinkingField(null);
      
      if (pKey) {
          const updatedConfigs = {
@@ -707,7 +710,7 @@ export const SinkingFundModule_Liquidity: React.FC<SinkingFundModule_LiquidityPr
                                           {w.id && (
                                               <button 
                                                   onClick={() => {
-                                                      if (window.confirm('Bạn có chắc muốn hoàn tác (undo) khoản rút này? Mọi sự kiện chi tiêu tự động đi kèm cũng sẽ bị xoá khỏi dòng thời gian.')) {
+                                                      if (window.confirm('Bạn có chắc muốn thu hồi khoản rút này không? Ghi nhận chi tiêu đi kèm trên dòng thời gian cũng sẽ bị gỡ bỏ.')) {
                                                           undoSinkingFundDisbursement(fund.id, w.id);
                                                       }
                                                   }}
@@ -872,23 +875,23 @@ export const SinkingFundModule_Liquidity: React.FC<SinkingFundModule_LiquidityPr
                                                              </>
                                                           )}
                                                           <span className="text-gray-300 font-light">+</span>
-                                                          <div className="flex items-center gap-1 bg-white px-1.5 py-0.5 rounded border border-slate-200 shadow-sm">
+                                                          <div className={`flex items-center gap-1 bg-white px-1.5 py-0.5 rounded border shadow-sm ${blinkingField === `${fund.id}-${pKey}` ? 'animate-pulse bg-red-100 border-red-500 ring-2 ring-red-400' : 'border-slate-200'}`}>
                                                              <input type="number" step="0.1" min="0" disabled={isPast}
                                                                 value={fund.periodConfigs?.[pKey]?.contribution !== undefined ? fund.periodConfigs[pKey].contribution : fund.monthlyContribution}
                                                                 onChange={(e) => { handlePeriodicContributionChange(fund, pKey, Number(e.target.value)); }}
-                                                                className="w-10 text-right text-[11px] font-bold text-family-accent bg-transparent focus:outline-none disabled:opacity-50 disabled:cursor-not-allowed"
+                                                                className={`w-10 text-right text-[11px] font-bold text-family-accent bg-transparent focus:outline-none disabled:opacity-50 disabled:cursor-not-allowed ${blinkingField === `${fund.id}-${pKey}` ? 'text-red-700' : ''}`}
                                                              />
-                                                             <span className="text-family-accent font-bold text-[11px]">triệu định kỳ</span>
+                                                             <span className={`font-bold text-[11px] ${blinkingField === `${fund.id}-${pKey}` ? 'text-red-700' : 'text-family-accent'}`}>triệu định kỳ</span>
                                                           </div>
                                                        </div>
                                                     ) : (
-                                                       <div className="flex items-center gap-1.5 bg-slate-50 px-2 py-1 rounded-md border border-slate-100">
+                                                       <div className={`flex items-center gap-1.5 px-2 py-1 rounded-md border ${blinkingField === `${fund.id}-${pKey}` ? 'animate-pulse bg-red-100 border-red-500 ring-2 ring-red-400' : 'bg-slate-50 border-slate-100'}`}>
                                                           <input type="number" step="0.1" min="0" disabled={isPast}
                                                              value={fund.periodConfigs?.[pKey]?.contribution !== undefined ? fund.periodConfigs[pKey].contribution : fund.monthlyContribution}
                                                              onChange={(e) => { handlePeriodicContributionChange(fund, pKey, Number(e.target.value)); }}
-                                                             className="w-14 text-right text-[11px] bg-white border border-family-accent/30 rounded px-1.5 py-0.5 font-bold text-family-accent focus:outline-none focus:ring-1 focus:ring-family-accent disabled:opacity-50 disabled:cursor-not-allowed disabled:bg-gray-50"
+                                                             className={`w-14 text-right text-[11px] border border-family-accent/30 rounded px-1.5 py-0.5 font-bold focus:outline-none focus:ring-1 focus:ring-family-accent disabled:opacity-50 disabled:cursor-not-allowed disabled:bg-gray-50 ${blinkingField === `${fund.id}-${pKey}` ? 'bg-red-50 text-red-700 border-red-500' : 'bg-white text-family-accent'}`}
                                                           />
-                                                          <span className="font-bold text-family-accent text-[11px]">triệu định kỳ</span>
+                                                          <span className={`font-bold text-[11px] ${blinkingField === `${fund.id}-${pKey}` ? 'text-red-700' : 'text-family-accent'}`}>triệu định kỳ</span>
                                                        </div>
                                                     )}
                                                  </div>

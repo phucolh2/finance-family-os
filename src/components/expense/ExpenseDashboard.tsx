@@ -4,9 +4,48 @@ import { analyzeExpense } from '../../engines/expenseEngine';
 import { Card, CardHeader, CardTitle, CardContent } from '../ui/Card';
 import { HelpTooltip } from '../ui/HelpTooltip';
 import { formatTableMoneyVNDMillion } from '../../utils/format';
-import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip as RechartsTooltip, Legend, Bar, Line, XAxis, YAxis, CartesianGrid, ComposedChart } from 'recharts';
+import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip as RechartsTooltip, Legend, Bar, XAxis, YAxis, CartesianGrid, ComposedChart, Area, ReferenceLine, Scatter } from 'recharts';
 import { PieChart as PieChartIcon } from 'lucide-react';
 import type { BudgetGroup } from '../../types/budget';
+
+const CustomExpenseTooltip = ({ active, payload, label }: any) => {
+  if (active && payload && payload.length) {
+    const data = payload[0].payload;
+    const totalActual = data.actual;
+    const budget = data.budget;
+    const diff = budget - totalActual;
+    const isOverBudget = diff < 0;
+
+    return (
+      <div className="bg-white p-3 border border-gray-100 shadow-xl rounded-xl min-w-[220px]">
+        <p className="font-bold text-gray-800 mb-2 border-b pb-1">{label}</p>
+        <div className="space-y-1.5 text-xs">
+          <div className="flex justify-between gap-4">
+            <span className="text-gray-500">Ngân sách hạn mức:</span>
+            <span className="font-semibold text-orange-500">{formatTableMoneyVNDMillion(budget)}</span>
+          </div>
+          <div className="flex justify-between gap-4">
+            <span className="text-gray-500">Chi thường xuyên:</span>
+            <span className="font-semibold text-sky-500">{formatTableMoneyVNDMillion(data.regularActual)}</span>
+          </div>
+          <div className="flex justify-between gap-4">
+            <span className="text-gray-500">Chi linh hoạt:</span>
+            <span className="font-semibold text-rose-500">{formatTableMoneyVNDMillion(data.flexibleActual)}</span>
+          </div>
+          <div className="flex justify-between gap-4 pt-1.5 border-t border-dashed mt-1">
+            <span className="text-gray-700 font-medium">Tổng chi thực tế:</span>
+            <span className="font-bold text-gray-800">{formatTableMoneyVNDMillion(totalActual)}</span>
+          </div>
+          <div className={`flex justify-between gap-4 mt-2 pt-1 font-bold ${isOverBudget ? 'text-red-500' : 'text-emerald-500'}`}>
+            <span>{isOverBudget ? 'Vượt ngân sách:' : 'Tiết kiệm được:'}</span>
+            <span>{isOverBudget ? '-' : '+'}{formatTableMoneyVNDMillion(Math.abs(diff))}</span>
+          </div>
+        </div>
+      </div>
+    );
+  }
+  return null;
+};
 
 export interface ExpenseDashboardProps {
   filter: BudgetGroup | 'all';
@@ -14,14 +53,14 @@ export interface ExpenseDashboardProps {
 }
 
 export const ExpenseDashboard: React.FC<ExpenseDashboardProps> = ({ filter, setFilter }) => {
-  const [expandedNodes, setExpandedNodes] = useState<Record<string, boolean>>({});
+  const [] = useState<Record<string, boolean>>({});
 
-  const toggleExpand = (id: string) => {
+  /* const toggleExpand = (id: string) => {
     setExpandedNodes(prev => ({
       ...prev,
       [id]: !prev[id]
     }));
-  };
+  }; */
   const { state, selectedPeriodKey } = useAppContext();
 
   const activeBudget = useMemo(() => {
@@ -53,8 +92,15 @@ export const ExpenseDashboard: React.FC<ExpenseDashboardProps> = ({ filter, setF
   }, [FILTER_GROUPS]);
 
   const expenseData = useMemo(() => {
-    return analyzeExpense(state.resolvedMonthlyDb || [], state.lifeEvents, selectedPeriodKey, expenseGroupIds);
-  }, [state.resolvedMonthlyDb, state.lifeEvents, selectedPeriodKey, expenseGroupIds]);
+    return analyzeExpense(
+      state.resolvedMonthlyDb || [], 
+      state.lifeEvents, 
+      selectedPeriodKey, 
+      expenseGroupIds,
+      state.sinkingFunds || [],
+      activeBudget
+    );
+  }, [state.resolvedMonthlyDb, state.lifeEvents, selectedPeriodKey, expenseGroupIds, state.sinkingFunds, activeBudget]);
 
   const currentSummary = expenseData.summaryByGroup[filter] || { totalBudget: 0, totalActual: 0, totalRegularActual: 0 };
   const currentSeries = expenseData.monthlySeries[filter] || [];
@@ -78,7 +124,19 @@ export const ExpenseDashboard: React.FC<ExpenseDashboardProps> = ({ filter, setF
   const remainingTotal = Math.max(0, currentSummary.totalBudget - currentSummary.totalRegularActual);
 
   // A nice color palette for the breakdown bars
-  const BREAKDOWN_COLORS = ['#10b981', '#3b82f6', '#f59e0b', '#8b5cf6', '#ec4899', '#06b6d4', '#84cc16'];
+  /* const BREAKDOWN_COLORS = ['#10b981', '#3b82f6', '#f59e0b', '#8b5cf6', '#ec4899', '#06b6d4', '#84cc16']; */
+
+  const averageActual = useMemo(() => {
+    if (currentSeriesWithRemaining.length === 0) return 0;
+    const sum = currentSeriesWithRemaining.reduce((acc, curr) => acc + curr.actual, 0);
+    return sum / currentSeriesWithRemaining.length;
+  }, [currentSeriesWithRemaining]);
+
+  // Map to add overBudget markers for Scatter
+  const seriesWithAlerts = currentSeriesWithRemaining.map(s => ({
+    ...s,
+    overBudgetAlert: s.actual > s.budget ? s.actual : null
+  }));
 
   return (
     <div className="space-y-6 mb-8">
@@ -122,7 +180,7 @@ export const ExpenseDashboard: React.FC<ExpenseDashboardProps> = ({ filter, setF
                 <span className="font-bold text-blue-500">{formatTableMoneyVNDMillion(currentSummary.totalRegularActual)}</span>
               </div>
               <div className="flex justify-between items-end border-t border-dashed pt-1 mt-1">
-                <span className="text-xs font-semibold text-family-textMuted">Quỹ thanh khoản sinh hoạt:</span>
+                <span className="text-xs font-semibold text-family-textMuted">Số tiền chi tiêu còn lại:</span>
                 <span className="font-bold text-gray-400">{formatTableMoneyVNDMillion(remainingTotal)}</span>
               </div>
               
@@ -139,7 +197,7 @@ export const ExpenseDashboard: React.FC<ExpenseDashboardProps> = ({ filter, setF
                       dataKey="value"
                       stroke="none"
                     >
-                      {pieData.map((entry, index) => (
+                      {pieData.map((_entry, index) => (
                         <Cell key={`cell-${index}`} fill={pieColors[index % pieColors.length]} />
                       ))}
                     </Pie>
@@ -168,27 +226,49 @@ export const ExpenseDashboard: React.FC<ExpenseDashboardProps> = ({ filter, setF
         <Card className="bg-white/80 border-family-accent/10 md:col-span-2">
           <CardHeader className="pb-2">
             <CardTitle className="text-sm font-semibold text-family-textMuted uppercase flex items-center gap-1.5">
-              Biến động chi tiêu theo tháng (Column & Line)
-              <HelpTooltip text="Biểu diễn mức chi tiêu thực tế (cột) so với ngân sách mục tiêu (đường) qua từng tháng." />
+              Xu hướng Chi tiêu & Hạn mức Ngân sách
+              <HelpTooltip text="Biểu diễn tổng chi tiêu thực tế (cột) so sánh với vùng giới hạn ngân sách (màu cam). Các tháng vượt ngân sách sẽ bị cảnh báo đỏ." />
             </CardTitle>
           </CardHeader>
           <CardContent>
             <div className="h-48">
               <ResponsiveContainer width="100%" height="100%">
-                <ComposedChart data={currentSeriesWithRemaining} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
-                  <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#e5e7eb" />
-                  <XAxis dataKey="periodKey" tick={{ fontSize: 10 }} tickMargin={5} />
-                  <YAxis tickFormatter={(val) => `${val}M`} tick={{ fontSize: 10 }} />
-                  <RechartsTooltip 
-                    formatter={(value: any) => formatTableMoneyVNDMillion(value as number)}
-                    labelStyle={{ color: '#374151', fontWeight: 'bold' }}
+                <ComposedChart data={seriesWithAlerts} margin={{ top: 15, right: 10, left: -20, bottom: 0 }}>
+                  <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#e5e7eb" opacity={0.5} />
+                  <XAxis dataKey="periodKey" tick={{ fontSize: 10 }} tickMargin={8} axisLine={false} tickLine={false} />
+                  <YAxis tickFormatter={(val) => `${val}M`} tick={{ fontSize: 10 }} axisLine={false} tickLine={false} />
+                  <RechartsTooltip content={<CustomExpenseTooltip />} cursor={{fill: '#f3f4f6', opacity: 0.4}} />
+                  <Legend wrapperStyle={{ fontSize: 11 }} iconType="circle" />
+                  
+                  {/* Area Envelope for Budget */}
+                  <Area 
+                    type="stepAfter" 
+                    dataKey="budget" 
+                    name="Vùng Ngân sách" 
+                    fill="#fed7aa" 
+                    fillOpacity={0.4} 
+                    stroke="#f97316" 
+                    strokeWidth={2}
+                    strokeDasharray="4 4"
+                    activeDot={false}
                   />
-                  <Legend wrapperStyle={{ fontSize: 11 }} />
+
+                  {/* Reference Line for Average Spending */}
+                  {averageActual > 0 && (
+                     <ReferenceLine 
+                       y={averageActual} 
+                       stroke="#9ca3af" 
+                       strokeDasharray="3 3" 
+                       label={{ position: 'insideTopLeft', value: 'Trung bình', fill: '#9ca3af', fontSize: 10 }} 
+                     />
+                  )}
+
                   {/* Stacked Columns for Regular and Flexible Actual */}
-                  <Bar dataKey="regularActual" name="Chi tiêu thường xuyên (Cột)" stackId="a" fill="#3b82f6" maxBarSize={40} />
-                  <Bar dataKey="flexibleActual" name="Chi tiêu linh hoạt (Cột)" stackId="a" fill="#ef4444" radius={[4, 4, 0, 0]} maxBarSize={40} />
-                  {/* Line for Budget */}
-                  <Line type="monotone" dataKey="budget" name="Ngân sách phân bổ (Đường)" stroke="#f97316" strokeWidth={3} dot={{ r: 3 }} activeDot={{ r: 5 }} />
+                  <Bar dataKey="regularActual" name="Thường xuyên" stackId="a" fill="#38bdf8" maxBarSize={32} />
+                  <Bar dataKey="flexibleActual" name="Linh hoạt" stackId="a" fill="#fb7185" radius={[4, 4, 0, 0]} maxBarSize={32} />
+                  
+                  {/* Alert Dots for over budget */}
+                  <Scatter dataKey="overBudgetAlert" name="Vượt ngân sách" fill="#ef4444" shape="circle" />
                 </ComposedChart>
               </ResponsiveContainer>
             </div>

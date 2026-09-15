@@ -418,8 +418,8 @@ export const BudgetHistory: React.FC = () => {
 
   const totalRatio = rootGroups.reduce((sum, g) => sum + (g.isActive ? g.ratioPercent : 0), 0);
 
-  const observedDbItem = selectedPeriodKey ? state.resolvedMonthlyDbMap?.[selectedPeriodKey] : undefined;
-  const flow = observedDbItem?.investmentFlow;
+
+
 
   return (
     <div className="space-y-6">

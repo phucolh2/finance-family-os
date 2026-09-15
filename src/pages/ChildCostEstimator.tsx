@@ -18,13 +18,21 @@ const LIFESTYLE_OPTIONS: { value: ChildLifestyle; label: string; description: st
 ];
 
 export const ChildCostEstimator: React.FC = () => {
-  const { state } = useAppContext();
+  const { state, updateToolConfig } = useAppContext();
+  const config = state.toolConfigs?.childCostEstimator || {};
 
   // --- Biến số nhập vào (thay vì hardcode) ---
-  const [birthMonth, setBirthMonth] = useState<number>(10);
-  const [birthYear, setBirthYear] = useState<number>(2031);
-  const [lifestyle, setLifestyle] = useState<ChildLifestyle>('premium');
-  const [budgetCapMonthly, setBudgetCapMonthly] = useState<number>(35);
+  const [birthMonth, setBirthMonth] = useState<number>(config.birthMonth ?? 10);
+  const [birthYear, setBirthYear] = useState<number>(config.birthYear ?? 2031);
+  const [lifestyle, setLifestyle] = useState<ChildLifestyle>(config.lifestyle ?? 'premium');
+  const [budgetCapMonthly, setBudgetCapMonthly] = useState<number>(config.budgetCapMonthly ?? 35);
+
+  React.useEffect(() => {
+    const handler = setTimeout(() => {
+      updateToolConfig('childCostEstimator', { birthMonth, birthYear, lifestyle, budgetCapMonthly });
+    }, 500);
+    return () => clearTimeout(handler);
+  }, [birthMonth, birthYear, lifestyle, budgetCapMonthly]);
 
   // 1. Calculate dynamic child cost timeline from age 0 to 22
   const childAgeRange = Array.from({ length: 23 }, (_, i) => i); // 0 to 22

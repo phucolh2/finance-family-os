@@ -27,25 +27,33 @@ export const HelpTooltip: React.FC<HelpTooltipProps> = ({ text, position = 'bott
   };
 
   const themeClasses = theme === 'dark' 
-    ? 'bg-family-bgDark/95 backdrop-blur-md border border-family-accent/20 shadow-xl text-family-textMuted' 
+    ? 'bg-[#2f241d]/95 backdrop-blur-md border border-family-accent/20 shadow-xl text-[#d4c6b6]' 
     : 'bg-white/95 backdrop-blur-md border border-gray-200 shadow-xl text-gray-800';
 
   return (
     <div
-      className="relative inline-block ml-2 select-none"
+      className="relative inline-block ml-1.5 select-none group"
       onMouseEnter={() => { setVisible(true); }}
       onMouseLeave={() => { setVisible(false); }}
       onFocus={() => { setVisible(true); }}
       onBlur={() => { setVisible(false); }}
+      onClick={(e) => {
+        e.preventDefault();
+        setVisible(!visible);
+      }}
+      tabIndex={0}
+      role="button"
+      aria-expanded={visible}
     >
-      <HelpCircle className={`w-4 h-4 text-family-textLight hover:text-family-accent transition-colors cursor-help ${iconClassName}`} />
-      {visible && (
-        <div
-          className={`absolute z-50 w-56 p-3 rounded-xl text-[10px] font-medium leading-relaxed transition-opacity duration-150 ${themeClasses} ${positionClasses[position]}`}
-        >
-          {text}
-        </div>
-      )}
+      <HelpCircle className={`w-[14px] h-[14px] text-family-textLight/70 group-hover:text-family-accent transition-colors cursor-help ${iconClassName}`} />
+      
+      <div
+        className={`absolute z-50 w-64 p-3.5 rounded-xl text-xs font-medium leading-relaxed transition-all duration-200 ease-out origin-top ${themeClasses} ${positionClasses[position]} ${
+          visible ? 'opacity-100 scale-100 translate-y-0 pointer-events-auto' : 'opacity-0 scale-95 translate-y-1 pointer-events-none'
+        }`}
+      >
+        {text}
+      </div>
     </div>
   );
 };

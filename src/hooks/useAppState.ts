@@ -7,6 +7,7 @@ import { migrateState, validateAppState } from '../utils/migration';
 import { generateResolvedMonthlyDb } from '../engines/databaseResolver';
 import { runProjection } from '../engines/projectionEngine';
 import { isBackupDue, createAutoBackup } from '../utils/scheduledBackup';
+import { loadFromFirestore, saveToFirestore, subscribeToFirestore } from '../services/firestoreSync';
 import {
   DEFAULT_FAMILY_PROFILE,
   DEFAULT_INCOME_SCHEDULE,
@@ -54,6 +55,12 @@ const INITIAL_APP_STATE: AppState = {
   investmentDeals: DEFAULT_INVESTMENT_DEALS,
   savingsDeposits: [],
   sinkingFunds: DEFAULT_SINKING_FUNDS,
+  debts: [],
+  fundTransfers: [],
+  insurancePolicies: [],
+  lifestyleAssets: [],
+  toolConfigs: {},
+  systemLogs: [],
   resolvedMonthlyDb: initialDb.list,
   resolvedMonthlyDbMap: initialDb.map,
 };
@@ -81,11 +88,17 @@ const EMPTY_APP_STATE: AppState = {
   investmentDeals: EMPTY_INVESTMENT_DEALS,
   savingsDeposits: [],
   sinkingFunds: EMPTY_SINKING_FUNDS,
+  debts: [],
+  fundTransfers: [],
+  insurancePolicies: [],
+  lifestyleAssets: [],
+  toolConfigs: {},
+  systemLogs: [],
   resolvedMonthlyDb: emptyDb.list,
   resolvedMonthlyDbMap: emptyDb.map,
 };
 
-export function useAppState() {
+export function useAppState(userId?: string) {
   // Global selected period key for observation
   const [selectedPeriodKey, setSelectedPeriodKey] = useState<string | undefined>(undefined);
 
@@ -113,6 +126,9 @@ export function useAppState() {
     }
     return new Date().toISOString();
   });
+
+  const [syncStatus, setSyncStatus] = useState<'idle' | 'syncing' | 'error' | 'success' | 'synced'>('idle');
+  const [isCloudLoading, setIsCloudLoading] = useState(false);
 
   const [state, setState] = useState<AppState>(() => {
     try {
@@ -152,6 +168,48 @@ export function useAppState() {
     }
     return INITIAL_APP_STATE;
   });
+  // Firestore Sync Effect
+  useEffect(() => {
+    if (!userId) return;
+    
+    let isMounted = true;
+    const initCloudSync = async () => {
+      setIsCloudLoading(true);
+      const data = await loadFromFirestore(userId);
+      if (data && isMounted) {
+        const migrated = migrateState(data.data, INITIAL_APP_STATE);
+        const dbResult = generateResolvedMonthlyDb(
+          migrated.profile, migrated.incomeSchedule, migrated.budgetSchedule, migrated.expenseSchedule,
+          migrated.assets, migrated.assumptions, migrated.lifeStages
+        );
+        migrated.resolvedMonthlyDb = dbResult.list;
+        migrated.resolvedMonthlyDbMap = dbResult.map;
+        setState(migrated);
+        setSyncStatus('synced');
+      }
+      setIsCloudLoading(false);
+    };
+    initCloudSync();
+
+    const unsubscribe = subscribeToFirestore(userId, (data) => {
+      if (isMounted) {
+        const migrated = migrateState(data.data, INITIAL_APP_STATE);
+        const dbResult = generateResolvedMonthlyDb(
+          migrated.profile, migrated.incomeSchedule, migrated.budgetSchedule, migrated.expenseSchedule,
+          migrated.assets, migrated.assumptions, migrated.lifeStages
+        );
+        migrated.resolvedMonthlyDb = dbResult.list;
+        migrated.resolvedMonthlyDbMap = dbResult.map;
+        setState(migrated);
+        setSyncStatus('synced');
+      }
+    });
+
+    return () => {
+      isMounted = false;
+      if (unsubscribe) unsubscribe();
+    };
+  }, [userId]);
 
   // Debounced auto-save effect to prevent disk drag on frequent inputs
   useEffect(() => {
@@ -170,6 +228,11 @@ export function useAppState() {
         if (isBackupDue()) {
           createAutoBackup(persisted);
         }
+        if (userId) {
+          saveToFirestore(userId, state, CURRENT_SCHEMA_VERSION).catch(err => {
+            console.error('Failed to save to firestore:', err);
+          });
+        }
       } catch (err) {
         console.error('Failed to write to localStorage:', err);
       }
@@ -184,7 +247,7 @@ export function useAppState() {
       clearTimeout(handler); 
       window.removeEventListener('beforeunload', saveToLocalStorage);
     };
-  }, [state]);
+  }, [state, userId]);
 
 
   const saveState = (newState: AppState) => {
@@ -270,7 +333,6 @@ export function useAppState() {
     };
 
     const updatedSchedule = [...state.incomeSchedule];
-    const newMonthValue = newItem.effectiveYear * 12 + newItem.effectiveMonth;
 
     // Allow concurrent streams (e.g., passive income from Real Estate and Fulltime Salary).
     // Removed logic that auto-ends previous items to support multiple income streams.
@@ -1140,6 +1202,37 @@ export function useAppState() {
     resetPortfolioToDefault,
     resetAssumptionsToDefault,
     importState,
+
+    updateToolConfig: (toolKey: string, config: any) => {
+      saveState({
+        ...state,
+        toolConfigs: {
+          ...(state.toolConfigs || {}),
+          [toolKey]: config
+        }
+      });
+    },
+
+    pushSystemLog: (action: string, module: string, description: string, actor: string = '👨‍👩‍👧 Gia đình') => {
+      const newLog: import('../types/finance').SystemActivityLog = {
+        id: `log_${Date.now()}_${Math.random().toString(36).substring(2, 9)}`,
+        timestamp: new Date().toISOString(),
+        actor,
+        action,
+        module,
+        description
+      };
+      
+      setState(prev => {
+        const nextLogs = [newLog, ...(prev.systemLogs || [])].slice(0, 500); // keep max 500
+        return {
+          ...prev,
+          systemLogs: nextLogs
+        };
+      });
+    },
+    syncStatus,
+    isCloudLoading,
   };
 }
 export type AppStateHook = ReturnType<typeof useAppState>;

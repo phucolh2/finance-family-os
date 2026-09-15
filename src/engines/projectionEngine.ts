@@ -40,14 +40,14 @@ export function runProjection(input: ProjectionEngineInput): ProjectionOutput {
   const budgetSchedule = safeArray(input.budgetSchedule);
   const expenseSchedule = safeArray(input.expenseSchedule);
   const lifeEvents = safeArray(input.lifeEvents);
-  const _assets = safeArray(input.assets);
+  // const _assets = safeArray(input.assets);
   const assumptions = input.assumptions;
   const investmentDeals = safeArray(input.investmentDeals);
   const savingsDeposits = safeArray(input.savingsDeposits);
   const sinkingFunds = safeArray(input.sinkingFunds);
   const debts = safeArray(input.debts);
   const projectionAdjustments = safeArray(input.projectionAdjustments);
-  const lifeStages = safeArray(input.lifeStages);
+  // const lifeStages = safeArray(input.lifeStages);
   const fundTransfers = safeArray(input.fundTransfers);
 
   // 1. Generate monthly timeline
@@ -161,7 +161,7 @@ export function runProjection(input: ProjectionEngineInput): ProjectionOutput {
         } else {
           let isPastOrCurrent = false;
           if (input.observationPeriodKey) {
-            const [obsMonthStr, obsYearStr] = input.observationPeriodKey.split('/');
+            const [obsYearStr, obsMonthStr] = input.observationPeriodKey.split('-');
             const obsMonth = parseInt(obsMonthStr, 10);
             const obsYear = parseInt(obsYearStr, 10);
             if (!isNaN(obsMonth) && !isNaN(obsYear)) {
@@ -341,6 +341,12 @@ export function runProjection(input: ProjectionEngineInput): ProjectionOutput {
     });
 
     // Process Fund Transfers for abstract buckets and edge cases
+    const projActiveBudget = budgetSchedule.length > 0 ? budgetSchedule[budgetSchedule.length - 1] : null;
+    const resolveGroupIdProj = (sourceId: string) => {
+      const group = projActiveBudget?.rootGroups?.find(g => g.id === sourceId);
+      return group?.groupId || sourceId;
+    };
+
     const transfersThisMonth = fundTransfers.filter(t => t.month === period.month && t.year === period.year);
     transfersThisMonth.forEach(t => {
        // --- 1. SOURCE DEDUCTIONS ---
@@ -350,6 +356,11 @@ export function runProjection(input: ProjectionEngineInput): ProjectionOutput {
           currentDebtReserveBalance -= t.amount;
        } else if (t.sourceType === 'cashflow' && (t.sourceId === 'liquidity' || t.sourceId?.startsWith('liquidity_group_'))) {
           currentLiquidityBalance -= t.amount;
+          if (t.sourceId.startsWith('liquidity_group_')) {
+             const rawId = t.sourceId.replace('liquidity_group_', '');
+             const groupId = resolveGroupIdProj(rawId);
+             groupBalances[groupId] = (groupBalances[groupId] || 0) - t.amount;
+          }
        } else if (t.sourceType === 'cashflow' && (!t.sourceId || t.sourceId === 'investable')) {
           totalInvestable -= t.amount;
        }
@@ -358,6 +369,11 @@ export function runProjection(input: ProjectionEngineInput): ProjectionOutput {
        if (t.destinationType === 'cashflow') {
           if (t.destinationId === 'liquidity' || t.destinationId?.startsWith('liquidity_group_')) {
              currentLiquidityBalance += t.amount;
+             if (t.destinationId.startsWith('liquidity_group_')) {
+                const rawId = t.destinationId.replace('liquidity_group_', '');
+                const groupId = resolveGroupIdProj(rawId);
+                groupBalances[groupId] = (groupBalances[groupId] || 0) + t.amount;
+             }
           } else {
              totalInvestable += t.amount;
           }
@@ -521,7 +537,7 @@ export function runProjection(input: ProjectionEngineInput): ProjectionOutput {
         ? sf.disbursedYear * 12 + sf.disbursedMonth
         : Infinity;
       const current = period.year * 12 + period.month;
-      const term = sf.termMonths || 1;
+      // const term = sf.termMonths || 1;
       const source = sf.sourceOfFund || (sf.fundType === 'debt_prep' ? 'debt_reserve' : (sf.fundType === 'lifestyle_savings' ? 'expense_surplus' : 'unallocated'));
       
       if (current >= start && current <= end) {
@@ -615,6 +631,10 @@ export function runProjection(input: ProjectionEngineInput): ProjectionOutput {
         
         if (source === 'unallocated' || source === 'investment') {
           activeSinkingFundsBalance_unallocated += state.balance;
+          if (current < end) {
+              if (source === 'unallocated') currentUnallocatedCashBalance -= newContrib;
+              else totalInvestable -= newContrib;
+          }
         } else if (source === 'saving') {
           activeSinkingFundsBalance_saving += state.balance;
           if (current < end) activeSinkingFundsContrib_saving += newContrib;
@@ -637,7 +657,7 @@ export function runProjection(input: ProjectionEngineInput): ProjectionOutput {
       warnings.push(`[Dự phòng] Tháng ${period.month}/${period.year}: Quỹ Dự phòng (Sinking Fund) thiếu hụt ${deficit.toFixed(1)} tr. Đã tự động trừ vào dòng tiền tự do (Cashflow). Bạn có thể điều chỉnh ngân sách thủ công để bù đắp.`);
     }
 
-    const _unallocatedForCompounding = Math.max(0, totalInvestable - activeValueUpToLastMonth - activeSavingsPrincipalThisMonth - activeSinkingFundsBalance_unallocated);
+    // const _unallocatedForCompounding = Math.max(0, totalInvestable - activeValueUpToLastMonth - activeSavingsPrincipalThisMonth - activeSinkingFundsBalance_unallocated);
 
     // Evaluate adjustments for the current month
 
@@ -755,7 +775,7 @@ export function runProjection(input: ProjectionEngineInput): ProjectionOutput {
     totalInvestable += monthlyContribution + investmentPnl + activeSavingsMaturedThisMonth_unallocated + sinkingFundMaturedThisMonth_unallocated;
 
     // Derived actual monthly rate based on custom profit
-    const _actualInvestmentRateMonthly = previousTotalInvestable > 0 ? investmentPnl / previousTotalInvestable : 0;
+    // const _actualInvestmentRateMonthly = previousTotalInvestable > 0 ? investmentPnl / previousTotalInvestable : 0;
 
     const assetBalances: Record<AssetType, number> = { fx_reserve_usd: 0, gold: 0, real_estate: 0, stocks: 0, crypto: 0 };
     const earmarkedBalances: Record<AssetType, number> = { fx_reserve_usd: 0, gold: 0, real_estate: 0, stocks: 0, crypto: 0 };
@@ -817,7 +837,7 @@ export function runProjection(input: ProjectionEngineInput): ProjectionOutput {
 
     const totalActiveCapital = Object.values(assetBalances).reduce((sum, v) => sum + v, 0);
     const unallocatedCash = Math.max(0, totalInvestable - totalActiveCapital - totalEarmarkedCapital);
-    const _safeTotalEndingBalance = Math.max(totalInvestable, totalActiveCapital + totalEarmarkedCapital);
+    // const _safeTotalEndingBalance = Math.max(totalInvestable, totalActiveCapital + totalEarmarkedCapital);
 
     if (totalActiveCapital + totalEarmarkedCapital > totalInvestable + 0.01) {
       warnings.push(`[Đầu tư] Tháng ${String(period.month)}/${String(period.year)}: Tổng vốn thương vụ hoạt động và chờ phân bổ (${(totalActiveCapital + totalEarmarkedCapital).toFixed(1)}M) vượt quá tổng ngân sách đầu tư khả dụng (${totalInvestable.toFixed(1)}M).`);
@@ -877,7 +897,7 @@ export function runProjection(input: ProjectionEngineInput): ProjectionOutput {
     };
 
     // Calculate Net Worth
-    const nominalNetWorth = portfolioOutput.totalEndingBalance + currentSavingBalance + activeSinkingFundsBalance_saving + currentLiquidityBalance + currentDebtReserveBalance + activeSinkingFundsBalance_expenseSurplus + activeSinkingFundsBalance_debtReserve + currentUnallocatedCashBalance;
+    const nominalNetWorth = portfolioOutput.totalEndingBalance + currentSavingBalance + activeSinkingFundsBalance_saving + currentLiquidityBalance + currentDebtReserveBalance + activeSinkingFundsBalance_expenseSurplus + activeSinkingFundsBalance_debtReserve + currentUnallocatedCashBalance + activeSinkingFundsBalance_unallocated;
 
     // Calculate Real Value Today
     const inflationRate = safeNumber(assumptions.generalInflationRateAnnual, 0);
@@ -955,6 +975,10 @@ export function runProjection(input: ProjectionEngineInput): ProjectionOutput {
       healthBalance: 0,
       savingBalance: Math.max(0, currentSavingBalance),
       debtReserveBalance: Math.max(0, currentDebtReserveBalance),
+      _rawSavingBalance: currentSavingBalance,
+      _rawDebtReserveBalance: currentDebtReserveBalance,
+      _rawUnallocatedBalance: currentUnallocatedCashBalance,
+      _rawInvestmentBalance: totalInvestable,
       portfolio: portfolioOutput,
       propertyValue: assetBalances.real_estate,
       nominalNetWorth,
@@ -1023,12 +1047,7 @@ export function runProjection(input: ProjectionEngineInput): ProjectionOutput {
     );
 
     // Calculate FIRE details for the end-of-year row
-    const _yearlyFireRes = calculateFire({
-      expensesMonthly: lastRow.budgetedExpensesMonthly || lastRow.expensesMonthly,
-      netWorth: lastRow.nominalNetWorth,
-      withdrawalRate: 4,
-      yearlyRows, // pass in accumulated rows so far to calculate expectedFireYear
-    });
+    /* const _yearlyFireRes = ... */
 
     yearlyRows.push({
       year: yr,

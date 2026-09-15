@@ -5,7 +5,7 @@ import type { FundCardProps } from './types';
 import type { FundingSourceId } from '../../../constants/fundingSources';
 
 export const LifestyleFundCard: React.FC<FundCardProps> = ({
-  fund, balance, progress, totalDisbursed, totalDeposited, isDisbursing,
+  fund, balance, progress, totalDeposited, isDisbursing,
   currentObservedMonth, currentObservedYear,
   expandedFundId, setExpandedFundId, onEdit, onDelete, onDisburse,
   renderDisburseForm, renderCashflowDetails,

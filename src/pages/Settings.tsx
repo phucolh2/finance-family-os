@@ -311,6 +311,12 @@ const AssetAllocationSettings: React.FC = () => {
   const [localAssets, setLocalAssets] = useState(state.assets);
   const [isEditing, setIsEditing] = useState(false);
 
+  React.useEffect(() => {
+    if (!isEditing) {
+      setLocalAssets(state.assets);
+    }
+  }, [state.assets, isEditing]);
+
   const totalAllocation = localAssets.reduce((sum, a) => sum + (a.targetAllocationPercent || 0), 0);
   const isValid = Math.abs(totalAllocation - 100) < 0.01;
 
@@ -400,7 +406,7 @@ const AssetAllocationSettings: React.FC = () => {
 };
 
 export const Settings: React.FC = () => {
-  const { state, lastSaved, schemaVersion, importState, resetToDefault, resetBudgetToDefault, resetIncomeToDefault, resetPortfolioToDefault, resetAssumptionsToDefault, updateAssumptions } = useAppContext();
+  const { state, lastSaved, schemaVersion, importState, resetToDefault, resetBudgetToDefault, resetIncomeToDefault, resetPortfolioToDefault, resetAssumptionsToDefault, pushSystemLog } = useAppContext();
 
   const fileInputRef = useRef<HTMLInputElement>(null);
   
@@ -499,8 +505,9 @@ export const Settings: React.FC = () => {
   };
 
   const handleResetAll = () => {
-    if (window.confirm('CẢNH BÁO ĐỎ: Bạn có chắc chắn muốn xóa toàn bộ dữ liệu Ngân sách, Thu nhập và Tài sản? Hành động này sẽ đưa hệ thống về trạng thái trắng tinh và không thể hoàn tác!')) {
+    if (window.confirm('Lưu ý nhỏ: Bạn có chắc chắn muốn làm lại từ đầu không? Toàn bộ dữ liệu ngân sách, thu nhập và tài sản sẽ được thiết lập lại. Hãy chắc chắn bạn đã tải file dự phòng nhé!')) {
       resetToDefault();
+      if (pushSystemLog) pushSystemLog('XÓA', 'Hệ thống', 'Đã đặt lại toàn bộ hệ thống về trạng thái ban đầu');
       addBackupHistoryEntry({ action: 'reset', status: 'success' });
       setBackupHistory(getBackupHistory());
       setLastExportSummary(null);
@@ -513,6 +520,7 @@ export const Settings: React.FC = () => {
   const handleResetBudget = () => {
     if (window.confirm('Bạn có chắc chắn muốn xóa sạch Lịch sử Kế hoạch Ngân sách?')) {
       resetBudgetToDefault();
+      if (pushSystemLog) pushSystemLog('XÓA', 'Phân bổ', 'Đã xóa toàn bộ Kế hoạch Ngân sách');
       setSuccessMsg('Dữ liệu Ngân sách đã được làm sạch.');
       setErrorMsg(null);
     }
@@ -521,6 +529,7 @@ export const Settings: React.FC = () => {
   const handleResetIncome = () => {
     if (window.confirm('Bạn có chắc chắn muốn xóa sạch Lịch sử Kế hoạch Thu nhập?')) {
       resetIncomeToDefault();
+      if (pushSystemLog) pushSystemLog('XÓA', 'Thu nhập', 'Đã xóa toàn bộ Lịch sử Thu nhập');
       setSuccessMsg('Dữ liệu Thu nhập đã được làm sạch.');
       setErrorMsg(null);
     }
@@ -529,14 +538,16 @@ export const Settings: React.FC = () => {
   const handleResetAssumptions = () => {
     if (window.confirm('Bạn có chắc chắn muốn khôi phục các chỉ số giả định (Lạm phát, Lãi suất...) về mức mặc định không?')) {
       resetAssumptionsToDefault();
+      if (pushSystemLog) pushSystemLog('CẬP NHẬT', 'Giả định', 'Đã khôi phục các thông số vĩ mô về mặc định');
       setSuccessMsg('Thông số giả định đã được khôi phục.');
       setErrorMsg(null);
     }
   };
 
   const handleResetPortfolio = () => {
-    if (window.confirm('Bạn có chắc chắn muốn xóa toàn bộ danh mục Tài sản, Giao dịch đầu tư và Số dư các quỹ không?')) {
+    if (window.confirm('Bạn có chắc chắn muốn làm mới toàn bộ danh mục tài sản, khoản đầu tư và số dư các quỹ không?')) {
       resetPortfolioToDefault();
+      if (pushSystemLog) pushSystemLog('XÓA', 'Tài sản', 'Đã làm mới toàn bộ danh mục tài sản và đầu tư');
       setSuccessMsg('Dữ liệu Tài sản và Đầu tư đã được làm sạch.');
       setErrorMsg(null);
     }

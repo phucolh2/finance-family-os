@@ -47,8 +47,8 @@ export const LifeStages: React.FC = () => {
   const [pendingEventData, setPendingEventData] = useState<any>(null);
   const [pendingWarningInfo, setPendingWarningInfo] = useState<{sourceName: string, overage: number, month: number, year: number} | null>(null);
 
-  const [isAdvisorOpen, setIsAdvisorOpen] = useState(false);
-  const [advisorSnapshot, setAdvisorSnapshot] = useState<AllocationSnapshot | null>(null);
+  const [] = useState(false);
+  const [] = useState<AllocationSnapshot | null>(null);
 
 
   const now = new Date();
@@ -350,7 +350,7 @@ export const LifeStages: React.FC = () => {
         return;
       }
       
-      const endMonthValueFund = targetMonthValue + durationFund;
+      // const endMonthValueFund = targetMonthValue + durationFund;
       const matchedGroup = formPeriodBreakdown.find(g => g.id === formData.recurringFundingSource);
       
       if (matchedGroup) {
@@ -959,7 +959,7 @@ export const LifeStages: React.FC = () => {
                         
                         const newActual = priorActual + impact;
                         const fillRatio = budgetForCategory > 0 ? (newActual / budgetForCategory) * 100 : (newActual > 0 ? Infinity : 0);
-                        const isOverBudget = newActual > budgetForCategory;
+                        // const isOverBudget = newActual > budgetForCategory;
                         
                         let trackAType: 'safe' | 'warning' | 'error' = 'safe';
                         let trackATitle = '';
@@ -1161,26 +1161,45 @@ export const LifeStages: React.FC = () => {
                                   budget = dbRow.budgetAmounts?.[lookupGroupId] || 0;
                                   actual = dbRow.actualExpenseByGroup?.[lookupGroupId] || 0;
                                   
-                                  let oldTrackAImpact = 0;
-                                  if (editingId) {
-                                      const oldEvent = state.lifeEvents.find(ev => ev.id === editingId);
-                                      if (oldEvent?.spendingCategory && oldEvent.recurringMonthlyImpact) {
-                                          const oldGroup = oldEvent.spendingCategory.split('/')[0];
-                                          if (oldGroup === lookupGroupId) {
-                                              let evStartMonth = oldEvent.month + 1;
-                                              let evStartYear = oldEvent.year;
-                                              if (evStartMonth > 12) { evStartMonth = 1; evStartYear += 1; }
-                                              const evStartVal = evStartYear * 12 + evStartMonth;
-                                              const dur = safeNumber(oldEvent.recurringDurationMonths) || 1200;
-                                              const evEndVal = evStartVal + dur - 1;
-                                              const currentVal = y * 12 + m;
-                                              if (currentVal >= evStartVal && currentVal <= evEndVal) {
-                                                  oldTrackAImpact = Math.abs(safeNumber(oldEvent.recurringMonthlyImpact));
-                                              }
+                                  // Add impact from all OTHER active life events on this group in this month
+                                  let otherLifeEventsImpact = 0;
+                                  const currentVal = y * 12 + m;
+                                  
+                                  state.lifeEvents.forEach(ev => {
+                                      if (ev.id === editingId) return; // Skip the one being edited
+                                      
+                                      const rawId = ev.spendingCategory ? ev.spendingCategory.split('/')[0] : (ev.recurringFundingSource || '');
+                                      let evGroupId = rawId.replace('group_', '');
+                                      // If it's a sinking fund, resolve to its fundGroup
+                                      const fund = state.sinkingFunds?.find(f => f.id === rawId);
+                                      if (fund?.fundGroup) evGroupId = fund.fundGroup;
+                                      
+                                      if (evGroupId !== lookupGroupId) return;
+                                      
+                                      let evStartMonth = ev.month + 1;
+                                      let evStartYear = ev.year;
+                                      if (evStartMonth > 12) { evStartMonth = 1; evStartYear += 1; }
+                                      const evStartVal = evStartYear * 12 + evStartMonth;
+                                      
+                                      // One-time impact
+                                      if (currentVal === evStartVal && (ev.amount || 0) < 0) {
+                                          otherLifeEventsImpact += Math.abs(safeNumber(ev.amount));
+                                      }
+                                      
+                                      // Recurring impact
+                                      const dur = safeNumber(ev.recurringDurationMonths) || 1200;
+                                      const evEndVal = evStartVal + dur - 1;
+                                      if (currentVal >= evStartVal && currentVal <= evEndVal) {
+                                          if ((ev.recurringMonthlyImpact || 0) < 0) {
+                                              otherLifeEventsImpact += Math.abs(safeNumber(ev.recurringMonthlyImpact));
+                                          }
+                                          if ((ev.recurringMonthlyImpactFund || 0) < 0) {
+                                              otherLifeEventsImpact += Math.abs(safeNumber(ev.recurringMonthlyImpactFund));
                                           }
                                       }
-                                  }
-                                  actual -= oldTrackAImpact;
+                                  });
+                                  
+                                  actual += otherLifeEventsImpact;
                                   
                                   periodSurplus = budget - actual;
                                   if (isSameCategoryGroup && trackAImpact > 0) {
@@ -1250,31 +1269,44 @@ export const LifeStages: React.FC = () => {
                               sampleBudget = firstDbRow.budgetAmounts?.[lookupGroupId] || 0;
                               sampleActual = firstDbRow.actualExpenseByGroup?.[lookupGroupId] || 0;
                               
-                              let oldTrackAImpact = 0;
-                              if (editingId) {
-                                  const oldEvent = state.lifeEvents.find(ev => ev.id === editingId);
-                                  if (oldEvent?.spendingCategory && oldEvent.recurringMonthlyImpact) {
-                                      const oldGroup = oldEvent.spendingCategory.split('/')[0];
-                                      if (oldGroup === lookupGroupId) {
-                                          let evStartMonth = oldEvent.month + 1;
-                                          let evStartYear = oldEvent.year;
-                                          if (evStartMonth > 12) { evStartMonth = 1; evStartYear += 1; }
-                                          const evStartVal = evStartYear * 12 + evStartMonth;
-                                          const dur = safeNumber(oldEvent.recurringDurationMonths) || 1200;
-                                          const evEndVal = evStartVal + dur - 1;
-                                          
-                                          let currentM = formData.month + 1;
-                                          let currentY = formData.year;
-                                          while (currentM > 12) { currentM -= 12; currentY += 1; }
-                                          const currentVal = currentY * 12 + currentM;
-                                          
-                                          if (currentVal >= evStartVal && currentVal <= evEndVal) {
-                                              oldTrackAImpact = Math.abs(safeNumber(oldEvent.recurringMonthlyImpact));
-                                          }
+                              let otherLifeEventsImpact = 0;
+                              let currentM = formData.month + 1;
+                              let currentY = formData.year;
+                              while (currentM > 12) { currentM -= 12; currentY += 1; }
+                              const currentVal = currentY * 12 + currentM;
+                              
+                              state.lifeEvents.forEach(ev => {
+                                  if (ev.id === editingId) return; // Skip the one being edited
+                                  
+                                  const rawId = ev.spendingCategory ? ev.spendingCategory.split('/')[0] : (ev.recurringFundingSource || '');
+                                  let evGroupId = rawId.replace('group_', '');
+                                  const fund = state.sinkingFunds?.find(f => f.id === rawId);
+                                  if (fund?.fundGroup) evGroupId = fund.fundGroup;
+                                  
+                                  if (evGroupId !== lookupGroupId) return;
+                                  
+                                  let evStartMonth = ev.month + 1;
+                                  let evStartYear = ev.year;
+                                  if (evStartMonth > 12) { evStartMonth = 1; evStartYear += 1; }
+                                  const evStartVal = evStartYear * 12 + evStartMonth;
+                                  
+                                  if (currentVal === evStartVal && (ev.amount || 0) < 0) {
+                                      otherLifeEventsImpact += Math.abs(safeNumber(ev.amount));
+                                  }
+                                  
+                                  const dur = safeNumber(ev.recurringDurationMonths) || 1200;
+                                  const evEndVal = evStartVal + dur - 1;
+                                  if (currentVal >= evStartVal && currentVal <= evEndVal) {
+                                      if ((ev.recurringMonthlyImpact || 0) < 0) {
+                                          otherLifeEventsImpact += Math.abs(safeNumber(ev.recurringMonthlyImpact));
+                                      }
+                                      if ((ev.recurringMonthlyImpactFund || 0) < 0) {
+                                          otherLifeEventsImpact += Math.abs(safeNumber(ev.recurringMonthlyImpactFund));
                                       }
                                   }
-                              }
-                              sampleActual -= oldTrackAImpact;
+                              });
+                              
+                              sampleActual += otherLifeEventsImpact;
                           }
                           const nextM = formData.month + 1 > 12 ? 1 : formData.month + 1;
                           const nextY = formData.month + 1 > 12 ? formData.year + 1 : formData.year;
@@ -1316,7 +1348,7 @@ export const LifeStages: React.FC = () => {
                           }
                           text1 += traceLines.join('\n');
 
-                          const text2 = '';
+                          // const text2 = '';
                           let adviceType: 'safe' | 'warning' | 'critical' | 'error' = 'safe';
                           const totalCashPool = availableRemaining + totalSurplusOverDuration;
                           const trueTotalCost = totalCost + (isSameSource ? oneTimeAmount : 0);
@@ -1580,9 +1612,9 @@ export const LifeStages: React.FC = () => {
                   for (let i = 0; i < dur; i++) {
                     const pKey = `${checkY}-${String(checkM).padStart(2, '0')}`;
                     const row = state.resolvedMonthlyDb.find(r => r.periodKey === pKey);
-                    if (row && (row as any)._monthlyBudget && (row as any)._monthlyActual) {
-                      const budget = (row as any)._monthlyBudget[categoryId] || 0;
-                      const actual = (row as any)._monthlyActual[categoryId] || 0;
+                    if (row && row.budgetAmounts && row.actualExpenseCategories) {
+                      const budget = row.budgetAmounts[categoryId] || 0;
+                      const actual = row.actualExpenseCategories[categoryId] || 0;
                       if (actual > budget) {
                         hasBudgetWarning = true; break;
                       }
@@ -1623,7 +1655,7 @@ export const LifeStages: React.FC = () => {
                 
                 {filteredTimelineEvents.length > 0 ? (
                   <div className="relative border-l-2 border-family-accent/20 ml-4 md:ml-6 space-y-6 py-4">
-                    {filteredTimelineEvents.map((event, index) => {
+                    {filteredTimelineEvents.map((event, _index) => {
                       const isIncome = event.amount >= 0;
                       const isRecurringIncome = safeNumber(event.recurringMonthlyImpact) >= 0;
                       const theme = getEventTheme(event.type, isIncome);

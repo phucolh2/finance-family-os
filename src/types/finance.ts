@@ -253,6 +253,43 @@ export interface FundTransfer {
   createdAt: number; // timestamp
 }
 
+export interface InsurancePolicy {
+  id: string;
+  type: 'social' | 'life' | 'non_life' | 'vehicle' | 'health';
+  provider: string; // e.g., BHXH VN, Prudential, AIA, Bảo Việt
+  policyNumber: string; // Mã hợp đồng / Số sổ
+  insuredPerson: string; // Người/Tài sản được bảo hiểm
+  premium: number; // Phí đóng (VNĐ)
+  paymentFrequency: 'monthly' | 'yearly' | 'one_time';
+  status: 'active' | 'expired' | 'pending';
+  notes?: string;
+}
+
+export interface LifestyleAsset {
+  id: string;
+  name: string; // Tên tiêu sản (VD: Ô tô VinFast, MacBook Pro)
+  type: 'vehicle' | 'electronics' | 'furniture' | 'other';
+  purchasePrice: number; // Giá mua (triệu VND)
+  purchaseMonth: number;
+  purchaseYear: number;
+  depreciationRateAnnual: number; // Tỷ lệ khấu hao (%/năm, VD: 10%)
+  maintenanceCostMonthly: number; // Chi phí nuôi/bảo dưỡng hàng tháng (triệu VND)
+  status: 'active' | 'sold';
+  soldMonth?: number;
+  soldYear?: number;
+  soldPrice?: number;
+  notes?: string;
+}
+
+export interface SystemActivityLog {
+  id: string;
+  timestamp: string;
+  actor: string;
+  action: string;
+  module: string;
+  description: string;
+}
+
 export interface AppState {
   profile: FamilyProfile;
   incomeCategories?: IncomeCategory[];
@@ -268,9 +305,13 @@ export interface AppState {
   sinkingFunds?: SinkingFund[];
   debts?: DebtLiability[];
   fundTransfers?: FundTransfer[];
+  insurancePolicies?: InsurancePolicy[];
+  lifestyleAssets?: LifestyleAsset[];
   projectionAdjustments?: import('./projection').ProjectionAdjustmentRecord[];
   resolvedMonthlyDb?: ResolvedMonthlyDbItem[];
   resolvedMonthlyDbMap?: Record<string, ResolvedMonthlyDbItem>;
+  toolConfigs?: Record<string, any>;
+  systemLogs?: SystemActivityLog[];
 }
 
 export interface PersistedAppState {

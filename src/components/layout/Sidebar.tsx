@@ -1,21 +1,31 @@
 import React from 'react';
 import {
-  Home,
-  Wallet,
-  Calendar,
-  Milestone,
-  Briefcase,
+  LayoutDashboard,
+  BookOpenText,
+  ScrollText,
+  TrendingUp,
+  PieChart,
+  ReceiptText,
+  LineChart,
+  PiggyBank,
+  ShieldCheck,
+  ArrowLeftRight,
+  CreditCard,
+  Sparkles,
   Flame,
   HeartPulse,
+  Baby,
+  Receipt,
+  BadgeCheck,
+  Landmark,
   BookOpen,
   Settings,
+  CarFront,
+  Palmtree,
   X,
-  History,
-  Activity,
-  ShieldCheck,
-  ArrowRightLeft,
-  Scale,
-  Baby,
+  FolderOpen,
+  Gift,
+  Activity
 } from 'lucide-react';
 
 interface SidebarProps {
@@ -29,37 +39,51 @@ export const Sidebar: React.FC<SidebarProps> = ({ activeTab, setActiveTab, onClo
     {
       title: 'Tổng quan',
       items: [
-        { id: 'dashboard', name: 'Tổng quan tài chính gia đình', icon: Home },
-        { id: 'cashflow', name: 'Bức tranh Tài chính (RDPD)', icon: Activity },
-        { id: 'event_ledger', name: 'Nhật ký sự kiện (Ledger)', icon: History },
+        { id: 'dashboard', name: 'Tổng quan tài chính gia đình', icon: LayoutDashboard, color: 'text-indigo-500', bg: 'bg-indigo-500/15' },
+        { id: 'cashflow', name: 'Bức tranh Tài chính (RDPD)', icon: BookOpenText, color: 'text-violet-500', bg: 'bg-violet-500/15' },
+        { id: 'event_ledger', name: 'Nhật ký sự kiện (Ledger)', icon: ScrollText, color: 'text-sky-500', bg: 'bg-sky-500/15' },
       ],
     },
     {
       title: 'Lịch trình & Giai đoạn',
       items: [
-        { id: 'income', name: 'Kế hoạch Thu nhập', icon: Wallet },
-        { id: 'budget_history', name: 'Phân Bổ Ngân Sách', icon: Calendar },
-        { id: 'life_stages', name: 'Quản lý chi tiêu', icon: Milestone },
-        { id: 'portfolio', name: 'Danh mục đầu tư', icon: Briefcase },
-        { id: 'savings', name: 'Tiết kiệm', icon: Wallet },
-        { id: 'reserves', name: 'Quỹ Dự phòng', icon: ShieldCheck },
-        { id: 'fund_transfers', name: 'Điều chuyển dòng tiền', icon: ArrowRightLeft },
-        { id: 'debt_management', name: 'Quản lý Công nợ', icon: Scale },
+        { id: 'income', name: 'Kế hoạch Thu nhập', icon: TrendingUp, color: 'text-emerald-500', bg: 'bg-emerald-500/15' },
+        { id: 'budget_history', name: 'Phân Bổ Ngân Sách', icon: PieChart, color: 'text-cyan-500', bg: 'bg-cyan-500/15' },
+        { id: 'life_stages', name: 'Quản lý chi tiêu', icon: ReceiptText, color: 'text-amber-500', bg: 'bg-amber-500/15' },
+        { id: 'portfolio', name: 'Danh mục đầu tư', icon: LineChart, color: 'text-blue-500', bg: 'bg-blue-500/15' },
+        { id: 'savings', name: 'Tiết kiệm', icon: PiggyBank, color: 'text-green-500', bg: 'bg-green-500/15' },
+        { id: 'reserves', name: 'Quỹ Dự phòng', icon: ShieldCheck, color: 'text-teal-500', bg: 'bg-teal-500/15' },
+        { id: 'fund_transfers', name: 'Điều chuyển dòng tiền', icon: ArrowLeftRight, color: 'text-orange-500', bg: 'bg-orange-500/15' },
+        { id: 'debt_management', name: 'Quản lý Công nợ', icon: CreditCard, color: 'text-rose-500', bg: 'bg-rose-500/15' },
       ],
     },
     {
       title: 'Công cụ hữu ích',
       items: [
-        { id: 'fire_center', name: 'FIRE Center', icon: Flame },
-        { id: 'health_rest', name: 'Bệnh tật & hậu sự', icon: HeartPulse },
-        { id: 'child_estimator', name: 'Công cụ tính phí Nuôi con', icon: Baby },
+        { id: 'year_in_review', name: 'Financial Wrapped', icon: Sparkles, color: 'text-fuchsia-500', bg: 'bg-fuchsia-500/15' },
+        { id: 'lifestyle_assets', name: 'Tiêu sản & Tiện nghi', icon: CarFront, color: 'text-indigo-500', bg: 'bg-indigo-500/15' },
+        { id: 'fire_center', name: 'FIRE Center', icon: Flame, color: 'text-red-500', bg: 'bg-red-500/15' },
+        { id: 'health_rest', name: 'Dự phòng Y tế & Hậu sự', icon: HeartPulse, color: 'text-pink-500', bg: 'bg-pink-500/15' },
+        { id: 'child_estimator', name: 'Công cụ tính phí Nuôi con', icon: Baby, color: 'text-yellow-500', bg: 'bg-yellow-500/15' },
+        { id: 'tax_calculator', name: 'Tối ưu Thuế TNCN', icon: Receipt, color: 'text-lime-500', bg: 'bg-lime-500/15' },
+        { id: 'insurance_manager', name: 'Sổ Quản lý Bảo hiểm', icon: BadgeCheck, color: 'text-slate-400', bg: 'bg-slate-400/15' },
+        { id: 'loan_simulator', name: 'Mô phỏng Vay vốn', icon: Landmark, color: 'text-stone-400', bg: 'bg-stone-400/15' },
+        { id: 'vacation_planner', name: 'Chuyến Đi Hạnh Phúc', icon: Palmtree, color: 'text-emerald-400', bg: 'bg-emerald-400/15' },
+      ],
+    },
+    {
+      title: 'Đời sống Gia đình',
+      items: [
+        { id: 'document_vault', name: 'Kho Giấy tờ', icon: FolderOpen, color: 'text-amber-600', bg: 'bg-amber-500/15' },
+        { id: 'giving_ledger', name: 'Sổ Hiếu hỷ', icon: Gift, color: 'text-rose-500', bg: 'bg-rose-500/15' },
+        { id: 'health_tracker', name: 'Nhật ký Sức khoẻ', icon: Activity, color: 'text-emerald-500', bg: 'bg-emerald-500/15' },
       ],
     },
     {
       title: 'Dự phòng & Tri thức',
       items: [
-        { id: 'knowledge_center', name: 'Knowledge Center', icon: BookOpen },
-        { id: 'settings', name: 'Cấu hình hệ thống', icon: Settings },
+        { id: 'knowledge_center', name: 'Knowledge Center', icon: BookOpen, color: 'text-family-accent', bg: 'bg-family-accent/15' },
+        { id: 'settings', name: 'Cài đặt & Đồng bộ', icon: Settings, color: 'text-gray-400', bg: 'bg-gray-400/15' },
       ],
     },
   ];
@@ -73,24 +97,35 @@ export const Sidebar: React.FC<SidebarProps> = ({ activeTab, setActiveTab, onClo
 
   return (
     <aside className="w-64 bg-family-bgDark border-r border-family-accent/10 flex flex-col h-full overflow-y-auto shrink-0 select-none">
-      <div className="p-6 border-b border-family-accent/10 flex items-center justify-between">
-        <div>
-          <h2 className="text-xl font-serif font-bold text-family-text flex items-center gap-2">
-            <span>👨‍👩‍👧‍👦</span> Family OS
-          </h2>
-          <span className="text-[10px] uppercase font-bold text-family-accent tracking-widest mt-1 block">v2.0 Beta</span>
+      <div className="relative p-6 border-b border-family-accent/10 flex items-center justify-between overflow-hidden">
+        {/* Subtle Romantic Background */}
+        <div className="absolute inset-0 opacity-25">
+          <img src="/images/family_love.jpg" alt="Love" className="w-full h-full object-cover object-[center_30%]" />
+          <div className="absolute inset-0 bg-gradient-to-r from-family-bgDark via-family-bgDark/80 to-transparent"></div>
+        </div>
+
+        <div className="relative z-10 flex items-center gap-3">
+          <div className="w-10 h-10 rounded-full border-2 border-white/50 overflow-hidden shadow-md shrink-0">
+            <img src="/images/couple_avatar.jpg" alt="Family Avatar" className="w-full h-full object-cover" />
+          </div>
+          <div>
+            <h2 className="text-xl font-serif font-bold text-family-text drop-shadow-md leading-tight">
+              Family OS
+            </h2>
+          </div>
         </div>
         {onCloseMobile && (
-          <button onClick={onCloseMobile} className="md:hidden p-1.5 rounded-xl hover:bg-family-bgDeep text-family-textMuted">
+          <button onClick={onCloseMobile} className="relative z-10 md:hidden p-1.5 rounded-xl hover:bg-family-bgDeep text-family-textMuted bg-family-bgDark/50 backdrop-blur-sm">
             <X className="w-5 h-5" />
           </button>
         )}
       </div>
 
       <nav className="flex-1 p-4 space-y-6">
-        {menuGroups.map((group) => (
-          <div key={group.title} className="space-y-1">
-            <span className="text-[10px] font-bold text-family-textLight uppercase tracking-wider px-3 block mb-2">
+        {menuGroups.map((group, index) => (
+          <div key={group.title} className="space-y-0.5">
+            {index > 0 && <div className="h-px bg-gradient-to-r from-transparent via-family-accent/10 to-transparent mb-4" />}
+            <span className="text-[10px] font-bold text-family-textLight uppercase tracking-wider px-3 block mb-2 flex items-center gap-1.5">
               {group.title}
             </span>
             {group.items.map((item) => {
@@ -100,13 +135,17 @@ export const Sidebar: React.FC<SidebarProps> = ({ activeTab, setActiveTab, onClo
                 <button
                   key={item.id}
                   onClick={() => { handleItemClick(item.id); }}
-                  className={`w-full flex items-center gap-3 px-3 py-2.5 text-xs font-semibold rounded-xl transition-all duration-150 ${
+                  className={`w-full flex items-center gap-3 px-3 py-2 text-xs font-semibold rounded-xl transition-all duration-150 ${
                     isActive
-                      ? 'bg-family-accent text-white shadow-md shadow-family-accent/15'
-                      : 'text-family-text hover:bg-family-bgDeep/40 hover:text-family-accentDark'
+                      ? 'bg-family-accent text-white shadow-md shadow-family-accent/20'
+                      : 'text-family-text hover:bg-family-bgDeep/50 hover:text-family-accentDark'
                   }`}
                 >
-                  <Icon className="w-4 h-4 shrink-0" />
+                  <span className={`w-7 h-7 rounded-lg flex items-center justify-center shrink-0 transition-all duration-150 ${
+                    isActive ? 'bg-white/20' : item.bg
+                  }`}>
+                    <Icon className={`w-3.5 h-3.5 ${isActive ? 'text-white' : item.color}`} />
+                  </span>
                   <span>{item.name}</span>
                 </button>
               );
@@ -114,6 +153,14 @@ export const Sidebar: React.FC<SidebarProps> = ({ activeTab, setActiveTab, onClo
           </div>
         ))}
       </nav>
+
+      {/* Footer Badge */}
+      <div className="p-4 border-t border-family-accent/10 mt-auto">
+        <div className="flex items-center justify-center gap-2 p-3 rounded-xl bg-gradient-to-br from-family-bgDeep to-white/30 border border-white/50 shadow-sm text-[10px] text-family-textLight font-medium">
+          <Sparkles className="w-3.5 h-3.5 text-family-accent/70" />
+          <span>Finance Family OS <span className="font-bold text-family-accent/80">v1.2</span></span>
+        </div>
+      </div>
     </aside>
   );
 };

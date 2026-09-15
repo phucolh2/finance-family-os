@@ -4,7 +4,6 @@ import { Card, CardHeader, CardTitle, CardContent } from '../components/ui/Card'
 import { ObservationControls } from '../components/ui/ObservationControls';
 import { runProjection } from '../engines/projectionEngine';
 import { calculateIncome } from '../engines/incomeEngine';
-import { calculateBudget } from '../engines/budgetEngine';
 import { formatTableMoneyVNDMillion } from '../utils/format';
 import { 
   ArrowUpRight, 
@@ -87,11 +86,11 @@ export const CashflowQuadrant: React.FC = () => {
   });
 
   // Calculate detailed budget for the active period
-  const budgetDetails = calculateBudget({
+  /* const budgetDetails = calculateBudget({
     period: activeRow.period,
     budgetSchedule: state.budgetSchedule,
     incomeMonthly: activeRow.incomeMonthly
-  });
+  }); */
 
   // --- 1. INCOME QUADRANT ---
   const incomeCategories = state.incomeCategories || [];

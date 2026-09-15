@@ -38,6 +38,11 @@ export interface ProjectionMonthlyRow {
   debtReserveBalance: number;
   unallocatedCashBalance: number;
   
+  _rawSavingBalance?: number;
+  _rawDebtReserveBalance?: number;
+  _rawUnallocatedBalance?: number;
+  _rawInvestmentBalance?: number;
+  
   // Portfolio balances
   portfolio: PortfolioMonthlyOutput;
   

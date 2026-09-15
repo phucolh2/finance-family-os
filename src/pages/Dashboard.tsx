@@ -11,6 +11,8 @@ import {
   formatTableMoneyVNDMillion,
 } from '../utils/format';
 import { KNOWLEDGE_ITEMS } from '../data/knowledgeItems';
+import { AnimatedNumber } from '../components/ui/AnimatedNumber';
+import { CustomChartTooltip } from '../components/ui/CustomChartTooltip';
 import {
   Tooltip,
   Legend,
@@ -39,7 +41,7 @@ import {
 import { HelpTooltip } from '../components/ui/HelpTooltip';
 import { safeNumber } from '../utils/math';
 import { ObservationControls } from '../components/ui/ObservationControls';
-
+import { DailyQuote } from '../components/ui/DailyQuote';
 export const Dashboard: React.FC = () => {
   const { state, selectedPeriodKey } = useAppContext();
   const { totalRemainingSum } = useLiquidityBreakdown('cumulative');
@@ -66,7 +68,7 @@ export const Dashboard: React.FC = () => {
   });
 
   const hasData = projection.monthlyRows.length > 0;
-  const lastRow = hasData ? projection.monthlyRows[projection.monthlyRows.length - 1] : null;
+  // const lastRow = hasData ? projection.monthlyRows[projection.monthlyRows.length - 1] : null;
 
   // Determine current/selected period logic
   const now = new Date();
@@ -113,8 +115,7 @@ export const Dashboard: React.FC = () => {
   const rowsUpToActive = hasData ? projection.monthlyRows.slice(0, activeIndex + 1) : [];
   const monthsElapsed = rowsUpToActive.length;
 
-  const startingNetWorth = safeNumber(state.profile.startingCapital, 100);
-  
+
   let cumulativeSaving = 0;
   let cumulativeInvestment = 0;
   let cumulativeLiquidity = 0;
@@ -148,10 +149,10 @@ export const Dashboard: React.FC = () => {
   }
 
   // Cumulative Returns = Current Net Worth - Net Principal Contributed
-  const netPrincipal = startingNetWorth + cumulativeSaving + cumulativeInvestment + cumulativeLiquidity + cumulativeDebtReserve + cumulativeUnallocated - cumulativePrincipalConsumed;
-  const cumulativeReturns = activeRow 
+  // const netPrincipal = startingNetWorth + cumulativeSaving + cumulativeInvestment + cumulativeLiquidity + cumulativeDebtReserve + cumulativeUnallocated - cumulativePrincipalConsumed;
+  /* const cumulativeReturns = activeRow 
     ? activeRow.nominalNetWorth - netPrincipal
-    : 0;
+    : 0; */
 
   // Calculate Dynamic Financial Health Score (Khoa học, Chuẩn Quốc tế)
   const savingsRate = currentIncome > 0 ? ((currentIncome - currentExpenses) / currentIncome) * 100 : 0;
@@ -175,14 +176,14 @@ export const Dashboard: React.FC = () => {
   const healthScore = Math.round(savingsRateScore + dealAllocationScore + fireScore + defensiveScore);
 
   // Render chart data from yearly rows
-  const yearlyChartData = projection.yearlyRows.map((row) => ({
+  /* const yearlyChartData = projection.yearlyRows.map((row) => ({
     year: `Năm ${row.year}`,
     'Tài sản ròng (Danh nghĩa)': Math.round(row.nominalNetWorth),
     'Tài sản ròng (Thực tế)': Math.round(row.realNetWorth),
     'Hạn mức FIRE': Math.round(row.fireTarget),
     'Tổng thu nhập': Math.round(row.totalIncomeYearly),
     'Tổng chi phí': Math.round(row.totalExpensesYearly),
-  }));
+  })); */
 
   // Find expected FIRE target age
   const fireCrossingRow = projection.monthlyRows.find((r) => r.nominalNetWorth >= r.fireTarget);
@@ -232,9 +233,9 @@ export const Dashboard: React.FC = () => {
   const healthMeta = getHealthLabel(healthScore);
 
   // SVG Circular progress configurations
-  const radius = 22;
-  const circumference = 2 * Math.PI * radius;
-  const strokeDashoffset = circumference - (Math.max(1, Math.min(100, healthScore)) / 100) * circumference;
+  // const radius = 22;
+  // const circumference = 2 * Math.PI * radius;
+  // const strokeDashoffset = circumference - (Math.max(1, Math.min(100, healthScore)) / 100) * circumference;
 
   // Pre-calculate values for the 6 Net Worth pillars for the current active row
   const valInvest = activeRow?.portfolio?.assets ? Object.values(activeRow.portfolio.assets).reduce((sum, a) => sum + a.endingBalance, 0) : 0;
@@ -259,138 +260,190 @@ export const Dashboard: React.FC = () => {
   return (
     <div className="space-y-6">
       {/* Page Header */}
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-        <div>
-          <h1 className="text-3xl font-serif font-bold text-family-text flex items-center gap-2">
+      <div className="flex flex-col md:flex-row md:items-end justify-between gap-4 mb-6 relative">
+        <div className="relative z-10">
+          <h1 className="text-3xl font-serif font-bold text-family-text flex items-center gap-2 mb-2">
             Tổng quan tài chính gia đình
             <HelpTooltip text="Bản sao kỹ thuật số hiển thị KPIs động, AI Twin Advisor và phân tích tài sản ròng/dòng tiền." />
           </h1>
-          <p className="text-sm text-family-textMuted mt-1">
-            Bản sao kỹ thuật số tài chính (Financial Digital Twin) của hai vợ chồng {state.profile.husbandName} & {state.profile.wifeName}.
+          <div className="h-1 w-20 bg-gradient-to-r from-family-accent to-transparent rounded-full mb-3" />
+          <p className="text-sm text-family-textMuted max-w-xl">
+            Bản sao kỹ thuật số tài chính (Financial Digital Twin) của hai vợ chồng <strong className="text-family-text">{state.profile.husbandName} & {state.profile.wifeName}</strong>.
           </p>
         </div>
-        <ObservationControls />
+        <div className="relative z-10">
+          <ObservationControls />
+        </div>
       </div>
 
+      <DailyQuote />
+
       {/* KPI & Health Score Row */}
-      <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+      <div className="grid grid-cols-2 md:grid-cols-3 print:grid-cols-3 gap-4">
         {/* Income Card */}
-        <Card isKpi className="border-l-family-accent bg-white/70 backdrop-blur-md shadow-sm transition-all hover:-translate-y-0.5">
-          <CardContent className="p-4 flex flex-col justify-between h-24">
-            <div className="flex items-start justify-between text-family-textMuted text-[10px] uppercase font-bold tracking-wider mb-2">
-              <span className="flex items-center gap-1.5 whitespace-nowrap overflow-hidden">
-                <Wallet className="w-3.5 h-3.5 shrink-0 text-family-accent" />
-                <span className="truncate">Khoản thu</span>
+        <Card isKpi className="border-l-family-accent overflow-hidden relative bg-gradient-to-br from-amber-50/80 to-white/70 backdrop-blur-md shadow-sm">
+          <div className="absolute top-0 right-0 w-20 h-20 bg-amber-400/10 rounded-full -translate-y-4 translate-x-4" />
+          <CardContent className="p-4 flex flex-col justify-between h-24 relative z-10">
+            <div className="flex items-start justify-between">
+              <span className="text-[10px] font-bold text-amber-700/80 uppercase tracking-wider flex items-center gap-1.5">
+                <Wallet className="w-3 h-3 shrink-0" />
+                Khoản thu
               </span>
-              <button onClick={() => { setExplanationId('permanent_income_hypothesis'); }} className="shrink-0 ml-1 text-family-accent hover:text-family-accent/80 transition-colors mt-0.5" title="Giải thích ý nghĩa">
-                <Info className="w-3.5 h-3.5" />
-              </button>
+              <div className="flex items-center gap-1">
+                <button onClick={() => { setExplanationId('permanent_income_hypothesis'); }} className="shrink-0 text-amber-500/70 hover:text-amber-600 transition-colors" title="Giải thích ý nghĩa">
+                  <Info className="w-3.5 h-3.5" />
+                </button>
+                <span className="w-8 h-8 rounded-xl bg-amber-500/15 flex items-center justify-center shrink-0">
+                  <Wallet className="w-4 h-4 text-amber-600" />
+                </span>
+              </div>
             </div>
             <div>
-              <div className="text-lg font-bold text-family-text">{formatKpiMoneyVNDMillion(currentIncome)}</div>
-              <div className="text-[9px] text-family-textMuted mt-0.5">Tháng quan sát</div>
+              <div className="text-xl font-extrabold text-family-text leading-none">
+                <AnimatedNumber value={currentIncome} formatFn={formatKpiMoneyVNDMillion} />
+              </div>
+              <div className="text-[9px] text-amber-600/70 mt-0.5 font-medium">Tháng quan sát</div>
             </div>
           </CardContent>
         </Card>
 
         {/* Investment Card */}
-        <Card isKpi className="border-l-green bg-white/70 backdrop-blur-md shadow-sm transition-all hover:-translate-y-0.5">
-          <CardContent className="p-4 flex flex-col justify-between h-24">
-            <div className="flex items-start justify-between text-family-textMuted text-[10px] uppercase font-bold tracking-wider mb-2">
-              <span className="flex items-center gap-1.5 whitespace-nowrap overflow-hidden">
-                <TrendingUp className="w-3.5 h-3.5 shrink-0 text-green-700" />
-                <span className="truncate">Khoản đầu tư</span>
+        <Card isKpi className="border-l-green overflow-hidden relative bg-gradient-to-br from-emerald-50/80 to-white/70 backdrop-blur-md shadow-sm">
+          <div className="absolute top-0 right-0 w-20 h-20 bg-emerald-400/10 rounded-full -translate-y-4 translate-x-4" />
+          <CardContent className="p-4 flex flex-col justify-between h-24 relative z-10">
+            <div className="flex items-start justify-between">
+              <span className="text-[10px] font-bold text-emerald-700/80 uppercase tracking-wider flex items-center gap-1.5">
+                <TrendingUp className="w-3 h-3 shrink-0" />
+                Khoản đầu tư
               </span>
-              <button onClick={() => { setExplanationId('modern_portfolio_theory'); }} className="shrink-0 ml-1 text-family-accent hover:text-family-accent/80 transition-colors mt-0.5" title="Giải thích ý nghĩa">
-                <Info className="w-3.5 h-3.5" />
-              </button>
+              <div className="flex items-center gap-1">
+                <button onClick={() => { setExplanationId('modern_portfolio_theory'); }} className="shrink-0 text-emerald-500/70 hover:text-emerald-600 transition-colors" title="Giải thích ý nghĩa">
+                  <Info className="w-3.5 h-3.5" />
+                </button>
+                <span className="w-8 h-8 rounded-xl bg-emerald-500/15 flex items-center justify-center shrink-0">
+                  <TrendingUp className="w-4 h-4 text-emerald-600" />
+                </span>
+              </div>
             </div>
             <div>
-              <div className="text-lg font-bold text-family-text">{formatKpiMoneyVNDMillion(currentInvestment)}</div>
-              <div className="text-[9px] text-family-textMuted mt-0.5">Đã trích trong tháng</div>
+              <div className="text-xl font-extrabold text-family-text leading-none">
+                <AnimatedNumber value={currentInvestment} formatFn={formatKpiMoneyVNDMillion} />
+              </div>
+              <div className="text-[9px] text-emerald-600/70 mt-0.5 font-medium">Đã trích trong tháng</div>
             </div>
           </CardContent>
         </Card>
 
         {/* Expense Card */}
-        <Card isKpi className="border-l-teal bg-white/70 backdrop-blur-md shadow-sm transition-all hover:-translate-y-0.5">
-          <CardContent className="p-4 flex flex-col justify-between h-24">
-            <div className="flex items-start justify-between text-family-textMuted text-[10px] uppercase font-bold tracking-wider mb-2">
-              <span className="flex items-center gap-1.5 whitespace-nowrap overflow-hidden">
-                <BadgeDollarSign className="w-3.5 h-3.5 shrink-0 text-teal-700" />
-                <span className="truncate">Khoản chi</span>
+        <Card isKpi className="border-l-teal overflow-hidden relative bg-gradient-to-br from-teal-50/80 to-white/70 backdrop-blur-md shadow-sm">
+          <div className="absolute top-0 right-0 w-20 h-20 bg-teal-400/10 rounded-full -translate-y-4 translate-x-4" />
+          <CardContent className="p-4 flex flex-col justify-between h-24 relative z-10">
+            <div className="flex items-start justify-between">
+              <span className="text-[10px] font-bold text-teal-700/80 uppercase tracking-wider flex items-center gap-1.5">
+                <BadgeDollarSign className="w-3 h-3 shrink-0" />
+                Khoản chi
               </span>
-              <button onClick={() => { setExplanationId('harvard_study'); }} className="shrink-0 ml-1 text-family-accent hover:text-family-accent/80 transition-colors mt-0.5" title="Giải thích ý nghĩa">
-                <Info className="w-3.5 h-3.5" />
-              </button>
+              <div className="flex items-center gap-1">
+                <button onClick={() => { setExplanationId('harvard_study'); }} className="shrink-0 text-teal-500/70 hover:text-teal-600 transition-colors" title="Giải thích ý nghĩa">
+                  <Info className="w-3.5 h-3.5" />
+                </button>
+                <span className="w-8 h-8 rounded-xl bg-teal-500/15 flex items-center justify-center shrink-0">
+                  <BadgeDollarSign className="w-4 h-4 text-teal-600" />
+                </span>
+              </div>
             </div>
             <div>
-              <div className="text-lg font-bold text-family-text">{formatKpiMoneyVNDMillion(currentExpenses)}</div>
-              <div className="text-[9px] text-family-textMuted mt-0.5">Tổng chi hàng tháng</div>
+              <div className="text-xl font-extrabold text-family-text leading-none">
+                <AnimatedNumber value={currentExpenses} formatFn={formatKpiMoneyVNDMillion} />
+              </div>
+              <div className="text-[9px] text-teal-600/70 mt-0.5 font-medium">Tổng chi hàng tháng</div>
             </div>
           </CardContent>
         </Card>
 
         {/* Savings Rate Card */}
-        <Card isKpi className="border-l-purple bg-white/70 backdrop-blur-md shadow-sm transition-all hover:-translate-y-0.5">
-          <CardContent className="p-4 flex flex-col justify-between h-24">
-            <div className="flex items-start justify-between text-family-textMuted text-[10px] uppercase font-bold tracking-wider mb-2">
-              <span className="flex items-center gap-1.5 whitespace-nowrap overflow-hidden">
-                <ArrowRightLeft className="w-3.5 h-3.5 shrink-0 text-purple-700" />
-                <span className="truncate">Tỷ lệ tích lũy</span>
+        <Card isKpi className="border-l-purple overflow-hidden relative bg-gradient-to-br from-violet-50/80 to-white/70 backdrop-blur-md shadow-sm">
+          <div className="absolute top-0 right-0 w-20 h-20 bg-violet-400/10 rounded-full -translate-y-4 translate-x-4" />
+          <CardContent className="p-4 flex flex-col justify-between h-24 relative z-10">
+            <div className="flex items-start justify-between">
+              <span className="text-[10px] font-bold text-violet-700/80 uppercase tracking-wider flex items-center gap-1.5">
+                <ArrowRightLeft className="w-3 h-3 shrink-0" />
+                Tỷ lệ tích lũy
               </span>
-              <button onClick={() => { setExplanationId('trinity_study'); }} className="shrink-0 ml-1 text-family-accent hover:text-family-accent/80 transition-colors mt-0.5" title="Giải thích ý nghĩa">
-                <Info className="w-3.5 h-3.5" />
-              </button>
+              <div className="flex items-center gap-1">
+                <button onClick={() => { setExplanationId('trinity_study'); }} className="shrink-0 text-violet-500/70 hover:text-violet-600 transition-colors" title="Giải thích ý nghĩa">
+                  <Info className="w-3.5 h-3.5" />
+                </button>
+                <span className="w-8 h-8 rounded-xl bg-violet-500/15 flex items-center justify-center shrink-0">
+                  <ArrowRightLeft className="w-4 h-4 text-violet-600" />
+                </span>
+              </div>
             </div>
             <div>
-              <div className="text-lg font-bold text-family-text">{savingsRate.toFixed(1)}%</div>
-              <div className="text-[9px] text-family-textMuted mt-0.5">Mục tiêu: &ge; 20%</div>
+              <div className="text-xl font-extrabold text-family-text leading-none">
+                <AnimatedNumber value={savingsRate} formatFn={(v) => `${v.toFixed(1)}%`} />
+              </div>
+              <div className={`text-[9px] mt-0.5 font-medium ${savingsRate >= 20 ? 'text-emerald-600/80' : 'text-rose-500/80'}`}>
+                {savingsRate >= 20 ? '✓ Đạt mục tiêu ≥ 20%' : '↓ Mục tiêu: ≥ 20%'}
+              </div>
             </div>
           </CardContent>
         </Card>
 
         {/* PCF Card */}
-        <Card isKpi className="border-l-blue bg-white/70 backdrop-blur-md shadow-sm transition-all hover:-translate-y-0.5">
-          <CardContent className="p-4 flex flex-col justify-between h-24">
-            <div className="flex items-start justify-between text-family-textMuted text-[10px] uppercase font-bold tracking-wider mb-2">
-              <span className="flex items-center gap-1.5 whitespace-nowrap overflow-hidden">
-                <Sparkles className="w-3.5 h-3.5 shrink-0 text-blue-600" />
-                <span className="truncate">Dòng tiền thụ động</span>
+        <Card isKpi className="border-l-blue overflow-hidden relative bg-gradient-to-br from-blue-50/80 to-white/70 backdrop-blur-md shadow-sm">
+          <div className="absolute top-0 right-0 w-20 h-20 bg-blue-400/10 rounded-full -translate-y-4 translate-x-4" />
+          <CardContent className="p-4 flex flex-col justify-between h-24 relative z-10">
+            <div className="flex items-start justify-between">
+              <span className="text-[10px] font-bold text-blue-700/80 uppercase tracking-wider flex items-center gap-1.5">
+                <Sparkles className="w-3 h-3 shrink-0" />
+                Thụ động
               </span>
-              <button onClick={() => { setExplanationId('trinity_study'); }} className="shrink-0 ml-1 text-family-accent hover:text-family-accent/80 transition-colors mt-0.5" title="Giải thích ý nghĩa">
-                <Info className="w-3.5 h-3.5" />
-              </button>
+              <div className="flex items-center gap-1">
+                <button onClick={() => { setExplanationId('trinity_study'); }} className="shrink-0 text-blue-500/70 hover:text-blue-600 transition-colors" title="Giải thích ý nghĩa">
+                  <Info className="w-3.5 h-3.5" />
+                </button>
+                <span className="w-8 h-8 rounded-xl bg-blue-500/15 flex items-center justify-center shrink-0">
+                  <Sparkles className="w-4 h-4 text-blue-600" />
+                </span>
+              </div>
             </div>
             <div>
-              <div className="text-lg font-bold text-family-text">{formatKpiMoneyVNDMillion(currentPassiveIncome)}</div>
-              <div className="text-[9px] text-family-textMuted mt-0.5">Từ tài sản, đầu tư sinh lời</div>
+              <div className="text-xl font-extrabold text-family-text leading-none">
+                <AnimatedNumber value={currentPassiveIncome} formatFn={formatKpiMoneyVNDMillion} />
+              </div>
+              <div className="text-[9px] text-blue-600/70 mt-0.5 font-medium">Từ tài sản sinh lời</div>
             </div>
           </CardContent>
         </Card>
 
         {/* Health Score Card */}
-        <Card isKpi className="border-l-yellow-600 bg-white/70 backdrop-blur-md shadow-sm transition-all hover:-translate-y-0.5 md:col-span-3 lg:col-span-1 relative overflow-hidden">
-          <CardContent className="p-4 flex flex-col justify-between h-24">
-            <div className="flex items-start justify-between text-family-textMuted text-[10px] uppercase font-bold tracking-wider mb-2">
-              <span className="flex items-center gap-1.5 whitespace-nowrap overflow-hidden">
-                <HeartPulse className="w-3.5 h-3.5 shrink-0 text-yellow-600" />
-                <span className="truncate">Sức khỏe</span>
+        <Card isKpi className="border-l-yellow-600 overflow-hidden relative bg-gradient-to-br from-yellow-50/80 to-white/70 backdrop-blur-md shadow-sm md:col-span-3 lg:col-span-1">
+          <div className="absolute top-0 right-0 w-20 h-20 bg-yellow-400/10 rounded-full -translate-y-4 translate-x-4" />
+          <CardContent className="p-4 flex flex-col justify-between h-24 relative z-10">
+            <div className="flex items-start justify-between">
+              <span className="text-[10px] font-bold text-yellow-700/80 uppercase tracking-wider flex items-center gap-1.5">
+                <HeartPulse className="w-3 h-3 shrink-0" />
+                Sức khỏe TC
+              </span>
+              <span className="w-8 h-8 rounded-xl bg-yellow-500/15 flex items-center justify-center shrink-0">
+                <HeartPulse className="w-4 h-4 text-yellow-600" />
               </span>
             </div>
             <div>
-              <div className="text-lg font-bold text-family-text">
-                {healthScore} <span className="text-[10px] font-normal text-family-textMuted">/ 100</span>
+              <div className="text-xl font-extrabold text-family-text leading-none flex items-baseline gap-1">
+                <AnimatedNumber value={healthScore} formatFn={(v) => Math.round(v).toString()} />
+                <span className="text-[10px] font-normal text-family-textMuted">/ 100</span>
               </div>
-              <div className={`text-[9px] mt-1 font-bold line-clamp-2 ${healthMeta.color}`}>
-                Trạng thái: {healthMeta.label}
+              <div className={`text-[9px] mt-0.5 font-bold ${healthMeta.color} inline-block px-1.5 py-0.5 rounded-md`}>
+                {healthMeta.label}
               </div>
             </div>
           </CardContent>
           {/* Linear Progress Bar */}
-          <div className="absolute bottom-0 left-0 w-full h-1 bg-yellow-600/15">
+          <div className="absolute bottom-0 left-0 w-full h-1 bg-yellow-200/60">
             <div 
-              className="h-full bg-yellow-500 transition-all duration-1000 ease-out" 
+              className="h-full bg-gradient-to-r from-yellow-400 to-yellow-600 transition-all duration-1000 ease-out" 
               style={{ width: `${Math.max(0, Math.min(100, healthScore))}%` }}
             />
           </div>
@@ -420,7 +473,7 @@ export const Dashboard: React.FC = () => {
       )}
 
       {/* Main Dashboard Section: AI Advisor & Flow */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+      <div className="grid grid-cols-1 lg:grid-cols-3 print:grid-cols-3 gap-6">
         {/* AI Advisor Panel */}
         <Card className="lg:col-span-2 bg-gradient-to-br from-family-bgDark/40 via-family-bgDark/20 to-transparent border-family-accent/15 relative overflow-hidden">
           <div className="absolute top-0 right-0 w-32 h-32 bg-family-accent/5 rounded-full filter blur-2xl" />
@@ -582,7 +635,7 @@ export const Dashboard: React.FC = () => {
           <div className="flex flex-col xl:flex-row gap-6 mt-4">
             {/* Left side: The 6 boxes */}
             <div className="flex-1 flex flex-col justify-between">
-              <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
+              <div className="grid grid-cols-2 md:grid-cols-3 print:grid-cols-3 gap-3">
                 <div className="bg-family-bgDark/20 p-3 rounded-xl border border-family-accent/5">
                   <span className="text-[10px] text-family-textMuted font-bold uppercase tracking-wider block">1. Đầu tư dài hạn</span>
                   <span className="text-[15px] font-extrabold text-purple-600 block mt-1">
@@ -676,8 +729,7 @@ export const Dashboard: React.FC = () => {
                       ))}
                     </Pie>
                     <Tooltip 
-                      formatter={(value: any) => formatTooltipMoneyVNDMillion(value as number)} 
-                      contentStyle={{ borderRadius: '8px', border: 'none', boxShadow: '0 4px 12px rgba(0,0,0,0.05)', fontSize: '11px' }}
+                      content={<CustomChartTooltip formatter={(val: any) => formatTooltipMoneyVNDMillion(val)} />} 
                     />
                     <Legend 
                       layout="vertical" 
@@ -692,6 +744,19 @@ export const Dashboard: React.FC = () => {
           </div>
         </Card>
       )}
+
+      {/* Footer Actions */}
+      <div className="flex justify-center pt-6 pb-4 print:hidden">
+        <button 
+          onClick={() => window.print()}
+          className="flex items-center gap-2 px-6 py-2.5 bg-white border border-gray-200 hover:border-family-accent hover:bg-family-accent/5 hover:text-family-accent text-gray-700 rounded-xl transition-all shadow-sm text-sm font-semibold group"
+        >
+          <svg className="w-5 h-5 text-gray-400 group-hover:text-family-accent transition-colors" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+          </svg>
+          Xuất Báo Cáo PDF
+        </button>
+      </div>
 
     </div>
   );

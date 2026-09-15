@@ -28,7 +28,7 @@ export const BudgetTreeNodeRow: React.FC<BudgetTreeNodeRowProps> = ({
   const [editNote, setEditNote] = useState(node.note || '');
   const [editClassification, setEditClassification] = useState<BudgetTreeNode['classification']>(node.classification);
 
-  const hasChildren = node.children && node.children.length > 0;
+  // const hasChildren = node.children && node.children.length > 0;
   const isGroup = node.nodeType === 'group';
 
   const handleSave = () => {

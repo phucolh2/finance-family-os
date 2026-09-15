@@ -100,7 +100,7 @@ export const DebtManagement: React.FC = () => {
     const maxSavingsRate = allSavingsRates.length > 0 ? Math.max(...allSavingsRates) : (state.assumptions?.savingsInterestRateAnnual || 5.5);
     const rateDiff = maxDebtRate - maxSavingsRate;
 
-    const debtReserveBalance = (activeRow?.debtReserveBalance || 0) + (activeRow?._activeSinkingFundsDebtReserve || 0);
+    // const debtReserveBalance = (activeRow?.debtReserveBalance || 0) + (activeRow?._activeSinkingFundsDebtReserve || 0);
 
     const debtFreeDate = useMemo(() => {
         if (activeDebts.length === 0) return null;

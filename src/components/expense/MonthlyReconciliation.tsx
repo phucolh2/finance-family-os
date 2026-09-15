@@ -39,7 +39,7 @@ export const MonthlyReconciliation: React.FC = () => {
     }[] = [];
 
     activeBudget.rootGroups.forEach(group => {
-      const groupBudgetTotal = (resolvedDbItem.budgetAmounts as any)[group.groupId] || 0;
+      const groupBudgetTotal = resolvedDbItem.budgetAmounts[group.groupId] || 0;
       
       const items = group.children || [];
       const totalRatio = items.reduce((sum, item) => sum + item.ratioPercent, 0);

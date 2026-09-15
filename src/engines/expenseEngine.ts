@@ -35,7 +35,9 @@ export function analyzeExpense(
   resolvedMonthlyDb: ResolvedMonthlyDbItem[],
   lifeEvents: LifeEvent[],
   currentPeriodKey?: string,
-  dynamicExpenseGroupIds?: string[]
+  dynamicExpenseGroupIds?: string[],
+  sinkingFunds?: any[],
+  activeBudget?: any
 ): ExpenseAnalysisResult {
   // Dynamically build groups from resolvedMonthlyDb
   const groupsSet = new Set<string>(['all']);
@@ -58,6 +60,15 @@ export function analyzeExpense(
     summaryByGroup[g] = { groupId: g, totalBudget: 0, totalActual: 0, totalRegularActual: 0 };
     monthlySeries[g] = [];
   });
+
+  const resolveGroupId = (sourceId: string) => {
+    if (!sourceId) return '';
+    const fund = sinkingFunds?.find(f => f.id === sourceId);
+    if (fund?.fundGroup) return fund.fundGroup;
+    const expenseGroup = activeBudget?.rootGroups?.find((g: any) => g.id === sourceId);
+    if (expenseGroup?.groupId) return expenseGroup.groupId;
+    return sourceId;
+  };
 
   // Default to the provided period, OR the current real-world month, OR the first month
   let targetPeriod = currentPeriodKey;
@@ -85,12 +96,12 @@ export function analyzeExpense(
   );
 
   windowDb.forEach(dbItem => {
-    const bAmounts = dbItem.budgetAmounts || {};
+    const bAmounts: Record<string, number> = dbItem.budgetAmounts || {};
     
     // Only include actual expense groups in the 'all' budget total based on dynamic classification
     let totalExpenseBudget = 0;
     expenseGroupsSet.forEach(gId => {
-      totalExpenseBudget += (bAmounts as any)[gId] || 0;
+      totalExpenseBudget += bAmounts[gId] || 0;
     });
 
     const monthlyBudgets: Record<string, number> = {
@@ -98,7 +109,7 @@ export function analyzeExpense(
     };
     groups.forEach(g => {
       if (g !== 'all') {
-        monthlyBudgets[g] = (bAmounts as any)[g] || 0;
+        monthlyBudgets[g] = bAmounts[g] || 0;
       }
     });
 
@@ -156,7 +167,9 @@ export function analyzeExpense(
        if (eMonthValue === dbMonthValue) {
            const amt = safeNumber(e.amount);
            if (amt < 0) { // Only count expenses
-              const groupId = e.source ? e.source.split('/')[0] : '';
+              // Identify expense group from spendingCategory OR fallback to resolving source
+              const rawId = e.spendingCategory ? e.spendingCategory.split('/')[0] : (e.source ? e.source.split('/')[0] : '');
+              const groupId = resolveGroupId(rawId);
               if (expenseGroupsSet.has(groupId)) {
                  const absAmt = Math.abs(amt);
                  if (groupId in monthlyActuals) {
@@ -167,7 +180,7 @@ export function analyzeExpense(
            }
        }
        
-       // 2. Track A expenses (Trừ định kì hàng tháng)
+       // 2. Track A expenses (Trừ định kì hàng tháng vào Dòng tiền chung)
        if (e.spendingCategory && e.recurringMonthlyImpact && safeNumber(e.recurringMonthlyImpact) < 0) {
            let startMonth = safeNumber(e.month) + 1;
            let startYear = safeNumber(e.year);
@@ -178,9 +191,33 @@ export function analyzeExpense(
            const endMonthValueA = durationA > 0 ? startMonthValue + durationA : Infinity;
            
            if (dbMonthValue >= startMonthValue && dbMonthValue < endMonthValueA) {
-               const groupId = e.spendingCategory.split('/')[0];
+               const rawId = e.spendingCategory.split('/')[0];
+               const groupId = resolveGroupId(rawId);
                if (expenseGroupsSet.has(groupId)) {
                   const absAmt = Math.abs(safeNumber(e.recurringMonthlyImpact));
+                  if (groupId in monthlyActuals) {
+                     monthlyActuals[groupId] += absAmt;
+                  }
+                  monthlyActuals.all += absAmt;
+               }
+           }
+       }
+       
+       // 3. Track B expenses (Trừ định kì hàng tháng vào Quỹ dự trữ/Sinking fund)
+       if (e.recurringFundingSource && e.recurringMonthlyImpactFund && safeNumber(e.recurringMonthlyImpactFund) < 0) {
+           let startMonth = safeNumber(e.month) + 1;
+           let startYear = safeNumber(e.year);
+           if (startMonth > 12) { startMonth = 1; startYear += 1; }
+           const startMonthValue = startYear * 12 + startMonth;
+           
+           const durationB = safeNumber(e.recurringDurationMonthsFund) || 0;
+           const endMonthValueB = durationB > 0 ? startMonthValue + durationB : Infinity;
+           
+           if (dbMonthValue >= startMonthValue && dbMonthValue < endMonthValueB) {
+               const rawId = e.spendingCategory ? e.spendingCategory.split('/')[0] : e.recurringFundingSource;
+               const groupId = resolveGroupId(rawId);
+               if (expenseGroupsSet.has(groupId)) {
+                  const absAmt = Math.abs(safeNumber(e.recurringMonthlyImpactFund));
                   if (groupId in monthlyActuals) {
                      monthlyActuals[groupId] += absAmt;
                   }

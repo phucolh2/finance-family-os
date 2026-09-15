@@ -16,7 +16,7 @@ interface TransferFormProps {
 }
 
 export const TransferForm: React.FC<TransferFormProps> = ({ onSuccess, onCancel }) => {
-  const { state, addFundTransfer, selectedPeriodKey } = useAppContext();
+  const { state, addFundTransfer, selectedPeriodKey, pushSystemLog } = useAppContext();
   const [sourceValue, setSourceValue] = useState<string>('cashflow:unallocated');
   const [destinationValue, setDestinationValue] = useState<string>('cashflow:investable');
   
@@ -167,12 +167,20 @@ export const TransferForm: React.FC<TransferFormProps> = ({ onSuccess, onCancel 
       month: currentMonth,
       year: currentYear,
       amount: numAmount,
-      sourceType: srcType as any,
+      sourceType: srcType as 'cashflow' | 'savings' | 'sinking_fund' | 'investment' | 'life_event' | 'pool',
       sourceId: srcId || undefined,
-      destinationType: destType as any,
+      destinationType: destType as 'cashflow' | 'savings' | 'sinking_fund' | 'investment' | 'debt',
       destinationId: destId || undefined,
       note,
     });
+
+    if (pushSystemLog) {
+      pushSystemLog(
+        'ĐIỀU CHUYỂN', 
+        'Điều chuyển dòng tiền', 
+        `Vừa điều chuyển ${formatMoneyVNDMillion(numAmount)} từ [${getItemLabel(sourceValue)}] sang [${getItemLabel(destinationValue)}]${note ? ` (Ghi chú: ${note})` : ''}`
+      );
+    }
 
     onSuccess();
   };
@@ -181,8 +189,8 @@ export const TransferForm: React.FC<TransferFormProps> = ({ onSuccess, onCancel 
     <Card className="bg-family-bg border-family-accent/20">
       <CardHeader>
         <CardTitle className="text-xl font-serif text-family-text flex items-center justify-between">
-          <span>Lệnh Điều Chuyển Dòng Tiền</span>
-          <HelpTooltip text="Điều chuyển dòng tiền giữa các quỹ/tài khoản. Ví dụ: Chuyển tiền từ thu nhập dôi dư sang Quỹ Đầu tư hoặc Quỹ Tiết kiệm." />
+          <span>Chia Sẻ Dòng Tiền (Chuyển khoản)</span>
+          <HelpTooltip text="Thực hiện chuyển tiền giữa các tài khoản, ví dụ: Chuyển tiền từ Lương sang Quỹ Đầu tư để xây dựng tương lai." />
         </CardTitle>
       </CardHeader>
 
@@ -262,7 +270,7 @@ export const TransferForm: React.FC<TransferFormProps> = ({ onSuccess, onCancel 
 
            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-6">
               <Input label="Số tiền điều chuyển (triệu VND)" type="number" value={amount} onChange={e => { setAmount(e.target.value); }} placeholder="VD: 50" required />
-              <Input label="Ghi chú giao dịch" value={note} onChange={e => { setNote(e.target.value); }} placeholder="VD: Chuyển tiền tiết kiệm sang mua chứng khoán" />
+              <Input label="Ghi chú chia sẻ (tùy chọn)" value={note} onChange={e => { setNote(e.target.value); }} placeholder="VD: Chuyển tiền dư tháng này sang tiết kiệm" />
            </div>
 
            {/* Live Interactive Simulation Banner */}

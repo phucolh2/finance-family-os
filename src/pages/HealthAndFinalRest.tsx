@@ -8,19 +8,32 @@ import { safeNumber } from '../utils/math';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
 import { Shield, HeartPulse, ShieldAlert } from 'lucide-react';
 import { HelpTooltip } from '../components/ui/HelpTooltip';
+import { useAppContext } from '../context/AppContext';
 
 export const HealthAndFinalRest: React.FC = () => {
-  // Local state for inputs to run simulation dynamically
-  const [medicalInflationRate, setMedicalInflationRate] = useState(6);
-  const [criticalIllnessReserveTarget, setCriticalIllnessReserveTarget] = useState(500);
-  const [healthFundCap, setHealthFundCap] = useState(300);
-  const [liquidityFundCap, setLiquidityFundCap] = useState(100);
-  const [finalRestCostToday, setFinalRestCostToday] = useState(150);
-  const [finalRestInflationRate, setFinalRestInflationRate] = useState(5);
-  const [insuranceMonthly, setInsuranceMonthly] = useState(2.0);
-  const [bhytMonthly, setBhytMonthly] = useState(0.2);
-  const [currentHealthFund, setCurrentHealthFund] = useState(150);
-  const [monthlyContribution, setMonthlyContribution] = useState(5.0);
+  const { state, updateToolConfig } = useAppContext();
+  const config = state.toolConfigs?.healthSimulator || {};
+
+  const [medicalInflationRate, setMedicalInflationRate] = useState(config.medicalInflationRate ?? 6);
+  const [criticalIllnessReserveTarget, setCriticalIllnessReserveTarget] = useState(config.criticalIllnessReserveTarget ?? 500);
+  const [healthFundCap, setHealthFundCap] = useState(config.healthFundCap ?? 300);
+  const [liquidityFundCap, setLiquidityFundCap] = useState(config.liquidityFundCap ?? 100);
+  const [finalRestCostToday, setFinalRestCostToday] = useState(config.finalRestCostToday ?? 150);
+  const [finalRestInflationRate, setFinalRestInflationRate] = useState(config.finalRestInflationRate ?? 5);
+  const [insuranceMonthly] = useState(config.insuranceMonthly ?? 2.0);
+  const [bhytMonthly] = useState(config.bhytMonthly ?? 0.2);
+  const [currentHealthFund, setCurrentHealthFund] = useState(config.currentHealthFund ?? 150);
+  const [monthlyContribution, setMonthlyContribution] = useState(config.monthlyContribution ?? 5.0);
+
+  React.useEffect(() => {
+    const handler = setTimeout(() => {
+      updateToolConfig('healthSimulator', {
+        medicalInflationRate, criticalIllnessReserveTarget, healthFundCap, liquidityFundCap,
+        finalRestCostToday, finalRestInflationRate, insuranceMonthly, bhytMonthly, currentHealthFund, monthlyContribution
+      });
+    }, 500);
+    return () => clearTimeout(handler);
+  }, [medicalInflationRate, criticalIllnessReserveTarget, healthFundCap, liquidityFundCap, finalRestCostToday, finalRestInflationRate, insuranceMonthly, bhytMonthly, currentHealthFund, monthlyContribution]);
 
   // Run healthEngine dynamically (pure function call)
   const healthResult = calculateHealthDefense({
@@ -55,8 +68,8 @@ export const HealthAndFinalRest: React.FC = () => {
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
           <h1 className="text-3xl font-serif font-bold text-family-text flex items-center gap-3">
-            <HeartPulse className="w-8 h-8 text-red-600 animate-pulse" /> Phòng vệ Y tế & Hậu sự
-            <HelpTooltip text="Tấm khiên bảo vệ tài chính trước rủi ro sức khỏe lớn và chi phí cuối đời." />
+            <HeartPulse className="w-8 h-8 text-red-600 animate-pulse" /> Dự phòng Y tế & Hậu sự
+            <HelpTooltip text="Công cụ mô phỏng độc lập. Các thông số ở đây chỉ dùng để tính toán thử nghiệm, hoàn toàn không làm thay đổi hay ảnh hưởng đến Dòng tiền hiện tại của dự án." />
           </h1>
           <p className="text-sm text-family-textMuted mt-1">
             Mô phỏng tấm khiên tài chính bảo vệ gia đình trước các rủi ro sức khỏe lớn và sự kiện cuối đời.
