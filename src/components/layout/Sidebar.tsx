@@ -28,7 +28,10 @@ import {
   Activity,
   Wrench,
   Repeat,
-  Contact
+  Contact,
+  Utensils,
+  CheckSquare,
+  Target
 } from 'lucide-react';
 
 interface SidebarProps {
@@ -88,6 +91,15 @@ export const Sidebar: React.FC<SidebarProps> = ({ activeTab, setActiveTab, onClo
         { id: 'home_inventory', name: 'Thiết bị & Bảo hành', icon: Wrench, color: 'text-orange-500', bg: 'bg-orange-500/15' },
         { id: 'subscription_tracker', name: 'Quản lý Thuê bao', icon: Repeat, color: 'text-violet-500', bg: 'bg-violet-500/15' },
         { id: 'family_contacts', name: 'Danh bạ Dịch vụ', icon: Contact, color: 'text-cyan-500', bg: 'bg-cyan-500/15' },
+      ],
+    },
+    {
+      title: 'Nuôi dạy & Sinh hoạt',
+      items: [
+        { id: 'meal_planner', name: 'Thực đơn & Đi chợ', icon: Utensils, color: 'text-orange-400', bg: 'bg-orange-400/15' },
+        { id: 'chore_chart', name: 'Việc nhà & Khen thưởng', icon: CheckSquare, color: 'text-indigo-400', bg: 'bg-indigo-400/15' },
+        { id: 'child_growth', name: 'Sổ tay Tăng trưởng', icon: Baby, color: 'text-pink-400', bg: 'bg-pink-400/15' },
+        { id: 'vision_board', name: 'Tầm nhìn Gia đình', icon: Target, color: 'text-sky-400', bg: 'bg-sky-400/15' },
       ],
     },
     {

@@ -56,6 +56,10 @@ const HealthTracker = lazyWithRetry(() => import('./pages/HealthTracker').then(m
 const HomeInventory = lazyWithRetry(() => import('./pages/HomeInventory').then(m => ({ default: m.HomeInventory })));
 const SubscriptionTracker = lazyWithRetry(() => import('./pages/SubscriptionTracker').then(m => ({ default: m.SubscriptionTracker })));
 const FamilyContacts = lazyWithRetry(() => import('./pages/FamilyContacts').then(m => ({ default: m.FamilyContacts })));
+const MealPlanner = lazyWithRetry(() => import('./pages/MealPlanner').then(m => ({ default: m.MealPlanner })));
+const ChoreChart = lazyWithRetry(() => import('./pages/ChoreChart').then(m => ({ default: m.ChoreChart })));
+const ChildGrowth = lazyWithRetry(() => import('./pages/ChildGrowth').then(m => ({ default: m.ChildGrowth })));
+const VisionBoard = lazyWithRetry(() => import('./pages/VisionBoard').then(m => ({ default: m.VisionBoard })));
 
 function AppContent() {
   const [activeTab, setActiveTab] = useState<string>('dashboard');
@@ -117,6 +121,14 @@ function AppContent() {
         return <SubscriptionTracker />;
       case 'family_contacts':
         return <FamilyContacts />;
+      case 'meal_planner':
+        return <MealPlanner />;
+      case 'chore_chart':
+        return <ChoreChart />;
+      case 'child_growth':
+        return <ChildGrowth />;
+      case 'vision_board':
+        return <VisionBoard />;
       case 'settings':
         return <Settings />;
       default:
