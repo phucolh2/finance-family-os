@@ -53,6 +53,9 @@ const VacationPlanner = lazyWithRetry(() => import('./pages/VacationPlanner').th
 const DocumentVault = lazyWithRetry(() => import('./pages/DocumentVault').then(m => ({ default: m.DocumentVault })));
 const GivingLedger = lazyWithRetry(() => import('./pages/GivingLedger').then(m => ({ default: m.GivingLedger })));
 const HealthTracker = lazyWithRetry(() => import('./pages/HealthTracker').then(m => ({ default: m.HealthTracker })));
+const HomeInventory = lazyWithRetry(() => import('./pages/HomeInventory').then(m => ({ default: m.HomeInventory })));
+const SubscriptionTracker = lazyWithRetry(() => import('./pages/SubscriptionTracker').then(m => ({ default: m.SubscriptionTracker })));
+const FamilyContacts = lazyWithRetry(() => import('./pages/FamilyContacts').then(m => ({ default: m.FamilyContacts })));
 
 function AppContent() {
   const [activeTab, setActiveTab] = useState<string>('dashboard');
@@ -108,6 +111,12 @@ function AppContent() {
         return <GivingLedger />;
       case 'health_tracker':
         return <HealthTracker />;
+      case 'home_inventory':
+        return <HomeInventory />;
+      case 'subscription_tracker':
+        return <SubscriptionTracker />;
+      case 'family_contacts':
+        return <FamilyContacts />;
       case 'settings':
         return <Settings />;
       default:

@@ -25,7 +25,10 @@ import {
   X,
   FolderOpen,
   Gift,
-  Activity
+  Activity,
+  Wrench,
+  Repeat,
+  Contact
 } from 'lucide-react';
 
 interface SidebarProps {
@@ -77,6 +80,14 @@ export const Sidebar: React.FC<SidebarProps> = ({ activeTab, setActiveTab, onClo
         { id: 'document_vault', name: 'Kho Giấy tờ', icon: FolderOpen, color: 'text-amber-600', bg: 'bg-amber-500/15' },
         { id: 'giving_ledger', name: 'Sổ Hiếu hỷ', icon: Gift, color: 'text-rose-500', bg: 'bg-rose-500/15' },
         { id: 'health_tracker', name: 'Nhật ký Sức khoẻ', icon: Activity, color: 'text-emerald-500', bg: 'bg-emerald-500/15' },
+      ],
+    },
+    {
+      title: 'Tiện ích Gia đình',
+      items: [
+        { id: 'home_inventory', name: 'Thiết bị & Bảo hành', icon: Wrench, color: 'text-orange-500', bg: 'bg-orange-500/15' },
+        { id: 'subscription_tracker', name: 'Quản lý Thuê bao', icon: Repeat, color: 'text-violet-500', bg: 'bg-violet-500/15' },
+        { id: 'family_contacts', name: 'Danh bạ Dịch vụ', icon: Contact, color: 'text-cyan-500', bg: 'bg-cyan-500/15' },
       ],
     },
     {
