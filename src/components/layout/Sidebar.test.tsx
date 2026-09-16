@@ -27,25 +27,26 @@ describe('Sidebar', () => {
   it('highlights the active tab', () => {
     render(<Sidebar {...defaultProps} activeTab="income" />);
     
-    const incomeBtn = screen.getByText('Kế hoạch Thu nhập').closest('button');
+    const incomeBtn = screen.getAllByText('Kế hoạch Thu nhập')[0].closest('button');
     expect(incomeBtn).toHaveClass('bg-family-accent'); // Active state class in Sidebar
   });
 
   it('calls setActiveTab when a navigation item is clicked', () => {
     render(<Sidebar {...defaultProps} />);
     
-    const settingsBtn = screen.getByText('Cài đặt & Đồng bộ');
+    const settingsBtn = screen.getAllByText('Cài đặt & Đồng bộ')[0];
     fireEvent.click(settingsBtn);
     
     expect(defaultProps.setActiveTab).toHaveBeenCalledWith('settings');
   });
 
   it('calls onCloseMobile when a navigation item is clicked (for mobile)', () => {
-    render(<Sidebar {...defaultProps} />);
+    const onCloseMobileMock = vi.fn();
+    render(<Sidebar {...defaultProps} onCloseMobile={onCloseMobileMock} />);
     
-    const incomeBtn = screen.getByText('Kế hoạch Thu nhập');
+    const incomeBtn = screen.getAllByText('Kế hoạch Thu nhập')[0];
     fireEvent.click(incomeBtn);
     
-    expect(defaultProps.onCloseMobile).toHaveBeenCalledTimes(1);
+    expect(onCloseMobileMock).toHaveBeenCalledTimes(1);
   });
 });

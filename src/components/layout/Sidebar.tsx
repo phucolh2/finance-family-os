@@ -1,4 +1,5 @@
 import React from 'react';
+import { useFrequentTabs } from '../../hooks/useFrequentTabs';
 import {
   LayoutDashboard,
   BookOpenText,
@@ -111,6 +112,23 @@ export const Sidebar: React.FC<SidebarProps> = ({ activeTab, setActiveTab, onClo
     },
   ];
 
+  const frequencies = useFrequentTabs(activeTab);
+
+  const topTabs = Object.entries(frequencies)
+    .sort((a, b) => b[1] - a[1])
+    .slice(0, 3)
+    .map(entry => entry[0]);
+
+  const allItems = menuGroups.flatMap(g => g.items);
+
+  const displayGroups = topTabs.length > 0 ? [
+    {
+      title: '⭐ Gợi Ý Cho Bạn',
+      items: topTabs.map(id => allItems.find(item => item.id === id)).filter(Boolean) as typeof allItems,
+    },
+    ...menuGroups
+  ] : menuGroups;
+
   const handleItemClick = (id: string) => {
     setActiveTab(id);
     if (onCloseMobile) {
@@ -145,7 +163,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ activeTab, setActiveTab, onClo
       </div>
 
       <nav className="flex-1 p-4 space-y-6">
-        {menuGroups.map((group, index) => (
+        {displayGroups.map((group, index) => (
           <div key={group.title} className="space-y-0.5">
             {index > 0 && <div className="h-px bg-gradient-to-r from-transparent via-family-accent/10 to-transparent mb-4" />}
             <span className="text-[10px] font-bold text-family-textLight uppercase tracking-wider px-3 block mb-2 flex items-center gap-1.5">
