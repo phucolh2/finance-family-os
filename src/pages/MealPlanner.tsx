@@ -94,11 +94,11 @@ export const MealPlanner: React.FC = () => {
     <div className="max-w-7xl mx-auto space-y-6 animate-fade-up">
       <div>
         <div className="flex items-center gap-2">
-          <h1 className="text-2xl font-bold text-family-text font-serif">Thực đơn & Đi chợ</h1>
+          <h1 className="text-2xl font-bold text-family-text font-serif">Cơm Nhà & Đi Chợ</h1>
           <HelpTooltip text="Công cụ giúp gia đình lên thực đơn tuần để chống lãng phí thức ăn (Food waste) và tiết kiệm thời gian đi siêu thị. Danh sách đi chợ được thiết kế để dễ dàng tick chọn ngay trên điện thoại." />
         </div>
         <p className="text-sm text-family-textMuted mt-1">
-          Lên thực đơn tuần và checklist những món cần mua
+          Món ngon mỗi ngày và danh sách mua sắm cho bữa cơm gia đình thêm ấm cúng
         </p>
       </div>
 

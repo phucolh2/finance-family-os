@@ -126,7 +126,7 @@ export const GivingLedger: React.FC = () => {
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
         <div>
           <div className="flex items-center gap-2">
-            <h1 className="text-2xl font-bold text-family-text font-serif">Sổ Hiếu hỷ & Biếu tặng</h1>
+            <h1 className="text-2xl font-bold text-family-text font-serif">Sổ Ân Tình (Hiếu Hỷ)</h1>
             <HelpTooltip text="Công cụ ghi chép lại các khoản tiền/quà mừng cưới, thôi nôi, đám hiếu, tân gia... (Đi và Nhận). Giúp gia đình dễ dàng tra cứu lại sau này để 'trả lễ' cho phù hợp với văn hoá. Dữ liệu này hoàn toàn độc lập và không cộng trừ vào dòng tiền hay ngân sách chính." />
           </div>
           <p className="text-sm text-family-textMuted mt-1">

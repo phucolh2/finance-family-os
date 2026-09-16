@@ -85,11 +85,11 @@ export const VisionBoard: React.FC = () => {
     <div className="max-w-7xl mx-auto space-y-6 animate-fade-up">
       <div>
         <div className="flex items-center gap-2">
-          <h1 className="text-2xl font-bold text-family-text font-serif">Tầm nhìn Gia đình</h1>
+          <h1 className="text-2xl font-bold text-family-text font-serif">Ước Mơ & Văn Hóa</h1>
           <HelpTooltip text="Bảng Tầm nhìn (Vision Board) giúp gia đình ghi lại những ước mơ, mục tiêu chung (Family Bucket List) và những nguyên tắc ứng xử để giữ gìn hạnh phúc gia đình." />
         </div>
         <p className="text-sm text-family-textMuted mt-1">
-          Nơi lưu giữ ước mơ chung và văn hoá của gia đình
+          Những mong muốn cả nhà sẽ cùng làm và những nguyên tắc yêu thương
         </p>
       </div>
 

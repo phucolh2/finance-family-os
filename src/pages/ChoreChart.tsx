@@ -91,11 +91,11 @@ export const ChoreChart: React.FC = () => {
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
         <div>
           <div className="flex items-center gap-2">
-            <h1 className="text-2xl font-bold text-family-text font-serif">Việc nhà & Điểm thưởng</h1>
+            <h1 className="text-2xl font-bold text-family-text font-serif">Cùng Làm Việc Nhà</h1>
             <HelpTooltip text="Công cụ giúp gia đình phân công việc nhà cho các thành viên (đặc biệt là trẻ em). Khi hoàn thành việc nhà sẽ nhận được 'Điểm thưởng' (Stars), có thể dùng để đổi lấy quyền lợi hoặc tiền tiêu vặt." />
           </div>
           <p className="text-sm text-family-textMuted mt-1">
-            Giao việc nhà và khuyến khích các bé thông qua điểm thưởng
+            Khuyến khích các thiên thần nhỏ san sẻ việc nhà và nhận sao khen thưởng
           </p>
         </div>
         <div className="flex gap-2">

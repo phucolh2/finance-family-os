@@ -125,11 +125,11 @@ export const HomeInventory: React.FC = () => {
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
         <div>
           <div className="flex items-center gap-2">
-            <h1 className="text-2xl font-bold text-family-text font-serif">Quản lý Thiết bị & Bảo hành</h1>
+            <h1 className="text-2xl font-bold text-family-text font-serif">Đồ Đạc Trong Nhà</h1>
             <HelpTooltip text="Quản lý vòng đời các tài sản/thiết bị quan trọng trong nhà (Tủ lạnh, Xe máy, Smart TV...). Công cụ giúp bạn theo dõi thời gian bảo hành còn lại và nhắc nhở lịch bảo dưỡng định kỳ, hoàn toàn không can thiệp vào dòng tiền hay ngân sách cốt lõi của gia đình." />
           </div>
           <p className="text-sm text-family-textMuted mt-1">
-            Sổ tay theo dõi tài sản, nhắc lịch vệ sinh/bảo dưỡng đồ điện máy trong nhà
+            Ghi nhớ lịch bảo dưỡng, thời hạn bảo hành để đồ đạc luôn bền đẹp
           </p>
         </div>
         <Button 

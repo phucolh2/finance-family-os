@@ -154,7 +154,7 @@ export const DocumentVault: React.FC = () => {
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
         <div>
           <div className="flex items-center gap-2">
-            <h1 className="text-2xl font-bold text-family-text font-serif">Kho Giấy tờ Gia đình</h1>
+            <h1 className="text-2xl font-bold text-family-text font-serif">Tủ Giấy Tờ Gia Đình Gia đình</h1>
             <HelpTooltip text="Quản lý tập trung các giấy tờ quan trọng của gia đình (CCCD, Sổ đỏ, Hộ chiếu, Khai sinh...). Không lưu trữ file thật để đảm bảo bảo mật, hệ thống chỉ giúp bạn ghi nhớ số hiệu, ngày hết hạn và nơi cất giữ vật lý trong nhà." />
           </div>
           <p className="text-sm text-family-textMuted mt-1">

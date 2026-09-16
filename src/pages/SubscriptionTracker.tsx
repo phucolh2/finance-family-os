@@ -136,11 +136,11 @@ export const SubscriptionTracker: React.FC = () => {
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
         <div>
           <div className="flex items-center gap-2">
-            <h1 className="text-2xl font-bold text-family-text font-serif">Quản lý Thuê bao</h1>
+            <h1 className="text-2xl font-bold text-family-text font-serif">Các Dịch Vụ Đang Dùng</h1>
             <HelpTooltip text="Công cụ giúp bạn quản lý các dịch vụ trả phí định kỳ như Netflix, iCloud, tiền Điện Nước... để dễ dàng theo dõi và hủy nếu không cần dùng tới. Công cụ này chỉ mang tính nhắc nhở, KHÔNG tự động trừ tiền trong dòng tiền chính của Family OS." />
           </div>
           <p className="text-sm text-family-textMuted mt-1">
-            Theo dõi chi phí định kỳ và nhắc lịch gia hạn các dịch vụ
+            Theo dõi tiền mạng, truyền hình, giải trí... để không lãng phí chi tiêu
           </p>
         </div>
         <Button 

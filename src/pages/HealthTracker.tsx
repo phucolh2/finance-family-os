@@ -109,7 +109,7 @@ export const HealthTracker: React.FC = () => {
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
         <div>
           <div className="flex items-center gap-2">
-            <h1 className="text-2xl font-bold text-family-text font-serif">Nhật ký Sức khoẻ</h1>
+            <h1 className="text-2xl font-bold text-family-text font-serif">Nhật Ký Khỏe Mạnh</h1>
             <HelpTooltip text="Ghi chép và theo dõi lịch sử khám chữa bệnh, tiêm phòng của các thành viên trong gia đình. Giúp bạn nhớ lại liều thuốc, bác sĩ điều trị và lịch hẹn khám lại. Dữ liệu này hoạt động độc lập với ngân sách chính." />
           </div>
           <p className="text-sm text-family-textMuted mt-1">

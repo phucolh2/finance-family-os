@@ -103,11 +103,11 @@ export const FamilyContacts: React.FC = () => {
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
         <div>
           <div className="flex items-center gap-2">
-            <h1 className="text-2xl font-bold text-family-text font-serif">Danh bạ Dịch vụ Gia đình</h1>
+            <h1 className="text-2xl font-bold text-family-text font-serif">Danh Bạ Bỏ Túi</h1>
             <HelpTooltip text="Lưu trữ các số điện thoại quan trọng (Thợ sửa điện nước, bảo vệ chung cư, bác sĩ gia đình...) để vợ/chồng đều có thể nhanh chóng tra cứu khi cần, đặc biệt trong các tình huống khẩn cấp." />
           </div>
           <p className="text-sm text-family-textMuted mt-1">
-            Danh bạ chia sẻ của gia đình, truy cập nhanh các dịch vụ thiết yếu
+            Số điện thoại thợ thầy, bác sĩ quen, cô giáo... khi cần là có ngay
           </p>
         </div>
         <Button 

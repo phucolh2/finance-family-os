@@ -98,11 +98,11 @@ export const ChildGrowth: React.FC = () => {
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
         <div>
           <div className="flex items-center gap-2">
-            <h1 className="text-2xl font-bold text-family-text font-serif">Sổ tay Tăng trưởng</h1>
+            <h1 className="text-2xl font-bold text-family-text font-serif">Hành Trình Khôn Lớn</h1>
             <HelpTooltip text="Lưu giữ các chỉ số chiều cao, cân nặng và các cột mốc đáng nhớ trong hành trình khôn lớn của con (Chiếc răng đầu tiên, ngày biết đi, ngày đầu tới trường...)." />
           </div>
           <p className="text-sm text-family-textMuted mt-1">
-            Ghi chép hành trình phát triển thể chất và tinh thần của các bé
+            Lưu giữ từng mốc phát triển, từng khoảnh khắc đáng yêu của các con
           </p>
         </div>
       </div>
