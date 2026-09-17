@@ -4,33 +4,14 @@ import { Button } from './Button';
 import { Input } from './Input';
 import { computeExpenseFinancing } from '../../engines/SmartAllocationAdvisor';
 import type { AllocationSnapshot, ExpenseFinancingResult } from '../../engines/SmartAllocationAdvisor';
-import { analyzeAllocationOffline } from '../../services/aiService';
-
-export interface AIAllocationResult {
-  goc_phan_bo: number;
-  thang_du: number;
-  benchmarks: {
-    muc_tieu_tu_do_tai_chinh: number;
-    dau_tu_toi_thieu: number;
-    quy_khan_cap_can: number;
-    chi_phi_toi_da: number;
-  };
-  canh_bao: {
-    muc_do: 'cao' | 'trung_binh' | 'thong_tin';
-    tieu_de: string;
-    noi_dung: string;
-    de_xuat_hanh_dong: string;
-  }[];
-  tong_ket: string;
-  de_xuat_phan_bo?: {
-    expense: { percent: number; amount: number };
-    investment: { percent: number; amount: number };
-    savings: { percent: number; amount: number };
-    reserve: { percent: number; amount: number };
-    ly_do: string;
-  };
-}
-import { Sparkles, X, BrainCircuit, ShieldAlert, Target, TrendingUp, } from 'lucide-react';
+import { analyzeAllocationOffline, analyzeBudgetWithGemini, analyzeExpenseFinancingWithGemini } from '../../services/aiService';
+import type { SmartAllocationOfflineResult } from '../../services/aiService';
+import { useAppContext } from '../../context/AppContext';
+import { useBodyScrollLock } from '../../hooks/useBodyScrollLock';
+import { 
+  Sparkles, X, BrainCircuit, Heart, Baby, ShieldCheck, 
+  TrendingUp, Check, ArrowRight, Bot, AlertCircle, RefreshCw
+} from 'lucide-react';
 import { formatTableMoneyVNDMillion } from '../../utils/format';
 import { HelpTooltip } from './HelpTooltip';
 
@@ -41,474 +22,570 @@ interface Props {
 }
 
 export const SmartAllocationAdvisorModal: React.FC<Props> = ({ isOpen, onClose, snapshot }) => {
+  const { state, updateBudgetScheduleItem, addLifeEvent, pushSystemLog } = useAppContext();
+  useBodyScrollLock(isOpen);
+
   const [mode, setMode] = useState<'income' | 'expense'>('income');
+  const [aiEngine, setAiEngine] = useState<'offline' | 'gemini'>('offline');
   const [amountInput, setAmountInput] = useState<string>('');
-  const [, setAmount] = useState<number>(0);
-  const [aiResults, setAiResults] = useState<AIAllocationResult | null>(null);
+  const [expenseNameInput, setExpenseNameInput] = useState<string>('');
+  const [aiResults, setAiResults] = useState<SmartAllocationOfflineResult | null>(null);
+  const [geminiAnalysis, setGeminiAnalysis] = useState<string | null>(null);
   const [isAnalyzing, setIsAnalyzing] = useState(false);
-  const [, setApiKey] = useState('');
+  const [apiKey, setApiKey] = useState('');
   const [expenseResult, setExpenseResult] = useState<ExpenseFinancingResult | null>(null);
+  
+  // Feedback states
+  const [applyBudgetSuccess, setApplyBudgetSuccess] = useState(false);
+  const [addExpenseSuccess, setAddExpenseSuccess] = useState(false);
 
   useEffect(() => {
-    setApiKey(localStorage.getItem('gemini_api_key') || '');
+    const key = localStorage.getItem('gemini_api_key') || (import.meta as any).env?.VITE_GEMINI_API_KEY || '';
+    setApiKey(key);
   }, []);
 
+  // Tự động gợi ý thu nhập mặc định khi mở modal
   useEffect(() => {
-    if (!isOpen) {
-      setAmountInput('');
-      setAmount(0);
-      setAiResults(null);
-      setExpenseResult(null);
-      setMode('income');
+    if (isOpen && snapshot) {
+      const currentDb = snapshot.appState.resolvedMonthlyDbMap?.[snapshot.currentPeriodKey];
+      const defaultIncome = currentDb?.income || snapshot.appState.incomeSchedule[0]?.incomeMonthly || 80;
+      setAmountInput(String(defaultIncome));
+      setExpenseNameInput('Gói sinh nở trọn gói & đồ sơ sinh');
+      setApplyBudgetSuccess(false);
+      setAddExpenseSuccess(false);
     }
-  }, [isOpen]);
+  }, [isOpen, snapshot]);
 
-  // Clear results when switching mode
+  // Reset kết quả khi chuyển chế độ
   useEffect(() => {
     setAiResults(null);
+    setGeminiAnalysis(null);
     setExpenseResult(null);
+    setApplyBudgetSuccess(false);
+    setAddExpenseSuccess(false);
   }, [mode]);
 
-  if (!isOpen) return null;
+  if (!isOpen || !snapshot) return null;
 
   const handleAnalyze = async () => {
     const val = parseFloat(amountInput);
-    if (isNaN(val) || val <= 0 || !snapshot) {
-      return;
-    }
-    setAmount(val);
-    
-    if (mode === 'income') {
-      setIsAnalyzing(true);
-      
-      // Giả lập thời gian load một chút (600ms) để giữ cảm giác Premium cho UI
-      setTimeout(() => {
-        try {
-          const currentDb = snapshot.appState.resolvedMonthlyDbMap?.[snapshot.currentPeriodKey];
-          const actualIncome = currentDb ? currentDb.income : val;
-          
-          let activeVersion = snapshot.appState.budgetSchedule[0];
-          const periodParts = snapshot.currentPeriodKey.split('-');
-          const y = parseInt(periodParts[0], 10);
-          const m = parseInt(periodParts[1], 10);
-          
-          const sortedHistory = [...snapshot.appState.budgetSchedule].sort((a, b) => {
-            if (a.effectiveYear !== b.effectiveYear) return a.effectiveYear - b.effectiveYear;
-            return a.effectiveMonth - b.effectiveMonth;
-          });
-          
-          const pastOrActive = sortedHistory.filter(item => {
-            if (item.effectiveYear < y) return true;
-            if (item.effectiveYear === y && item.effectiveMonth <= m) return true;
-            return false;
-          });
-          
-          if (pastOrActive.length > 0) {
-            activeVersion = pastOrActive[pastOrActive.length - 1];
+    if (isNaN(val) || val <= 0) return;
+
+    setIsAnalyzing(true);
+    setApplyBudgetSuccess(false);
+    setAddExpenseSuccess(false);
+
+    try {
+      if (mode === 'income') {
+        const currentDb = snapshot.appState.resolvedMonthlyDbMap?.[snapshot.currentPeriodKey];
+        const actualIncome = currentDb ? currentDb.income : val;
+
+        const sortedHistory = [...snapshot.appState.budgetSchedule].sort((a, b) => {
+          if (a.effectiveYear !== b.effectiveYear) return a.effectiveYear - b.effectiveYear;
+          return a.effectiveMonth - b.effectiveMonth;
+        });
+
+        const periodParts = snapshot.currentPeriodKey.split('-');
+        const y = parseInt(periodParts[0], 10);
+        const m = parseInt(periodParts[1], 10);
+
+        const pastOrActive = sortedHistory.filter(item => {
+          if (item.effectiveYear < y) return true;
+          if (item.effectiveYear === y && item.effectiveMonth <= m) return true;
+          return false;
+        });
+
+        const activeVersion = pastOrActive.length > 0 ? pastOrActive[pastOrActive.length - 1] : sortedHistory[0];
+        const chi_phi_hang_thang = snapshot.housingBasicAvgExpense > 0 ? snapshot.housingBasicAvgExpense : 25;
+
+        // 1. Phân tích qua Smart Engine Offline (luôn chạy làm nền tảng)
+        const offlineRes = analyzeAllocationOffline({
+          thu_nhap_du_phong: actualIncome,
+          goc_phan_bo: val,
+          cay_ngan_sach: activeVersion?.rootGroups.map(g => ({
+            ten_muc: g.name,
+            ty_le_phan_tram: g.ratioPercent,
+            so_tien: (val * g.ratioPercent) / 100,
+            classification: g.classification
+          })) || [],
+          chi_phi_hang_thang,
+          current_liquidity: snapshot.currentLiquidityBalance,
+          housingCost: 9 // Tiền thuê nhà cố định 9 triệu
+        });
+        setAiResults(offlineRes);
+
+        // 2. Nếu chọn Gemini và có key -> Gọi thêm Gemini API
+        if (aiEngine === 'gemini' && apiKey) {
+          try {
+            const geminiText = await analyzeBudgetWithGemini(apiKey, state, val, "Gia đình đang thuê nhà 9 triệu, chuẩn bị đón em bé.");
+            setGeminiAnalysis(geminiText);
+          } catch (err) {
+            console.warn("Gemini API call failed, fallback to offline engine:", err);
           }
-
-          const chi_phi_hang_thang = snapshot.housingBasicAvgExpense > 0 ? snapshot.housingBasicAvgExpense : (val * 0.5);
-
-          const inputData = {
-            thu_nhap_du_phong: actualIncome,
-            goc_phan_bo: val,
-            cay_ngan_sach: activeVersion?.rootGroups.map(g => ({
-              ten_muc: g.name,
-              ty_le_phan_tram: g.ratioPercent,
-              so_tien: (val * g.ratioPercent) / 100,
-              classification: g.classification
-            })) || [],
-            chi_phi_hang_thang,
-            current_liquidity: snapshot.currentLiquidityBalance
-          };
-
-          const result = analyzeAllocationOffline(inputData);
-          setAiResults(result);
-        } catch (err) {
-          console.error(err);
-          alert("Lỗi khi phân tích: " + (err as Error).message);
-        } finally {
-          setIsAnalyzing(false);
         }
-      }, 600);
-    } else {
-      const res = computeExpenseFinancing(val, snapshot);
-      setExpenseResult(res);
+      } else {
+        // Tab Trả góp Khoản chi
+        const res = computeExpenseFinancing(val, snapshot);
+        setExpenseResult(res);
+
+        if (aiEngine === 'gemini' && apiKey) {
+          try {
+            const geminiText = await analyzeExpenseFinancingWithGemini(
+              apiKey,
+              state,
+              expenseNameInput || 'Khoản chi lớn',
+              val,
+              res.availableLiquidity,
+              res.surplusMonthly
+            );
+            setGeminiAnalysis(geminiText);
+          } catch (err) {
+            console.warn("Gemini call failed:", err);
+          }
+        }
+      }
+    } catch (err) {
+      console.error(err);
+      alert("Lỗi khi phân tích: " + (err as Error).message);
+    } finally {
+      setIsAnalyzing(false);
     }
   };
 
+  /**
+   * Áp dụng đề xuất AI trực tiếp vào Cây Ngân Sách của tháng quan sát
+   */
+  const handleApplyToBudgetSchedule = () => {
+    if (!aiResults || !snapshot) return;
 
+    // Tìm budget schedule của tháng quan sát
+    const periodParts = snapshot.currentPeriodKey.split('-');
+    const y = parseInt(periodParts[0], 10);
+    const m = parseInt(periodParts[1], 10);
 
-  /* const getTierIcon = (tier: number) => {
-    switch(tier) {
-      case 0: return <ShieldAlert className="w-5 h-5 text-rose-500 drop-shadow-sm" />;
-      case 1: return <ArrowDownToLine className="w-5 h-5 text-amber-500 drop-shadow-sm" />;
-      case 2: return <Target className="w-5 h-5 text-blue-500 drop-shadow-sm" />;
-      case 3: return <TrendingUp className="w-5 h-5 text-emerald-500 drop-shadow-sm" />;
-      default: return <className="w-5 h-5 text-indigo-500 drop-shadow-sm" />;
-    }
-  }; */
+    const sortedHistory = [...snapshot.appState.budgetSchedule].sort((a, b) => {
+      if (a.effectiveYear !== b.effectiveYear) return a.effectiveYear - b.effectiveYear;
+      return a.effectiveMonth - b.effectiveMonth;
+    });
 
-  /* const getTierBadge = (tier: number) => {
-    switch(tier) {
-      case 0: return <span className="px-2.5 py-1 text-[10px] uppercase tracking-wider rounded-full bg-rose-50 text-rose-700 font-bold border border-rose-200 shadow-sm flex items-center gap-1.5"><span className="w-1.5 h-1.5 rounded-full bg-rose-500 animate-pulse"></span> Khẩn cấp</span>;
-      case 1: return <span className="px-2.5 py-1 text-[10px] uppercase tracking-wider rounded-full bg-amber-50 text-amber-700 font-bold border border-amber-200 shadow-sm flex items-center gap-1.5"><span className="w-1.5 h-1.5 rounded-full bg-amber-500"></span> Nên làm</span>;
-      case 2: return <span className="px-2.5 py-1 text-[10px] uppercase tracking-wider rounded-full bg-blue-50 text-blue-700 font-bold border border-blue-200 shadow-sm flex items-center gap-1.5"><span className="w-1.5 h-1.5 rounded-full bg-blue-500"></span> Tối ưu</span>;
-      case 3: return <span className="px-2.5 py-1 text-[10px] uppercase tracking-wider rounded-full bg-emerald-50 text-emerald-700 font-bold border border-emerald-200 shadow-sm flex items-center gap-1.5"><span className="w-1.5 h-1.5 rounded-full bg-emerald-500"></span> Dài hạn</span>;
-      default: return null;
-    }
-  }; */
+    const pastOrActive = sortedHistory.filter(item => {
+      if (item.effectiveYear < y) return true;
+      if (item.effectiveYear === y && item.effectiveMonth <= m) return true;
+      return false;
+    });
+
+    const activeSchedule = pastOrActive.length > 0 ? pastOrActive[pastOrActive.length - 1] : sortedHistory[0];
+    if (!activeSchedule) return;
+
+    // Cập nhật tỷ lệ các rootGroups theo chuẩn 4 Trụ Cột Hài Hòa
+    const updatedRootGroups = activeSchedule.rootGroups.map(group => {
+      const gName = group.name.toLowerCase();
+      const gId = (group.groupId || '').toLowerCase();
+
+      let newRatio = group.ratioPercent;
+
+      if (gName.includes('cần thiết') || gName.includes('nhà cửa') || gId.includes('housing')) {
+        newRatio = 25.0; // 25% (gồm tiền nhà 9tr + sinh hoạt ăn uống)
+      } else if (gName.includes('yêu thương') || gName.includes('kết nối') || gId.includes('family_experience')) {
+        newRatio = 7.0;  // 7% hẹn hò, du lịch, hiếu kính
+      } else if (gName.includes('không cần thiết') || gName.includes('tận hưởng') || gId.includes('wants')) {
+        newRatio = 5.5;  // 5.5% tiện nghi, cá nhân
+      } else if (gName.includes('học tập')) {
+        newRatio = 1.5;  // 1.5% phát triển
+      } else if (gName.includes('bé') || gName.includes('con') || gId.includes('baby')) {
+        newRatio = 10.0; // 10% Quỹ Chào Đời đón con
+      } else if (gName.includes('dự phòng') || gId.includes('safety')) {
+        newRatio = 7.5;  // 7.5% Y tế, bảo hiểm thai sản
+      } else if (gName.includes('tiết kiệm') || gId.includes('saving')) {
+        newRatio = 2.5;  // 2.5% sắm sửa gia đình
+      } else if (gName.includes('đầu tư') || gId.includes('invest')) {
+        newRatio = 41.0; // 41% tích sản tự do tài chính
+      }
+
+      return {
+        ...group,
+        ratioPercent: newRatio
+      };
+    });
+
+    // Cập nhật lại vào AppState
+    updateBudgetScheduleItem({
+      ...activeSchedule,
+      rootGroups: updatedRootGroups,
+      note: `Cập nhật bởi Trợ lý AI (${aiResults.de_xuat_phan_bo.ly_do.slice(0, 60)}...)`
+    });
+
+    pushSystemLog(
+      'Cập nhật Cây Ngân Sách',
+      'Phân Bổ Ngân Sách',
+      `Áp dụng cấu trúc 4 Trụ Cột AI đề xuất cho tháng ${m}/${y}: Chi phí thiết yếu 25%, Quỹ đón con 10%, Đầu tư 41%.`
+    );
+
+    setApplyBudgetSuccess(true);
+  };
+
+  /**
+   * Tạo Khoản Chi Linh Hoạt (LifeEvent) từ đề xuất Trả Góp
+   */
+  const handleCreateLifeEvent = () => {
+    if (!expenseResult || !snapshot) return;
+
+    const periodParts = snapshot.currentPeriodKey.split('-');
+    const y = parseInt(periodParts[0], 10);
+    const m = parseInt(periodParts[1], 10);
+
+    const title = expenseNameInput.trim() || `Khoản chi ${expenseResult.expenseAmount}tr`;
+    const isBaby = title.toLowerCase().includes('sinh') || title.toLowerCase().includes('con') || title.toLowerCase().includes('bầu');
+
+    addLifeEvent({
+      name: title,
+      type: isBaby ? 'child_birth' : 'large_purchase',
+      month: m,
+      year: y,
+      amount: expenseResult.upfrontPayment,
+      recurringMonthlyImpact: expenseResult.monthlyPayment,
+      recurringDurationMonths: expenseResult.durationMonths,
+      affectsNetWorth: false,
+      source: 'cashflow',
+      note: `Trợ lý AI phân bổ: Trả trước ${expenseResult.upfrontPayment}tr, phần còn lại ${expenseResult.remainingToFinance}tr trả góp ${expenseResult.monthlyPayment.toFixed(1)}tr/tháng trong ${expenseResult.durationMonths} tháng.`
+    });
+
+    pushSystemLog(
+      'Tạo Khoản Chi Linh Hoạt',
+      'Quản Lý Chi Tiêu',
+      `Tạo sự kiện "${title}": Trả trước ${expenseResult.upfrontPayment}tr, trả góp ${expenseResult.monthlyPayment.toFixed(1)}tr/tháng trong ${expenseResult.durationMonths} tháng.`
+    );
+
+    setAddExpenseSuccess(true);
+  };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/40 backdrop-blur-sm p-4 animate-in fade-in duration-300">
-      <div className="bg-white rounded-2xl shadow-2xl w-full max-w-3xl max-h-[90vh] flex flex-col overflow-hidden border border-slate-200/60 ring-1 ring-slate-900/5">
+    <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4 bg-slate-900/40 backdrop-blur-sm animate-in fade-in duration-200">
+      <div className="bg-white w-full max-w-2xl rounded-t-2xl sm:rounded-2xl shadow-2xl overflow-hidden flex flex-col max-h-[92dvh] sm:max-h-[88dvh] border border-slate-200">
+        
         {/* Header */}
-        <div className="px-7 py-5 border-b border-slate-100 bg-white/80 backdrop-blur-md flex justify-between items-center sticky top-0 z-10">
-          <div className="flex items-center gap-4">
-            <div className="p-2.5 bg-gradient-to-br from-indigo-500 to-violet-600 rounded-xl text-white shadow-lg shadow-indigo-200/50 ring-1 ring-white/20">
-              <BrainCircuit className="w-6 h-6 drop-shadow-md" />
+        <div className="p-4 sm:p-5 border-b border-slate-100 flex justify-between items-center bg-gradient-to-r from-indigo-50/50 via-white to-violet-50/50 shrink-0">
+          <div className="flex items-center gap-2.5">
+            <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-indigo-600 to-violet-600 flex items-center justify-center text-white shadow-md shadow-indigo-200">
+              <BrainCircuit className="w-5 h-5" />
             </div>
             <div>
-              <div className="flex items-center gap-3">
-                <h2 className="text-xl font-bold text-slate-800 tracking-tight">Trợ lý Phân bổ Thông minh</h2>
-                <HelpTooltip 
-                  text={
-                    mode === 'income' ? (
-                      <div className="w-72 space-y-2">
-                        <p className="font-bold border-b border-indigo-200/50 pb-1.5 mb-2 text-indigo-700">Nguyên tắc Phân bổ Waterfall</p>
-                        <p className="text-slate-600">Dòng tiền sẽ chảy tuần tự qua các tầng ưu tiên sau:</p>
-                        <ul className="list-disc pl-4 text-xs space-y-1.5 text-slate-600">
-                          <li><b className="text-slate-800">Khẩn cấp:</b> Đảm bảo Quỹ an toàn tối thiểu (3 tháng sinh hoạt)</li>
-                          <li><b className="text-slate-800">Nên làm:</b> Ưu tiên các Mục tiêu cố định đang chạy</li>
-                          <li><b className="text-slate-800">Tối ưu:</b> Bù đắp Quỹ an toàn (6 tháng)</li>
-                          <li><b className="text-slate-800">Dài hạn:</b> Đầu tư & Tiết kiệm theo tỷ trọng</li>
-                        </ul>
-                      </div>
-                    ) : (
-                      <div className="w-72 space-y-2">
-                        <p className="font-bold border-b border-indigo-200/50 pb-1.5 mb-2 text-indigo-700">Nguyên tắc Trả góp Khoản chi</p>
-                        <p className="text-slate-600">Tính toán phương án an toàn nhất khi mua sắm lớn:</p>
-                        <ul className="list-disc pl-4 text-xs space-y-1.5 text-slate-600">
-                          <li><b className="text-slate-800">Trả trước:</b> Rút từ Quỹ thanh khoản nhưng đảm bảo giữ lại số dư tối thiểu (3 tháng sinh hoạt).</li>
-                          <li><b className="text-slate-800">Trả góp:</b> Dùng tối đa 90% thặng dư dòng tiền hàng tháng để gánh số tiền còn thiếu.</li>
-                        </ul>
-                      </div>
-                    )
-                  }
-                  position="bottom-left"
-                />
-                {snapshot && (
-                  <span className="px-3 py-1 bg-slate-50 text-slate-600 text-[10px] uppercase tracking-wider font-bold rounded-full border border-slate-200 shadow-sm ml-auto flex items-center gap-1">
-                    <span className="w-1.5 h-1.5 rounded-full bg-indigo-400"></span>
-                    Tháng: {snapshot.currentPeriodKey.split('-')[1]}/{snapshot.currentPeriodKey.split('-')[0]}
-                  </span>
-                )}
+              <div className="flex items-center gap-2">
+                <h2 className="text-base sm:text-lg font-bold text-slate-800">Trợ lý Phân Bổ AI</h2>
+                <HelpTooltip text="Trợ lý AI đọc hiểu thu nhập, chi phí cố định (như tiền thuê nhà 9 triệu), lịch sử chi tiêu và kế hoạch có con để đưa ra lời khuyên tài chính thông minh nhất." />
               </div>
-              <p className="text-sm text-slate-500 mt-1 font-medium">
-                {mode === 'income' 
-                  ? "Tối ưu dòng tiền dựa trên các nguyên tắc tài chính cá nhân"
-                  : "Mô phỏng cấu trúc trả trước & trả góp an toàn cho khoản chi lớn"}
+              <p className="text-xs text-slate-500">
+                Tháng {snapshot.currentPeriodKey.split('-')[1]}/{snapshot.currentPeriodKey.split('-')[0]} • Chuẩn hóa 4 Trụ Cột Gia Đình
               </p>
             </div>
           </div>
-          <button onClick={onClose} className="p-2 text-slate-400 hover:text-slate-600 hover:bg-slate-100 rounded-full transition-all duration-200 hover:rotate-90">
+          <button 
+            onClick={onClose}
+            className="p-1.5 text-slate-400 hover:text-slate-600 hover:bg-slate-100 rounded-lg transition-colors"
+          >
             <X className="w-5 h-5" />
           </button>
         </div>
 
-        {/* Content */}
-        <div className="flex-1 overflow-y-auto p-7 bg-slate-50/50">
-          <div className="flex flex-col gap-8">
-            
-            {/* Input Section */}
-            <div className="flex bg-slate-200/50 p-1 rounded-xl w-full max-w-sm mx-auto mb-2">
+        {/* Tab switcher */}
+        <div className="p-3 border-b border-slate-100 bg-slate-50/50 flex gap-2 shrink-0">
+          <button
+            onClick={() => setMode('income')}
+            className={`flex-1 py-2 px-3 text-xs sm:text-sm font-bold rounded-xl transition-all flex items-center justify-center gap-1.5 ${
+              mode === 'income' 
+                ? 'bg-indigo-600 text-white shadow-sm' 
+                : 'bg-white text-slate-600 hover:bg-slate-100 border border-slate-200/60'
+            }`}
+          >
+            <span>💰</span> Phân Bổ Ngân Sách
+          </button>
+          <button
+            onClick={() => setMode('expense')}
+            className={`flex-1 py-2 px-3 text-xs sm:text-sm font-bold rounded-xl transition-all flex items-center justify-center gap-1.5 ${
+              mode === 'expense' 
+                ? 'bg-rose-600 text-white shadow-sm' 
+                : 'bg-white text-slate-600 hover:bg-slate-100 border border-slate-200/60'
+            }`}
+          >
+            <span>🛒</span> Trả Góp Khoản Chi Lớn
+          </button>
+        </div>
+
+        {/* Body content */}
+        <div className="flex-1 overflow-y-auto p-4 sm:p-6 space-y-5">
+          
+          {/* Engine Selector */}
+          <div className="flex items-center justify-between p-2.5 rounded-xl bg-slate-100/70 border border-slate-200/60 text-xs">
+            <span className="font-semibold text-slate-700 flex items-center gap-1.5">
+              <Bot className="w-4 h-4 text-indigo-600" /> Động cơ phân tích:
+            </span>
+            <div className="flex gap-1">
               <button
-                onClick={() => { setMode('income'); }}
-                className={`flex-1 py-2 text-sm font-bold rounded-lg transition-all duration-200 ${
-                  mode === 'income' 
-                    ? 'bg-white text-indigo-700 shadow-sm ring-1 ring-slate-200/50' 
-                    : 'text-slate-500 hover:text-slate-700 hover:bg-slate-200/50'
+                type="button"
+                onClick={() => setAiEngine('offline')}
+                className={`px-2.5 py-1 rounded-lg font-medium transition-all ${
+                  aiEngine === 'offline' ? 'bg-white text-indigo-700 shadow-xs font-bold' : 'text-slate-500 hover:text-slate-700'
                 }`}
               >
-                💰 Phân bổ Thu nhập
+                Smart Engine (Tức thì)
               </button>
               <button
-                onClick={() => { setMode('expense'); }}
-                className={`flex-1 py-2 text-sm font-bold rounded-lg transition-all duration-200 ${
-                  mode === 'expense' 
-                    ? 'bg-white text-rose-700 shadow-sm ring-1 ring-slate-200/50' 
-                    : 'text-slate-500 hover:text-slate-700 hover:bg-slate-200/50'
+                type="button"
+                onClick={() => setAiEngine('gemini')}
+                className={`px-2.5 py-1 rounded-lg font-medium transition-all flex items-center gap-1 ${
+                  aiEngine === 'gemini' ? 'bg-indigo-600 text-white shadow-xs font-bold' : 'text-slate-500 hover:text-slate-700'
                 }`}
               >
-                🛒 Trả góp Khoản chi
+                <Sparkles className="w-3 h-3 text-amber-300" /> Gemini AI
               </button>
             </div>
+          </div>
 
-            <Card className="border-0 shadow-md shadow-slate-200/50 bg-white ring-1 ring-slate-200/50 rounded-2xl overflow-hidden">
-              <CardContent className="p-7">
-                <div className="flex gap-5 items-end">
-                  <div className="flex-1 space-y-2.5">
-                    <label className="text-sm font-bold text-slate-700">
-                      {mode === 'income' ? 'Số tiền thu nhập/tiền dư (Triệu VNĐ)' : 'Số tiền cần chi tiêu (Triệu VNĐ)'}
-                    </label>
-                    <Input 
-                      type="number" 
-                      placeholder="VD: 100" 
-                      value={amountInput}
-                      onChange={(e) => { setAmountInput(e.target.value); }}
-                      className="text-lg font-semibold h-12 shadow-inner bg-slate-50 border-slate-200 focus-visible:ring-indigo-500/30"
-                    />
-                  </div>
-                  <Button 
-                    onClick={handleAnalyze} 
-                    disabled={isAnalyzing}
-                    className="h-12 px-8 gap-2.5 bg-gradient-to-r from-indigo-600 to-violet-600 hover:from-indigo-700 hover:to-violet-700 text-white shadow-md shadow-indigo-200/50 hover:shadow-lg hover:shadow-indigo-300/50 transform hover:-translate-y-0.5 transition-all duration-200 rounded-xl font-bold disabled:opacity-70 disabled:hover:translate-y-0"
-                  >
-                    <Sparkles className={`w-4 h-4 ${isAnalyzing ? 'animate-spin' : 'text-indigo-100'}`} /> {isAnalyzing ? 'Đang phân tích...' : 'Phân tích'}
-                  </Button>
+          {/* Form input */}
+          <Card className="border border-slate-200 shadow-xs bg-white">
+            <CardContent className="p-4 space-y-3">
+              {mode === 'expense' && (
+                <div>
+                  <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5">
+                    Tên khoản chi dự kiến *
+                  </label>
+                  <Input 
+                    type="text"
+                    placeholder="VD: Gói sinh con Vinmec, Mua xe máy..."
+                    value={expenseNameInput}
+                    onChange={(e) => setExpenseNameInput(e.target.value)}
+                    className="text-sm h-10 border-slate-200"
+                  />
                 </div>
-              </CardContent>
-            </Card>
+              )}
 
-            {/* Loading State */}
-            {isAnalyzing && (
-              <div className="flex flex-col items-center justify-center p-10 space-y-4 animate-in fade-in">
-                <div className="w-10 h-10 border-4 border-indigo-200 border-t-indigo-600 rounded-full animate-spin"></div>
-                <p className="text-indigo-600 font-medium animate-pulse">AI đang phân tích chiến lược dòng tiền...</p>
+              <div className="flex gap-3 items-end">
+                <div className="flex-1">
+                  <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5">
+                    {mode === 'income' ? 'Số tiền thu nhập/tháng (Triệu VNĐ)' : 'Tổng giá trị khoản chi (Triệu VNĐ)'}
+                  </label>
+                  <Input 
+                    type="number"
+                    placeholder="VD: 80"
+                    value={amountInput}
+                    onChange={(e) => setAmountInput(e.target.value)}
+                    className="text-base font-semibold h-10 border-slate-200 font-mono"
+                  />
+                </div>
+                <Button 
+                  onClick={handleAnalyze}
+                  disabled={isAnalyzing || !amountInput}
+                  className="h-10 px-5 bg-gradient-to-r from-indigo-600 to-violet-600 hover:from-indigo-700 hover:to-violet-700 text-white font-bold shrink-0 shadow-sm"
+                >
+                  {isAnalyzing ? (
+                    <span className="flex items-center gap-1.5"><RefreshCw className="w-4 h-4 animate-spin" /> Đang tính...</span>
+                  ) : (
+                    <span className="flex items-center gap-1.5"><Sparkles className="w-4 h-4 text-amber-300" /> Phân Tích</span>
+                  )}
+                </Button>
               </div>
-            )}
+            </CardContent>
+          </Card>
 
-            {/* Results Section */}
-            {!isAnalyzing && mode === 'income' && aiResults && (
-              <div className="space-y-6 animate-in slide-in-from-bottom-4 duration-500">
-                <div className="bg-gradient-to-r from-indigo-50 to-violet-50 p-5 rounded-2xl border border-indigo-100 shadow-sm flex items-start gap-4">
-                  <div className="p-2.5 bg-white rounded-xl shadow-sm text-indigo-600">
-                    <Sparkles className="w-6 h-6" />
+          {/* TAB 1: KẾT QUẢ PHÂN BỔ THU NHẬP */}
+          {mode === 'income' && aiResults && (
+            <div className="space-y-4 animate-in fade-in duration-300">
+              
+              {/* Tổng kết */}
+              <div className="p-4 rounded-2xl bg-gradient-to-br from-indigo-50 via-white to-violet-50 border border-indigo-100/80 shadow-xs space-y-2">
+                <div className="flex items-center gap-2 text-indigo-900 font-bold text-sm">
+                  <Sparkles className="w-4 h-4 text-indigo-600" />
+                  <span>Lời Khuyên Chiến Lược Từ AI</span>
+                </div>
+                <p className="text-xs sm:text-sm text-slate-700 leading-relaxed">
+                  {aiResults.tong_ket}
+                </p>
+              </div>
+
+              {/* 4 Trụ Cột Đề Xuất */}
+              <div>
+                <h3 className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-2.5">
+                  Cơ Cấu 4 Trụ Cột Tối Ưu (Dành Cho Thu Nhập {aiResults.goc_phan_bo} Tr)
+                </h3>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+                  
+                  {/* Trụ 1: Thiết yếu */}
+                  <div className="p-3.5 rounded-xl border border-amber-200/70 bg-amber-50/30 space-y-1">
+                    <div className="flex items-center justify-between">
+                      <span className="text-xs font-bold text-amber-900 flex items-center gap-1.5">
+                        <ShieldCheck className="w-4 h-4 text-amber-600" />
+                        {aiResults.de_xuat_phan_bo.needs.label}
+                      </span>
+                      <span className="text-xs font-bold px-2 py-0.5 rounded-md bg-amber-100 text-amber-800 font-mono">
+                        {aiResults.de_xuat_phan_bo.needs.percent}% ({aiResults.de_xuat_phan_bo.needs.amount.toFixed(1)}tr)
+                      </span>
+                    </div>
+                    <p className="text-[11px] text-amber-800/80 leading-relaxed">
+                      {aiResults.de_xuat_phan_bo.needs.details}
+                    </p>
                   </div>
-                  <div>
-                    <h3 className="font-bold text-lg text-indigo-900 tracking-tight mb-1">
-                      Tổng kết từ AI
-                    </h3>
-                    <p className="text-indigo-800/80 font-medium leading-relaxed">
-                      {aiResults.tong_ket}
+
+                  {/* Trụ 2: Yêu thương */}
+                  <div className="p-3.5 rounded-xl border border-rose-200/70 bg-rose-50/30 space-y-1">
+                    <div className="flex items-center justify-between">
+                      <span className="text-xs font-bold text-rose-900 flex items-center gap-1.5">
+                        <Heart className="w-4 h-4 text-rose-600" />
+                        {aiResults.de_xuat_phan_bo.romance_family.label}
+                      </span>
+                      <span className="text-xs font-bold px-2 py-0.5 rounded-md bg-rose-100 text-rose-800 font-mono">
+                        {aiResults.de_xuat_phan_bo.romance_family.percent}% ({aiResults.de_xuat_phan_bo.romance_family.amount.toFixed(1)}tr)
+                      </span>
+                    </div>
+                    <p className="text-[11px] text-rose-800/80 leading-relaxed">
+                      {aiResults.de_xuat_phan_bo.romance_family.details}
+                    </p>
+                  </div>
+
+                  {/* Trụ 3: Đón con & Dự phòng */}
+                  <div className="p-3.5 rounded-xl border border-pink-200/70 bg-pink-50/30 space-y-1">
+                    <div className="flex items-center justify-between">
+                      <span className="text-xs font-bold text-pink-900 flex items-center gap-1.5">
+                        <Baby className="w-4 h-4 text-pink-600" />
+                        {aiResults.de_xuat_phan_bo.baby_reserve.label}
+                      </span>
+                      <span className="text-xs font-bold px-2 py-0.5 rounded-md bg-pink-100 text-pink-800 font-mono">
+                        {aiResults.de_xuat_phan_bo.baby_reserve.percent}% ({aiResults.de_xuat_phan_bo.baby_reserve.amount.toFixed(1)}tr)
+                      </span>
+                    </div>
+                    <p className="text-[11px] text-pink-800/80 leading-relaxed">
+                      {aiResults.de_xuat_phan_bo.baby_reserve.details}
+                    </p>
+                  </div>
+
+                  {/* Trụ 4: Đầu tư bền vững */}
+                  <div className="p-3.5 rounded-xl border border-emerald-200/70 bg-emerald-50/30 space-y-1">
+                    <div className="flex items-center justify-between">
+                      <span className="text-xs font-bold text-emerald-900 flex items-center gap-1.5">
+                        <TrendingUp className="w-4 h-4 text-emerald-600" />
+                        {aiResults.de_xuat_phan_bo.investment.label}
+                      </span>
+                      <span className="text-xs font-bold px-2 py-0.5 rounded-md bg-emerald-100 text-emerald-800 font-mono">
+                        {aiResults.de_xuat_phan_bo.investment.percent}% ({aiResults.de_xuat_phan_bo.investment.amount.toFixed(1)}tr)
+                      </span>
+                    </div>
+                    <p className="text-[11px] text-emerald-800/80 leading-relaxed">
+                      {aiResults.de_xuat_phan_bo.investment.details}
                     </p>
                   </div>
                 </div>
-
-                <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                  <div className="bg-white p-4 rounded-xl border border-slate-200 shadow-sm flex flex-col justify-between">
-                    <div className="text-[10px] text-slate-500 font-bold uppercase tracking-wider mb-2">Mục tiêu Tự do TC</div>
-                    <div className="text-lg font-black text-slate-800">{formatTableMoneyVNDMillion(aiResults.benchmarks.muc_tieu_tu_do_tai_chinh)}</div>
-                  </div>
-                  <div className="bg-white p-4 rounded-xl border border-slate-200 shadow-sm flex flex-col justify-between">
-                    <div className="text-[10px] text-slate-500 font-bold uppercase tracking-wider mb-2">Đầu tư tối thiểu</div>
-                    <div className="text-lg font-black text-slate-800">{formatTableMoneyVNDMillion(aiResults.benchmarks.dau_tu_toi_thieu)}</div>
-                  </div>
-                  <div className="bg-white p-4 rounded-xl border border-slate-200 shadow-sm flex flex-col justify-between">
-                    <div className="text-[10px] text-slate-500 font-bold uppercase tracking-wider mb-2">Quỹ khẩn cấp cần</div>
-                    <div className="text-lg font-black text-slate-800">{formatTableMoneyVNDMillion(aiResults.benchmarks.quy_khan_cap_can)}</div>
-                  </div>
-                  <div className="bg-white p-4 rounded-xl border border-slate-200 shadow-sm flex flex-col justify-between">
-                    <div className="text-[10px] text-slate-500 font-bold uppercase tracking-wider mb-2">Chi phí tối đa</div>
-                    <div className="text-lg font-black text-slate-800">{formatTableMoneyVNDMillion(aiResults.benchmarks.chi_phi_toi_da)}</div>
-                  </div>
-                </div>
-
-                {aiResults.de_xuat_phan_bo && (
-                  <div className="space-y-4 mt-6 animate-in slide-in-from-bottom-4 duration-500 delay-150 fill-mode-both">
-                    <h4 className="font-bold text-slate-700 flex items-center gap-2">
-                      <TrendingUp className="w-5 h-5 text-indigo-500" /> Mô hình Phân bổ Lý tưởng
-                    </h4>
-                    <div className="bg-gradient-to-br from-indigo-50 to-white p-5 rounded-2xl border border-indigo-100 shadow-sm relative overflow-hidden">
-                      <div className="absolute top-0 right-0 w-32 h-32 bg-indigo-500/5 rounded-full blur-2xl -mr-10 -mt-10"></div>
-                      <p className="text-sm text-slate-600 mb-5 relative z-10">{aiResults.de_xuat_phan_bo.ly_do}</p>
-                      
-                      <div className="grid grid-cols-2 md:grid-cols-4 gap-3 relative z-10">
-                        {/* Expense */}
-                        <div className="bg-white p-3 rounded-xl border border-rose-100 shadow-sm flex flex-col justify-between relative overflow-hidden">
-                          <div className="absolute top-0 left-0 bottom-0 w-1 bg-rose-400"></div>
-                          <div className="text-[10px] text-rose-600 font-bold uppercase tracking-wider mb-1 flex items-center justify-between pl-2">
-                            <span>Chi phí</span>
-                            <span className="bg-rose-50 px-1.5 rounded">{aiResults.de_xuat_phan_bo.expense.percent}%</span>
-                          </div>
-                          <div className="text-lg font-black text-slate-800 pl-2">{formatTableMoneyVNDMillion(aiResults.de_xuat_phan_bo.expense.amount)}</div>
-                        </div>
-                        {/* Investment */}
-                        <div className="bg-white p-3 rounded-xl border border-blue-100 shadow-sm flex flex-col justify-between relative overflow-hidden">
-                          <div className="absolute top-0 left-0 bottom-0 w-1 bg-blue-500"></div>
-                          <div className="text-[10px] text-blue-600 font-bold uppercase tracking-wider mb-1 flex items-center justify-between pl-2">
-                            <span>Đầu tư</span>
-                            <span className="bg-blue-50 px-1.5 rounded">{aiResults.de_xuat_phan_bo.investment.percent}%</span>
-                          </div>
-                          <div className="text-lg font-black text-slate-800 pl-2">{formatTableMoneyVNDMillion(aiResults.de_xuat_phan_bo.investment.amount)}</div>
-                        </div>
-                        {/* Savings */}
-                        <div className="bg-white p-3 rounded-xl border border-emerald-100 shadow-sm flex flex-col justify-between relative overflow-hidden">
-                          <div className="absolute top-0 left-0 bottom-0 w-1 bg-emerald-400"></div>
-                          <div className="text-[10px] text-emerald-600 font-bold uppercase tracking-wider mb-1 flex items-center justify-between pl-2">
-                            <span>Tiết kiệm</span>
-                            <span className="bg-emerald-50 px-1.5 rounded">{aiResults.de_xuat_phan_bo.savings.percent}%</span>
-                          </div>
-                          <div className="text-lg font-black text-slate-800 pl-2">{formatTableMoneyVNDMillion(aiResults.de_xuat_phan_bo.savings.amount)}</div>
-                        </div>
-                        {/* Reserve */}
-                        <div className="bg-white p-3 rounded-xl border border-amber-100 shadow-sm flex flex-col justify-between relative overflow-hidden">
-                          <div className="absolute top-0 left-0 bottom-0 w-1 bg-amber-400"></div>
-                          <div className="text-[10px] text-amber-600 font-bold uppercase tracking-wider mb-1 flex items-center justify-between pl-2">
-                            <span>Dự phòng</span>
-                            <span className="bg-amber-50 px-1.5 rounded">{aiResults.de_xuat_phan_bo.reserve.percent}%</span>
-                          </div>
-                          <div className="text-lg font-black text-slate-800 pl-2">{formatTableMoneyVNDMillion(aiResults.de_xuat_phan_bo.reserve.amount)}</div>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                )}
-
-                <div className="space-y-4 mt-6">
-                  <h4 className="font-bold text-slate-700 flex items-center gap-2">
-                    <BrainCircuit className="w-5 h-5 text-slate-400" /> Chi tiết phân tích
-                  </h4>
-                  {aiResults.canh_bao.length === 0 ? (
-                    <div className="text-center p-8 text-slate-500 bg-white rounded-2xl border border-slate-200 border-dashed shadow-sm">
-                      Phân bổ của bạn đã đạt chuẩn, không có cảnh báo nào!
-                    </div>
-                  ) : (
-                    aiResults.canh_bao.map((cb, idx) => {
-                      const isHigh = cb.muc_do === 'cao';
-                      const isMed = cb.muc_do === 'trung_binh';
-                      
-                      return (
-                        <div key={idx} className={`bg-white p-5 rounded-2xl border shadow-sm flex gap-4 items-start relative overflow-hidden group ${
-                          isHigh ? 'border-rose-200' : isMed ? 'border-amber-200' : 'border-blue-200'
-                        }`}>
-                          <div className={`absolute left-0 top-0 bottom-0 w-1 ${
-                            isHigh ? 'bg-rose-500' : isMed ? 'bg-amber-500' : 'bg-blue-500'
-                          }`}></div>
-                          <div className={`mt-1 p-2 rounded-xl ring-1 ${
-                            isHigh ? 'bg-rose-50 ring-rose-100 text-rose-600' : isMed ? 'bg-amber-50 ring-amber-100 text-amber-600' : 'bg-blue-50 ring-blue-100 text-blue-600'
-                          }`}>
-                            {isHigh ? <ShieldAlert className="w-5 h-5" /> : isMed ? <Target className="w-5 h-5" /> : <TrendingUp className="w-5 h-5" />}
-                          </div>
-                          <div className="flex-1">
-                            <div className="flex justify-between items-start mb-1">
-                              <h4 className="font-bold text-slate-800 text-base">{cb.tieu_de}</h4>
-                              <span className={`px-2.5 py-1 text-[10px] uppercase tracking-wider rounded-full font-bold border shadow-sm ${
-                                isHigh ? 'bg-rose-50 text-rose-700 border-rose-200' : 
-                                isMed ? 'bg-amber-50 text-amber-700 border-amber-200' : 
-                                'bg-blue-50 text-blue-700 border-blue-200'
-                              }`}>
-                                {isHigh ? 'Quan trọng' : isMed ? 'Lưu ý' : 'Thông tin'}
-                              </span>
-                            </div>
-                            <p className="text-sm text-slate-600 mb-3 leading-relaxed">{cb.noi_dung}</p>
-                            <div className={`text-xs px-3 py-2 rounded-lg inline-block font-medium border ${
-                              isHigh ? 'bg-rose-50 text-rose-700 border-rose-100' : 
-                              isMed ? 'bg-amber-50 text-amber-700 border-amber-100' : 
-                              'bg-blue-50 text-blue-700 border-blue-100'
-                            }`}>
-                              💡 {cb.de_xuat_hanh_dong}
-                            </div>
-                          </div>
-                        </div>
-                      );
-                    })
-                  )}
-                </div>
               </div>
-            )}
 
-            {/* Expense Financing Results */}
-            {mode === 'expense' && expenseResult && (
-              <div className="space-y-5 animate-in slide-in-from-bottom-4 duration-500">
-                <h3 className="font-bold text-lg text-slate-800 tracking-tight flex items-center gap-2">
-                  Cấu trúc Trả góp Đề xuất
-                </h3>
-
-                <div className={`p-5 rounded-2xl border ${expenseResult.isFeasible ? 'bg-emerald-50/50 border-emerald-200' : 'bg-rose-50/50 border-rose-200'} shadow-sm`}>
-                  <p className={`text-sm font-medium ${expenseResult.isFeasible ? 'text-emerald-800' : 'text-rose-800'}`}>
-                    {expenseResult.message}
-                  </p>
-                </div>
-
-                {expenseResult.isFeasible && (
-                  <div className="space-y-4">
-                    {/* Upfront Card */}
-                    <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm flex gap-4 items-start relative overflow-hidden group">
-                      <div className="absolute left-0 top-0 bottom-0 w-1 bg-blue-400 opacity-50"></div>
-                      <div className="mt-1 bg-slate-50 p-2 rounded-xl ring-1 ring-slate-100">
-                        <Target className="w-5 h-5 text-blue-500" />
-                      </div>
-                      <div className="flex-1">
-                        <div className="flex justify-between items-start mb-2">
-                          <h4 className="font-bold text-slate-800 text-base">Tác động Một lần (Trả trước)</h4>
-                          <span className="px-2.5 py-1 text-[10px] uppercase tracking-wider rounded-full bg-blue-50 text-blue-700 font-bold border border-blue-200 shadow-sm">
-                            Từ Quỹ Thanh Khoản
-                          </span>
-                        </div>
-                        <div className="text-sm text-slate-500 mb-4 leading-relaxed">
-                          Hệ thống đã tính toán giữ lại {formatTableMoneyVNDMillion((snapshot?.housingBasicAvgExpense || 0) * 3)} mức sàn an toàn (3 tháng). Số tiền tối đa có thể rút ra trả ngay là:
-                        </div>
-                        <div className="flex items-center gap-6 bg-slate-50/80 px-4 py-3.5 rounded-xl border border-slate-100/80">
-                          <div className="flex flex-col">
-                            <span className="text-[10px] text-slate-400 uppercase tracking-wider font-bold mb-0.5">Số tiền thanh toán ngay</span>
-                            <span className="font-black text-transparent bg-clip-text bg-gradient-to-r from-blue-600 to-indigo-600 text-lg">
-                              {formatTableMoneyVNDMillion(expenseResult.upfrontPayment)}
-                            </span>
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-
-                    {/* Installments Card */}
-                    {expenseResult.remainingToFinance > 0 && (
-                      <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm flex gap-4 items-start relative overflow-hidden group">
-                        <div className="absolute left-0 top-0 bottom-0 w-1 bg-orange-400 opacity-50"></div>
-                        <div className="mt-1 bg-slate-50 p-2 rounded-xl ring-1 ring-slate-100">
-                          <TrendingUp className="w-5 h-5 text-orange-500" />
-                        </div>
-                        <div className="flex-1">
-                          <div className="flex justify-between items-start mb-2">
-                            <h4 className="font-bold text-slate-800 text-base">Luồng B: Trả góp hàng tháng</h4>
-                            <span className="px-2.5 py-1 text-[10px] uppercase tracking-wider rounded-full bg-orange-50 text-orange-700 font-bold border border-orange-200 shadow-sm">
-                              Dòng tiền thặng dư
-                            </span>
-                          </div>
-                          <div className="text-sm text-slate-500 mb-4 leading-relaxed">
-                            Dòng tiền thặng dư mỗi tháng đang là {formatTableMoneyVNDMillion(expenseResult.surplusMonthly)}. Trích 90% thặng dư để trả góp phần còn lại ({formatTableMoneyVNDMillion(expenseResult.remainingToFinance)}).
-                          </div>
-                          <div className="flex items-center gap-6 bg-slate-50/80 px-4 py-3.5 rounded-xl border border-slate-100/80">
-                            <div className="flex flex-col">
-                              <span className="text-[10px] text-slate-400 uppercase tracking-wider font-bold mb-0.5">Số tiền (Triệu/tháng)</span>
-                              <span className="font-black text-transparent bg-clip-text bg-gradient-to-r from-orange-600 to-rose-600 text-lg">
-                                {formatTableMoneyVNDMillion(expenseResult.monthlyPayment)}
-                              </span>
-                            </div>
-                            <div className="w-px h-8 bg-slate-200"></div>
-                            <div className="flex flex-col">
-                              <span className="text-[10px] text-slate-400 uppercase tracking-wider font-bold mb-0.5">Số kỳ tác động</span>
-                              <span className="font-semibold text-slate-700">
-                                {expenseResult.durationMonths} tháng
-                              </span>
-                            </div>
-                          </div>
-                        </div>
-                      </div>
-                    )}
+              {/* Phân tích sâu từ Gemini (nếu có) */}
+              {geminiAnalysis && (
+                <div className="p-4 rounded-xl border border-indigo-200 bg-indigo-50/40 text-xs text-slate-800 space-y-2">
+                  <div className="font-bold flex items-center gap-1.5 text-indigo-900">
+                    <Sparkles className="w-4 h-4 text-amber-500" /> Tâm Thư Từ Cố Vấn AI Gemini:
                   </div>
+                  <div className="whitespace-pre-line leading-relaxed">
+                    {geminiAnalysis}
+                  </div>
+                </div>
+              )}
+
+              {/* NÚT 1-CLICK ÁP DỤNG VÀO CÂY NGÂN SÁCH */}
+              <div className="pt-2">
+                {applyBudgetSuccess ? (
+                  <div className="p-3 rounded-xl bg-emerald-50 border border-emerald-200 flex items-center justify-center gap-2 text-emerald-700 font-bold text-xs">
+                    <Check className="w-4 h-4" /> Đã cập nhật thành công Cây Ngân Sách tháng này!
+                  </div>
+                ) : (
+                  <Button
+                    onClick={handleApplyToBudgetSchedule}
+                    className="w-full py-2.5 bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 text-white font-bold rounded-xl shadow-md flex items-center justify-center gap-2 text-sm"
+                  >
+                    <Check className="w-4 h-4" /> Áp Dụng Tỷ Lệ Này Vào Cây Ngân Sách Tháng Này
+                  </Button>
                 )}
               </div>
-            )}
-            
-          </div>
+            </div>
+          )}
+
+          {/* TAB 2: KẾT QUẢ TRẢ GÓP KHOẢN CHI LỚN */}
+          {mode === 'expense' && expenseResult && (
+            <div className="space-y-4 animate-in fade-in duration-300">
+              
+              <div className="p-4 rounded-2xl bg-gradient-to-br from-rose-50 via-white to-amber-50 border border-rose-100 shadow-xs space-y-2">
+                <div className="flex items-center gap-2 text-rose-900 font-bold text-sm">
+                  <AlertCircle className="w-4 h-4 text-rose-600" />
+                  <span>Đánh Giá Tính Khả Thi Dòng Tiền</span>
+                </div>
+                <p className="text-xs sm:text-sm text-slate-700 leading-relaxed">
+                  {expenseResult.message}
+                </p>
+              </div>
+
+              {/* Thẻ cấu trúc trả góp */}
+              <div className="grid grid-cols-2 sm:grid-cols-3 gap-2.5">
+                <div className="p-3 bg-slate-50 border border-slate-200 rounded-xl">
+                  <span className="text-[10px] uppercase tracking-wider font-bold text-slate-400 block mb-1">Trả Trước (Upfront)</span>
+                  <span className="text-base font-bold text-slate-800 font-mono">
+                    {formatTableMoneyVNDMillion(expenseResult.upfrontPayment)}
+                  </span>
+                  <span className="text-[10px] text-slate-500 block mt-0.5">Từ quỹ thanh khoản dư</span>
+                </div>
+
+                <div className="p-3 bg-slate-50 border border-slate-200 rounded-xl">
+                  <span className="text-[10px] uppercase tracking-wider font-bold text-slate-400 block mb-1">Trả Góp Hàng Tháng</span>
+                  <span className="text-base font-bold text-indigo-700 font-mono">
+                    {formatTableMoneyVNDMillion(expenseResult.monthlyPayment)} / tháng
+                  </span>
+                  <span className="text-[10px] text-slate-500 block mt-0.5">Thời hạn: {expenseResult.durationMonths} tháng</span>
+                </div>
+
+                <div className="p-3 bg-slate-50 border border-slate-200 rounded-xl col-span-2 sm:col-span-1">
+                  <span className="text-[10px] uppercase tracking-wider font-bold text-slate-400 block mb-1">Thặng Dư Sau Góp</span>
+                  <span className="text-base font-bold text-emerald-700 font-mono">
+                    {formatTableMoneyVNDMillion(Math.max(0, expenseResult.surplusMonthly - expenseResult.monthlyPayment))} / tháng
+                  </span>
+                  <span className="text-[10px] text-slate-500 block mt-0.5">Dòng tiền vẫn dương an toàn</span>
+                </div>
+              </div>
+
+              {/* Phân tích Gemini (nếu có) */}
+              {geminiAnalysis && (
+                <div className="p-4 rounded-xl border border-rose-200 bg-rose-50/30 text-xs text-slate-800 space-y-2">
+                  <div className="font-bold flex items-center gap-1.5 text-rose-900">
+                    <Sparkles className="w-4 h-4 text-amber-500" /> Đánh Giá Từ Gemini AI:
+                  </div>
+                  <div className="whitespace-pre-line leading-relaxed">
+                    {geminiAnalysis}
+                  </div>
+                </div>
+              )}
+
+              {/* NÚT 1-CLICK TẠO KHOẢN CHI LINH HOẠT VÀO LIFESTAGES */}
+              <div className="pt-2">
+                {addExpenseSuccess ? (
+                  <div className="p-3 rounded-xl bg-emerald-50 border border-emerald-200 flex items-center justify-center gap-2 text-emerald-700 font-bold text-xs">
+                    <Check className="w-4 h-4" /> Đã tạo khoản chi linh hoạt thành công vào Quản lý chi tiêu!
+                  </div>
+                ) : (
+                  <Button
+                    onClick={handleCreateLifeEvent}
+                    disabled={!expenseResult.isFeasible}
+                    className="w-full py-2.5 bg-gradient-to-r from-rose-600 to-orange-600 hover:from-rose-700 hover:to-orange-700 text-white font-bold rounded-xl shadow-md flex items-center justify-center gap-2 text-sm disabled:opacity-50"
+                  >
+                    <ArrowRight className="w-4 h-4" /> Tạo Khoản Chi Linh Hoạt Này (Vào Quản Lý Chi Tiêu)
+                  </Button>
+                )}
+              </div>
+            </div>
+          )}
+
         </div>
 
         {/* Footer */}
-        <div className="px-6 py-4 border-t border-slate-100 bg-white/80 backdrop-blur-sm flex justify-end gap-3 rounded-b-2xl">
-          <Button variant="outline" onClick={onClose} className="hover:bg-slate-50 hover:text-slate-700 text-slate-500 font-semibold border-slate-200">
+        <div className="p-3 sm:p-4 border-t border-slate-100 bg-slate-50 flex justify-end shrink-0">
+          <Button variant="outline" onClick={onClose} className="px-5 text-slate-600 font-bold">
             Đóng
           </Button>
         </div>
+
       </div>
     </div>
   );

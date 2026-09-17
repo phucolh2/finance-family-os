@@ -1,11 +1,19 @@
 import { GoogleGenerativeAI } from '@google/generative-ai';
 import type { AppState } from '../types/finance';
 
-// Hàm dịch toàn bộ dữ liệu AppContext thành Markdown Prompt
+// Helper format tiền tệ tiếng Việt
+export function formatTableMoneyVNDMillionOffline(amount: number): string {
+  if (amount >= 1000) {
+    return (amount / 1000).toLocaleString('vi-VN', { minimumFractionDigits: 1, maximumFractionDigits: 2 }) + ' Tỷ';
+  }
+  return amount.toLocaleString('vi-VN', { minimumFractionDigits: 1, maximumFractionDigits: 2 }) + ' Tr';
+}
+
+// Hàm dịch toàn bộ dữ liệu AppContext thành Markdown Prompt cho AI
 export const buildSystemContext = (state: AppState): string => {
   const { profile, incomeSchedule, budgetSchedule, lifeEvents, investmentDeals, assumptions } = state;
 
-  const currentIncome = incomeSchedule.length > 0 ? incomeSchedule[0].incomeMonthly : 0;
+  const currentIncome = incomeSchedule.length > 0 ? incomeSchedule[0].incomeMonthly : 80;
   const currentBudget = budgetSchedule.length > 0 ? budgetSchedule[0] : null;
 
   let budgetText = '';
@@ -15,33 +23,32 @@ export const buildSystemContext = (state: AppState): string => {
       .join('\n');
   }
 
-  return `Bạn là "Finance Family OS Copilot" - một trợ lý tài chính AI thông minh được nhúng trực tiếp vào phần mềm quản lý gia đình.
-Nhiệm vụ của bạn là trả lời các câu hỏi tài chính dựa trên DỮ LIỆU HIỆN TẠI của người dùng.
-Luôn trả lời bằng tiếng Việt, ngắn gọn, súc tích, chuyên nghiệp và có sự đồng cảm.
-Khi tính toán, hãy cẩn thận và chỉ ra các con số rõ ràng. Dùng Markdown để định dạng câu trả lời cho đẹp (in đậm số tiền, dùng danh sách).
+  return `Bạn là "Finance Family OS AI Advisor" - Chuyên gia hoạch định tài chính gia đình cao cấp (Certified Financial Planner - CFP) kiêm Cố vấn hạnh phúc gia đình.
+Nhiệm vụ của bạn là tư vấn phân bổ ngân sách và dòng tiền một cách thông minh, cân bằng giữa:
+1. Hạnh phúc & Thoải mái hiện tại (Ăn uống dinh dưỡng, hẹn hò vợ chồng, du lịch, hiếu kính cha mẹ).
+2. Dự phòng an toàn & Chào đón thiên thần nhỏ (Quỹ thai sản, tiêm chủng, bảo hiểm y tế).
+3. Đầu tư tích sản dài hạn bền vững (Tự do tài chính, không đầu tư mạo hiểm khi chuẩn bị sinh nở).
 
-DƯỚI ĐÂY LÀ DỮ LIỆU HIỆN TẠI CỦA GIA ĐÌNH:
-
---- 1. TỔNG QUAN ---
-- Vốn khởi điểm: ${profile.startingCapital || 0} triệu VND
+DƯỚI ĐÂY LÀ BỨC TRANH TÀI CHÍNH CỦA GIA ĐÌNH:
+- Vốn khởi điểm: ${profile?.startingCapital || 0} triệu VNĐ
+- Thu nhập hàng tháng: ${currentIncome} triệu VNĐ
+- Tiền thuê nhà cố định: Khoảng 9 triệu VNĐ/tháng
 - Lạm phát dự kiến: ${assumptions.generalInflationRateAnnual}% / năm
-- Lãi tiết kiệm dự kiến: ${assumptions.savingsInterestRateAnnual}% / năm
-- Thu nhập mỗi tháng hiện tại: ${currentIncome} triệu VND
+- Lãi suất kỳ vọng: ${assumptions.investmentYieldExpectationAnnual}% / năm
 
---- 2. PHÂN BỔ NGÂN SÁCH ---
-(Tỷ trọng phân bổ dòng tiền hàng tháng:)
-${budgetText}
+CƠ CẤU NGÂN SÁCH HIỆN TẠI:
+${budgetText || 'Chưa cấu hình chi tiết.'}
 
---- 3. SỰ KIỆN CUỘC ĐỜI (Tương lai) ---
-${!lifeEvents || lifeEvents.length === 0 ? 'Chưa có sự kiện nào.' : lifeEvents.map(e => `- Tháng ${e.month}/${e.year}: [${e.type}] ${e.name}. Tác động 1 lần: ${e.amount} triệu. Tác động dòng tiền: ${e.recurringMonthlyImpact || 0} triệu/tháng. Nguồn: ${e.source}`).join('\n')}
+KẾ HOẠCH & SỰ KIỆN TƯƠNG LAI:
+${!lifeEvents || lifeEvents.length === 0 ? 'Gia đình đang lên kế hoạch chuẩn bị sinh em bé.' : lifeEvents.map(e => `- ${e.name} (${e.type}): Tháng ${e.month}/${e.year}, Số tiền: ${e.amount} triệu.`).join('\n')}
 
---- 4. THƯƠNG VỤ ĐẦU TƯ ---
-${!investmentDeals || investmentDeals.length === 0 ? 'Chưa có khoản đầu tư nào.' : investmentDeals.map(d => `- [${d.assetType}] ${d.name}. Vốn: ${d.capital} triệu. Tình trạng: ${d.status === 'settled' ? 'Đã tất toán' : 'Đang chạy'}. Lãi đã chốt: ${d.realizedProfit || 0} triệu.`).join('\n')}
+DANH MỤC TÀI SẢN & ĐẦU TƯ:
+${!investmentDeals || investmentDeals.length === 0 ? 'Chưa có khoản đầu tư lớn.' : investmentDeals.map(d => `- [${d.assetType}] ${d.name}: Vốn ${d.capital} triệu.`).join('\n')}
 
-HƯỚNG DẪN TRẢ LỜI:
-1. Luôn ưu tiên dùng dữ liệu ở trên để trả lời.
-2. Trừ khi được yêu cầu, hãy luôn dùng dữ liệu TỔNG QUAN và SỰ KIỆN CUỘC ĐỜI để nhẩm tính tình hình tài chính trong tương lai.
-3. Không khuyên những thứ sáo rỗng, hãy nói thẳng vào con số của người dùng.`;
+NGUYÊN TẮC TƯ VẤN:
+- Giọng văn ấm áp, tôn trọng, gần gũi như một người bạn tri kỷ am hiểu tài chính của gia đình.
+- Luôn chỉ ra con số cụ thể (Triệu VNĐ và %).
+- Đưa ra lời khuyên thực tế, tránh sáo rỗng.`;
 };
 
 // Hàm gửi tin nhắn tới Gemini API
@@ -54,7 +61,6 @@ export const sendChatMessage = async (
   if (!apiKey) throw new Error("Chưa cấu hình Gemini API Key.");
 
   const genAI = new GoogleGenerativeAI(apiKey);
-  // Dùng gemini-2.5-flash để hỗ trợ hạn mức Free Tier tốt nhất
   const model = genAI.getGenerativeModel({ 
     model: 'gemini-2.5-flash',
     systemInstruction: buildSystemContext(state)
@@ -73,6 +79,103 @@ export const sendChatMessage = async (
   return response.text();
 };
 
+/**
+ * AI Gemini: Phân tích sâu Phân bổ Ngân Sách 4 Trụ Cột (Hạnh phúc - An toàn - Đón con - Đầu tư)
+ */
+export const analyzeBudgetWithGemini = async (
+  apiKey: string,
+  state: AppState,
+  targetIncome: number,
+  notes?: string
+): Promise<string> => {
+  if (!apiKey) throw new Error("Chưa cấu hình Gemini API Key.");
+
+  const prompt = `Gia đình chúng tôi có mức thu nhập quan sát tháng này là **${targetIncome} triệu VNĐ**.
+Gia đình đang có chi phí thuê nhà cố định khoảng **9 triệu VNĐ/tháng** và đang có kế hoạch **chuẩn bị đón em bé**.
+${notes ? `Yêu cầu thêm từ vợ chồng tôi: "${notes}"` : ''}
+
+Hãy phân tích và gợi ý cho hai vợ chồng tôi một cấu trúc phân bổ ngân sách chuẩn thế giới, mang lại:
+1. Sự thoải mái, ăn uống dinh dưỡng bồi bổ sức khỏe cho mẹ bầu tương lai.
+2. Giữ lửa hôn nhân (hẹn hò cuối tuần, du lịch nghỉ dưỡng hâm nóng tình cảm).
+3. Quỹ Chào Đời chuẩn bị đón con (sinh viện quốc tế, đồ sơ sinh) và quỹ khẩn cấp.
+4. Tỷ lệ đầu tư bền vững (lãi kép dài hạn mà không gây áp lực).
+
+Vui lòng trình bày rõ ràng:
+- Tỷ lệ % và số tiền cụ thể cho từng nhóm chính.
+- Lời khuyên tâm huyết dành cho hai vợ chồng.`;
+
+  const genAI = new GoogleGenerativeAI(apiKey);
+  const model = genAI.getGenerativeModel({
+    model: 'gemini-2.5-flash',
+    systemInstruction: buildSystemContext(state)
+  });
+
+  const res = await model.generateContent(prompt);
+  return res.response.text();
+};
+
+/**
+ * AI Gemini: Tư vấn cấu trúc Trả góp Khoản chi lớn an toàn
+ */
+export const analyzeExpenseFinancingWithGemini = async (
+  apiKey: string,
+  state: AppState,
+  expenseName: string,
+  amount: number,
+  availableLiquidity: number,
+  monthlySurplus: number
+): Promise<string> => {
+  if (!apiKey) throw new Error("Chưa cấu hình Gemini API Key.");
+
+  const prompt = `Gia đình chúng tôi đang cân nhắc một khoản chi lớn: **"${expenseName}"** với tổng chi phí **${amount} triệu VNĐ**.
+- Thanh khoản an toàn hiện có: **${availableLiquidity} triệu VNĐ**.
+- Dòng tiền thặng dư hàng tháng trung bình: **${monthlySurplus} triệu VNĐ/tháng**.
+
+Hãy giúp vợ chồng tôi:
+1. Đánh giá tính khả thi: Có nên mua/chi ngay không?
+2. Đề xuất cấu trúc chi trả tối ưu: Trả trước bao nhiêu %, trả góp trong bao nhiêu tháng và mỗi tháng trích bao nhiêu để không làm thủng quỹ khẩn cấp của gia đình.
+3. Lời khuyên giúp vợ chồng tránh áp lực tài chính.`;
+
+  const genAI = new GoogleGenerativeAI(apiKey);
+  const model = genAI.getGenerativeModel({
+    model: 'gemini-2.5-flash',
+    systemInstruction: buildSystemContext(state)
+  });
+
+  const res = await model.generateContent(prompt);
+  return res.response.text();
+};
+
+/**
+ * Offline Smart Advisor: Thuật toán AI nội tại thông minh, tức thì, bảo mật 100%
+ */
+export interface SmartAllocationOfflineResult {
+  goc_phan_bo: number;
+  thang_du: number;
+  benchmarks: {
+    muc_tieu_tu_do_tai_chinh: number;
+    dau_tu_de_xuat: number;
+    quy_khan_cap_can: number;
+    chi_phi_thiet_yeu_de_xuat: number;
+  };
+  canh_bao: {
+    muc_do: 'cao' | 'trung_binh' | 'thong_tin';
+    tieu_de: string;
+    noi_dung: string;
+    de_xuat_hanh_dong: string;
+  }[];
+  de_xuat_phan_bo: {
+    needs: { percent: number; amount: number; label: string; details: string };
+    romance_family: { percent: number; amount: number; label: string; details: string };
+    baby_reserve: { percent: number; amount: number; label: string; details: string };
+    investment: { percent: number; amount: number; label: string; details: string };
+    ly_do: string;
+  };
+  // Mapping tương thích để bấm nút "Áp dụng vào Cây Ngân Sách"
+  targetGroupRatios: Record<string, number>;
+  tong_ket: string;
+}
+
 export const analyzeAllocationOffline = (
   inputData: {
     thu_nhap_du_phong: number;
@@ -80,141 +183,115 @@ export const analyzeAllocationOffline = (
     cay_ngan_sach: { ten_muc: string; ty_le_phan_tram: number; so_tien: number; classification?: string }[];
     chi_phi_hang_thang: number;
     current_liquidity: number;
+    hasBabyPlan?: boolean;
+    housingCost?: number; // Tiền nhà cố định, mặc định 9tr nếu có
   }
-) => {
-  const { thu_nhap_du_phong, goc_phan_bo, cay_ngan_sach, chi_phi_hang_thang, current_liquidity } = inputData;
-  const thang_du = Math.max(0, thu_nhap_du_phong - goc_phan_bo);
+): SmartAllocationOfflineResult => {
+  const { thu_nhap_du_phong, goc_phan_bo, current_liquidity } = inputData;
+  const income = goc_phan_bo > 0 ? goc_phan_bo : (thu_nhap_du_phong > 0 ? thu_nhap_du_phong : 80);
+  const housingCost = inputData.housingCost || 9; // 9 triệu cố định
+  const monthlyExpenseEst = Math.max(inputData.chi_phi_hang_thang, 25); // Ước tính sinh hoạt chuẩn
 
   const benchmarks = {
-    muc_tieu_tu_do_tai_chinh: thu_nhap_du_phong * 300,
-    dau_tu_toi_thieu: goc_phan_bo * 0.20,
-    quy_khan_cap_can: chi_phi_hang_thang * 3,
-    chi_phi_toi_da: goc_phan_bo * 0.50
+    muc_tieu_tu_do_tai_chinh: income * 300,
+    dau_tu_de_xuat: income * 0.40, // 40% đầu tư bền vững
+    quy_khan_cap_can: monthlyExpenseEst * 3, // Sàn 3 tháng
+    chi_phi_thiet_yeu_de_xuat: income * 0.25 // 25% thiết yếu
   };
 
-  const canh_bao: any[] = [];
-  let totalPercent = 0;
-  let allGood = true;
+  const canh_bao: SmartAllocationOfflineResult['canh_bao'] = [];
 
-  let totalExpense = 0;
-  let totalInvestment = 0;
+  // 1. Kiểm tra tiền thuê nhà
+  const housingRatio = (housingCost / income) * 100;
+  if (housingRatio > 25) {
+    canh_bao.push({
+      muc_do: 'trung_binh',
+      tieu_de: 'Tỷ trọng chi phí nhà ở',
+      noi_dung: `Tiền thuê nhà hiện tại (${housingCost} triệu) chiếm ${housingRatio.toFixed(1)}% thu nhập.`,
+      de_xuat_hanh_dong: 'Nên kiểm soát các chi phí sinh hoạt điện nước khác để tổng chi phí thiết yếu không vượt quá 35%.'
+    });
+  } else {
+    canh_bao.push({
+      muc_do: 'thong_tin',
+      tieu_de: 'Chi phí nhà ở an toàn',
+      noi_dung: `Tiền thuê nhà ${housingCost} triệu chiếm ${housingRatio.toFixed(1)}% thu nhập, đạt tỷ lệ vàng theo chuẩn quốc tế (<20%).`,
+      de_xuat_hanh_dong: 'Duy trì sự ổn định không gian sống thoải mái để giữ gìn sức khỏe gia đình.'
+    });
+  }
 
-  let totalSavings = 0;
-  let totalReserve = 0;
+  // 2. Kiểm tra thanh khoản khẩn cấp
+  if (current_liquidity < benchmarks.quy_khan_cap_can) {
+    canh_bao.push({
+      muc_do: 'cao',
+      tieu_de: 'Củng cố Quỹ Khẩn Cấp',
+      noi_dung: `Thanh khoản hiện tại (${formatTableMoneyVNDMillionOffline(current_liquidity)}) dưới mức sàn an toàn 3 tháng (${formatTableMoneyVNDMillionOffline(benchmarks.quy_khan_cap_can)}).`,
+      de_xuat_hanh_dong: 'Ưu tiên trích lập quỹ khẩn cấp trước khi dồn quá nhiều tiền vào các kênh đầu tư khó thanh khoản.'
+    });
+  }
 
-  cay_ngan_sach.forEach(item => {
-    const percent = item.ty_le_phan_tram;
-    totalPercent += percent;
-    
-    // Nếu không có phân loại cứng thì tự đoán dựa trên tên
-    const cls = item.classification || (
-      item.ten_muc.toLowerCase().includes('sinh hoạt') || item.ten_muc.toLowerCase().includes('thiết yếu') ? 'expense' :
-      item.ten_muc.toLowerCase().includes('đầu tư') || item.ten_muc.toLowerCase().includes('tích lũy') ? 'investment' :
-      item.ten_muc.toLowerCase().includes('tiết kiệm') ? 'savings' : 'debt_reserve'
-    );
-
-    if (cls === 'expense') totalExpense += percent;
-    if (cls === 'investment') totalInvestment += percent;
-    if (cls === 'savings') totalSavings += percent;
-    if (cls === 'debt_reserve') totalReserve += percent;
+  // 3. Kế hoạch đón con
+  canh_bao.push({
+    muc_do: 'thong_tin',
+    tieu_de: 'Chuẩn bị chào đón thiên thần nhỏ',
+    noi_dung: 'Gia đình đang chuẩn bị đón bé, cần thiết lập riêng Quỹ Chào Đời (8-10 triệu/tháng) tích lũy trong 12 tháng.',
+    de_xuat_hanh_dong: 'Trích riêng quỹ này để chi trả viện phí quốc tế, đồ dùng sơ sinh và vắc-xin mà không chạm vào tiền đầu tư.'
   });
 
-  if (totalExpense > 50) {
-    allGood = false;
-    canh_bao.push({
-      muc_do: 'cao',
-      tieu_de: 'Chi phí sinh hoạt quá cao',
-      noi_dung: `Chi phí thiết yếu đang phân bổ chiếm ${totalExpense.toFixed(1)}%, vượt ngưỡng an toàn khuyến nghị 50%.`,
-      de_xuat_hanh_dong: 'Cân nhắc cắt giảm các khoản chi tiêu không cần thiết hoặc tối ưu hóa chi phí cố định.'
-    });
-  }
-
-  if (totalInvestment < 20) {
-    allGood = false;
-    canh_bao.push({
-      muc_do: 'trung_binh',
-      tieu_de: 'Tỷ lệ đầu tư thấp',
-      noi_dung: `Đầu tư hiện tại chỉ phân bổ ${totalInvestment.toFixed(1)}%, dưới mức tối thiểu 20% để đạt tự do tài chính đúng lộ trình.`,
-      de_xuat_hanh_dong: 'Cố gắng trích lập thêm quỹ đầu tư ngay khi nhận lương (Pay Yourself First).'
-    });
-  }
-
-  if (Math.abs(totalPercent - 100) > 0.1) {
-    allGood = false;
-    canh_bao.push({
-      muc_do: 'cao',
-      tieu_de: 'Cấu hình tỷ lệ lỗi',
-      noi_dung: `Cây ngân sách đang phân bổ ${totalPercent.toFixed(1)}%, chưa khớp 100% Gốc phân bổ.`,
-      de_xuat_hanh_dong: 'Vào cấu hình Cây ngân sách để điều chỉnh lại tổng tỷ lệ các quỹ về chuẩn 100%.'
-    });
-  }
-
-  if (current_liquidity < benchmarks.quy_khan_cap_can) {
-    allGood = false;
-    canh_bao.push({
-      muc_do: 'trung_binh',
-      tieu_de: 'Số dư quỹ khẩn cấp thấp',
-      noi_dung: `Thanh khoản thực tế tích lũy của bạn là ${formatTableMoneyVNDMillionOffline(current_liquidity)}, chưa đạt mức tối thiểu an toàn (${formatTableMoneyVNDMillionOffline(benchmarks.quy_khan_cap_can)} - 3 tháng chi phí).`,
-      de_xuat_hanh_dong: 'Ưu tiên dùng tiền dư và tăng tỷ lệ phân bổ vào quỹ Dự phòng trước khi đầu tư rủi ro.'
-    });
-    if (totalSavings + totalReserve === 0) {
-      canh_bao.push({
-        muc_do: 'cao',
-        tieu_de: 'Thiếu trích lập dự phòng',
-        noi_dung: `Bạn đang thiếu tiền dự phòng nhưng Cây ngân sách lại đang trích 0% cho Tiết kiệm/Dự phòng.`,
-        de_xuat_hanh_dong: 'Chỉnh sửa Cây ngân sách ngay để tự động chảy tiền vào quỹ Khẩn cấp hàng tháng.'
-      });
-    }
-  } else if (current_liquidity < chi_phi_hang_thang * 6) {
-    canh_bao.push({
-      muc_do: 'thong_tin',
-      tieu_de: 'Tối ưu số dư dự phòng',
-      noi_dung: `Quỹ khẩn cấp đã qua mức tối thiểu nhưng chưa đạt mức lý tưởng 6 tháng (${formatTableMoneyVNDMillionOffline(chi_phi_hang_thang * 6)}).`,
-      de_xuat_hanh_dong: 'Nên trích một phần thặng dư để tiếp tục bồi đắp quỹ này cho an tâm tuyệt đối.'
-    });
-  }
-
-  if (thang_du > 0) {
-    canh_bao.push({
-      muc_do: 'thong_tin',
-      tieu_de: 'Tối ưu hóa thặng dư',
-      noi_dung: `Bạn đang có dư ${formatTableMoneyVNDMillionOffline(thang_du)}, số tiền này có thể bị hao hụt nếu để không.`,
-      de_xuat_hanh_dong: 'Có thể chuyển ngay thặng dư này sang Quỹ tích lũy hoặc Đầu tư qua chức năng Điều chuyển dòng tiền.'
-    });
-  }
-
-  const idealExpense = 50;
-  const idealInvestment = 30;
-  const idealSavings = 10;
-  const idealReserve = 10;
-  const reason = "Mô hình Tự do Tài chính (FIRE) tối ưu: Giữ chi phí cơ bản ở mức 50%, dành 10% Tiết kiệm phòng rủi ro, 10% Dự phòng hưởng thụ/cơ hội. Quan trọng nhất: Dồn tối đa 30% (thay vì 20% tối thiểu) vào Đầu tư để tăng tốc độ đạt Tự do tài chính.";
+  // TÍNH TOÁN CƠ CẤU 4 TRỤ CỘT HẠNH PHÚC & BỀN VỮNG (Chuẩn 100%)
+  // - Thiết yếu (Needs): 25% (gồm thuê nhà 9tr + ăn uống dinh dưỡng bồi bổ)
+  // - Cảm xúc & Gia đình (Wants & Connection): 12.5% (hẹn hò, du lịch, gắn kết cha mẹ)
+  // - Dự phòng & Đón con (Safety & Baby): 20% (Quỹ đón con 10% + Dự phòng y tế 10%)
+  // - Đầu tư bền vững (Sustainable Wealth): 42.5% (tích sản tự do tài chính)
+  const needsPercent = 25.0;
+  const romancePercent = 12.5;
+  const babyReservePercent = 20.0;
+  const investmentPercent = 42.5;
 
   const de_xuat_phan_bo = {
-    expense: { percent: idealExpense, amount: goc_phan_bo * idealExpense / 100 },
-    investment: { percent: idealInvestment, amount: goc_phan_bo * idealInvestment / 100 },
-    savings: { percent: idealSavings, amount: goc_phan_bo * idealSavings / 100 },
-    reserve: { percent: idealReserve, amount: goc_phan_bo * idealReserve / 100 },
-    ly_do: reason
+    needs: {
+      percent: needsPercent,
+      amount: (income * needsPercent) / 100,
+      label: 'Chi phí Thiết yếu',
+      details: `Gồm tiền thuê nhà (${housingCost}tr) + Ăn uống dinh dưỡng, di chuyển, điện nước.`
+    },
+    romance_family: {
+      percent: romancePercent,
+      amount: (income * romancePercent) / 100,
+      label: 'Hạnh phúc & Yêu thương',
+      details: 'Hẹn hò cuối tuần vợ chồng, tích lũy du lịch nghỉ dưỡng và hiếu kính cha mẹ.'
+    },
+    baby_reserve: {
+      percent: babyReservePercent,
+      amount: (income * babyReservePercent) / 100,
+      label: 'Đón con & Dự phòng an toàn',
+      details: 'Quỹ Chào Đời cho bé (sinh viện quốc tế, đồ sơ sinh) + Quỹ Y tế, khẩn cấp.'
+    },
+    investment: {
+      percent: investmentPercent,
+      amount: (income * investmentPercent) / 100,
+      label: 'Đầu tư Bền vững',
+      details: 'Tích sản dài hạn tạo lãi kép tự do tài chính, an tâm không lo rút non.'
+    },
+    ly_do: 'Mô hình cân bằng chuẩn quốc tế: Sống thoải mái hôm nay, chuẩn bị chu đáo nhất cho con, và tài sản vẫn tăng trưởng vượt trội.'
+  };
+
+  // Tỷ lệ ánh xạ tương ứng vào cây ngân sách mặc định
+  const targetGroupRatios: Record<string, number> = {
+    'housing_basic': 25.0,     // Chi phí cần thiết
+    'family_experience': 7.0,   // Kết nối & Yêu thương
+    'wants': 5.5,               // Chi phí không cần thiết / Tận hưởng
+    'safety_reserve': 10.0,     // Dự phòng y tế & khẩn cấp
+    'baby_fund': 10.0,          // Quỹ các em bé đáng géc
+    'future_investing': 42.5,   // Đầu tư
   };
 
   return {
-    goc_phan_bo,
-    thang_du,
+    goc_phan_bo: income,
+    thang_du: 0,
     benchmarks,
-    canh_bao: canh_bao.sort((a, b) => {
-      const rank = { cao: 0, trung_binh: 1, thong_tin: 2 };
-      return rank[a.muc_do as keyof typeof rank] - rank[b.muc_do as keyof typeof rank];
-    }).slice(0, 3), // Lấy top 3
+    canh_bao,
     de_xuat_phan_bo,
-    tong_ket: allGood ? 
-      "Xin chúc mừng! Cơ cấu phân bổ ngân sách của bạn đang đạt mức tối ưu theo các quy chuẩn tài chính cá nhân. Hãy tiếp tục duy trì kỷ luật này nhé." : 
-      "Dựa trên các chuẩn mực tài chính, dòng tiền của bạn cần được tinh chỉnh đôi chút để tối ưu hóa khả năng tích lũy và phòng vệ rủi ro. Hãy xem các cảnh báo bên dưới."
+    targetGroupRatios,
+    tong_ket: `Dựa trên thu nhập ${income} triệu và tiền nhà cố định ${housingCost} triệu, AI đề xuất cấu trúc "Hạnh phúc & Đón con": Dành trọn vẹn 37.5% cho cuộc sống gia đình ấm cúng, 20% sẵn sàng cho bé chào đời và duy trì 42.5% đầu tư tích sản tăng trưởng vững vàng.`
   };
 };
-
-function formatTableMoneyVNDMillionOffline(amount: number): string {
-  if (amount >= 1000) {
-    return (amount / 1000).toLocaleString('en-US', { minimumFractionDigits: 1, maximumFractionDigits: 2 }) + ' Tỷ';
-  }
-  return amount.toLocaleString('en-US', { minimumFractionDigits: 1, maximumFractionDigits: 2 }) + ' Tr';
-}
