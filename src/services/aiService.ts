@@ -69,7 +69,13 @@ async function generateGeminiContentWithFallback(
 
   const cleanKey = apiKey.trim();
   const genAI = new GoogleGenerativeAI(cleanKey);
-  const candidateModels = ['gemini-1.5-flash', 'gemini-2.0-flash', 'gemini-1.5-pro'];
+  const candidateModels = [
+    'gemini-3-flash-preview',
+    'gemini-3.1-flash-lite',
+    'gemini-3.5-flash',
+    'gemini-3.6-flash',
+    'gemini-flash-latest'
+  ];
 
   let lastError: any = null;
   for (const modelName of candidateModels) {
@@ -108,7 +114,7 @@ export const sendChatMessage = async (
   const cleanKey = apiKey.trim();
   const genAI = new GoogleGenerativeAI(cleanKey);
   const model = genAI.getGenerativeModel({ 
-    model: 'gemini-1.5-flash',
+    model: 'gemini-3-flash-preview',
     systemInstruction: buildSystemContext(state)
   });
 
