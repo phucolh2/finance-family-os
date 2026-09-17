@@ -1,15 +1,8 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect } from 'react';
 import { useAppContext } from '../../context/AppContext';
 import { runProjection } from '../../engines/projectionEngine';
-import { SmartAllocationAdvisorModal } from './SmartAllocationAdvisorModal';
-import { createAdvisorSnapshot } from '../../engines/SmartAllocationAdvisor';
-import { BrainCircuit } from 'lucide-react';
-import { Button } from './Button';
-
 export const ObservationControls: React.FC = () => {
   const { state, updateProfile, selectedPeriodKey, setSelectedPeriodKey } = useAppContext();
-  const [isAdvisorOpen, setIsAdvisorOpen] = useState(false);
-  const [advisorSnapshot, setAdvisorSnapshot] = useState<any>(null);
 
   // Run projection dynamically to get the month list
   const projection = runProjection({
@@ -104,26 +97,6 @@ export const ObservationControls: React.FC = () => {
           </button>
         )}
       </div>
-      
-      {/* Smart Allocation Advisor Button */}
-      <Button 
-        onClick={() => {
-          setAdvisorSnapshot(createAdvisorSnapshot(state, projection, activeKey));
-          setIsAdvisorOpen(true);
-        }} 
-        className="gap-1.5 text-xs h-[30px] shrink-0 bg-indigo-50 text-indigo-700 hover:bg-indigo-100 border border-indigo-200/60 shadow-sm rounded-xl px-3 ml-auto sm:ml-2" 
-        variant="outline"
-      >
-        <BrainCircuit className="w-4 h-4 text-pink-500" /> 
-        <span className="font-bold">Trợ lý Phân bổ</span>
-      </Button>
-
-      {/* Advisor Modal */}
-      <SmartAllocationAdvisorModal 
-        isOpen={isAdvisorOpen}
-        onClose={() => { setIsAdvisorOpen(false); }}
-        snapshot={advisorSnapshot}
-      />
     </div>
   );
 };
