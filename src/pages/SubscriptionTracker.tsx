@@ -2,13 +2,14 @@ import React, { useState, useMemo } from 'react';
 import { useAppState } from '../hooks/useAppState';
 import { 
   Repeat, Plus, Search, 
-  Calendar, Edit2, Trash2, X,
+  Calendar, Edit2, Trash2,
   MonitorPlay, Zap, Laptop, Dumbbell, Box, AlertCircle
 } from 'lucide-react';
 import { HelpTooltip } from '../components/ui/HelpTooltip';
 import { Button } from '../components/ui/Button';
 import { Card, CardContent } from '../components/ui/Card';
 import { EmptyState } from '../components/ui/EmptyState';
+import { Modal, ModalHeader, ModalBody, ModalFooter } from '../components/ui/Modal';
 import { useBodyScrollLock } from '../hooks/useBodyScrollLock';
 
 export interface SubscriptionItem {
@@ -284,136 +285,99 @@ export const SubscriptionTracker: React.FC = () => {
         </div>
       )}
 
-      {/* Modal */}
-      {isModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm animate-in fade-in duration-200">
-          <div className="bg-family-bg border border-violet-500/20 rounded-2xl w-full max-w-xl shadow-2xl overflow-hidden flex flex-col max-h-[90vh]">
-            <div className="p-4 border-b bg-violet-500/10 border-violet-500/20 flex justify-between items-center">
-              <div className="flex items-center gap-2">
-                <Repeat className="w-5 h-5 text-violet-500" />
-                <h2 className="text-lg font-bold text-family-text">
-                  {editingItem ? 'Cập nhật Thuê bao' : 'Thêm Thuê bao Mới'}
-                </h2>
-              </div>
-              <button 
-                type="button"
-                onClick={() => setIsModalOpen(false)}
-                className="p-1 text-family-textMuted hover:text-family-text hover:bg-white/10 rounded-lg"
-              >
-                <X className="w-5 h-5" />
-              </button>
+      {/* Modal — Portal-based, scroll-locked, mobile slide-up */}
+      <Modal isOpen={isModalOpen} onClose={() => setIsModalOpen(false)} maxWidth="max-w-xl">
+        <ModalHeader
+          title={editingItem ? 'Cập nhật Thuê bao' : 'Thêm Thuê bao Mới'}
+          icon={<Repeat className="w-5 h-5 text-violet-500" />}
+          onClose={() => setIsModalOpen(false)}
+          accentClass="bg-violet-500/10"
+        />
+        <form onSubmit={handleSave}>
+          <ModalBody className="space-y-4">
+            <div>
+              <label className="block text-xs font-semibold text-family-textLight uppercase tracking-wider mb-2">Tên dịch vụ *</label>
+              <input
+                required name="name"
+                defaultValue={editingItem?.name}
+                placeholder="VD: Netflix Premium, Tiền điện, Internet VNPT..."
+                className="w-full bg-family-bgDark/50 border border-family-accent/20 rounded-xl px-4 py-2.5 text-sm text-family-text focus:outline-none focus:border-family-accent/50"
+              />
             </div>
-            
-            <form onSubmit={handleSave} className="flex-1 overflow-y-auto p-6 space-y-5">
+
+            <div>
+              <label className="block text-xs font-semibold text-family-textLight uppercase tracking-wider mb-2">Phân loại *</label>
+              <div className="grid grid-cols-2 gap-2">
+                {Object.entries(CATEGORIES).map(([key, cat]) => (
+                  <label key={key} className="flex items-center gap-2 p-2.5 rounded-xl border border-family-accent/10 bg-family-bgDark/30 cursor-pointer hover:bg-family-accent/5 transition-colors">
+                    <input type="radio" name="category" value={key}
+                      defaultChecked={editingItem ? editingItem.category === key : key === 'entertainment'}
+                      className="text-violet-500 focus:ring-violet-500 bg-family-bgDark"
+                    />
+                    <div className="flex items-center gap-1.5 text-sm text-family-text truncate">
+                      {React.createElement(cat.icon, { className: `w-4 h-4 shrink-0 ${cat.color}` })}
+                      <span className="truncate">{cat.label.split(' (')[0]}</span>
+                    </div>
+                  </label>
+                ))}
+              </div>
+            </div>
+
+            <div className="grid grid-cols-2 gap-3">
               <div>
-                <label className="block text-xs font-semibold text-family-textLight uppercase tracking-wider mb-2">Tên dịch vụ *</label>
-                <input 
-                  required
-                  name="name"
-                  defaultValue={editingItem?.name}
-                  placeholder="VD: Netflix Premium, Tiền điện, Internet VNPT..."
-                  className="w-full bg-family-bgDark/50 border border-family-accent/20 rounded-xl px-4 py-2.5 text-sm text-family-text focus:outline-none focus:border-family-accent/50"
+                <label className="block text-xs font-semibold text-family-textLight uppercase tracking-wider mb-2">Số tiền *</label>
+                <input required name="price" type="text"
+                  defaultValue={editingItem?.price ? new Intl.NumberFormat('vi-VN').format(editingItem.price) : ''}
+                  placeholder="VD: 260.000"
+                  onChange={(e) => { const v = e.target.value.replace(/[^0-9]/g, ''); if (v) e.target.value = new Intl.NumberFormat('vi-VN').format(Number(v)); }}
+                  className="w-full bg-family-bgDark/50 border border-family-accent/20 rounded-xl px-3 py-2.5 text-sm font-mono text-family-text focus:outline-none focus:border-family-accent/50"
                 />
               </div>
-
               <div>
-                <label className="block text-xs font-semibold text-family-textLight uppercase tracking-wider mb-2">Phân loại *</label>
-                <div className="grid grid-cols-2 gap-2">
-                  {Object.entries(CATEGORIES).map(([key, cat]) => (
-                    <label key={key} className="flex items-center gap-2 p-2.5 rounded-xl border border-family-accent/10 bg-family-bgDark/30 cursor-pointer hover:bg-family-accent/5 transition-colors">
-                      <input 
-                        type="radio" 
-                        name="category" 
-                        value={key} 
-                        defaultChecked={editingItem ? editingItem.category === key : key === 'entertainment'}
-                        className="text-violet-500 focus:ring-violet-500 bg-family-bgDark"
-                      />
-                      <div className="flex items-center gap-1.5 text-sm text-family-text truncate">
-                        {React.createElement(cat.icon, { className: `w-4 h-4 shrink-0 ${cat.color}` })}
-                        <span className="truncate">{cat.label.split(' (')[0]}</span>
-                      </div>
-                    </label>
-                  ))}
-                </div>
+                <label className="block text-xs font-semibold text-family-textLight uppercase tracking-wider mb-2">Chu kỳ *</label>
+                <select name="billingCycle" defaultValue={editingItem?.billingCycle || 'monthly'}
+                  className="w-full bg-family-bgDark/50 border border-family-accent/20 rounded-xl px-3 py-2.5 text-sm text-family-text focus:outline-none focus:border-family-accent/50"
+                >
+                  <option value="monthly">Hàng tháng</option>
+                  <option value="yearly">Hàng năm</option>
+                </select>
               </div>
+            </div>
 
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-xs font-semibold text-family-textLight uppercase tracking-wider mb-2">Số tiền *</label>
-                  <input 
-                    required
-                    name="price"
-                    type="text"
-                    defaultValue={editingItem?.price ? new Intl.NumberFormat('vi-VN').format(editingItem.price) : ''}
-                    placeholder="VD: 260.000"
-                    onChange={(e) => {
-                      const val = e.target.value.replace(/[^0-9]/g, '');
-                      if (val) {
-                        e.target.value = new Intl.NumberFormat('vi-VN').format(Number(val));
-                      }
-                    }}
-                    className="w-full bg-family-bgDark/50 border border-family-accent/20 rounded-xl px-4 py-2.5 text-sm font-mono text-family-text focus:outline-none focus:border-family-accent/50"
-                  />
-                </div>
-                <div>
-                  <label className="block text-xs font-semibold text-family-textLight uppercase tracking-wider mb-2">Chu kỳ thanh toán *</label>
-                  <select 
-                    name="billingCycle"
-                    defaultValue={editingItem?.billingCycle || 'monthly'}
-                    className="w-full bg-family-bgDark/50 border border-family-accent/20 rounded-xl px-4 py-2.5 text-sm text-family-text focus:outline-none focus:border-family-accent/50"
-                  >
-                    <option value="monthly">Hàng tháng</option>
-                    <option value="yearly">Hàng năm</option>
-                  </select>
-                </div>
-              </div>
-
-              <div className="grid grid-cols-2 gap-4 border-t border-white/5 pt-4">
-                <div>
-                  <label className="block text-xs font-semibold text-family-textLight uppercase tracking-wider mb-2">Người thanh toán *</label>
-                  <input 
-                    required
-                    type="text"
-                    name="owner"
-                    defaultValue={editingItem?.owner}
-                    placeholder="VD: Vợ, Chồng, Gia đình..."
-                    className="w-full bg-family-bgDark/50 border border-family-accent/20 rounded-xl px-4 py-2.5 text-sm text-family-text focus:outline-none focus:border-family-accent/50"
-                  />
-                </div>
-                <div>
-                  <label className="block text-xs font-semibold text-family-textLight uppercase tracking-wider mb-2">Ngày gia hạn tiếp theo *</label>
-                  <input 
-                    required
-                    type="date"
-                    name="nextBillingDate"
-                    defaultValue={editingItem?.nextBillingDate || new Date().toISOString().split('T')[0]}
-                    className="w-full bg-family-bgDark/50 border border-family-accent/20 rounded-xl px-4 py-2.5 text-sm text-family-text focus:outline-none focus:border-family-accent/50"
-                    style={{ colorScheme: 'dark' }}
-                  />
-                </div>
-              </div>
-
+            <div className="grid grid-cols-2 gap-3">
               <div>
-                <label className="block text-xs font-semibold text-family-textLight uppercase tracking-wider mb-2">Ghi chú (Tài khoản, Cách huỷ...)</label>
-                <textarea 
-                  name="notes"
-                  defaultValue={editingItem?.notes}
-                  placeholder="Ghi lại tài khoản đăng nhập hoặc mã khách hàng để tiện thanh toán..."
-                  rows={2}
-                  className="w-full bg-family-bgDark/50 border border-family-accent/20 rounded-xl px-4 py-2.5 text-sm text-family-text focus:outline-none focus:border-family-accent/50 resize-none"
+                <label className="block text-xs font-semibold text-family-textLight uppercase tracking-wider mb-2">Người thanh toán *</label>
+                <input required type="text" name="owner" defaultValue={editingItem?.owner}
+                  placeholder="VD: Vợ, Chồng..."
+                  className="w-full bg-family-bgDark/50 border border-family-accent/20 rounded-xl px-3 py-2.5 text-sm text-family-text focus:outline-none focus:border-family-accent/50"
                 />
               </div>
-
-              <div className="pt-4 flex justify-end gap-3 border-t border-family-accent/10">
-                <Button type="button" variant="outline" onClick={() => setIsModalOpen(false)}>Hủy</Button>
-                <Button type="submit" className="bg-violet-600 hover:bg-violet-700 text-white">
-                  Lưu Thuê Bao
-                </Button>
+              <div>
+                <label className="block text-xs font-semibold text-family-textLight uppercase tracking-wider mb-2">Ngày gia hạn *</label>
+                <input required type="date" name="nextBillingDate"
+                  defaultValue={editingItem?.nextBillingDate || new Date().toISOString().split('T')[0]}
+                  className="w-full bg-family-bgDark/50 border border-family-accent/20 rounded-xl px-3 py-2.5 text-sm text-family-text focus:outline-none focus:border-family-accent/50"
+                  style={{ colorScheme: 'dark' }}
+                />
               </div>
-            </form>
-          </div>
-        </div>
-      )}
+            </div>
+
+            <div>
+              <label className="block text-xs font-semibold text-family-textLight uppercase tracking-wider mb-2">Ghi chú (Tài khoản, Cách huỷ...)</label>
+              <textarea name="notes" defaultValue={editingItem?.notes}
+                placeholder="Ghi lại tài khoản đăng nhập hoặc mã khách hàng..."
+                rows={2}
+                className="w-full bg-family-bgDark/50 border border-family-accent/20 rounded-xl px-4 py-2.5 text-sm text-family-text focus:outline-none focus:border-family-accent/50 resize-none"
+              />
+            </div>
+          </ModalBody>
+
+          <ModalFooter>
+            <Button type="button" variant="outline" onClick={() => setIsModalOpen(false)}>Hủy</Button>
+            <Button type="submit" className="bg-violet-600 hover:bg-violet-700 text-white">Lưu Thuê Bao</Button>
+          </ModalFooter>
+        </form>
+      </Modal>
     </div>
   );
 };

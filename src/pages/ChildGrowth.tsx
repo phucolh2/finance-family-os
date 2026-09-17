@@ -51,6 +51,15 @@ export const ChildGrowth: React.FC = () => {
     setNewChildName('');
   };
 
+  const handleRemoveMember = (name: string) => {
+    if (!window.confirm(`Xóa bé "${name}" và toàn bộ dữ liệu của bé?`)) return;
+    const newChildren = childrenNames.filter(c => c !== name);
+    const newRecords = records.filter(r => r.childName !== name);
+    const newMilestones = milestones.filter(m => m.childName !== name);
+    saveConfig(newChildren, newRecords, newMilestones);
+    if (activeChild === name) setActiveChild(newChildren[0] || '');
+  };
+
   const activeRecords = useMemo(() => {
     return records.filter(r => r.childName === activeChild).sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
   }, [records, activeChild]);
@@ -126,13 +135,21 @@ export const ChildGrowth: React.FC = () => {
 
           <div className="flex gap-2 overflow-x-auto w-full hide-scrollbar">
             {childrenNames.map(child => (
-              <button
-                key={child}
-                onClick={() => setActiveChild(child)}
-                className={`px-4 py-2 rounded-xl text-sm font-semibold transition-colors shrink-0 ${activeChild === child ? 'bg-pink-500 text-white' : 'bg-family-bgDark/50 text-family-textMuted hover:bg-pink-500/20 hover:text-pink-400'}`}
-              >
-                {child}
-              </button>
+              <div key={child} className="flex items-center shrink-0 rounded-xl overflow-hidden">
+                <button
+                  onClick={() => setActiveChild(child)}
+                  className={`px-3 py-2 text-sm font-semibold transition-colors ${activeChild === child ? 'bg-pink-500 text-white' : 'bg-family-bgDark/50 text-family-textMuted hover:bg-pink-500/20 hover:text-pink-400'}`}
+                >
+                  {child}
+                </button>
+                <button
+                  onClick={() => handleRemoveMember(child)}
+                  title={`Xóa bé ${child}`}
+                  className={`px-2 py-2 text-xs transition-colors ${activeChild === child ? 'bg-pink-600 hover:bg-red-600 text-white' : 'bg-family-bgDark/70 hover:bg-red-500/20 text-family-textMuted hover:text-red-400'}`}
+                >
+                  <X className="w-3.5 h-3.5" />
+                </button>
+              </div>
             ))}
           </div>
         </CardContent>
