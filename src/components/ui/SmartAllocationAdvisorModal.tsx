@@ -57,10 +57,18 @@ export const SmartAllocationAdvisorModal: React.FC<Props> = ({
   // Feedback states
   const [applyBudgetSuccess, setApplyBudgetSuccess] = useState(false);
   const [addExpenseSuccess, setAddExpenseSuccess] = useState(false);
+  const [showKeyConfig, setShowKeyConfig] = useState(false);
 
   useEffect(() => {
-    const key = localStorage.getItem('gemini_api_key') || (import.meta as any).env?.VITE_GEMINI_API_KEY || '';
+    const envKey = (import.meta as any).env?.VITE_GEMINI_API_KEY || '';
+    const key = localStorage.getItem('gemini_api_key') || envKey;
     setApiKey(key);
+    if (key) {
+      if (!localStorage.getItem('gemini_api_key')) {
+        localStorage.setItem('gemini_api_key', key);
+      }
+      setAiEngine('gemini');
+    }
   }, []);
 
   // Tự động gợi ý thu nhập hoặc khoản chi mặc định khi mở modal
@@ -365,30 +373,65 @@ export const SmartAllocationAdvisorModal: React.FC<Props> = ({
         <div className="flex-1 overflow-y-auto p-4 sm:p-6 space-y-5">
           
           {/* Engine Selector */}
-          <div className="flex items-center justify-between p-2.5 rounded-xl bg-slate-100/70 border border-slate-200/60 text-xs">
-            <span className="font-semibold text-slate-700 flex items-center gap-1.5">
-              <Bot className="w-4 h-4 text-indigo-600" /> Động cơ phân tích:
-            </span>
-            <div className="flex gap-1">
-              <button
-                type="button"
-                onClick={() => setAiEngine('offline')}
-                className={`px-2.5 py-1 rounded-lg font-medium transition-all ${
-                  aiEngine === 'offline' ? 'bg-white text-indigo-700 shadow-xs font-bold' : 'text-slate-500 hover:text-slate-700'
-                }`}
-              >
-                Smart Engine (Tức thì)
-              </button>
-              <button
-                type="button"
-                onClick={() => setAiEngine('gemini')}
-                className={`px-2.5 py-1 rounded-lg font-medium transition-all flex items-center gap-1 ${
-                  aiEngine === 'gemini' ? 'bg-indigo-600 text-white shadow-xs font-bold' : 'text-slate-500 hover:text-slate-700'
-                }`}
-              >
-                <Sparkles className="w-3 h-3 text-amber-300" /> Gemini AI
-              </button>
+          <div className="flex flex-col gap-2 p-2.5 rounded-xl bg-slate-100/70 border border-slate-200/60 text-xs">
+            <div className="flex items-center justify-between">
+              <span className="font-semibold text-slate-700 flex items-center gap-1.5">
+                <Bot className="w-4 h-4 text-indigo-600" /> Động cơ phân tích:
+              </span>
+              <div className="flex items-center gap-1.5">
+                <button
+                  type="button"
+                  onClick={() => setAiEngine('offline')}
+                  className={`px-2.5 py-1 rounded-lg font-medium transition-all ${
+                    aiEngine === 'offline' ? 'bg-white text-indigo-700 shadow-xs font-bold' : 'text-slate-500 hover:text-slate-700'
+                  }`}
+                >
+                  Smart Engine (Tức thì)
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setAiEngine('gemini')}
+                  className={`px-2.5 py-1 rounded-lg font-medium transition-all flex items-center gap-1 ${
+                    aiEngine === 'gemini' ? 'bg-indigo-600 text-white shadow-xs font-bold' : 'text-slate-500 hover:text-slate-700'
+                  }`}
+                >
+                  <Sparkles className="w-3 h-3 text-amber-300" /> Gemini AI
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setShowKeyConfig(!showKeyConfig)}
+                  className="p-1 text-slate-400 hover:text-slate-600 rounded transition-colors"
+                  title="Cấu hình Gemini API Key"
+                >
+                  🔑
+                </button>
+              </div>
             </div>
+
+            {/* Quick API Key field (expandable) */}
+            {showKeyConfig && (
+              <div className="pt-2 border-t border-slate-200/60 flex items-center gap-2">
+                <Input
+                  type="password"
+                  placeholder="Nhập Google Gemini API Key..."
+                  value={apiKey}
+                  onChange={(e) => {
+                    const newKey = e.target.value.trim();
+                    setApiKey(newKey);
+                    localStorage.setItem('gemini_api_key', newKey);
+                  }}
+                  className="h-8 text-xs font-mono"
+                />
+                <Button
+                  size="sm"
+                  variant="outline"
+                  onClick={() => setShowKeyConfig(false)}
+                  className="h-8 text-xs font-bold px-3 shrink-0"
+                >
+                  Lưu
+                </Button>
+              </div>
+            )}
           </div>
 
           {/* Form input */}

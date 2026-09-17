@@ -52,6 +52,51 @@ NGUYÊN TẮC TƯ VẤN:
 };
 
 // Hàm gửi tin nhắn tới Gemini API
+/**
+ * Helper gọi Gemini API với cơ chế fallback model tự động:
+ * 1. Thử gemini-1.5-flash (chuẩn ổn định nhất của Google AI Studio)
+ * 2. Thử gemini-2.0-flash
+ * 3. Thử gemini-1.5-pro
+ */
+async function generateGeminiContentWithFallback(
+  apiKey: string,
+  systemInstruction: string,
+  prompt: string
+): Promise<string> {
+  if (!apiKey || !apiKey.trim()) {
+    throw new Error("Chưa cấu hình Gemini API Key.");
+  }
+
+  const cleanKey = apiKey.trim();
+  const genAI = new GoogleGenerativeAI(cleanKey);
+  const candidateModels = ['gemini-1.5-flash', 'gemini-2.0-flash', 'gemini-1.5-pro'];
+
+  let lastError: any = null;
+  for (const modelName of candidateModels) {
+    try {
+      const model = genAI.getGenerativeModel({
+        model: modelName,
+        systemInstruction,
+        generationConfig: {
+          maxOutputTokens: 2048,
+          temperature: 0.7,
+        }
+      });
+      const res = await model.generateContent(prompt);
+      const text = res.response.text();
+      if (text && text.trim().length > 0) {
+        return text;
+      }
+    } catch (err) {
+      lastError = err;
+      console.warn(`[Gemini API] Thử model ${modelName} thất bại, thử model tiếp theo...`, err);
+    }
+  }
+
+  throw new Error(`Không thể kết nối Gemini API: ${(lastError as Error)?.message || 'Vui lòng kiểm tra lại API Key.'}`);
+}
+
+// Hàm gửi tin nhắn tới Gemini API (Copilot Chat)
 export const sendChatMessage = async (
   apiKey: string,
   message: string,
@@ -60,16 +105,17 @@ export const sendChatMessage = async (
 ) => {
   if (!apiKey) throw new Error("Chưa cấu hình Gemini API Key.");
 
-  const genAI = new GoogleGenerativeAI(apiKey);
+  const cleanKey = apiKey.trim();
+  const genAI = new GoogleGenerativeAI(cleanKey);
   const model = genAI.getGenerativeModel({ 
-    model: 'gemini-2.5-flash',
+    model: 'gemini-1.5-flash',
     systemInstruction: buildSystemContext(state)
   });
 
   const chat = model.startChat({
     history: chatHistory,
     generationConfig: {
-      maxOutputTokens: 1000,
+      maxOutputTokens: 1500,
       temperature: 0.7,
     },
   });
@@ -88,30 +134,26 @@ export const analyzeBudgetWithGemini = async (
   targetIncome: number,
   notes?: string
 ): Promise<string> => {
-  if (!apiKey) throw new Error("Chưa cấu hình Gemini API Key.");
-
   const prompt = `Gia đình chúng tôi có mức thu nhập quan sát tháng này là **${targetIncome} triệu VNĐ**.
-Gia đình đang có chi phí thuê nhà cố định khoảng **9 triệu VNĐ/tháng** và đang có kế hoạch **chuẩn bị đón em bé**.
+Chi phí cố định tiền thuê nhà: **9 triệu VNĐ/tháng**.
+Gia đình đang trong giai đoạn đặc biệt: **Chuẩn bị kế hoạch đón thiên thần nhỏ (em bé)**.
 ${notes ? `Yêu cầu thêm từ vợ chồng tôi: "${notes}"` : ''}
 
-Hãy phân tích và gợi ý cho hai vợ chồng tôi một cấu trúc phân bổ ngân sách chuẩn thế giới, mang lại:
-1. Sự thoải mái, ăn uống dinh dưỡng bồi bổ sức khỏe cho mẹ bầu tương lai.
-2. Giữ lửa hôn nhân (hẹn hò cuối tuần, du lịch nghỉ dưỡng hâm nóng tình cảm).
-3. Quỹ Chào Đời chuẩn bị đón con (sinh viện quốc tế, đồ sơ sinh) và quỹ khẩn cấp.
-4. Tỷ lệ đầu tư bền vững (lãi kép dài hạn mà không gây áp lực).
+Hãy đưa ra lời tư vấn cụ thể, rõ ràng, sâu sắc theo mô hình **4 Trụ Cột Hạnh Phúc Chuẩn Quốc Tế**:
+1. **Trụ cột 1: Chi phí Thiết yếu (~25% = ${(targetIncome * 0.25).toFixed(1)} tr)**
+   - Bảo đảm tiền thuê nhà 9 triệu.
+   - Ngân sách ăn uống dinh dưỡng thực phẩm sạch bồi bổ sức khỏe cho mẹ bầu tương lai.
+2. **Trụ cột 2: Kết nối & Giữ lửa Hôn nhân (~12.5% = ${(targetIncome * 0.125).toFixed(1)} tr)**
+   - Hẹn hò lãng mạn cuối tuần, quỹ du lịch nghỉ dưỡng (Babymoon) và hiếu kính cha mẹ.
+3. **Trụ cột 3: Quỹ Đón Con & Dự Phòng An Toàn (~20% = ${(targetIncome * 0.20).toFixed(1)} tr)**
+   - Quỹ Chào Đời (8-10 tr/tháng tích lũy cho viện quốc tế, đồ sơ sinh, vắc-xin).
+   - Quỹ Y tế & khẩn cấp bảo vệ mẹ và bé.
+4. **Trụ cột 4: Đầu tư Tích sản Bền vững (~42.5% = ${(targetIncome * 0.425).toFixed(1)} tr)**
+   - Đầu tư dài hạn tạo lãi kép tự do tài chính, tuyệt đối an tâm, không phải rút non.
 
-Vui lòng trình bày rõ ràng:
-- Tỷ lệ % và số tiền cụ thể cho từng nhóm chính.
-- Lời khuyên tâm huyết dành cho hai vợ chồng.`;
+Vui lòng viết lời khuyên bằng tiếng Việt, phân tích rành mạch từng số tiền, kèm lời chúc ấm áp gửi tới hai vợ chồng!`;
 
-  const genAI = new GoogleGenerativeAI(apiKey);
-  const model = genAI.getGenerativeModel({
-    model: 'gemini-2.5-flash',
-    systemInstruction: buildSystemContext(state)
-  });
-
-  const res = await model.generateContent(prompt);
-  return res.response.text();
+  return generateGeminiContentWithFallback(apiKey, buildSystemContext(state), prompt);
 };
 
 /**
@@ -125,25 +167,19 @@ export const analyzeExpenseFinancingWithGemini = async (
   availableLiquidity: number,
   monthlySurplus: number
 ): Promise<string> => {
-  if (!apiKey) throw new Error("Chưa cấu hình Gemini API Key.");
-
   const prompt = `Gia đình chúng tôi đang cân nhắc một khoản chi lớn: **"${expenseName}"** với tổng chi phí **${amount} triệu VNĐ**.
+Dữ liệu tài chính hiện tại của gia đình:
 - Thanh khoản an toàn hiện có: **${availableLiquidity} triệu VNĐ**.
 - Dòng tiền thặng dư hàng tháng trung bình: **${monthlySurplus} triệu VNĐ/tháng**.
 
-Hãy giúp vợ chồng tôi:
-1. Đánh giá tính khả thi: Có nên mua/chi ngay không?
-2. Đề xuất cấu trúc chi trả tối ưu: Trả trước bao nhiêu %, trả góp trong bao nhiêu tháng và mỗi tháng trích bao nhiêu để không làm thủng quỹ khẩn cấp của gia đình.
-3. Lời khuyên giúp vợ chồng tránh áp lực tài chính.`;
+Hãy giúp hai vợ chồng tôi:
+1. **Đánh giá tính khả thi:** Gia đình có nên thực hiện khoản chi này vào thời điểm này không?
+2. **Đề xuất cấu trúc chi trả tối ưu:** 
+   - Trả trước (upfront): Bao nhiêu triệu từ quỹ thanh khoản dư mà không làm thủng sàn khẩn cấp 3 tháng?
+   - Trả góp (monthly payment): Chia đều trong bao nhiêu tháng và mỗi tháng trích bao nhiêu triệu từ thặng dư để cuộc sống vẫn thoải mái?
+3. **Lời khuyên tài chính:** Cách quản lý dòng tiền để không bị áp lực nợ nần sau khi mua sắm.`;
 
-  const genAI = new GoogleGenerativeAI(apiKey);
-  const model = genAI.getGenerativeModel({
-    model: 'gemini-2.5-flash',
-    systemInstruction: buildSystemContext(state)
-  });
-
-  const res = await model.generateContent(prompt);
-  return res.response.text();
+  return generateGeminiContentWithFallback(apiKey, buildSystemContext(state), prompt);
 };
 
 /**
