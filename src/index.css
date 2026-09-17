@@ -39,6 +39,12 @@ body {
   font-family: "Be Vietnam Pro", system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
   height: 100%;
   overflow-x: hidden;
+  /* ── Professional touch: font rendering ── */
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  text-rendering: optimizeLegibility;
+  /* ── Prevent accidental tap zoom on iOS ── */
+  touch-action: manipulation;
 }
 
 /* Lock root div to full viewport — prevents phantom scrollable area */
@@ -47,6 +53,33 @@ body {
   overflow: hidden;
   display: flex;
   flex-direction: column;
+}
+
+/* ── Remove tap highlight (blue flash) on mobile ── */
+* {
+  -webkit-tap-highlight-color: transparent;
+}
+
+/* ── Remove callout menu on long press images/links ── */
+img, a {
+  -webkit-touch-callout: none;
+}
+
+/* ── Smooth inertia scrolling on all scroll containers (iOS) ── */
+.overflow-y-auto,
+.overflow-y-scroll,
+[class*="overflow-y-"] {
+  -webkit-overflow-scrolling: touch;
+}
+
+/* ── Prevent pull-to-refresh & overscroll glow ── */
+body {
+  overscroll-behavior: none;
+}
+
+/* ── Prevent text inflate on orientation change (iOS Safari) ── */
+html {
+  -webkit-text-size-adjust: 100%;
 }
 
 .font-serif {
@@ -177,4 +210,65 @@ html {
 }
 .animate-fade-up {
   animation: fadeSlideUp 0.35s ease-out both;
+}
+
+/* ─── Professional Modal Animations ──────────────────── */
+
+/* Mobile: slide up from the bottom */
+@keyframes modalSlideUp {
+  from {
+    opacity: 0;
+    transform: translateY(100%);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Desktop: subtle scale-in from centre */
+@keyframes modalScaleIn {
+  from {
+    opacity: 0;
+    transform: scale(0.95) translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+  }
+}
+
+.animate-modal-in {
+  animation: modalSlideUp 0.28s cubic-bezier(0.32, 0.72, 0, 1) both;
+}
+
+@media (min-width: 640px) {
+  .animate-modal-in {
+    animation: modalScaleIn 0.22s cubic-bezier(0.34, 1.56, 0.64, 1) both;
+  }
+}
+
+/* ─── Safe area paddings for iPhone notch ─────────────── */
+.safe-area-bottom {
+  padding-bottom: env(safe-area-inset-bottom, 0px);
+}
+.safe-area-top {
+  padding-top: env(safe-area-inset-top, 0px);
+}
+
+/* ─── Hide scrollbar but keep scroll functional ────────── */
+.hide-scrollbar {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+.hide-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+
+/* ─── Input focus glow — consistent across browsers ────── */
+input:focus-visible,
+textarea:focus-visible,
+select:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 0;
 }

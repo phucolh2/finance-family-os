@@ -4,6 +4,7 @@ import { Baby, Plus, Calendar, Trophy, Trash2, X, Ruler } from 'lucide-react';
 import { HelpTooltip } from '../components/ui/HelpTooltip';
 import { Button } from '../components/ui/Button';
 import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/Card';
+import { useBodyScrollLock } from '../hooks/useBodyScrollLock';
 
 interface GrowthRecord {
   id: string;
@@ -33,6 +34,7 @@ export const ChildGrowth: React.FC = () => {
   const [newChildName, setNewChildName] = useState('');
   
   const [isRecordModalOpen, setIsRecordModalOpen] = useState(false);
+  useBodyScrollLock(isRecordModalOpen);
   const [isMilestoneModalOpen, setIsMilestoneModalOpen] = useState(false);
 
   const saveConfig = (newChildren: string[], newRecords: GrowthRecord[], newMilestones: Milestone[]) => {

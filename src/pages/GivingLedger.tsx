@@ -9,6 +9,7 @@ import { HelpTooltip } from '../components/ui/HelpTooltip';
 import { Button } from '../components/ui/Button';
 import { Card, CardContent } from '../components/ui/Card';
 import { EmptyState } from '../components/ui/EmptyState';
+import { useBodyScrollLock } from '../hooks/useBodyScrollLock';
 
 export interface GiftRecord {
   id: string;
@@ -42,6 +43,7 @@ export const GivingLedger: React.FC = () => {
   const [filterType, setFilterType] = useState<string>('all');
   
   const [isModalOpen, setIsModalOpen] = useState(false);
+  useBodyScrollLock(isModalOpen);
   const [editingRecord, setEditingRecord] = useState<GiftRecord | null>(null);
   const [modalDirection, setModalDirection] = useState<'give' | 'receive'>('give');
 

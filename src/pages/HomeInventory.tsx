@@ -9,6 +9,7 @@ import { HelpTooltip } from '../components/ui/HelpTooltip';
 import { Button } from '../components/ui/Button';
 import { Card, CardContent } from '../components/ui/Card';
 import { EmptyState } from '../components/ui/EmptyState';
+import { useBodyScrollLock } from '../hooks/useBodyScrollLock';
 
 export interface InventoryItem {
   id: string;
@@ -40,6 +41,7 @@ export const HomeInventory: React.FC = () => {
   const [filterCategory, setFilterCategory] = useState<string>('all');
   
   const [isModalOpen, setIsModalOpen] = useState(false);
+  useBodyScrollLock(isModalOpen);
   const [editingItem, setEditingItem] = useState<InventoryItem | null>(null);
 
   const saveConfig = (newItems: InventoryItem[]) => {

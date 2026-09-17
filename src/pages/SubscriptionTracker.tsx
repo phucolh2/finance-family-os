@@ -9,6 +9,7 @@ import { HelpTooltip } from '../components/ui/HelpTooltip';
 import { Button } from '../components/ui/Button';
 import { Card, CardContent } from '../components/ui/Card';
 import { EmptyState } from '../components/ui/EmptyState';
+import { useBodyScrollLock } from '../hooks/useBodyScrollLock';
 
 export interface SubscriptionItem {
   id: string;
@@ -39,6 +40,7 @@ export const SubscriptionTracker: React.FC = () => {
   const [filterCategory, setFilterCategory] = useState<string>('all');
   
   const [isModalOpen, setIsModalOpen] = useState(false);
+  useBodyScrollLock(isModalOpen);
   const [editingItem, setEditingItem] = useState<SubscriptionItem | null>(null);
 
   const saveConfig = (newItems: SubscriptionItem[]) => {

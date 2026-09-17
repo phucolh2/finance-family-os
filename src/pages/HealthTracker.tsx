@@ -9,6 +9,7 @@ import { HelpTooltip } from '../components/ui/HelpTooltip';
 import { Button } from '../components/ui/Button';
 import { Card, CardContent } from '../components/ui/Card';
 import { EmptyState } from '../components/ui/EmptyState';
+import { useBodyScrollLock } from '../hooks/useBodyScrollLock';
 
 export interface HealthRecord {
   id: string;
@@ -39,6 +40,7 @@ export const HealthTracker: React.FC = () => {
   const [filterType, setFilterType] = useState<string>('all');
   
   const [isModalOpen, setIsModalOpen] = useState(false);
+  useBodyScrollLock(isModalOpen);
   const [editingRecord, setEditingRecord] = useState<HealthRecord | null>(null);
 
   const membersList = useMemo(() => {

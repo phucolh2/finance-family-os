@@ -9,6 +9,7 @@ import { HelpTooltip } from '../components/ui/HelpTooltip';
 import { Button } from '../components/ui/Button';
 import { Card, CardContent } from '../components/ui/Card';
 import { EmptyState } from '../components/ui/EmptyState';
+import { useBodyScrollLock } from '../hooks/useBodyScrollLock';
 
 export interface ContactItem {
   id: string;
@@ -36,6 +37,7 @@ export const FamilyContacts: React.FC = () => {
   const [filterCategory, setFilterCategory] = useState<string>('all');
   
   const [isModalOpen, setIsModalOpen] = useState(false);
+  useBodyScrollLock(isModalOpen);
   const [editingItem, setEditingItem] = useState<ContactItem | null>(null);
   const [copiedId, setCopiedId] = useState<string | null>(null);
 

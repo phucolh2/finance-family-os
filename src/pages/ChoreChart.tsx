@@ -5,6 +5,7 @@ import { HelpTooltip } from '../components/ui/HelpTooltip';
 import { Button } from '../components/ui/Button';
 import { Card, CardContent } from '../components/ui/Card';
 import { EmptyState } from '../components/ui/EmptyState';
+import { useBodyScrollLock } from '../hooks/useBodyScrollLock';
 
 interface Chore {
   id: string;
@@ -22,6 +23,7 @@ export const ChoreChart: React.FC = () => {
   const members: string[] = config.members || [];
 
   const [isModalOpen, setIsModalOpen] = useState(false);
+  useBodyScrollLock(isModalOpen);
   const [newMemberName, setNewMemberName] = useState('');
 
   const saveConfig = (newChores: Chore[], newMembers: string[]) => {

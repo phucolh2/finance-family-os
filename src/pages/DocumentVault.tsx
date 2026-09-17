@@ -9,6 +9,7 @@ import { HelpTooltip } from '../components/ui/HelpTooltip';
 import { Button } from '../components/ui/Button';
 import { Card, CardContent } from '../components/ui/Card';
 import { EmptyState } from '../components/ui/EmptyState';
+import { useBodyScrollLock } from '../hooks/useBodyScrollLock';
 
 export interface DocumentItem {
   id: string;
@@ -52,6 +53,7 @@ export const DocumentVault: React.FC = () => {
   const [filterOwner, setFilterOwner] = useState<string>('all');
   
   const [isModalOpen, setIsModalOpen] = useState(false);
+  useBodyScrollLock(isModalOpen);
   const [editingDoc, setEditingDoc] = useState<DocumentItem | null>(null);
 
   const ownersList = useMemo(() => {
