@@ -14,7 +14,7 @@ export const Layout: React.FC<LayoutProps> = ({ activeTab, setActiveTab, childre
   const [isMobileOpen, setIsMobileOpen] = useState(false);
 
   return (
-    <div className="flex flex-col md:flex-row h-[100dvh] w-screen overflow-hidden bg-family-bg print:h-auto print:w-auto print:overflow-visible print:bg-white">
+    <div className="flex flex-col md:flex-row h-[100dvh] w-full max-w-full overflow-hidden bg-family-bg print:h-auto print:w-auto print:overflow-visible print:bg-white">
       {/* Mobile Header Bar */}
       <header className="flex md:hidden items-center justify-between px-6 py-4 bg-family-bgDark/80 border-b border-family-accent/10 select-none shrink-0 z-40 print:hidden">
         <h1 className="text-lg font-serif font-bold text-family-text flex items-center gap-2">
@@ -53,12 +53,12 @@ export const Layout: React.FC<LayoutProps> = ({ activeTab, setActiveTab, childre
       )}
 
       {/* Main Content Area */}
-      <main className="flex-1 overflow-y-auto p-6 md:p-8 relative print:overflow-visible print:p-0 print:m-0">
+      <main className="flex-1 overflow-y-auto overflow-x-hidden p-4 md:p-8 relative print:overflow-visible print:p-0 print:m-0">
         {/* Cloud Sync Status Bar */}
         <div className="hidden md:flex justify-end mb-4 max-w-6xl mx-auto print:hidden">
           <AuthStatusBar />
         </div>
-        <div className="max-w-6xl mx-auto pb-12 print:pb-0 print:max-w-none">
+        <div className="max-w-6xl mx-auto pb-20 md:pb-12 print:pb-0 print:max-w-none">
           {children}
         </div>
       </main>

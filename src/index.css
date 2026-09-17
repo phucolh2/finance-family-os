@@ -37,7 +37,16 @@ body {
     linear-gradient(135deg, #fff8ef 0%, #fffdf8 48%, #f0fdf4 100%);
   color: var(--text);
   font-family: "Be Vietnam Pro", system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
-  min-height: 100vh;
+  height: 100%;
+  overflow-x: hidden;
+}
+
+/* Lock root div to full viewport — prevents phantom scrollable area */
+#root {
+  height: 100%;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
 }
 
 .font-serif {
@@ -85,6 +94,8 @@ input[type=number] {
 /* ─── Smooth Scroll ────────────────────────────────── */
 html {
   scroll-behavior: smooth;
+  height: 100%;
+  overflow: hidden;
 }
 
 /* ─── Premium Card Micro-shine ─────────────────────── */
