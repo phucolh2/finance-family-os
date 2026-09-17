@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { useAppContext } from '../../context/AppContext';
 import { runProjection } from '../../engines/projectionEngine';
 import { SmartAllocationAdvisorModal } from './SmartAllocationAdvisorModal';
+import { createAdvisorSnapshot } from '../../engines/SmartAllocationAdvisor';
 import { BrainCircuit } from 'lucide-react';
 import { Button } from './Button';
 
@@ -107,26 +108,7 @@ export const ObservationControls: React.FC = () => {
       {/* Smart Allocation Advisor Button */}
       <Button 
         onClick={() => {
-          const effectivePeriodKey = activeKey;
-          const currentPeriodValue = parseInt(effectivePeriodKey.split('-')[0], 10) * 12 + parseInt(effectivePeriodKey.split('-')[1], 10);
-          const projData = projection.monthlyRows.find((r: any) => r.period.key === effectivePeriodKey);
-          
-          const activeBudget = state.budgetSchedule.filter(
-            (b) => b.effectiveYear * 12 + b.effectiveMonth <= currentPeriodValue
-          ).sort((a,b) => (b.effectiveYear * 12 + b.effectiveMonth) - (a.effectiveYear * 12 + a.effectiveMonth))[0];
-          
-          let housingBasicBudget = 0;
-          if (activeBudget && state.resolvedMonthlyDbMap?.[effectivePeriodKey]) {
-            housingBasicBudget = state.resolvedMonthlyDbMap[effectivePeriodKey].budgetAmounts?.housing_basic || 0;
-          }
-          
-          setAdvisorSnapshot({
-            appState: state,
-            projection,
-            currentPeriodKey: effectivePeriodKey,
-            housingBasicAvgExpense: housingBasicBudget,
-            currentLiquidityBalance: projData ? projData.liquidityBalance : 0
-          });
+          setAdvisorSnapshot(createAdvisorSnapshot(state, projection, activeKey));
           setIsAdvisorOpen(true);
         }} 
         className="gap-1.5 text-xs h-[30px] shrink-0 bg-indigo-50 text-indigo-700 hover:bg-indigo-100 border border-indigo-200/60 shadow-sm rounded-xl px-3 ml-auto sm:ml-2" 

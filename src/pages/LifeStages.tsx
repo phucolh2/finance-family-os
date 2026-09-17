@@ -22,6 +22,9 @@ import { ExpenseScheduleView } from '../components/expense/ExpenseScheduleView';
 import { LiquidityBreakdownTable } from '../components/expense/LiquidityBreakdownTable';
 import { SavingsAndLiquidityView } from '../components/expense/SavingsAndLiquidityView';
 import { ObservationControls } from '../components/ui/ObservationControls';
+import { SmartAllocationAdvisorModal } from '../components/ui/SmartAllocationAdvisorModal';
+import { createAdvisorSnapshot } from '../engines/SmartAllocationAdvisor';
+import { runProjection } from '../engines/projectionEngine';
 
 import type { BudgetGroup } from '../types/budget';
 import type { LifeEvent } from '../types/finance';
@@ -47,8 +50,44 @@ export const LifeStages: React.FC = () => {
   const [pendingEventData, setPendingEventData] = useState<any>(null);
   const [pendingWarningInfo, setPendingWarningInfo] = useState<{sourceName: string, overage: number, month: number, year: number} | null>(null);
 
-  const [] = useState(false);
-  const [] = useState<AllocationSnapshot | null>(null);
+  const [isAdvisorOpen, setIsAdvisorOpen] = useState(false);
+  const [advisorSnapshot, setAdvisorSnapshot] = useState<AllocationSnapshot | null>(null);
+
+  const handleOpenAiExpenseAdvisor = () => {
+    const periodKey = `${formData.year}-${String(formData.month).padStart(2, '0')}`;
+    const proj = runProjection({
+      profile: state.profile,
+      incomeSchedule: state.incomeSchedule,
+      budgetSchedule: state.budgetSchedule,
+      lifeStages: state.lifeStages,
+      lifeEvents: state.lifeEvents,
+      assets: state.assets,
+      assumptions: state.assumptions,
+      investmentDeals: state.investmentDeals,
+      savingsDeposits: state.savingsDeposits,
+      sinkingFunds: state.sinkingFunds,
+      debts: state.debts,
+      fundTransfers: state.fundTransfers,
+      expenseSchedule: state.expenseSchedule,
+    });
+    setAdvisorSnapshot(createAdvisorSnapshot(state, proj, periodKey));
+    setIsAdvisorOpen(true);
+  };
+
+  const handleApplyAiExpenseFinancing = (financing: {
+    upfrontPayment: number;
+    monthlyPayment: number;
+    durationMonths: number;
+    note: string;
+  }) => {
+    setFormData(prev => ({
+      ...prev,
+      amount: financing.upfrontPayment,
+      recurringMonthlyImpact: financing.monthlyPayment,
+      recurringDurationMonths: financing.durationMonths,
+      note: prev.note ? `${prev.note}\n${financing.note}` : financing.note
+    }));
+  };
 
 
   const now = new Date();
@@ -755,10 +794,21 @@ export const LifeStages: React.FC = () => {
           {formError && <WarningBox type="danger" message={formError} />}
           <Card className="border-family-accent/30 bg-family-bgDark/20 shadow-md transform transition-all mt-6">
           <CardHeader>
-            <CardTitle>{isAdding ? 'Thêm khoản chi linh hoạt mới' : 'Chỉnh sửa khoản chi linh hoạt'}</CardTitle>
-            <CardDescription>
-              Chi tiêu linh hoạt là các khoản chi tiêu lớn một lần hoặc tạo ra dòng tiền dài hạn nằm ngoài ngân sách sinh hoạt cố định (Ví dụ: Mua đồ điện tử, du lịch, mua xe, sinh con...).
-            </CardDescription>
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+              <div>
+                <CardTitle>{isAdding ? 'Thêm khoản chi linh hoạt mới' : 'Chỉnh sửa khoản chi linh hoạt'}</CardTitle>
+                <CardDescription>
+                  Chi tiêu linh hoạt là các khoản chi tiêu lớn một lần hoặc tạo ra dòng tiền dài hạn nằm ngoài ngân sách sinh hoạt cố định (Ví dụ: Mua đồ điện tử, du lịch, mua xe, sinh con...).
+                </CardDescription>
+              </div>
+              <Button
+                type="button"
+                onClick={handleOpenAiExpenseAdvisor}
+                className="gap-2 bg-gradient-to-r from-rose-600 to-amber-600 hover:from-rose-700 hover:to-amber-700 text-white font-bold text-xs h-9 shadow-sm shrink-0 self-start sm:self-center"
+              >
+                <Sparkles className="w-3.5 h-3.5 text-amber-300" /> AI Gợi Ý Cấu Trúc Trả Góp
+              </Button>
+            </div>
           </CardHeader>
           <CardContent>
             <form onSubmit={handleSave} className="space-y-6">
@@ -1933,6 +1983,16 @@ export const LifeStages: React.FC = () => {
       )}
 
 
+      {/* AI Advisor Modal with form prefill callback */}
+      <SmartAllocationAdvisorModal
+        isOpen={isAdvisorOpen}
+        onClose={() => setIsAdvisorOpen(false)}
+        snapshot={advisorSnapshot}
+        defaultMode="expense"
+        initialExpenseName={formData.name}
+        initialExpenseAmount={formData.amount}
+        onApplyExpenseFinancing={handleApplyAiExpenseFinancing}
+      />
     </div>
   );
 };

@@ -19,13 +19,32 @@ interface Props {
   isOpen: boolean;
   onClose: () => void;
   snapshot: AllocationSnapshot | null;
+  defaultMode?: 'income' | 'expense';
+  initialExpenseName?: string;
+  initialExpenseAmount?: number;
+  onApplyBudgetToEditor?: (updatedRatios: Record<string, number>) => void;
+  onApplyExpenseFinancing?: (financing: {
+    upfrontPayment: number;
+    monthlyPayment: number;
+    durationMonths: number;
+    note: string;
+  }) => void;
 }
 
-export const SmartAllocationAdvisorModal: React.FC<Props> = ({ isOpen, onClose, snapshot }) => {
+export const SmartAllocationAdvisorModal: React.FC<Props> = ({ 
+  isOpen, 
+  onClose, 
+  snapshot,
+  defaultMode,
+  initialExpenseName,
+  initialExpenseAmount,
+  onApplyBudgetToEditor,
+  onApplyExpenseFinancing
+}) => {
   const { state, updateBudgetScheduleItem, addLifeEvent, pushSystemLog } = useAppContext();
   useBodyScrollLock(isOpen);
 
-  const [mode, setMode] = useState<'income' | 'expense'>('income');
+  const [mode, setMode] = useState<'income' | 'expense'>(defaultMode || 'income');
   const [aiEngine, setAiEngine] = useState<'offline' | 'gemini'>('offline');
   const [amountInput, setAmountInput] = useState<string>('');
   const [expenseNameInput, setExpenseNameInput] = useState<string>('');
@@ -44,17 +63,25 @@ export const SmartAllocationAdvisorModal: React.FC<Props> = ({ isOpen, onClose, 
     setApiKey(key);
   }, []);
 
-  // Tự động gợi ý thu nhập mặc định khi mở modal
+  // Tự động gợi ý thu nhập hoặc khoản chi mặc định khi mở modal
   useEffect(() => {
     if (isOpen && snapshot) {
-      const currentDb = snapshot.appState.resolvedMonthlyDbMap?.[snapshot.currentPeriodKey];
-      const defaultIncome = currentDb?.income || snapshot.appState.incomeSchedule[0]?.incomeMonthly || 80;
-      setAmountInput(String(defaultIncome));
-      setExpenseNameInput('Gói sinh nở trọn gói & đồ sơ sinh');
+      if (defaultMode) {
+        setMode(defaultMode);
+      }
+      if (defaultMode === 'expense' && initialExpenseAmount && initialExpenseAmount > 0) {
+        setAmountInput(String(initialExpenseAmount));
+      } else {
+        const currentDb = snapshot.appState.resolvedMonthlyDbMap?.[snapshot.currentPeriodKey];
+        const defaultIncome = currentDb?.income || snapshot.appState.incomeSchedule[0]?.incomeMonthly || 80;
+        setAmountInput(String(defaultIncome));
+      }
+
+      setExpenseNameInput(initialExpenseName || 'Gói sinh nở trọn gói & đồ sơ sinh');
       setApplyBudgetSuccess(false);
       setAddExpenseSuccess(false);
     }
-  }, [isOpen, snapshot]);
+  }, [isOpen, snapshot, defaultMode, initialExpenseName, initialExpenseAmount]);
 
   // Reset kết quả khi chuyển chế độ
   useEffect(() => {
@@ -158,6 +185,15 @@ export const SmartAllocationAdvisorModal: React.FC<Props> = ({ isOpen, onClose, 
   const handleApplyToBudgetSchedule = () => {
     if (!aiResults || !snapshot) return;
 
+    if (onApplyBudgetToEditor) {
+      onApplyBudgetToEditor(aiResults.targetGroupRatios);
+      setApplyBudgetSuccess(true);
+      setTimeout(() => {
+        onClose();
+      }, 600);
+      return;
+    }
+
     // Tìm budget schedule của tháng quan sát
     const periodParts = snapshot.currentPeriodKey.split('-');
     const y = parseInt(periodParts[0], 10);
@@ -229,6 +265,20 @@ export const SmartAllocationAdvisorModal: React.FC<Props> = ({ isOpen, onClose, 
    */
   const handleCreateLifeEvent = () => {
     if (!expenseResult || !snapshot) return;
+
+    if (onApplyExpenseFinancing) {
+      onApplyExpenseFinancing({
+        upfrontPayment: expenseResult.upfrontPayment,
+        monthlyPayment: expenseResult.monthlyPayment,
+        durationMonths: expenseResult.durationMonths,
+        note: `Gợi ý bởi AI: Trả trước ${expenseResult.upfrontPayment}tr, trả góp ${expenseResult.monthlyPayment.toFixed(1)}tr/tháng trong ${expenseResult.durationMonths} tháng.`
+      });
+      setAddExpenseSuccess(true);
+      setTimeout(() => {
+        onClose();
+      }, 500);
+      return;
+    }
 
     const periodParts = snapshot.currentPeriodKey.split('-');
     const y = parseInt(periodParts[0], 10);
@@ -491,14 +541,14 @@ export const SmartAllocationAdvisorModal: React.FC<Props> = ({ isOpen, onClose, 
               <div className="pt-2">
                 {applyBudgetSuccess ? (
                   <div className="p-3 rounded-xl bg-emerald-50 border border-emerald-200 flex items-center justify-center gap-2 text-emerald-700 font-bold text-xs">
-                    <Check className="w-4 h-4" /> Đã cập nhật thành công Cây Ngân Sách tháng này!
+                    <Check className="w-4 h-4" /> {onApplyBudgetToEditor ? 'Đã áp dụng vào Bảng Biên Tập Tỷ Lệ!' : 'Đã cập nhật thành công Cây Ngân Sách tháng này!'}
                   </div>
                 ) : (
                   <Button
                     onClick={handleApplyToBudgetSchedule}
                     className="w-full py-2.5 bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 text-white font-bold rounded-xl shadow-md flex items-center justify-center gap-2 text-sm"
                   >
-                    <Check className="w-4 h-4" /> Áp Dụng Tỷ Lệ Này Vào Cây Ngân Sách Tháng Này
+                    <Check className="w-4 h-4" /> {onApplyBudgetToEditor ? 'Áp Dụng Vào Bảng Biên Tập Cây Tỷ Lệ' : 'Áp Dụng Tỷ Lệ Này Vào Cây Ngân Sách Tháng Này'}
                   </Button>
                 )}
               </div>
@@ -562,7 +612,7 @@ export const SmartAllocationAdvisorModal: React.FC<Props> = ({ isOpen, onClose, 
               <div className="pt-2">
                 {addExpenseSuccess ? (
                   <div className="p-3 rounded-xl bg-emerald-50 border border-emerald-200 flex items-center justify-center gap-2 text-emerald-700 font-bold text-xs">
-                    <Check className="w-4 h-4" /> Đã tạo khoản chi linh hoạt thành công vào Quản lý chi tiêu!
+                    <Check className="w-4 h-4" /> {onApplyExpenseFinancing ? 'Đã điền cấu trúc trả góp vào form thành công!' : 'Đã tạo khoản chi linh hoạt thành công vào Quản lý chi tiêu!'}
                   </div>
                 ) : (
                   <Button
@@ -570,7 +620,7 @@ export const SmartAllocationAdvisorModal: React.FC<Props> = ({ isOpen, onClose, 
                     disabled={!expenseResult.isFeasible}
                     className="w-full py-2.5 bg-gradient-to-r from-rose-600 to-orange-600 hover:from-rose-700 hover:to-orange-700 text-white font-bold rounded-xl shadow-md flex items-center justify-center gap-2 text-sm disabled:opacity-50"
                   >
-                    <ArrowRight className="w-4 h-4" /> Tạo Khoản Chi Linh Hoạt Này (Vào Quản Lý Chi Tiêu)
+                    <ArrowRight className="w-4 h-4" /> {onApplyExpenseFinancing ? 'Điền Cấu Trúc Trả Góp Này Vào Form Chi Tiêu' : 'Tạo Khoản Chi Linh Hoạt Này (Vào Quản Lý Chi Tiêu)'}
                   </Button>
                 )}
               </div>

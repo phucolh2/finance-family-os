@@ -4,7 +4,7 @@ import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '../co
 import { Button } from '../components/ui/Button';
 import { Input } from '../components/ui/Input';
 import { WarningBox } from '../components/ui/WarningBox';
-import { Trash2, Plus, Save, BarChart2, Check, Sliders, AlertTriangle } from 'lucide-react';
+import { Trash2, Plus, Save, BarChart2, Check, Sliders, AlertTriangle, Sparkles } from 'lucide-react';
 import type { BudgetTreeNode } from '../types/budget';
 import { BudgetVersionCompareChart } from '../components/budget/BudgetVersionCompareChart';
 import { BudgetHistoryTrendChart } from '../components/budget/BudgetHistoryTrendChart';
@@ -16,6 +16,9 @@ import { rebuildTreeFromFlatRatios } from '../engines/budgetEngine';
 import { DEFAULT_BUDGET_TREE } from '../data/defaultInputs';
 import { ObservationControls } from '../components/ui/ObservationControls';
 import { HelpTooltip } from '../components/ui/HelpTooltip';
+import { SmartAllocationAdvisorModal } from '../components/ui/SmartAllocationAdvisorModal';
+import { createAdvisorSnapshot } from '../engines/SmartAllocationAdvisor';
+import { runProjection } from '../engines/projectionEngine';
 import { DndContext, closestCenter, KeyboardSensor, PointerSensor, useSensor, useSensors } from '@dnd-kit/core';
 import type { DragEndEvent } from '@dnd-kit/core';
 import { arrayMove, SortableContext, sortableKeyboardCoordinates, verticalListSortingStrategy } from '@dnd-kit/sortable';
@@ -95,6 +98,65 @@ export const BudgetHistory: React.FC = () => {
   const [newYear, setNewYear] = useState<number>(2027);
   const [newNote, setNewNote] = useState<string>('');
   const [newBaseAmount, setNewBaseAmount] = useState<number | ''>('');
+
+  // AI Advisor Modal states
+  const [isAdvisorOpen, setIsAdvisorOpen] = useState(false);
+  const [advisorSnapshot, setAdvisorSnapshot] = useState<any>(null);
+
+  const handleOpenAiAdvisor = () => {
+    const periodKey = `${editYear}-${String(editMonth).padStart(2, '0')}`;
+    const proj = runProjection({
+      profile: state.profile,
+      incomeSchedule: state.incomeSchedule,
+      budgetSchedule: state.budgetSchedule,
+      lifeStages: state.lifeStages,
+      lifeEvents: state.lifeEvents,
+      assets: state.assets,
+      assumptions: state.assumptions,
+      investmentDeals: state.investmentDeals,
+      savingsDeposits: state.savingsDeposits,
+      sinkingFunds: state.sinkingFunds,
+      debts: state.debts,
+      fundTransfers: state.fundTransfers,
+      expenseSchedule: state.expenseSchedule,
+    });
+    setAdvisorSnapshot(createAdvisorSnapshot(state, proj, periodKey));
+    setIsAdvisorOpen(true);
+  };
+
+  const handleApplyAiRatiosToEditor = (_targetRatios: Record<string, number>) => {
+    const nextGroups = rootGroups.map(group => {
+      const gName = group.name.toLowerCase();
+      const gId = (group.groupId || '').toLowerCase();
+      let r = group.ratioPercent;
+
+      if (gName.includes('cần thiết') || gName.includes('nhà cửa') || gId.includes('housing')) {
+        r = 25.0;
+      } else if (gName.includes('yêu thương') || gName.includes('kết nối') || gId.includes('family')) {
+        r = 7.0;
+      } else if (gName.includes('không cần thiết') || gName.includes('tận hưởng') || gId.includes('wants')) {
+        r = 5.5;
+      } else if (gName.includes('học tập')) {
+        r = 1.5;
+      } else if (gName.includes('bé') || gName.includes('con') || gId.includes('baby')) {
+        r = 10.0;
+      } else if (gName.includes('dự phòng') || gId.includes('safety')) {
+        r = 7.5;
+      } else if (gName.includes('tiết kiệm') || gId.includes('saving')) {
+        r = 2.5;
+      } else if (gName.includes('đầu tư') || gId.includes('invest')) {
+        r = 41.0;
+      }
+
+      return {
+        ...group,
+        ratioPercent: r
+      };
+    });
+
+    setRootGroups(nextGroups);
+    setEditNote(prev => prev ? `${prev} (AI gợi ý 4 Trụ Cột)` : 'Cấu trúc 4 Trụ Cột Hạnh Phúc do AI gợi ý');
+  };
 
   // Expanded groups in tree editor
   const [expandedGroups, setExpandedGroups] = useState<Record<string, boolean>>({
@@ -829,15 +891,25 @@ export const BudgetHistory: React.FC = () => {
                       </CardDescription>
                     </div>
                     
-                    {isDirty && (
-                      <Button 
-                        onClick={handleSaveChanges} 
-                        className="gap-2 self-start md:self-center"
-                        disabled={Math.abs(totalRatio - 100) > 0.05}
+                    <div className="flex items-center gap-2.5 flex-wrap">
+                      <Button
+                        type="button"
+                        onClick={handleOpenAiAdvisor}
+                        className="gap-2 bg-gradient-to-r from-indigo-600 to-violet-600 hover:from-indigo-700 hover:to-violet-700 text-white font-bold text-xs h-9 shadow-sm"
                       >
-                        <Save className="w-4 h-4" /> Lưu thay đổi của mốc
+                        <Sparkles className="w-3.5 h-3.5 text-amber-300" /> AI Gợi Ý Phân Bổ
                       </Button>
-                    )}
+
+                      {isDirty && (
+                        <Button 
+                          onClick={handleSaveChanges} 
+                          className="gap-2 self-start md:self-center text-xs h-9"
+                          disabled={Math.abs(totalRatio - 100) > 0.05}
+                        >
+                          <Save className="w-4 h-4" /> Lưu thay đổi của mốc
+                        </Button>
+                      )}
+                    </div>
                   </div>
 
                   {/* Settings form fields (effective date inputs moved here!) */}
@@ -943,6 +1015,15 @@ export const BudgetHistory: React.FC = () => {
 
         </div>
       )}
+
+      {/* AI Advisor Modal with direct editor callback */}
+      <SmartAllocationAdvisorModal
+        isOpen={isAdvisorOpen}
+        onClose={() => setIsAdvisorOpen(false)}
+        snapshot={advisorSnapshot}
+        defaultMode="income"
+        onApplyBudgetToEditor={handleApplyAiRatiosToEditor}
+      />
     </div>
   );
 };

@@ -22,6 +22,35 @@ export interface AllocationSnapshot {
 }
 
 /**
+ * Factory to create AllocationSnapshot consistently from state, projection, and periodKey
+ */
+export const createAdvisorSnapshot = (
+  state: AppState,
+  projection: ProjectionOutput,
+  periodKey: string
+): AllocationSnapshot => {
+  const currentPeriodValue = parseInt(periodKey.split('-')[0], 10) * 12 + parseInt(periodKey.split('-')[1], 10);
+  const projData = projection.monthlyRows.find((r: any) => r.period.key === periodKey);
+
+  const activeBudget = state.budgetSchedule.filter(
+    (b) => b.effectiveYear * 12 + b.effectiveMonth <= currentPeriodValue
+  ).sort((a, b) => (b.effectiveYear * 12 + b.effectiveMonth) - (a.effectiveYear * 12 + a.effectiveMonth))[0];
+
+  let housingBasicBudget = 0;
+  if (activeBudget && state.resolvedMonthlyDbMap?.[periodKey]) {
+    housingBasicBudget = state.resolvedMonthlyDbMap[periodKey].budgetAmounts?.housing_basic || 0;
+  }
+
+  return {
+    appState: state,
+    projection,
+    currentPeriodKey: periodKey,
+    housingBasicAvgExpense: housingBasicBudget,
+    currentLiquidityBalance: projData ? projData.liquidityBalance : 0
+  };
+};
+
+/**
  * Helper to parse YYYY-MM into total months
  */
 const parsePeriodKey = (key: string) => {
