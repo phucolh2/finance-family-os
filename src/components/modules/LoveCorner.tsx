@@ -427,7 +427,12 @@ export const LoveCorner: React.FC = () => {
     const newNotes = [newNote, ...notes];
     updateToolConfig('loveCorner', { ...config, notes: newNotes });
     if (pushSystemLog) {
-      pushSystemLog('GẮN KẾT', 'Yêu thương', `Đã dán một lời nhắn mới lên bảng (${author})`);
+      const authorLabel = author === 'wife' 
+        ? `👩‍💼 ${state.profile?.wifeName || 'Vợ Yêu'}`
+        : author === 'husband'
+        ? `👨‍💼 ${state.profile?.husbandName || 'Chồng Yêu'}`
+        : '👨‍👩‍👧 Cả hai vợ chồng';
+      pushSystemLog('GẮN KẾT', 'Yêu thương', `Đã dán một lời nhắn mới lên bảng Yêu thương`, authorLabel);
     }
     setMessage('');
     clearAudio();

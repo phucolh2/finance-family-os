@@ -1213,11 +1213,31 @@ export function useAppState(userId?: string) {
       });
     },
 
-    pushSystemLog: (action: string, module: string, description: string, actor: string = '👨‍👩‍👧 Gia đình') => {
+    pushSystemLog: (action: string, module: string, description: string, actor?: string) => {
+      let resolvedActor = actor;
+      if (!resolvedActor || resolvedActor === '👨‍👩‍👧 Gia đình') {
+        const storedActor = localStorage.getItem('family_active_actor');
+        if (storedActor === 'wife') {
+          resolvedActor = `👩‍💼 Vợ (${state.profile?.wifeName || 'Vợ'})`;
+        } else if (storedActor === 'husband') {
+          resolvedActor = `👨‍💼 Chồng (${state.profile?.husbandName || 'Chồng'})`;
+        } else {
+          // Check LoveCorner accountMapping
+          const loveMapping = (state.toolConfigs?.loveCorner?.accountMapping as Record<string, string>) || {};
+          if (userId && loveMapping[userId] === 'wife') {
+            resolvedActor = `👩‍💼 Vợ (${state.profile?.wifeName || 'Vợ'})`;
+          } else if (userId && loveMapping[userId] === 'husband') {
+            resolvedActor = `👨‍💼 Chồng (${state.profile?.husbandName || 'Chồng'})`;
+          } else {
+            resolvedActor = `👨‍💼 Chồng (${state.profile?.husbandName || 'Chồng'})`;
+          }
+        }
+      }
+
       const newLog: import('../types/finance').SystemActivityLog = {
         id: `log_${Date.now()}_${Math.random().toString(36).substring(2, 9)}`,
         timestamp: new Date().toISOString(),
-        actor,
+        actor: resolvedActor,
         action,
         module,
         description
@@ -1230,6 +1250,13 @@ export function useAppState(userId?: string) {
           systemLogs: nextLogs
         };
       });
+    },
+
+    clearSystemLogs: () => {
+      setState(prev => ({
+        ...prev,
+        systemLogs: []
+      }));
     },
     syncStatus,
     isCloudLoading,

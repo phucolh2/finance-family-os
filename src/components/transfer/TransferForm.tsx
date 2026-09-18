@@ -23,6 +23,9 @@ export const TransferForm: React.FC<TransferFormProps> = ({ onSuccess, onCancel 
   const [amount, setAmount] = useState<string>('');
   const [note, setNote] = useState<string>('');
   const [formError, setFormError] = useState<string>('');
+  const [operator, setOperator] = useState<'husband' | 'wife'>(() => {
+    return (localStorage.getItem('family_active_actor') as 'husband' | 'wife') || 'husband';
+  });
 
   const { liquidityBreakdownData, totalRemainingSum } = useLiquidityBreakdown('cumulative', selectedPeriodKey);
 
@@ -175,10 +178,15 @@ export const TransferForm: React.FC<TransferFormProps> = ({ onSuccess, onCancel 
     });
 
     if (pushSystemLog) {
+      const actorName = operator === 'wife'
+        ? `👩‍💼 ${state.profile?.wifeName || 'Vợ Yêu'}`
+        : `👨‍💼 ${state.profile?.husbandName || 'Chồng Yêu'}`;
+
       pushSystemLog(
         'ĐIỀU CHUYỂN', 
         'Điều chuyển dòng tiền', 
-        `Vừa điều chuyển ${formatMoneyVNDMillion(numAmount)} từ [${getItemLabel(sourceValue)}] sang [${getItemLabel(destinationValue)}]${note ? ` (Ghi chú: ${note})` : ''}`
+        `Vừa điều chuyển ${formatMoneyVNDMillion(numAmount)} từ [${getItemLabel(sourceValue)}] sang [${getItemLabel(destinationValue)}]${note ? ` (Ghi chú: ${note})` : ''}`,
+        actorName
       );
     }
 
@@ -268,7 +276,41 @@ export const TransferForm: React.FC<TransferFormProps> = ({ onSuccess, onCancel 
               </div>
            </div>
 
-           <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-6">
+            {/* Người thực hiện */}
+            <div className="bg-family-bgDark/30 p-3.5 rounded-xl border border-family-accent/10 mt-6">
+              <div className="flex items-center justify-between mb-2">
+                <span className="text-xs font-bold text-family-text uppercase tracking-wider">Người thực hiện</span>
+                <span className="text-[11px] text-family-textMuted lowercase">ghi nhận vào nhật ký chung tay</span>
+              </div>
+              <div className="grid grid-cols-2 gap-3">
+                <button
+                  type="button"
+                  onClick={() => setOperator('husband')}
+                  className={`py-2 px-3 rounded-xl border flex items-center justify-center gap-2 font-medium text-sm transition-all cursor-pointer ${
+                    operator === 'husband'
+                      ? 'bg-blue-50/90 border-blue-400 text-blue-800 shadow-sm font-bold'
+                      : 'bg-family-bg/80 border-family-accent/20 text-family-textMuted hover:text-family-text'
+                  }`}
+                >
+                  <span>👨‍💼</span>
+                  <span>{state.profile?.husbandName || 'Chồng'}</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setOperator('wife')}
+                  className={`py-2 px-3 rounded-xl border flex items-center justify-center gap-2 font-medium text-sm transition-all cursor-pointer ${
+                    operator === 'wife'
+                      ? 'bg-rose-50/90 border-rose-400 text-rose-800 shadow-sm font-bold'
+                      : 'bg-family-bg/80 border-family-accent/20 text-family-textMuted hover:text-family-text'
+                  }`}
+                >
+                  <span>👩‍💼</span>
+                  <span>{state.profile?.wifeName || 'Vợ'}</span>
+                </button>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-4">
               <Input label="Số tiền điều chuyển (triệu VND)" type="number" value={amount} onChange={e => { setAmount(e.target.value); }} placeholder="VD: 50" required />
               <Input label="Ghi chú chia sẻ (tùy chọn)" value={note} onChange={e => { setNote(e.target.value); }} placeholder="VD: Chuyển tiền dư tháng này sang tiết kiệm" />
            </div>
