@@ -1,7 +1,11 @@
 rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
-    // Mỗi người dùng chỉ có quyền đọc/ghi dữ liệu của chính mình
+    // Dữ liệu chung của gia đình (vợ và chồng đã đăng nhập đều có quyền đọc/ghi để đồng bộ PC và điện thoại)
+    match /family/{document=**} {
+      allow read, write: if request.auth != null;
+    }
+    // Dữ liệu riêng của từng người dùng
     match /users/{userId}/data/{document=**} {
       allow read, write: if request.auth != null && request.auth.uid == userId;
     }

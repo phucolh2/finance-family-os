@@ -124,8 +124,77 @@ export const LoveCorner: React.FC = () => {
   const lastViewed = config.lastViewed || {};
   const specialDates: SpecialDate[] = config.specialDates || DEFAULT_SPECIAL_DATES;
 
-  const myLastViewed = (user?.uid && lastViewed[user.uid]) || 0;
-  const hasNewMessage = notes.length > 0 && notes[0].createdAt > myLastViewed;
+  // Lấy thời điểm đọc tin gần nhất từ cả LocalStorage thiết bị và Firestore server
+  const localLastViewed = Number(localStorage.getItem('love_corner_last_viewed') || 0);
+  const serverLastViewed = (user?.uid && lastViewed[user.uid]) || 0;
+  const initialEffectiveLastViewed = Math.max(localLastViewed, serverLastViewed);
+
+  const [lastViewedTimestamp, setLastViewedTimestamp] = useState<number>(initialEffectiveLastViewed);
+  const [justOpenedViewTimestamp, setJustOpenedViewTimestamp] = useState<number>(initialEffectiveLastViewed);
+  const [hasReadCurrentSession, setHasReadCurrentSession] = useState(false);
+
+  // Đồng bộ lại khi serverLastViewed hoặc localLastViewed thay đổi
+  useEffect(() => {
+    const updated = Math.max(
+      Number(localStorage.getItem('love_corner_last_viewed') || 0),
+      (user?.uid && lastViewed[user.uid]) || 0
+    );
+    if (updated > lastViewedTimestamp) {
+      setLastViewedTimestamp(updated);
+    }
+  }, [user?.uid, lastViewed]);
+
+  // Nếu có tin mới phát sinh sau mốc đã đọc, kích hoạt lại trạng thái tin mới
+  const latestCreatedAt = notes[0]?.createdAt || 0;
+  useEffect(() => {
+    if (latestCreatedAt > lastViewedTimestamp) {
+      setHasReadCurrentSession(false);
+    }
+  }, [latestCreatedAt, lastViewedTimestamp]);
+
+  // Kiểm tra có tin nhắn mới hay không:
+  // 1. Phải có tin nhắn tạo sau thời điểm đã xem gần nhất
+  // 2. Tin nhắn đó KHÔNG PHẢI do chính người dùng hiện tại tạo
+  // 3. Chưa đọc trong phiên hiện tại
+  const hasNewMessage = useMemo(() => {
+    if (hasReadCurrentSession || notes.length === 0) return false;
+    const latestNote = notes[0];
+    if (latestNote.createdAt <= lastViewedTimestamp) return false;
+    if (author !== 'both' && latestNote.author === author) return false;
+    return true;
+  }, [notes, lastViewedTimestamp, author, hasReadCurrentSession]);
+
+  // Hàm mở LoveCorner: Đánh dấu đã đọc ngay lập tức, tắt hoàn toàn nhấp nháy/bouncing
+  const handleOpenLoveCorner = () => {
+    setIsOpen(true);
+    setJustOpenedViewTimestamp(lastViewedTimestamp); // Giữ mốc để nhận diện thiệp "MỚI"
+    const now = Date.now();
+    setLastViewedTimestamp(now);
+    setHasReadCurrentSession(true);
+    localStorage.setItem('love_corner_last_viewed', now.toString());
+    if (user?.uid) {
+      updateToolConfig('loveCorner', {
+        ...config,
+        lastViewed: {
+          ...lastViewed,
+          [user.uid]: now
+        }
+      });
+    }
+  };
+
+  // Xác định một thiệp có phải là tin mới nhận hay không
+  const isNoteNew = (note: LoveNote, index: number) => {
+    if (author !== 'both' && note.author === author) return false;
+    if (justOpenedViewTimestamp > 0) {
+      return note.createdAt > justOpenedViewTimestamp;
+    }
+    return index === 0 && (Date.now() - note.createdAt < 24 * 60 * 60 * 1000);
+  };
+
+  const newNotesCount = useMemo(() => {
+    return notes.filter((n, idx) => isNoteNew(n, idx)).length;
+  }, [notes, justOpenedViewTimestamp, author]);
 
   // Helper for computing days left for any SpecialDate
   const getDaysLeft = (sd: SpecialDate) => {
@@ -190,17 +259,7 @@ export const LoveCorner: React.FC = () => {
     return result;
   }, [notes, filterAuthor, filterType, searchQuery, viewMode]);
 
-  useEffect(() => {
-    if (isOpen && user?.uid && hasNewMessage) {
-      updateToolConfig('loveCorner', {
-        ...config,
-        lastViewed: {
-          ...lastViewed,
-          [user.uid]: Date.now()
-        }
-      });
-    }
-  }, [isOpen, user?.uid, hasNewMessage]);
+
 
   useEffect(() => {
     if (user?.email) {
@@ -650,14 +709,17 @@ export const LoveCorner: React.FC = () => {
   return (
     <>
       <button
-        onClick={() => setIsOpen(true)}
-        className={`fixed bottom-6 right-6 z-[60] p-4 sm:p-5 rounded-full bg-gradient-to-br from-pink-400 to-rose-500 hover:from-pink-500 hover:to-rose-600 text-white shadow-[0_8px_30px_rgba(244,63,94,0.4)] hover:shadow-[0_8px_40px_rgba(244,63,94,0.6)] transition-all duration-300 transform hover:scale-110 active:scale-95 group print:hidden ${hasNewMessage ? 'animate-bounce' : ''}`}
+        onClick={handleOpenLoveCorner}
+        className={`fixed bottom-6 right-6 z-[60] p-4 sm:p-5 rounded-full bg-gradient-to-br from-pink-400 to-rose-500 hover:from-pink-500 hover:to-rose-600 text-white shadow-[0_8px_30px_rgba(244,63,94,0.4)] hover:shadow-[0_8px_40px_rgba(244,63,94,0.6)] transition-all duration-300 transform hover:scale-110 active:scale-95 group print:hidden ${hasNewMessage ? 'animate-bounce ring-4 ring-yellow-400/80 shadow-[0_8px_35px_rgba(244,63,94,0.7)]' : ''}`}
+        title={hasNewMessage ? 'Có lời nhắn mới từ bạn đời!' : 'Góc Tình Yêu (Love Corner)'}
       >
-        <Heart className={`w-7 h-7 sm:w-8 sm:h-8 fill-white/20 group-hover:fill-white/40 ${hasNewMessage ? 'animate-ping' : 'animate-pulse'} group-hover:animate-none`} />
+        <Heart className={`w-7 h-7 sm:w-8 sm:h-8 fill-white/20 group-hover:fill-white/40 ${hasNewMessage ? 'animate-pulse' : ''} group-hover:scale-110 transition-transform`} />
         {hasNewMessage && (
-          <span className="absolute top-0 right-0 flex h-4 w-4">
+          <span className="absolute -top-1 -right-1 flex h-5 w-5">
             <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-yellow-400 opacity-75"></span>
-            <span className="relative inline-flex rounded-full h-4 w-4 bg-yellow-500 border-2 border-white"></span>
+            <span className="relative inline-flex rounded-full h-5 w-5 bg-gradient-to-tr from-amber-400 to-yellow-300 border-2 border-white items-center justify-center text-[10px] font-black text-rose-700 shadow-md">
+              !
+            </span>
           </span>
         )}
       </button>
@@ -1164,6 +1226,38 @@ export const LoveCorner: React.FC = () => {
                    )}
                  </div>
 
+                  {/* Status & New Message Banner */}
+                  {newNotesCount > 0 && (
+                    <div className="mb-4 p-3 sm:p-4 bg-gradient-to-r from-pink-500/10 via-rose-500/10 to-amber-500/10 border border-pink-200/80 rounded-2xl flex items-center justify-between shadow-sm animate-in fade-in duration-300">
+                      <div className="flex items-center gap-2.5 sm:gap-3">
+                        <span className="flex h-3 w-3 relative shrink-0">
+                          <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-rose-400 opacity-75"></span>
+                          <span className="relative inline-flex rounded-full h-3 w-3 bg-rose-500"></span>
+                        </span>
+                        <p className="text-xs sm:text-sm font-bold text-rose-700">
+                          💌 Bạn có <span className="underline decoration-rose-400 font-black">{newNotesCount} lời nhắn mới</span> từ bạn đời được đánh dấu <span className="bg-rose-500 text-white px-2 py-0.5 rounded-full text-xs font-black inline-flex items-center gap-1 shadow-sm">✨ MỚI</span> bên dưới!
+                        </p>
+                      </div>
+                      {(filterAuthor !== 'all' || filterType !== 'all' || searchQuery) && (
+                        <button
+                          onClick={() => { setFilterAuthor('all'); setFilterType('all'); setSearchQuery(''); }}
+                          className="text-xs font-bold text-rose-600 hover:text-rose-800 underline ml-2 shrink-0"
+                        >
+                          Xem tất cả
+                        </button>
+                      )}
+                    </div>
+                  )}
+
+                  {!user && (
+                    <div className="mb-4 p-3 bg-amber-50/90 border border-amber-200/70 rounded-2xl flex items-center justify-between text-xs text-amber-800 shadow-sm">
+                      <div className="flex items-center gap-2">
+                        <span className="text-base shrink-0">☁️</span>
+                        <span>Đang lưu cục bộ trên máy này. Hãy đăng nhập tài khoản Google ở góc phải để tự động đồng bộ sang điện thoại của bạn đời.</span>
+                      </div>
+                    </div>
+                  )}
+
                  {filteredNotes.length === 0 && pinnedDatesOnBoard.length === 0 ? (
                    <div className="flex flex-col items-center justify-center py-20 lg:py-32 flex-1">
                      <div className="w-32 h-32 bg-gradient-to-tr from-pink-100 to-rose-50 rounded-full flex items-center justify-center mb-6 shadow-inner">
@@ -1243,6 +1337,7 @@ export const LoveCorner: React.FC = () => {
                        const pos = getItemPos(note.id, index);
                        const isDragging = draggingId === note.id;
                        const isTopZ = topZIndexId === note.id;
+                       const isNew = isNoteNew(note, index);
 
                        return (
                          <div
@@ -1251,7 +1346,7 @@ export const LoveCorner: React.FC = () => {
                              position: 'absolute',
                              left: `${pos.x}px`,
                              top: `${pos.y}px`,
-                             zIndex: isDragging ? 100 : isTopZ ? 40 : 10 + (index % 20),
+                             zIndex: isDragging ? 100 : isTopZ ? 50 : isNew ? 35 : 10 + (index % 20),
                            }}
                            onPointerDown={(e) => handlePointerDown(e, note.id as any, index)}
                            onPointerMove={(e) => handlePointerMove(e, note.id)}
@@ -1267,7 +1362,12 @@ export const LoveCorner: React.FC = () => {
 
                            {note.image ? (
                              /* Polaroid Free Style */
-                             <div className={`bg-white p-3 sm:p-4 pb-14 sm:pb-16 rounded-sm shadow-md border border-slate-200/80 transition-transform ${getRotationClass(index)}`}>
+                             <div className={`bg-white p-3 sm:p-4 pb-14 sm:pb-16 rounded-sm shadow-md border border-slate-200/80 transition-transform ${getRotationClass(index)} relative ${isNew ? 'ring-4 ring-rose-400/90 shadow-[0_0_30px_rgba(244,63,94,0.5)]' : ''}`}>
+                                {isNew && (
+                                  <div className="absolute -top-3 left-4 z-40 px-2.5 py-0.5 bg-gradient-to-r from-rose-500 to-pink-500 text-white text-[11px] font-black rounded-full shadow-lg border-2 border-white flex items-center gap-1 animate-bounce">
+                                    ✨ MỚI
+                                  </div>
+                                )}
                                <div className="w-full aspect-[4/5] bg-[#fbfbfb] border border-slate-100 rounded-sm overflow-hidden relative shadow-inner group-hover/img:shadow-md transition-shadow">
                                  <img src={note.image} alt="Drawing" className="w-full h-full object-contain mix-blend-multiply opacity-90 pointer-events-none" />
                                  {note.audio && (
@@ -1315,7 +1415,12 @@ export const LoveCorner: React.FC = () => {
                              </div>
                            ) : (
                              /* Text Sticky Note Style */
-                             <div className={`p-6 sm:p-7 rounded-[2rem] ${note.color} shadow-md border transition-transform ${getRotationClass(index)} relative`}>
+                             <div className={`p-6 sm:p-7 rounded-[2rem] ${note.color} shadow-md border transition-transform ${getRotationClass(index)} relative ${isNew ? 'ring-4 ring-rose-400/90 shadow-[0_0_30px_rgba(244,63,94,0.5)]' : ''}`}>
+                                {isNew && (
+                                  <div className="absolute -top-3 left-6 z-40 px-2.5 py-0.5 bg-gradient-to-r from-rose-500 to-pink-500 text-white text-[11px] font-black rounded-full shadow-lg border-2 border-white flex items-center gap-1 animate-bounce">
+                                    ✨ MỚI
+                                  </div>
+                                )}
                                <p className="text-base sm:text-lg font-medium leading-relaxed mb-4 text-slate-800 whitespace-pre-wrap">
                                  {note.message}
                                </p>
@@ -1401,6 +1506,7 @@ export const LoveCorner: React.FC = () => {
                      {/* Regular Notes in Grid Mode */}
                      {filteredNotes.map((note, index) => {
                         const authorInfo = getAuthorDisplay(note.author);
+                        const isNew = isNoteNew(note, index);
                         const dateStr = new Date(note.createdAt).toLocaleDateString('vi-VN', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute:'2-digit' });
                         const reactions = note.reactions || {};
                         const reactionEntries = Object.entries(reactions).filter(([, users]) => users.length > 0);
@@ -1419,7 +1525,12 @@ export const LoveCorner: React.FC = () => {
 
                             {note.image ? (
                               /* Polaroid Style */
-                              <div className="bg-white p-3 sm:p-4 pb-14 sm:pb-16 rounded-sm shadow-md hover:shadow-2xl border border-slate-100 transition-all duration-500 hover:rotate-0 hover:scale-[1.02] hover:z-20">
+                              <div className={`bg-white p-3 sm:p-4 pb-14 sm:pb-16 rounded-sm shadow-md hover:shadow-2xl border border-slate-100 transition-all duration-500 hover:rotate-0 hover:scale-[1.02] hover:z-20 relative ${isNew ? 'ring-4 ring-rose-400/90 shadow-xl shadow-rose-300/60' : ''}`}>
+                                {isNew && (
+                                  <div className="absolute -top-3 left-4 z-30 px-2.5 py-0.5 bg-gradient-to-r from-rose-500 to-pink-500 text-white text-[11px] font-black rounded-full shadow-lg border-2 border-white flex items-center gap-1 animate-pulse">
+                                    ✨ MỚI
+                                  </div>
+                                )}
                                 <div className="w-full aspect-[4/5] bg-[#fbfbfb] border border-slate-100 rounded-sm overflow-hidden relative shadow-inner">
                                   <img src={note.image} alt="Drawing" className="w-full h-full object-contain mix-blend-multiply opacity-90" />
                                   {note.audio && (
@@ -1470,7 +1581,12 @@ export const LoveCorner: React.FC = () => {
                               </div>
                             ) : (
                               /* Text Card Style */
-                              <div className={`p-6 sm:p-8 rounded-[2rem] ${note.color} shadow-sm hover:shadow-xl border transition-all duration-500 hover:-translate-y-2 hover:scale-[1.01] hover:z-20`}>
+                              <div className={`p-6 sm:p-8 rounded-[2rem] ${note.color} shadow-sm hover:shadow-xl border transition-all duration-500 hover:-translate-y-2 hover:scale-[1.01] hover:z-20 relative ${isNew ? 'ring-4 ring-rose-400/90 shadow-xl shadow-rose-300/60' : ''}`}>
+                                {isNew && (
+                                  <div className="absolute -top-3 left-6 z-40 px-2.5 py-0.5 bg-gradient-to-r from-rose-500 to-pink-500 text-white text-[11px] font-black rounded-full shadow-lg border-2 border-white flex items-center gap-1 animate-pulse">
+                                    ✨ MỚI
+                                  </div>
+                                )}
                                 <p className="text-lg sm:text-xl font-medium leading-relaxed mb-4 text-slate-800 whitespace-pre-wrap">
                                   {note.message}
                                 </p>

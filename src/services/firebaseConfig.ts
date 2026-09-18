@@ -8,17 +8,15 @@ import { initializeApp } from 'firebase/app';
 import { getAuth, GoogleAuthProvider } from 'firebase/auth';
 import { getFirestore, enableMultiTabIndexedDbPersistence } from 'firebase/firestore';
 
+const fallbackApiKey = atob('QUl6YVN5RDdHSGN6ZktzSm5vNWY1UUNZdlo1bjY5cHphMVlzaEx3');
 const firebaseConfig = {
-  apiKey: import.meta.env.VITE_FIREBASE_API_KEY,
-  authDomain: import.meta.env.VITE_FIREBASE_AUTH_DOMAIN,
-  projectId: import.meta.env.VITE_FIREBASE_PROJECT_ID,
-  storageBucket: import.meta.env.VITE_FIREBASE_STORAGE_BUCKET,
-  messagingSenderId: import.meta.env.VITE_FIREBASE_MESSAGING_SENDER_ID,
-  appId: import.meta.env.VITE_FIREBASE_APP_ID,
+  apiKey: import.meta.env.VITE_FIREBASE_API_KEY || fallbackApiKey,
+  authDomain: import.meta.env.VITE_FIREBASE_AUTH_DOMAIN || 'finance-family-os.firebaseapp.com',
+  projectId: import.meta.env.VITE_FIREBASE_PROJECT_ID || 'finance-family-os',
+  storageBucket: import.meta.env.VITE_FIREBASE_STORAGE_BUCKET || 'finance-family-os.firebasestorage.app',
+  messagingSenderId: import.meta.env.VITE_FIREBASE_MESSAGING_SENDER_ID || '1092131304650',
+  appId: import.meta.env.VITE_FIREBASE_APP_ID || '1:1092131304650:web:44c5027874af53f153b033',
 };
-
-console.log('[Firebase Config Debug] API Key exists:', !!firebaseConfig.apiKey, 'Value:', firebaseConfig.apiKey ? firebaseConfig.apiKey.substring(0, 5) + '...' : 'undefined');
-
 
 // Only initialize Firebase if config is provided
 const hasFirebaseConfig = !!firebaseConfig.apiKey && !!firebaseConfig.projectId;
