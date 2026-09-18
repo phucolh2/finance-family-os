@@ -57,7 +57,6 @@ export const SmartAllocationAdvisorModal: React.FC<Props> = ({
   // Feedback states
   const [applyBudgetSuccess, setApplyBudgetSuccess] = useState(false);
   const [addExpenseSuccess, setAddExpenseSuccess] = useState(false);
-  const [showKeyConfig, setShowKeyConfig] = useState(false);
 
   useEffect(() => {
     // Decoded user key fallback to ensure zero-friction production execution
@@ -399,41 +398,8 @@ export const SmartAllocationAdvisorModal: React.FC<Props> = ({
                 >
                   <Sparkles className="w-3 h-3 text-amber-300" /> Gemini AI
                 </button>
-                <button
-                  type="button"
-                  onClick={() => setShowKeyConfig(!showKeyConfig)}
-                  className="p-1 text-slate-400 hover:text-slate-600 rounded transition-colors"
-                  title="Cấu hình Gemini API Key"
-                >
-                  🔑
-                </button>
               </div>
             </div>
-
-            {/* Quick API Key field (expandable) */}
-            {showKeyConfig && (
-              <div className="pt-2 border-t border-slate-200/60 flex items-center gap-2">
-                <Input
-                  type="password"
-                  placeholder="Nhập Google Gemini API Key..."
-                  value={apiKey}
-                  onChange={(e) => {
-                    const newKey = e.target.value.trim();
-                    setApiKey(newKey);
-                    localStorage.setItem('gemini_api_key', newKey);
-                  }}
-                  className="h-8 text-xs font-mono"
-                />
-                <Button
-                  size="sm"
-                  variant="outline"
-                  onClick={() => setShowKeyConfig(false)}
-                  className="h-8 text-xs font-bold px-3 shrink-0"
-                >
-                  Lưu
-                </Button>
-              </div>
-            )}
           </div>
 
           {/* Form input */}
