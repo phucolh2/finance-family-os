@@ -87,9 +87,9 @@ export const CopilotChat: React.FC = () => {
     setIsLoading(true);
 
     try {
-      // Chuyển đổi lịch sử chat sang định dạng Gemini
+      // Chuyển đổi lịch sử chat sang định dạng Gemini (loại bỏ tin lỗi nếu có)
       const chatHistory = messages
-        .filter(m => m.content)
+        .filter(m => m.content && !m.content.startsWith('❌ **Không thể kết nối AI**'))
         .slice(-10) // Lấy tối đa 10 tin gần nhất để giữ context gọn gàng
         .map(m => ({
           role: m.role,

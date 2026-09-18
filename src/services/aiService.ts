@@ -245,6 +245,55 @@ async function generateGeminiContentWithFallback(
   throw new Error(`Không thể kết nối Gemini API: ${(lastError as Error)?.message || 'Vui lòng kiểm tra lại API Key.'}`);
 }
 
+/**
+ * Chuẩn hóa lịch sử trò chuyện cho Gemini SDK:
+ * 1. Bắt buộc bắt đầu bằng role 'user' (nếu lịch sử bắt đầu bằng lời chào của model, phải loại bỏ phần chào đầu đó).
+ * 2. Các lượt trò chuyện phải luân phiên xen kẽ user -> model -> user -> model.
+ * 3. Lịch sử đưa vào startChat phải kết thúc bằng role 'model' để lượt gửi kế tiếp (sendMessage) là role 'user'.
+ */
+export function sanitizeGeminiHistory(
+  rawHistory: { role: 'user' | 'model'; parts: { text: string }[] }[]
+): { role: 'user' | 'model'; parts: { text: string }[] }[] {
+  if (!rawHistory || rawHistory.length === 0) return [];
+
+  // 1. Lọc các mục không có nội dung text hợp lệ
+  const valid = rawHistory.filter(
+    item => item.parts && item.parts.length > 0 && item.parts.some(p => p.text && p.text.trim())
+  );
+
+  // 2. Tìm vị trí tin nhắn đầu tiên của 'user'
+  const firstUserIndex = valid.findIndex(item => item.role === 'user');
+  if (firstUserIndex === -1) {
+    // Chưa có tin nhắn user nào trước đó -> history phải rỗng []
+    return [];
+  }
+
+  // 3. Lấy từ tin nhắn user đầu tiên trở đi
+  const fromFirstUser = valid.slice(firstUserIndex);
+
+  // 4. Đảm bảo luân phiên user -> model (gộp nội dung nếu trùng role liên tiếp)
+  const alternating: { role: 'user' | 'model'; parts: { text: string }[] }[] = [];
+  for (const item of fromFirstUser) {
+    if (alternating.length === 0) {
+      alternating.push({ role: item.role, parts: [{ text: item.parts.map(p => p.text).join('\n') }] });
+    } else {
+      const last = alternating[alternating.length - 1];
+      if (last.role === item.role) {
+        last.parts[0].text += '\n' + item.parts.map(p => p.text).join('\n');
+      } else {
+        alternating.push({ role: item.role, parts: [{ text: item.parts.map(p => p.text).join('\n') }] });
+      }
+    }
+  }
+
+  // 5. startChat yêu cầu turn cuối cùng trong history là 'model' (để turn gửi sendMessage tiếp theo là 'user')
+  while (alternating.length > 0 && alternating[alternating.length - 1].role !== 'model') {
+    alternating.pop();
+  }
+
+  return alternating;
+}
+
 // Hàm gửi tin nhắn tới Gemini API (Copilot Chat) với hỗ trợ tra cứu Internet & Fallback Model thông minh
 export const sendChatMessage = async (
   apiKey: string,
@@ -258,18 +307,19 @@ export const sendChatMessage = async (
   const cleanKey = apiKey.trim();
   const genAI = new GoogleGenerativeAI(cleanKey);
   const systemInstruction = buildSystemContext(state);
+  const cleanHistory = sanitizeGeminiHistory(chatHistory);
 
   // 1. Nếu người dùng bật chế độ tra cứu Internet, thử gọi Gemini kèm Google Search Grounding tool
   if (useWebSearch) {
     try {
       const searchModel = genAI.getGenerativeModel({ 
-        model: 'gemini-3-flash-preview',
+        model: 'gemini-3.6-flash',
         systemInstruction,
         tools: [{ googleSearch: {} } as any]
       });
 
       const chat = searchModel.startChat({
-        history: chatHistory,
+        history: cleanHistory,
         generationConfig: {
           maxOutputTokens: 2000,
           temperature: 0.7,
@@ -287,6 +337,7 @@ export const sendChatMessage = async (
 
   // 2. Danh sách các model ứng cử viên thế hệ 3
   const candidateModels = [
+    'gemini-3.6-flash',
     'gemini-3-flash-preview',
     'gemini-3.1-flash-lite',
     'gemini-3.5-flash',
@@ -302,7 +353,7 @@ export const sendChatMessage = async (
       });
 
       const chat = model.startChat({
-        history: chatHistory,
+        history: cleanHistory,
         generationConfig: {
           maxOutputTokens: 2000,
           temperature: 0.7,
