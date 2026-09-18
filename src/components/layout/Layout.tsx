@@ -13,6 +13,7 @@ interface LayoutProps {
 
 export const Layout: React.FC<LayoutProps> = ({ activeTab, setActiveTab, children }) => {
   const [isMobileOpen, setIsMobileOpen] = useState(false);
+  const [isCopilotOpen, setIsCopilotOpen] = useState(false);
 
   return (
     <div className="flex flex-col md:flex-row h-[100dvh] w-full max-w-full overflow-hidden bg-family-bg print:h-auto print:w-auto print:overflow-visible print:bg-white">
@@ -63,8 +64,12 @@ export const Layout: React.FC<LayoutProps> = ({ activeTab, setActiveTab, childre
           {children}
         </div>
       </main>
-      <LoveCorner />
-      <CopilotChat />
+      <LoveCorner isHidden={isCopilotOpen} />
+      <CopilotChat 
+        activeTab={activeTab} 
+        isOpen={isCopilotOpen} 
+        onToggleOpen={setIsCopilotOpen} 
+      />
     </div>
   );
 };

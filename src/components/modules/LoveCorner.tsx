@@ -73,7 +73,11 @@ const DEFAULT_SPECIAL_DATES: SpecialDate[] = [
   { id: 'mens_day', label: 'Ngày Đàn ông VN', emoji: '🤵', month: 11, day: 19 },
 ];
 
-export const LoveCorner: React.FC = () => {
+interface LoveCornerProps {
+  isHidden?: boolean;
+}
+
+export const LoveCorner: React.FC<LoveCornerProps> = ({ isHidden = false }) => {
   const { state, updateToolConfig, pushSystemLog } = useAppContext();
   const { user } = useAuth();
   const [isOpen, setIsOpen] = useState(false);
@@ -715,14 +719,16 @@ export const LoveCorner: React.FC = () => {
     <>
       <button
         onClick={handleOpenLoveCorner}
-        className={`fixed bottom-6 right-6 z-[60] p-4 sm:p-5 rounded-full bg-gradient-to-br from-pink-400 to-rose-500 hover:from-pink-500 hover:to-rose-600 text-white shadow-[0_8px_30px_rgba(244,63,94,0.4)] hover:shadow-[0_8px_40px_rgba(244,63,94,0.6)] transition-all duration-300 transform hover:scale-110 active:scale-95 group print:hidden ${hasNewMessage ? 'animate-bounce ring-4 ring-yellow-400/80 shadow-[0_8px_35px_rgba(244,63,94,0.7)]' : ''}`}
+        className={`fixed bottom-6 right-5 sm:right-6 z-40 p-3.5 sm:p-4 rounded-full bg-gradient-to-br from-pink-400 to-rose-500 hover:from-pink-500 hover:to-rose-600 text-white shadow-[0_8px_25px_rgba(244,63,94,0.35)] hover:shadow-[0_8px_35px_rgba(244,63,94,0.55)] transition-all duration-300 transform hover:scale-105 active:scale-95 group print:hidden cursor-pointer ${
+          isHidden ? 'opacity-0 pointer-events-none scale-75' : 'opacity-100 scale-100'
+        } ${hasNewMessage ? 'animate-bounce ring-4 ring-yellow-400/80 shadow-[0_8px_35px_rgba(244,63,94,0.7)]' : ''}`}
         title={hasNewMessage ? 'Có lời nhắn mới từ bạn đời!' : 'Góc Tình Yêu (Love Corner)'}
       >
-        <Heart className={`w-7 h-7 sm:w-8 sm:h-8 fill-white/20 group-hover:fill-white/40 ${hasNewMessage ? 'animate-pulse' : ''} group-hover:scale-110 transition-transform`} />
+        <Heart className={`w-6 h-6 sm:w-7 sm:h-7 fill-white/20 group-hover:fill-white/40 ${hasNewMessage ? 'animate-pulse' : ''} group-hover:scale-110 transition-transform`} />
         {hasNewMessage && (
-          <span className="absolute -top-1 -right-1 flex h-5 w-5">
+          <span className="absolute -top-1 -right-1 flex h-4 w-4">
             <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-yellow-400 opacity-75"></span>
-            <span className="relative inline-flex rounded-full h-5 w-5 bg-gradient-to-tr from-amber-400 to-yellow-300 border-2 border-white items-center justify-center text-[10px] font-black text-rose-700 shadow-md">
+            <span className="relative inline-flex rounded-full h-4 w-4 bg-gradient-to-tr from-amber-400 to-yellow-300 border-2 border-white items-center justify-center text-[9px] font-black text-rose-700 shadow-md">
               !
             </span>
           </span>
