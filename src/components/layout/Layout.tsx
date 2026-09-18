@@ -3,6 +3,7 @@ import { Sidebar } from './Sidebar';
 import { Menu } from 'lucide-react';
 import { AuthStatusBar } from '../auth/AuthStatusBar';
 import { LoveCorner } from '../modules/LoveCorner';
+import { CopilotChat } from '../copilot/CopilotChat';
 
 interface LayoutProps {
   activeTab: string;
@@ -63,6 +64,7 @@ export const Layout: React.FC<LayoutProps> = ({ activeTab, setActiveTab, childre
         </div>
       </main>
       <LoveCorner />
+      <CopilotChat />
     </div>
   );
 };

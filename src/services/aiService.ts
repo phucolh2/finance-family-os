@@ -9,9 +9,20 @@ export function formatTableMoneyVNDMillionOffline(amount: number): string {
   return amount.toLocaleString('vi-VN', { minimumFractionDigits: 1, maximumFractionDigits: 2 }) + ' Tr';
 }
 
-// Hàm dịch toàn bộ dữ liệu AppContext thành Markdown Prompt cho AI
+// Hàm dịch toàn bộ dữ liệu AppContext thành Markdown Prompt toàn diện cho AI
 export const buildSystemContext = (state: AppState): string => {
-  const { profile, incomeSchedule, budgetSchedule, lifeEvents, investmentDeals, assumptions } = state;
+  const { 
+    profile, 
+    incomeSchedule, 
+    budgetSchedule, 
+    lifeEvents, 
+    investmentDeals = [], 
+    assumptions,
+    savingsDeposits = [],
+    sinkingFunds = [],
+    debts = [],
+    resolvedMonthlyDb = []
+  } = state;
 
   const currentIncome = incomeSchedule.length > 0 ? incomeSchedule[0].incomeMonthly : 80;
   const currentBudget = budgetSchedule.length > 0 ? budgetSchedule[0] : null;
@@ -19,36 +30,168 @@ export const buildSystemContext = (state: AppState): string => {
   let budgetText = '';
   if (currentBudget && currentBudget.rootGroups) {
     budgetText = currentBudget.rootGroups
-      .map(group => `- ${group.name}: ${group.ratioPercent}%`)
+      .map(group => `- ${group.name}: ${group.ratioPercent}% (~${((currentIncome * group.ratioPercent) / 100).toFixed(1)} tr/tháng)`)
       .join('\n');
   }
 
-  return `Bạn là "Finance Family OS AI Advisor" - Chuyên gia hoạch định tài chính gia đình cao cấp (Certified Financial Planner - CFP) kiêm Cố vấn hạnh phúc gia đình.
-Nhiệm vụ của bạn là tư vấn phân bổ ngân sách và dòng tiền một cách thông minh, cân bằng giữa:
-1. Hạnh phúc & Thoải mái hiện tại (Ăn uống dinh dưỡng, hẹn hò vợ chồng, du lịch, hiếu kính cha mẹ).
-2. Dự phòng an toàn & Chào đón thiên thần nhỏ (Quỹ thai sản, tiêm chủng, bảo hiểm y tế).
-3. Đầu tư tích sản dài hạn bền vững (Tự do tài chính, không đầu tư mạo hiểm khi chuẩn bị sinh nở).
+  // 1. Tổng hợp Tài sản ròng (Net Worth) & Tiết kiệm
+  const totalSavings = savingsDeposits
+    .filter(s => s.status === 'active')
+    .reduce((sum, s) => sum + (s.principal || 0), 0);
 
-DƯỚI ĐÂY LÀ BỨC TRANH TÀI CHÍNH CỦA GIA ĐÌNH:
-- Vốn khởi điểm: ${profile?.startingCapital || 0} triệu VNĐ
-- Thu nhập hàng tháng: ${currentIncome} triệu VNĐ
+  const totalSinkingFunds = sinkingFunds
+    .filter(f => f.status === 'active')
+    .reduce((sum, f) => sum + ((f as any).currentBalance ?? f.initialDeposit ?? 0), 0);
+
+  const totalInvestedDeals = investmentDeals
+    .filter(d => d.status === 'active')
+    .reduce((sum, d) => sum + (d.capital || 0), 0);
+
+  const totalDebts = debts
+    .filter(d => d.status === 'active')
+    .reduce((sum, d) => sum + ((d as any).remainingBalance ?? d.principal ?? 0), 0);
+
+  const startingCapital = profile?.startingCapital || 0;
+  const estimatedNetWorth = Math.round((startingCapital + totalSavings + totalSinkingFunds + totalInvestedDeals - totalDebts) * 10) / 10;
+
+  // 2. Lịch sử Chi Tiêu Thực Tế Hàng Tháng (Lấy các tháng gần nhất)
+  const recentMonthlyRecords = [...resolvedMonthlyDb]
+    .filter(item => (item.totalActualExpenseMonthly !== undefined && item.totalActualExpenseMonthly > 0) || item.income > 0)
+    .slice(-12); // 12 tháng gần nhất
+
+  let monthlyHistoryText = '';
+  if (recentMonthlyRecords.length > 0) {
+    monthlyHistoryText = recentMonthlyRecords.map(m => {
+      const actualExp = m.totalActualExpenseMonthly || 0;
+      const surplus = Math.round((m.income - actualExp) * 10) / 10;
+      let groupDetails = '';
+      if (m.actualExpenseByGroup && Object.keys(m.actualExpenseByGroup).length > 0) {
+        groupDetails = Object.entries(m.actualExpenseByGroup)
+          .filter(([_, val]) => val > 0)
+          .map(([k, val]) => `${k}: ${val} tr`)
+          .join(', ');
+      }
+      return `- Tháng ${m.month}/${m.year} (${m.periodKey}): Thu nhập ${m.income} tr | Chi tiêu thực tế: ${actualExp} tr | Dư tích lũy: ${surplus} tr ${groupDetails ? `[Chi tiết: ${groupDetails}]` : ''}`;
+    }).join('\n');
+  } else {
+    monthlyHistoryText = 'Chưa có bản ghi chi tiêu tháng cũ được lưu. (Mặc định thu nhập hiện tại 80 tr/tháng, tiền thuê nhà 9 tr/tháng).';
+  }
+
+  // 3. Quỹ Tích Lũy Mục Tiêu (Sinking Funds - Quỹ sinh con, mua sắm...)
+  let sinkingFundsText = '';
+  if (sinkingFunds.length > 0) {
+    sinkingFundsText = sinkingFunds.map(f => {
+      const current = (f as any).currentBalance ?? f.initialDeposit ?? 0;
+      const gap = Math.max(0, f.targetAmount - current);
+      const monthsNeeded = f.monthlyContribution > 0 ? Math.ceil(gap / f.monthlyContribution) : 'Chưa đặt góp đều';
+      const targetTime = (f as any).targetDate || `Bắt đầu: ${f.startMonth}/${f.startYear}`;
+      return `- ${f.name}: Hiện có ${current} tr / Mục tiêu ${f.targetAmount} tr (Còn thiếu: ${gap} tr). Góp hàng tháng: ${f.monthlyContribution} tr/tháng. Thời điểm: ${targetTime}. Dự kiến cần: ${monthsNeeded} tháng nữa.`;
+    }).join('\n');
+  } else {
+    sinkingFundsText = 'Gia đình đang chuẩn bị kế hoạch tích lũy quỹ đón thiên thần nhỏ (mục tiêu ~80 - 100 triệu).';
+  }
+
+  // 4. Sổ tiết kiệm (Savings Deposits)
+  let savingsText = '';
+  if (savingsDeposits.length > 0) {
+    savingsText = savingsDeposits.map(s => 
+      `- ${s.name}: Gốc ${s.principal} tr | Lãi suất ${s.interestRateAnnual}%/năm | Kỳ hạn ${s.termMonths} tháng | Bắt đầu: ${s.startMonth}/${s.startYear} | Trạng thái: ${s.status === 'active' ? 'Đang gửi' : 'Đã tất toán'}`
+    ).join('\n');
+  } else {
+    savingsText = 'Chưa có sổ tiết kiệm cá nhân.';
+  }
+
+  // 5. Nợ & Khoản vay (Debts)
+  let debtsText = '';
+  if (debts.length > 0) {
+    debtsText = debts.map(d => {
+      const rem = (d as any).remainingBalance ?? d.principal ?? 0;
+      const monthlyPay = (d as any).monthlyPayment ? `${(d as any).monthlyPayment} tr/tháng` : 'Theo kỳ hạn';
+      return `- ${d.name} (${d.type}): Dư nợ ${rem} tr (Gốc ban đầu ${d.principal} tr) | Trả góp: ${monthlyPay} | Lãi suất ${d.interestRateAnnual}%/năm | Kỳ hạn ${d.termMonths} tháng từ ${d.startMonth}/${d.startYear}`;
+    }).join('\n');
+  } else {
+    debtsText = 'Gia đình hiện tại không có nợ xấu hoặc khoản vay lớn.';
+  }
+
+  // 6. Tính toán Chỉ số Độc lập tài chính (FIRE)
+  // Ước tính chi tiêu hàng năm: Lấy trung bình chi tiêu hoặc 35 tr/tháng (420 tr/năm)
+  const estimatedMonthlyLivingExpense = recentMonthlyRecords.length > 0 
+    ? (recentMonthlyRecords.reduce((s, r) => s + (r.totalActualExpenseMonthly || 30), 0) / recentMonthlyRecords.length)
+    : 30;
+  const annualLivingExpense = estimatedMonthlyLivingExpense * 12;
+  const fireTarget = Math.round((annualLivingExpense / 0.04) * 10) / 10; // Quy tắc 4%
+  const fireGap = Math.max(0, fireTarget - estimatedNetWorth);
+  const monthlySurplus = Math.max(0, currentIncome - estimatedMonthlyLivingExpense);
+  const yearsToFire = monthlySurplus > 0 ? (fireGap / (monthlySurplus * 12)).toFixed(1) : 'Chưa xác định';
+
+  return `Bạn là "Finance Family OS AI Advisor" - Chuyên gia hoạch định tài chính gia đình cao cấp (Certified Financial Planner - CFP) kiêm Cố vấn hạnh phúc gia đình tri kỷ của hai vợ chồng.
+Bạn trả lời trực tiếp các câu hỏi của người dùng dựa trên CHÍNH DỮ LIỆU TÀI CHÍNH THỰC TẾ của gia đình được cung cấp dưới đây.
+
+============================================================
+BỨC TRANH TÀI CHÍNH TOÀN DIỆN CỦA GIA ĐÌNH:
+============================================================
+- Tổng tài sản ròng ước tính (Net Worth): ${estimatedNetWorth} triệu VNĐ
+- Vốn khởi điểm: ${startingCapital} triệu VNĐ
+- Thu nhập hiện tại: ${currentIncome} triệu VNĐ/tháng
 - Tiền thuê nhà cố định: Khoảng 9 triệu VNĐ/tháng
 - Lạm phát dự kiến: ${assumptions.generalInflationRateAnnual}% / năm
-- Lãi suất kỳ vọng: ${assumptions.investmentYieldExpectationAnnual}% / năm
+- Lãi suất đầu tư kỳ vọng: ${assumptions.investmentYieldExpectationAnnual}% / năm
 
-CƠ CẤU NGÂN SÁCH HIỆN TẠI:
+1. DỮ LIỆU CHI TIÊU THỰC TẾ TỪNG THÁNG (LỊCH SỬ THỰC):
+${monthlyHistoryText}
+
+2. CƠ CẤU PHÂN BỔ NGÂN SÁCH DỰ KIẾN (4 TRỤ CỘT):
 ${budgetText || 'Chưa cấu hình chi tiết.'}
 
-KẾ HOẠCH & SỰ KIỆN TƯƠNG LAI:
-${!lifeEvents || lifeEvents.length === 0 ? 'Gia đình đang lên kế hoạch chuẩn bị sinh em bé.' : lifeEvents.map(e => `- ${e.name} (${e.type}): Tháng ${e.month}/${e.year}, Số tiền: ${e.amount} triệu.`).join('\n')}
+3. TIẾN ĐỘ CÁC QUỸ TÍCH LŨY MỤC TIÊU (SINKING FUNDS):
+Tổng tích lũy hiện có: ${totalSinkingFunds} triệu VNĐ
+${sinkingFundsText}
 
-DANH MỤC TÀI SẢN & ĐẦU TƯ:
-${!investmentDeals || investmentDeals.length === 0 ? 'Chưa có khoản đầu tư lớn.' : investmentDeals.map(d => `- [${d.assetType}] ${d.name}: Vốn ${d.capital} triệu.`).join('\n')}
+4. DANH MỤC SỔ TIẾT KIỆM (SAVINGS DEPOSITS):
+Tổng tiền gửi tiết kiệm: ${totalSavings} triệu VNĐ
+${savingsText}
 
-NGUYÊN TẮC TƯ VẤN:
-- Giọng văn ấm áp, tôn trọng, gần gũi như một người bạn tri kỷ am hiểu tài chính của gia đình.
-- Luôn chỉ ra con số cụ thể (Triệu VNĐ và %).
-- Đưa ra lời khuyên thực tế, tránh sáo rỗng.`;
+5. NỢ & NGHĨA VỤ TÀI CHÍNH (DEBTS):
+Tổng dư nợ còn lại: ${totalDebts} triệu VNĐ
+${debtsText}
+
+6. DANH MỤC ĐẦU TƯ & TÀI SẢN (INVESTMENT DEALS):
+Tổng vốn đầu tư: ${totalInvestedDeals} triệu VNĐ
+${investmentDeals.length === 0 ? 'Chưa có thương vụ đầu tư lớn.' : investmentDeals.map(d => `- [${d.assetType}] ${d.name}: Vốn ${d.capital} tr (Trạng thái: ${d.status}, Lợi nhuận: ${d.realizedProfit || 0} tr).`).join('\n')}
+
+7. KẾ HOẠCH TƯƠNG LAI & CHI TIÊU LINH HOẠT (LIFE EVENTS):
+${lifeEvents.length === 0 ? 'Kế hoạch trọng tâm: Chuẩn bị tài chính đón thiên thần nhỏ.' : lifeEvents.map(e => `- ${e.name} (${e.type}): Tháng ${e.month}/${e.year}, Số tiền: ${e.amount} tr. Ghi chú: ${e.note || 'Không'}`).join('\n')}
+
+8. CHỈ SỐ TỰ DO TÀI CHÍNH (FIRE TARGET):
+- Chi phí sinh hoạt ước tính: ${estimatedMonthlyLivingExpense.toFixed(1)} tr/tháng (~${annualLivingExpense.toFixed(1)} tr/năm).
+- Số tiền cần có để đạt Tự Do Tài Chính (quy tắc 4%): ${fireTarget} triệu VNĐ (~${(fireTarget / 1000).toFixed(2)} Tỷ).
+- Khoảng cách còn lại (FIRE Gap): ${fireGap} triệu VNĐ.
+- Tốc độ tích lũy thặng dư hàng tháng: ~${monthlySurplus.toFixed(1)} triệu VNĐ/tháng.
+- Dự kiến thời gian đạt FIRE: khoảng ${yearsToFire} năm nữa (nếu giữ vững kỷ luật tài chính và tái đầu tư sinh lời ${assumptions.investmentYieldExpectationAnnual}%/năm).
+
+============================================================
+QUY TẮC PHẢN HỒI & TƯ VẤN (BẮT BUỘC TUÂN THỦ):
+============================================================
+1. KHI ĐƯỢC HỎI VỀ CHI TIÊU QUÁ KHỨ (VD: "Tháng qua sài nhiêu tiền?", "Tháng nào chi nhiều nhất?"):
+   - Đọc NGAY từ mục 1 (DỮ LIỆU CHI TIÊU THỰC TẾ).
+   - Nêu chính xác con số: Thu nhập bao nhiêu, tổng chi thực tế bao nhiêu, dư tiết kiệm bao nhiêu.
+   - Chỉ ra khoản chi lớn nhất (VD: Tiền nhà 9 triệu, ăn uống...).
+   - So sánh với ngân sách kế hoạch: Tiết kiệm tốt hay vượt mức, lời động viên chân thành.
+
+2. KHI ĐƯỢC HỎI VỀ DỰ ĐOÁN THỜI GIAN ĐẠT MỤC TIÊU (VD: "Bao lâu tôi đạt được...", "Khi nào gom đủ quỹ sinh con?", "Bao lâu nữa tự do tài chính?"):
+   - Tính toán rõ ràng:
+     + Mục tiêu cần bao nhiêu (Target), hiện có bao nhiêu (Current) -> Còn thiếu bao nhiêu (Gap).
+     + Với tốc độ tích lũy / trích quỹ hiện tại (X triệu/tháng): Số tháng = Gap / X.
+     + Quy đổi ra mốc thời gian cụ thể: "Sau X tháng nữa, dự kiến vào khoảng Tháng MM/YYYY".
+     + Đưa ra kịch bản tối ưu: "Nếu hai vợ chồng tăng trích thêm Y triệu/tháng thì sẽ rút ngắn được Z tháng".
+
+3. KHI ĐƯỢC HỎI TRA CỨU KIẾN THỨC / THÔNG TIN ĐỜI SỐNG / INTERNET (VD: Chi phí sinh con viện Từ Dũ/Vinmec, bảo hiểm thai sản, giá vàng, lãi suất ngân hàng):
+   - Cung cấp thông tin thực tế, cập nhật, chi tiết từng gói chi phí (sinh thường, sinh mổ, chi phí phòng dịch vụ, quyền lợi bảo hiểm).
+   - Luôn đối chiếu với bức tranh tài chính của gia đình (VD: "Gói sinh khoảng 40-55 triệu, với quỹ hiện tại X triệu và tốc độ góp Y triệu/tháng thì hoàn toàn nằm trong tầm kiểm soát an toàn của gia đình").
+
+4. PHONG CÁCH GIAO TIẾP:
+   - Xưng hô lịch sự, ấm áp, đồng cảm như một người bạn tri kỷ am hiểu tài chính gia đình.
+   - Định dạng Markdown rõ ràng, dễ đọc (bullet points, in đậm con số tiền Triệu VNĐ, bảng nếu cần).`;
 };
 
 // Hàm gửi tin nhắn tới Gemini API
@@ -102,33 +245,83 @@ async function generateGeminiContentWithFallback(
   throw new Error(`Không thể kết nối Gemini API: ${(lastError as Error)?.message || 'Vui lòng kiểm tra lại API Key.'}`);
 }
 
-// Hàm gửi tin nhắn tới Gemini API (Copilot Chat)
+// Hàm gửi tin nhắn tới Gemini API (Copilot Chat) với hỗ trợ tra cứu Internet & Fallback Model thông minh
 export const sendChatMessage = async (
   apiKey: string,
   message: string,
   chatHistory: { role: 'user' | 'model'; parts: { text: string }[] }[],
-  state: AppState
-) => {
+  state: AppState,
+  useWebSearch: boolean = false
+): Promise<string> => {
   if (!apiKey) throw new Error("Chưa cấu hình Gemini API Key.");
 
   const cleanKey = apiKey.trim();
   const genAI = new GoogleGenerativeAI(cleanKey);
-  const model = genAI.getGenerativeModel({ 
-    model: 'gemini-3-flash-preview',
-    systemInstruction: buildSystemContext(state)
-  });
+  const systemInstruction = buildSystemContext(state);
 
-  const chat = model.startChat({
-    history: chatHistory,
-    generationConfig: {
-      maxOutputTokens: 1500,
-      temperature: 0.7,
-    },
-  });
+  // 1. Nếu người dùng bật chế độ tra cứu Internet, thử gọi Gemini kèm Google Search Grounding tool
+  if (useWebSearch) {
+    try {
+      const searchModel = genAI.getGenerativeModel({ 
+        model: 'gemini-3-flash-preview',
+        systemInstruction,
+        tools: [{ googleSearch: {} } as any]
+      });
 
-  const result = await chat.sendMessage(message);
-  const response = await result.response;
-  return response.text();
+      const chat = searchModel.startChat({
+        history: chatHistory,
+        generationConfig: {
+          maxOutputTokens: 2000,
+          temperature: 0.7,
+        },
+      });
+
+      const result = await chat.sendMessage(message);
+      const response = await result.response;
+      return response.text();
+    } catch (searchError) {
+      console.warn("Google Search tool hit quota/limit, falling back to standard AI model:", searchError);
+      // Fallback to standard model below
+    }
+  }
+
+  // 2. Danh sách các model ứng cử viên thế hệ 3
+  const candidateModels = [
+    'gemini-3-flash-preview',
+    'gemini-3.1-flash-lite',
+    'gemini-3.5-flash',
+    'gemini-flash-latest'
+  ];
+
+  let lastError: any = null;
+  for (const modelName of candidateModels) {
+    try {
+      const model = genAI.getGenerativeModel({ 
+        model: modelName,
+        systemInstruction
+      });
+
+      const chat = model.startChat({
+        history: chatHistory,
+        generationConfig: {
+          maxOutputTokens: 2000,
+          temperature: 0.7,
+        },
+      });
+
+      const result = await chat.sendMessage(message);
+      const response = await result.response;
+      return response.text();
+    } catch (err: any) {
+      lastError = err;
+      if (err?.status === 404 || err?.status === 429) {
+        continue;
+      }
+      throw err;
+    }
+  }
+
+  throw new Error(`Không thể kết nối Gemini API: ${(lastError as Error)?.message || 'Vui lòng kiểm tra lại kết nối mạng.'}`);
 };
 
 /**
