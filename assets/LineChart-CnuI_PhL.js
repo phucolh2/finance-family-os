@@ -1,0 +1,1 @@
+import{o as e,r as t}from"./createLucideIcon-X_kUInbS.js";import{rt as n}from"./CategoricalChart-D5W28x1T.js";import{t as r}from"./CartesianChart-r9M9P8wo.js";var i=e(t()),a=[`axis`],o=(0,i.forwardRef)((e,t)=>i.createElement(r,{chartName:`LineChart`,defaultTooltipEventType:`axis`,validateTooltipEventTypes:a,tooltipPayloadSearcher:n,categoricalChartProps:e,ref:t}));export{o as t};
