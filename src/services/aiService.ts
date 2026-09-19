@@ -205,7 +205,9 @@ QUY TẮC PHẢN HỒI & TƯ VẤN (BẮT BUỘC TUÂN THỦ):
 
    👉 NẾU TÌNH TRẠNG LÀ [ONLINE]:
    Sử dụng TRỰC TIẾP con số từ kết quả tìm kiếm Google Search, ghi rõ nguồn và thời điểm cập nhật.
-   **LƯU Ý:** Bạn phải kiểm tra kỹ NGÀY THÁNG của kết quả tìm kiếm. Nếu kết quả trả về là tin tức của nhiều tháng trước hoặc năm ngoái (không phải ngày hôm nay), bạn PHẢI nói rõ: "Kết quả tôi tìm được là dữ liệu cũ từ [Tháng/Năm], không phải giá hôm nay." KHÔNG ĐƯỢC lấy giá cũ và khẳng định đó là giá hôm nay.
+   **LƯU Ý QUAN TRỌNG VỀ NGUỒN VÀ THỜI GIAN:** 
+   1. Bạn phải kiểm tra kỹ NGÀY THÁNG của kết quả. Nếu là dữ liệu của nhiều tháng trước hoặc năm ngoái, bạn PHẢI nói rõ: "Kết quả tôi tìm được là dữ liệu cũ từ [Tháng/Năm]". KHÔNG ĐƯỢC khẳng định đó là giá hôm nay.
+   2. ƯU TIÊN TUYỆT ĐỐI tra cứu từ các nguồn chuyên biệt như: '24hmoney.vn' (thế giới, crypto, giá vàng, lãi suất, tỷ giá, futures) và 'giavang.org'.
 
 4. KHI ĐƯỢC HỎI TRA CỨU KIẾN THỨC / THÔNG TIN ĐỜI SỐNG / INTERNET (VD: Chi phí sinh con viện Từ Dũ/Vinmec, bảo hiểm thai sản):
    - Cung cấp thông tin thực tế, cập nhật, chi tiết từng gói chi phí (sinh thường, sinh mổ, chi phí phòng dịch vụ, quyền lợi bảo hiểm).
@@ -359,7 +361,7 @@ export const sendChatMessage = async (
           },
         });
 
-        const searchMessage = message + "\n\n(YÊU CẦU HỆ THỐNG ĐỐI VỚI AI: BẠN ĐANG DÙNG CÔNG CỤ GOOGLE SEARCH. HÃY TÌM KIẾM DỮ LIỆU CỦA NGÀY HÔM NAY. NẾU KẾT QUẢ TÌM KIẾM LÀ CỦA CÁC THÁNG TRƯỚC HOẶC NĂM TRƯỚC, BẠN PHẢI NÓI RÕ: 'DỮ LIỆU TÌM ĐƯỢC LÀ DỮ LIỆU CŨ TỪ QUÁ KHỨ' VÀ KHÔNG ĐƯỢC PHÉP BÁO CÁO NHƯ THỂ ĐÓ LÀ GIÁ HÔM NAY!)";
+        const searchMessage = message + "\n\n(YÊU CẦU HỆ THỐNG ĐỐI VỚI AI: BẠN ĐANG DÙNG CÔNG CỤ GOOGLE SEARCH. HÃY ƯU TIÊN TRA CỨU TỪ CÁC NGUỒN UY TÍN SAU: 24hmoney.vn (vàng, lãi suất, crypto, hàng hóa, tỷ giá) hoặc giavang.org. BẠN NÊN THÊM TỪ KHÓA 'site:24hmoney.vn' HOẶC 'site:giavang.org' VÀO LỆNH TÌM KIẾM CỦA MÌNH ĐỂ CÓ SỐ LIỆU CHÍNH XÁC NHẤT. HÃY TÌM KIẾM DỮ LIỆU CỦA NGÀY HÔM NAY. NẾU KẾT QUẢ LÀ DỮ LIỆU CŨ, BẠN PHẢI NÓI RÕ LÀ DỮ LIỆU CŨ TỪ QUÁ KHỨ VÀ KHÔNG BÁO CÁO NHƯ THỂ LÀ GIÁ HÔM NAY!)";
         const result = await chat.sendMessage(searchMessage);
         const response = await result.response;
         const text = response.text();
