@@ -1,0 +1,1 @@
+---\nname: copilot-system-prompt\ndescription: Huong dan thiet ke System Prompt cho Tro ly Gia dinh trong Finance Family OS.\n---\n\n# Skill Placeholder\n
