@@ -717,23 +717,41 @@ export const LoveCorner: React.FC<LoveCornerProps> = ({ isHidden = false }) => {
 
   return (
     <>
-      <button
-        onClick={handleOpenLoveCorner}
-        className={`fixed bottom-6 right-5 sm:right-6 z-40 p-3.5 sm:p-4 rounded-full bg-gradient-to-br from-pink-400 to-rose-500 hover:from-pink-500 hover:to-rose-600 text-white shadow-[0_8px_25px_rgba(244,63,94,0.35)] hover:shadow-[0_8px_35px_rgba(244,63,94,0.55)] transition-all duration-300 transform hover:scale-105 active:scale-95 group print:hidden cursor-pointer ${
+      {/* NÚT BẤM NỔI TRÒN ĐỒNG BỘ DOCK (Love Corner) */}
+      <div 
+        className={`fixed bottom-4 sm:bottom-6 right-4 sm:right-6 z-40 print:hidden flex items-center justify-end transition-all duration-300 ${
           isHidden ? 'opacity-0 pointer-events-none scale-75' : 'opacity-100 scale-100'
-        } ${hasNewMessage ? 'animate-bounce ring-4 ring-yellow-400/80 shadow-[0_8px_35px_rgba(244,63,94,0.7)]' : ''}`}
-        title={hasNewMessage ? 'Có lời nhắn mới từ bạn đời!' : 'Góc Tình Yêu (Love Corner)'}
+        }`}
       >
-        <Heart className={`w-6 h-6 sm:w-7 sm:h-7 fill-white/20 group-hover:fill-white/40 ${hasNewMessage ? 'animate-pulse' : ''} group-hover:scale-110 transition-transform`} />
-        {hasNewMessage && (
-          <span className="absolute -top-1 -right-1 flex h-4 w-4">
-            <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-yellow-400 opacity-75"></span>
-            <span className="relative inline-flex rounded-full h-4 w-4 bg-gradient-to-tr from-amber-400 to-yellow-300 border-2 border-white items-center justify-center text-[9px] font-black text-rose-700 shadow-md">
-              !
-            </span>
-          </span>
-        )}
-      </button>
+        <div className="relative flex items-center group">
+          {/* Tooltip bay sang trái khi hover trên desktop */}
+          <div className="hidden sm:block absolute right-full mr-3 pointer-events-none opacity-0 group-hover:opacity-100 transition-all duration-200 transform translate-x-2 group-hover:translate-x-0">
+            <div className="bg-slate-900/90 backdrop-blur-md text-white text-xs font-bold px-3 py-1.5 rounded-xl shadow-xl whitespace-nowrap flex items-center gap-1.5 border border-white/10">
+              <span className="text-pink-400">💕</span>
+              <span>Góc Tình Yêu</span>
+              {hasNewMessage && <span className="text-amber-300 text-[10px] font-extrabold">• Tin mới</span>}
+            </div>
+          </div>
+
+          <button
+            onClick={handleOpenLoveCorner}
+            className={`w-12 h-12 sm:w-14 sm:h-14 rounded-full bg-gradient-to-br from-pink-400 via-rose-500 to-pink-600 hover:from-pink-500 hover:to-rose-600 text-white shadow-[0_8px_25px_rgba(244,63,94,0.35)] hover:shadow-[0_8px_35px_rgba(244,63,94,0.55)] transition-all duration-300 transform hover:scale-105 active:scale-95 flex items-center justify-center cursor-pointer relative group ${
+              hasNewMessage ? 'animate-bounce ring-4 ring-yellow-400/80 shadow-[0_8px_35px_rgba(244,63,94,0.7)]' : ''
+            }`}
+            title={hasNewMessage ? 'Có lời nhắn mới từ bạn đời!' : 'Góc Tình Yêu (Love Corner)'}
+          >
+            <Heart className={`w-6 h-6 sm:w-7 sm:h-7 fill-white/20 group-hover:fill-white/40 ${hasNewMessage ? 'animate-pulse' : ''} group-hover:scale-110 transition-transform`} />
+            {hasNewMessage && (
+              <span className="absolute -top-1 -right-1 flex h-4 w-4">
+                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-yellow-400 opacity-75"></span>
+                <span className="relative inline-flex rounded-full h-4 w-4 bg-gradient-to-tr from-amber-400 to-yellow-300 border-2 border-white items-center justify-center text-[9px] font-black text-rose-700 shadow-md">
+                  !
+                </span>
+              </span>
+            )}
+          </button>
+        </div>
+      </div>
 
       {/* Hidden file input for photo upload */}
       <input
