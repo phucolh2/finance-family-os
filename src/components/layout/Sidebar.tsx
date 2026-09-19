@@ -24,15 +24,7 @@ import {
   CarFront,
   Palmtree,
   X,
-  FolderOpen,
-  Gift,
-  Activity,
-  Wrench,
-  Repeat,
-  Contact,
-  Utensils,
-  CheckSquare,
-  Target
+  Home,
 } from 'lucide-react';
 
 interface SidebarProps {
@@ -79,28 +71,9 @@ export const Sidebar: React.FC<SidebarProps> = ({ activeTab, setActiveTab, onClo
       ],
     },
     {
-      title: 'Góc Tổ Ấm',
+      title: 'Nhà Mình',
       items: [
-        { id: 'document_vault', name: 'Tủ Giấy Tờ', icon: FolderOpen, color: 'text-amber-600', bg: 'bg-amber-500/15' },
-        { id: 'giving_ledger', name: 'Sổ Ân Tình', icon: Gift, color: 'text-rose-500', bg: 'bg-rose-500/15' },
-        { id: 'health_tracker', name: 'Nhật Ký Khỏe Mạnh', icon: Activity, color: 'text-emerald-500', bg: 'bg-emerald-500/15' },
-      ],
-    },
-    {
-      title: 'Chăm Sóc Nhà Cửa',
-      items: [
-        { id: 'home_inventory', name: 'Đồ Đạc Trong Nhà', icon: Wrench, color: 'text-orange-500', bg: 'bg-orange-500/15' },
-        { id: 'subscription_tracker', name: 'Dịch Vụ Đang Dùng', icon: Repeat, color: 'text-violet-500', bg: 'bg-violet-500/15' },
-        { id: 'family_contacts', name: 'Danh Bạ Bỏ Túi', icon: Contact, color: 'text-cyan-500', bg: 'bg-cyan-500/15' },
-      ],
-    },
-    {
-      title: 'Bếp Núc & Con Cái',
-      items: [
-        { id: 'meal_planner', name: 'Cơm Nhà & Đi Chợ', icon: Utensils, color: 'text-orange-400', bg: 'bg-orange-400/15' },
-        { id: 'chore_chart', name: 'Cùng Làm Việc Nhà', icon: CheckSquare, color: 'text-indigo-400', bg: 'bg-indigo-400/15' },
-        { id: 'child_growth', name: 'Hành Trình Khôn Lớn', icon: Baby, color: 'text-pink-400', bg: 'bg-pink-400/15' },
-        { id: 'vision_board', name: 'Ước Mơ Của Cả Nhà', icon: Target, color: 'text-sky-400', bg: 'bg-sky-400/15' },
+        { id: 'family_hub', name: '🏠 Nhà Mình', icon: Home, color: 'text-family-accent', bg: 'bg-family-accent/15' },
       ],
     },
     {

@@ -60,6 +60,7 @@ const MealPlanner = lazyWithRetry(() => import('./pages/MealPlanner').then(m => 
 const ChoreChart = lazyWithRetry(() => import('./pages/ChoreChart').then(m => ({ default: m.ChoreChart })));
 const ChildGrowth = lazyWithRetry(() => import('./pages/ChildGrowth').then(m => ({ default: m.ChildGrowth })));
 const VisionBoard = lazyWithRetry(() => import('./pages/VisionBoard').then(m => ({ default: m.VisionBoard })));
+const FamilyHub = lazyWithRetry(() => import('./pages/FamilyHub').then(m => ({ default: m.FamilyHub })));
 
 function AppContent() {
   const [activeTab, setActiveTab] = useState<string>('dashboard');
@@ -109,6 +110,8 @@ function AppContent() {
         return <LoanSimulator />;
       case 'vacation_planner':
         return <VacationPlanner />;
+      case 'family_hub':
+        return <FamilyHub />;
       case 'document_vault':
         return <DocumentVault />;
       case 'giving_ledger':
