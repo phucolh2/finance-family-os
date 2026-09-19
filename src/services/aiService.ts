@@ -344,6 +344,8 @@ export const sendChatMessage = async (
   const systemInstruction = buildSystemContext(state, useWebSearch);
   const cleanHistory = sanitizeGeminiHistory(chatHistory);
 
+  let lastError: any = null;
+
   // 1. Nếu người dùng bật chế độ tra cứu Internet, thử gọi Gemini kèm Google Search Grounding tool
   if (useWebSearch) {
     const searchCandidateModels = ['gemini-1.5-pro', 'gemini-1.5-flash', 'gemini-3-flash-preview', 'gemini-3.6-flash'];
@@ -381,7 +383,8 @@ export const sendChatMessage = async (
         if (finalText && finalText.trim().length > 0) {
           return finalText;
         }
-      } catch (searchError) {
+      } catch (searchError: any) {
+        lastError = searchError;
         console.warn(`[Google Search ${searchModelName}] Thử tra cứu thất bại hoặc quá tải, chuyển sang model tiếp theo:`, searchError);
       }
     }
@@ -390,10 +393,9 @@ export const sendChatMessage = async (
   // Nếu đã bật Web Search nhưng tất cả model search đều thất bại, bắt buộc chuyển sang mode OFFLINE
   // để cảnh báo người dùng thay vì hallucinate dữ liệu cũ.
   const fallbackSystemInstruction = useWebSearch 
-    ? buildSystemContext(state, false) + "\n\n⚠️ GHI CHÚ QUAN TRỌNG: Quá trình gọi công cụ Search bị lỗi mạng. Bắt buộc phải thông báo cho người dùng là không thể tra cứu do lỗi kết nối." 
+    ? buildSystemContext(state, false) + "\n\n⚠️ GHI CHÚ QUAN TRỌNG: Quá trình gọi công cụ Search bị lỗi mạng. Bắt buộc phải thông báo cho người dùng là không thể tra cứu do lỗi kết nối. (Mã lỗi hệ thống: " + (lastError?.message || "Unknown Error") + ")" 
     : systemInstruction;
 
-  // 2. Danh sách các model ứng cử viên thế hệ 3 có sẵn
   const candidateModels = [
     'gemini-1.5-pro',
     'gemini-1.5-flash',
@@ -403,7 +405,6 @@ export const sendChatMessage = async (
     'gemini-3.6-flash'
   ];
 
-  let lastError: any = null;
   for (const modelName of candidateModels) {
     try {
       const model = genAI.getGenerativeModel({ 
