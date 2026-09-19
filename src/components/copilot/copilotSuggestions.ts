@@ -238,14 +238,14 @@ export function getSmartContextPrompts(activeTab: string = 'dashboard', state: A
     });
   }
 
-  // Luôn có 1 câu hỏi tra cứu Internet thông minh
+  // Luôn có 1 câu hỏi tra cứu Internet thông minh (bắt buộc forceSearch = true để tránh dữ liệu lỗi thời)
   if (!prompts.some(p => p.forceSearch)) {
     prompts.push({
-      id: 'general_search_invest',
-      label: '🌐 Lãi suất ngân hàng & giá vàng hôm nay?',
-      prompt: 'Tra cứu giúp tôi: Mặt bằng lãi suất tiết kiệm các ngân hàng lớn (Vietcombank, BIDV, Techcombank) và xu hướng giá vàng hiện nay ra sao?',
+      id: 'general_search_gold_rates',
+      label: '🌐 Giá vàng & lãi suất hôm nay (thời gian thực)',
+      prompt: 'Tra cứu ngay giá vàng SJC và vàng nhẫn 9999 hôm nay tại Việt Nam (mua vào/bán ra), đồng thời cho biết lãi suất tiết kiệm tốt nhất tại các ngân hàng lớn hiện nay là bao nhiêu?',
       forceSearch: true,
-      tag: 'Tra cứu Internet',
+      tag: 'Tra cứu thời gian thực',
     });
   }
 
