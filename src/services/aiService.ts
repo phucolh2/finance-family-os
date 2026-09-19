@@ -205,6 +205,7 @@ QUY TẮC PHẢN HỒI & TƯ VẤN (BẮT BUỘC TUÂN THỦ):
 
    👉 NẾU TÌNH TRẠNG LÀ [ONLINE]:
    Sử dụng TRỰC TIẾP con số từ kết quả tìm kiếm Google Search, ghi rõ nguồn và thời điểm cập nhật.
+   **LƯU Ý:** Bạn phải kiểm tra kỹ NGÀY THÁNG của kết quả tìm kiếm. Nếu kết quả trả về là tin tức của nhiều tháng trước hoặc năm ngoái (không phải ngày hôm nay), bạn PHẢI nói rõ: "Kết quả tôi tìm được là dữ liệu cũ từ [Tháng/Năm], không phải giá hôm nay." KHÔNG ĐƯỢC lấy giá cũ và khẳng định đó là giá hôm nay.
 
 4. KHI ĐƯỢC HỎI TRA CỨU KIẾN THỨC / THÔNG TIN ĐỜI SỐNG / INTERNET (VD: Chi phí sinh con viện Từ Dũ/Vinmec, bảo hiểm thai sản):
    - Cung cấp thông tin thực tế, cập nhật, chi tiết từng gói chi phí (sinh thường, sinh mổ, chi phí phòng dịch vụ, quyền lợi bảo hiểm).
