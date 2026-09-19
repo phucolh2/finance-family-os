@@ -370,6 +370,12 @@ export const sendChatMessage = async (
     }
   }
 
+  // Nếu đã bật Web Search nhưng tất cả model search đều thất bại, bắt buộc chuyển sang mode OFFLINE
+  // để cảnh báo người dùng thay vì hallucinate dữ liệu cũ.
+  const fallbackSystemInstruction = useWebSearch 
+    ? buildSystemContext(state, false) + "\n\n⚠️ GHI CHÚ QUAN TRỌNG: Quá trình gọi công cụ Search bị lỗi mạng. Bắt buộc phải thông báo cho người dùng là không thể tra cứu do lỗi kết nối." 
+    : systemInstruction;
+
   // 2. Danh sách các model ứng cử viên thế hệ 3 có sẵn
   const candidateModels = [
     'gemini-1.5-pro',
@@ -385,7 +391,7 @@ export const sendChatMessage = async (
     try {
       const model = genAI.getGenerativeModel({ 
         model: modelName,
-        systemInstruction
+        systemInstruction: fallbackSystemInstruction
       });
 
       const chat = model.startChat({
