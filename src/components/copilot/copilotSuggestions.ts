@@ -330,7 +330,7 @@ export function getFallbackFollowUps(lastUserQuestion: string): string[] {
   }
 
   return [
-    '💡 Copilot có lời khuyên tài chính quan trọng nào cho gia đình lúc này?',
+    '💡 Trợ lý Gia đình có lời khuyên tài chính quan trọng nào cho gia đình lúc này?',
     '📊 Cơ cấu tài sản ròng hiện tại có an toàn trước lạm phát không?',
     '🎯 Mục tiêu tài chính tiếp theo gia đình nên ưu tiên là gì?',
   ];

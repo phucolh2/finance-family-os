@@ -52,7 +52,7 @@ export const CopilotChat: React.FC<CopilotChatProps> = ({
     return [
       { 
         role: 'model', 
-        content: '👋 Xin chào hai vợ chồng! Tôi là **Finance Copilot** — Cố vấn tài chính gia đình riêng của anh chị.\n\nTôi đã kết nối trực tiếp với toàn bộ dữ liệu thu nhập, chi tiêu thực tế, các quỹ mục tiêu và tài sản ròng của gia đình. Anh chị có thể hỏi tôi bất kỳ điều gì về chi tiêu, dự đoán thời gian đạt mục tiêu tài chính hoặc tra cứu thông tin ngoài Internet!' 
+        content: '👋 Xin chào hai vợ chồng! Tôi là **Trợ lý Gia đình** — Người bạn đồng hành và cố vấn tài chính thân thiết của anh chị.\n\nTôi đã kết nối trực tiếp với toàn bộ dữ liệu thu nhập, chi tiêu thực tế, các quỹ mục tiêu và tài sản ròng của gia đình. Anh chị có thể hỏi tôi bất kỳ điều gì về chi tiêu, dự đoán thời gian đạt mục tiêu tài chính hoặc tra cứu thông tin ngoài Internet!' 
       }
     ];
   });
@@ -106,7 +106,7 @@ export const CopilotChat: React.FC<CopilotChatProps> = ({
     try {
       // Chuyển đổi lịch sử chat sang định dạng Gemini (loại bỏ tin lỗi nếu có)
       const chatHistory = messages
-        .filter(m => m.content && !m.content.startsWith('❌ **Không thể kết nối AI**'))
+        .filter(m => m.content && !m.content.startsWith('❌ **Tạm thời không thể kết nối') && !m.content.startsWith('❌ **Không thể kết nối'))
         .slice(-10) // Lấy tối đa 10 tin gần nhất để giữ context gọn gàng
         .map(m => ({
           role: m.role,
@@ -128,7 +128,7 @@ export const CopilotChat: React.FC<CopilotChatProps> = ({
       console.error('Copilot Error:', error);
       setMessages(prev => [...prev, { 
         role: 'model', 
-        content: `❌ **Không thể kết nối AI**: ${error.message || 'Vui lòng kiểm tra lại kết nối mạng.'}\n\n*Gợi ý:* Hãy thử lại sau giây lát.` 
+        content: `❌ **Tạm thời không thể kết nối tới Trợ lý Gia đình**: ${error.message || 'Máy chủ AI đang bận hoặc mạng không ổn định.'}\n\n*Gợi ý:* Hãy kiểm tra kết nối mạng và thử bấm gửi lại câu hỏi sau vài giây nhé.` 
       }]);
     } finally {
       setIsLoading(false);
@@ -220,7 +220,7 @@ export const CopilotChat: React.FC<CopilotChatProps> = ({
         <button
           onClick={() => setIsOpen(true)}
           className="relative group flex items-center gap-2 px-3.5 py-2.5 rounded-full bg-gradient-to-r from-indigo-600 via-purple-600 to-indigo-700 hover:from-indigo-700 hover:to-purple-700 text-white shadow-[0_8px_25px_rgba(79,70,229,0.35)] hover:shadow-[0_8px_35px_rgba(79,70,229,0.5)] transition-all duration-300 transform hover:scale-105 active:scale-95 cursor-pointer"
-          title="Trợ lý AI Tài chính Gia đình (Finance Copilot)"
+          title="Trợ lý Gia đình"
         >
           <div className="relative">
             <Bot className="w-5 h-5 text-amber-300 group-hover:rotate-12 transition-transform" />
@@ -229,7 +229,7 @@ export const CopilotChat: React.FC<CopilotChatProps> = ({
               <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-emerald-500"></span>
             </span>
           </div>
-          <span className="hidden md:inline font-bold text-xs tracking-wide">AI Copilot</span>
+          <span className="hidden md:inline font-bold text-xs tracking-wide">Trợ lý Gia đình</span>
         </button>
       </div>
     );
@@ -247,7 +247,7 @@ export const CopilotChat: React.FC<CopilotChatProps> = ({
           </div>
           <div>
             <div className="flex items-center gap-1.5">
-              <h3 className="font-bold text-sm leading-none">Finance Copilot</h3>
+              <h3 className="font-bold text-sm leading-none">Trợ lý Gia đình</h3>
               <span className="px-1.5 py-0.5 text-[10px] font-extrabold uppercase tracking-wider bg-emerald-500 text-white rounded-md">
                 Live AI
               </span>
@@ -346,7 +346,7 @@ export const CopilotChat: React.FC<CopilotChatProps> = ({
               <Loader2 className="w-4 h-4 animate-spin text-indigo-600" />
             </div>
             <div className="bg-white border border-slate-200 p-3 rounded-2xl rounded-tl-xs shadow-xs text-xs text-slate-500 flex items-center gap-2">
-              <span>Finance Copilot đang suy nghĩ và tính toán...</span>
+              <span>Trợ lý Gia đình đang suy nghĩ và tính toán...</span>
             </div>
           </div>
         )}

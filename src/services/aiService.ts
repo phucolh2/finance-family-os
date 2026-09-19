@@ -124,7 +124,7 @@ export const buildSystemContext = (state: AppState): string => {
   const monthlySurplus = Math.max(0, currentIncome - estimatedMonthlyLivingExpense);
   const yearsToFire = monthlySurplus > 0 ? (fireGap / (monthlySurplus * 12)).toFixed(1) : 'Chưa xác định';
 
-  return `Bạn là "Finance Family OS AI Advisor" - Chuyên gia hoạch định tài chính gia đình cao cấp (Certified Financial Planner - CFP) kiêm Cố vấn hạnh phúc gia đình tri kỷ của hai vợ chồng.
+  return `Bạn là "Trợ lý Gia đình" - Người bạn đồng hành và Chuyên gia hoạch định tài chính gia đình thân thiết, tri kỷ của hai vợ chồng.
 Bạn trả lời trực tiếp các câu hỏi của người dùng dựa trên CHÍNH DỮ LIỆU TÀI CHÍNH THỰC TẾ của gia đình được cung cấp dưới đây.
 
 ============================================================
@@ -224,8 +224,7 @@ async function generateGeminiContentWithFallback(
     'gemini-3-flash-preview',
     'gemini-3.1-flash-lite',
     'gemini-3.5-flash',
-    'gemini-3.6-flash',
-    'gemini-flash-latest'
+    'gemini-3.6-flash'
   ];
 
   let lastError: any = null;
@@ -319,37 +318,41 @@ export const sendChatMessage = async (
 
   // 1. Nếu người dùng bật chế độ tra cứu Internet, thử gọi Gemini kèm Google Search Grounding tool
   if (useWebSearch) {
-    try {
-      const searchModel = genAI.getGenerativeModel({ 
-        model: 'gemini-3.6-flash',
-        systemInstruction,
-        tools: [{ googleSearch: {} } as any]
-      });
+    const searchCandidateModels = ['gemini-3-flash-preview', 'gemini-3.6-flash'];
+    for (const searchModelName of searchCandidateModels) {
+      try {
+        const searchModel = genAI.getGenerativeModel({ 
+          model: searchModelName,
+          systemInstruction,
+          tools: [{ googleSearch: {} } as any]
+        });
 
-      const chat = searchModel.startChat({
-        history: cleanHistory,
-        generationConfig: {
-          maxOutputTokens: 2000,
-          temperature: 0.7,
-        },
-      });
+        const chat = searchModel.startChat({
+          history: cleanHistory,
+          generationConfig: {
+            maxOutputTokens: 2000,
+            temperature: 0.7,
+          },
+        });
 
-      const result = await chat.sendMessage(message);
-      const response = await result.response;
-      return response.text();
-    } catch (searchError) {
-      console.warn("Google Search tool hit quota/limit, falling back to standard AI model:", searchError);
-      // Fallback to standard model below
+        const result = await chat.sendMessage(message);
+        const response = await result.response;
+        const text = response.text();
+        if (text && text.trim().length > 0) {
+          return text;
+        }
+      } catch (searchError) {
+        console.warn(`[Google Search ${searchModelName}] Thử tra cứu thất bại hoặc quá tải, chuyển sang model tiếp theo:`, searchError);
+      }
     }
   }
 
-  // 2. Danh sách các model ứng cử viên thế hệ 3
+  // 2. Danh sách các model ứng cử viên thế hệ 3 có sẵn
   const candidateModels = [
-    'gemini-3.6-flash',
     'gemini-3-flash-preview',
     'gemini-3.1-flash-lite',
     'gemini-3.5-flash',
-    'gemini-flash-latest'
+    'gemini-3.6-flash'
   ];
 
   let lastError: any = null;
@@ -370,17 +373,20 @@ export const sendChatMessage = async (
 
       const result = await chat.sendMessage(message);
       const response = await result.response;
-      return response.text();
+      const text = response.text();
+      if (text && text.trim().length > 0) {
+        return text;
+      }
     } catch (err: any) {
       lastError = err;
-      if (err?.status === 404 || err?.status === 429) {
-        continue;
-      }
-      throw err;
+      console.warn(`[Trợ lý Gia đình API] Model ${modelName} gặp lỗi (${err?.status || err?.message}), chuyển model dự phòng tiếp theo...`);
+      // Đợi 250ms giảm xung đột nếu server Google đang tạm bận (503/429)
+      await new Promise(resolve => setTimeout(resolve, 250));
+      continue;
     }
   }
 
-  throw new Error(`Không thể kết nối Gemini API: ${(lastError as Error)?.message || 'Vui lòng kiểm tra lại kết nối mạng.'}`);
+  throw new Error(`Không thể kết nối Trợ lý Gia đình: ${(lastError as Error)?.message || 'Máy chủ AI đang bận, vui lòng thử lại sau giây lát.'}`);
 };
 
 /**
