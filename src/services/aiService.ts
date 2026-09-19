@@ -128,8 +128,10 @@ export const buildSystemContext = (state: AppState, useWebSearch: boolean = fals
 Bạn trả lời trực tiếp các câu hỏi của người dùng dựa trên CHÍNH DỮ LIỆU TÀI CHÍNH THỰC TẾ của gia đình được cung cấp dưới đây.
 
 ============================================================
+============================================================
 BỨC TRANH TÀI CHÍNH TOÀN DIỆN CỦA GIA ĐÌNH:
 ============================================================
+- HÔM NAY LÀ NGÀY: ${new Date().toLocaleDateString('vi-VN')}
 - Tổng tài sản ròng ước tính (Net Worth): ${estimatedNetWorth} triệu VNĐ
 - Vốn khởi điểm: ${startingCapital} triệu VNĐ
 - Thu nhập hiện tại: ${currentIncome} triệu VNĐ/tháng
@@ -350,7 +352,7 @@ export const sendChatMessage = async (
         const searchModel = genAI.getGenerativeModel({ 
           model: searchModelName,
           systemInstruction,
-          tools: [{ googleSearch: {} } as any]
+          tools: [{ googleSearchRetrieval: { dynamicRetrievalConfig: { mode: 'MODE_DYNAMIC' as any, dynamicThreshold: 0.0 } } }]
         });
 
         const chat = searchModel.startChat({
