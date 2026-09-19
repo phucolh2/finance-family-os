@@ -359,11 +359,23 @@ export const sendChatMessage = async (
           },
         });
 
-        const result = await chat.sendMessage(message);
+        const searchMessage = message + "\n\n(YÊU CẦU HỆ THỐNG ĐỐI VỚI AI: BẠN ĐANG DÙNG CÔNG CỤ GOOGLE SEARCH. HÃY TÌM KIẾM DỮ LIỆU CỦA NGÀY HÔM NAY. NẾU KẾT QUẢ TÌM KIẾM LÀ CỦA CÁC THÁNG TRƯỚC HOẶC NĂM TRƯỚC, BẠN PHẢI NÓI RÕ: 'DỮ LIỆU TÌM ĐƯỢC LÀ DỮ LIỆU CŨ TỪ QUÁ KHỨ' VÀ KHÔNG ĐƯỢC PHÉP BÁO CÁO NHƯ THỂ ĐÓ LÀ GIÁ HÔM NAY!)";
+        const result = await chat.sendMessage(searchMessage);
         const response = await result.response;
         const text = response.text();
-        if (text && text.trim().length > 0) {
-          return text;
+        let finalText = text;
+        const candidates = response.candidates;
+        if (candidates && candidates.length > 0 && candidates[0].groundingMetadata && candidates[0].groundingMetadata.groundingChunks) {
+          const chunks = candidates[0].groundingMetadata.groundingChunks;
+          const urls = chunks.map((c: any) => c.web?.uri).filter(Boolean);
+          if (urls.length > 0) {
+            const uniqueUrls = Array.from(new Set(urls));
+            finalText += "\n\n🌐 **Nguồn dữ liệu AI vừa tra cứu:**\n" + uniqueUrls.map(u => `- ${u}`).join('\n');
+          }
+        }
+        
+        if (finalText && finalText.trim().length > 0) {
+          return finalText;
         }
       } catch (searchError) {
         console.warn(`[Google Search ${searchModelName}] Thử tra cứu thất bại hoặc quá tải, chuyển sang model tiếp theo:`, searchError);
