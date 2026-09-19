@@ -424,6 +424,9 @@ export const sendChatMessage = async (
       const response = await result.response;
       const text = response.text();
       if (text && text.trim().length > 0) {
+        if (useWebSearch && lastError) {
+          return text + `\n\n*(🔍 Thông tin gỡ lỗi hệ thống: Google Search API bị từ chối phục vụ. Mã lỗi: ${lastError.message})*`;
+        }
         return text;
       }
     } catch (err: any) {
