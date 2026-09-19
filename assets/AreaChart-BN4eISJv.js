@@ -1,1 +1,0 @@
-import{o as e,r as t}from"./createLucideIcon-X_kUInbS.js";import{rt as n}from"./CategoricalChart-DC0Vn7jg.js";import{t as r}from"./CartesianChart-D9is1Lw-.js";var i=e(t()),a=[`axis`],o=(0,i.forwardRef)((e,t)=>i.createElement(r,{chartName:`AreaChart`,defaultTooltipEventType:`axis`,validateTooltipEventTypes:a,tooltipPayloadSearcher:n,categoricalChartProps:e,ref:t}));export{o as t};
