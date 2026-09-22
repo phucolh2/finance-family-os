@@ -4,7 +4,6 @@ export interface PromptSuggestion {
   id: string;
   label: string;
   prompt: string;
-  forceSearch?: boolean;
   tag?: string;
 }
 
@@ -149,10 +148,9 @@ export function getSmartContextPrompts(activeTab: string = 'dashboard', state: A
         },
         {
           id: 'tab_baby_cost_search',
-          label: '🌐 Chi phí sinh con Vinmec / Từ Dũ?',
-          prompt: 'Tra cứu giúp tôi: Chi phí gói sinh trọn gói tại bệnh viện Vinmec hoặc Từ Dũ hiện nay khoảng bao nhiêu và gồm những quyền lợi gì?',
-          forceSearch: true,
-          tag: 'Tra cứu Internet',
+          label: 'Chi phí sinh con Vinmec / Từ Dũ?',
+          prompt: 'Theo kiến thức của bạn, chi phí gói sinh trọn gói tại bệnh viện Vinmec hoặc Từ Dũ thường rơi vào khoảng bao nhiêu và gồm những quyền lợi gì?',
+          tag: 'Kiến thức y tế',
         }
       );
       break;
@@ -238,16 +236,7 @@ export function getSmartContextPrompts(activeTab: string = 'dashboard', state: A
     });
   }
 
-  // Luôn có 1 câu hỏi tra cứu Internet thông minh (bắt buộc forceSearch = true để tránh dữ liệu lỗi thời)
-  if (!prompts.some(p => p.forceSearch)) {
-    prompts.push({
-      id: 'general_search_gold_rates',
-      label: '🌐 Giá vàng & lãi suất hôm nay (thời gian thực)',
-      prompt: 'Tra cứu ngay giá vàng SJC và vàng nhẫn 9999 hôm nay tại Việt Nam (mua vào/bán ra), đồng thời cho biết lãi suất tiết kiệm tốt nhất tại các ngân hàng lớn hiện nay là bao nhiêu?',
-      forceSearch: true,
-      tag: 'Tra cứu thời gian thực',
-    });
-  }
+
 
   return prompts.slice(0, 5);
 }

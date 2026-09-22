@@ -38,7 +38,7 @@ export const CopilotChat: React.FC<CopilotChatProps> = ({
   };
 
   const [apiKey, setApiKey] = useState('');
-  const [useWebSearch, setUseWebSearch] = useState(false);
+  const useWebSearch = false;
   
   const [messages, setMessages] = useState<ChatMessage[]>(() => {
     const saved = sessionStorage.getItem('finance_copilot_history');
@@ -52,7 +52,7 @@ export const CopilotChat: React.FC<CopilotChatProps> = ({
     return [
       { 
         role: 'model', 
-        content: '👋 Xin chào hai vợ chồng! Tôi là **Trợ lý Gia đình** — Người bạn đồng hành và cố vấn tài chính thân thiết của anh chị.\n\nTôi đã kết nối trực tiếp với toàn bộ dữ liệu thu nhập, chi tiêu thực tế, các quỹ mục tiêu và tài sản ròng của gia đình. Anh chị có thể hỏi tôi bất kỳ điều gì về chi tiêu, dự đoán thời gian đạt mục tiêu tài chính hoặc tra cứu thông tin ngoài Internet!' 
+        content: '👋 Xin chào hai vợ chồng! Tôi là **Trợ lý Gia đình** — Người bạn đồng hành và cố vấn tài chính thân thiết của anh chị.\n\nTôi đã kết nối trực tiếp với toàn bộ dữ liệu thu nhập, chi tiêu thực tế, các quỹ mục tiêu và tài sản ròng của gia đình. Anh chị có thể hỏi tôi bất kỳ điều gì về chi tiêu, dự đoán thời gian đạt mục tiêu tài chính, hay lời khuyên đầu tư nhé!' 
       }
     ];
   });
@@ -369,7 +369,7 @@ export const CopilotChat: React.FC<CopilotChatProps> = ({
           <button
             key={qpIdx}
             type="button"
-            onClick={() => executeSendMessage(qp.prompt, qp.forceSearch)}
+            onClick={() => executeSendMessage(qp.prompt)}
             disabled={isLoading}
             className="whitespace-nowrap px-2.5 py-1 bg-slate-100 hover:bg-indigo-50 hover:text-indigo-700 hover:border-indigo-200 border border-slate-200 rounded-full text-[11px] font-medium text-slate-600 transition-all shrink-0 cursor-pointer"
             title={qp.prompt}
@@ -381,22 +381,7 @@ export const CopilotChat: React.FC<CopilotChatProps> = ({
 
       {/* INPUT CONTROLS & FORM */}
       <div className="p-3 bg-white border-t border-slate-200 shrink-0 space-y-2">
-        {/* Toggle Tra cứu Internet */}
-        <div className="flex items-center justify-between text-xs px-1">
-          <button
-            type="button"
-            onClick={() => setUseWebSearch(!useWebSearch)}
-            className={`flex items-center gap-1.5 px-2 py-0.5 rounded-md font-medium transition-colors cursor-pointer ${
-              useWebSearch 
-                ? 'bg-emerald-50 text-emerald-700 font-bold border border-emerald-200' 
-                : 'text-slate-500 hover:text-slate-800'
-            }`}
-            title="Bật/Tắt tra cứu kiến thức đời sống & thông tin ngoài internet"
-          >
-            <Globe className={`w-3.5 h-3.5 ${useWebSearch ? 'text-emerald-600 animate-spin-slow' : 'text-slate-400'}`} />
-            <span>{useWebSearch ? '🌐 Tra cứu Internet: ĐANG BẬT' : '🌐 Tra cứu Internet: Tắt'}</span>
-          </button>
-
+        <div className="flex items-center justify-end text-xs px-1">
           <span className="text-[10px] text-slate-400">
             Model: Gemini 3 Flash
           </span>
@@ -408,7 +393,7 @@ export const CopilotChat: React.FC<CopilotChatProps> = ({
             type="text"
             value={input}
             onChange={(e) => setInput(e.target.value)}
-            placeholder={useWebSearch ? "Hỏi tra cứu chi phí, thị trường trên Internet..." : "Hỏi về chi tiêu, dự đoán mục tiêu tài chính..."}
+            placeholder="Hỏi về chi tiêu, dự đoán mục tiêu tài chính..."
             className="w-full pl-4 pr-12 py-2.5 bg-slate-100 border border-transparent rounded-full focus:bg-white focus:border-indigo-400 focus:ring-2 focus:ring-indigo-100 focus:outline-none text-xs sm:text-sm text-slate-800 transition-all"
             disabled={isLoading}
           />
