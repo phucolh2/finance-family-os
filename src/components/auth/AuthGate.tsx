@@ -10,6 +10,18 @@ export const AuthGate: React.FC<{ children: React.ReactNode }> = ({ children }) 
   const [isSigningIn, setIsSigningIn] = useState(false);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
 
+  // Ép vai trò dựa trên email
+  if (user && user.email) {
+    const email = user.email.toLowerCase();
+    const husbandEmails = ['lhoaiphuoc@gmail.com', 'phuocbaulam@gmail.com'];
+    const wifeEmails = ['que7tam@gmail.com', 'dieuhong1013@gmail.com'];
+    if (husbandEmails.includes(email)) {
+      localStorage.setItem('family_active_actor', 'husband');
+    } else if (wifeEmails.includes(email)) {
+      localStorage.setItem('family_active_actor', 'wife');
+    }
+  }
+
   // Nếu Firebase chưa được cấu hình hoặc người dùng đã đăng nhập hoặc chọn chế độ khách -> Cho vào app
   if (!isFirebaseEnabled || user || isGuestMode) {
     if (isCloudLoading) {

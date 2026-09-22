@@ -43,9 +43,7 @@ export const SystemAuditTab: React.FC = () => {
   const rawLogs: SystemActivityLog[] = state.systemLogs || [];
 
   // Quản lý vai trò người thực hiện hiện tại của thiết bị
-  const [currentActor, setCurrentActor] = useState<'husband' | 'wife'>(() => {
-    return (localStorage.getItem('family_active_actor') as 'husband' | 'wife') || 'husband';
-  });
+  const currentActor = (localStorage.getItem('family_active_actor') as 'husband' | 'wife') || 'husband';
 
   const [filterActor, setFilterActor] = useState<'all' | 'husband' | 'wife'>('all');
   const [filterAction, setFilterAction] = useState<string>('all');
@@ -53,10 +51,6 @@ export const SystemAuditTab: React.FC = () => {
   const husbandName = state.profile?.husbandName || 'Chồng';
   const wifeName = state.profile?.wifeName || 'Vợ';
 
-  const handleSelectActor = (actor: 'husband' | 'wife') => {
-    setCurrentActor(actor);
-    localStorage.setItem('family_active_actor', actor);
-  };
 
   const handleClearHistory = () => {
     if (window.confirm('Bạn có chắc chắn muốn xóa toàn bộ lịch sử hoạt động chung tay này không? Thao tác này không thể hoàn tác.')) {
@@ -117,7 +111,7 @@ export const SystemAuditTab: React.FC = () => {
         </div>
       </div>
 
-      {/* Thanh chọn vai trò người thực hiện của thiết bị này */}
+      {/* Thanh hiển thị vai trò người thực hiện của thiết bị này */}
       <div className="p-4 bg-white/90 backdrop-blur-md rounded-2xl border border-slate-200/80 shadow-sm flex flex-col sm:flex-row sm:items-center justify-between gap-3">
         <div className="flex items-center gap-2">
           <UserCheck className="w-4 h-4 text-slate-500 shrink-0" />
@@ -126,28 +120,16 @@ export const SystemAuditTab: React.FC = () => {
           </span>
         </div>
         <div className="flex items-center gap-2">
-          <button
-            onClick={() => handleSelectActor('husband')}
-            className={`px-3.5 py-1.5 rounded-xl text-xs font-bold flex items-center gap-1.5 transition-all cursor-pointer ${
+          <div
+            className={`px-4 py-2 rounded-xl text-xs font-bold flex items-center gap-2 shadow-sm ${
               currentActor === 'husband'
-                ? 'bg-blue-600 text-white shadow-md shadow-blue-200 ring-2 ring-blue-300'
-                : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
+                ? 'bg-blue-600 text-white shadow-blue-200 ring-2 ring-blue-300'
+                : 'bg-rose-500 text-white shadow-rose-200 ring-2 ring-rose-300'
             }`}
           >
-            <span>👨‍💼</span>
-            <span>Chồng ({husbandName})</span>
-          </button>
-          <button
-            onClick={() => handleSelectActor('wife')}
-            className={`px-3.5 py-1.5 rounded-xl text-xs font-bold flex items-center gap-1.5 transition-all cursor-pointer ${
-              currentActor === 'wife'
-                ? 'bg-rose-500 text-white shadow-md shadow-rose-200 ring-2 ring-rose-300'
-                : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
-            }`}
-          >
-            <span>👩‍💼</span>
-            <span>Vợ ({wifeName})</span>
-          </button>
+            <span>{currentActor === 'husband' ? '👨‍💼' : '👩‍💼'}</span>
+            <span>{currentActor === 'husband' ? `Chồng (${husbandName})` : `Vợ (${wifeName})`}</span>
+          </div>
         </div>
       </div>
 

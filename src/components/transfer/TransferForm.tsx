@@ -23,9 +23,7 @@ export const TransferForm: React.FC<TransferFormProps> = ({ onSuccess, onCancel 
   const [amount, setAmount] = useState<string>('');
   const [note, setNote] = useState<string>('');
   const [formError, setFormError] = useState<string>('');
-  const [operator, setOperator] = useState<'husband' | 'wife'>(() => {
-    return (localStorage.getItem('family_active_actor') as 'husband' | 'wife') || 'husband';
-  });
+  const operator = (localStorage.getItem('family_active_actor') as 'husband' | 'wife') || 'husband';
 
   const { liquidityBreakdownData, totalRemainingSum } = useLiquidityBreakdown('cumulative', selectedPeriodKey);
 
@@ -282,31 +280,17 @@ export const TransferForm: React.FC<TransferFormProps> = ({ onSuccess, onCancel 
                 <span className="text-xs font-bold text-family-text uppercase tracking-wider">Người thực hiện</span>
                 <span className="text-[11px] text-family-textMuted lowercase">ghi nhận vào nhật ký chung tay</span>
               </div>
-              <div className="grid grid-cols-2 gap-3">
-                <button
-                  type="button"
-                  onClick={() => setOperator('husband')}
-                  className={`py-2 px-3 rounded-xl border flex items-center justify-center gap-2 font-medium text-sm transition-all cursor-pointer ${
+              <div className="flex gap-3">
+                <div
+                  className={`py-2 px-4 rounded-xl border flex items-center justify-center gap-2 font-medium text-sm shadow-sm font-bold ${
                     operator === 'husband'
-                      ? 'bg-blue-50/90 border-blue-400 text-blue-800 shadow-sm font-bold'
-                      : 'bg-family-bg/80 border-family-accent/20 text-family-textMuted hover:text-family-text'
+                      ? 'bg-blue-50/90 border-blue-400 text-blue-800'
+                      : 'bg-rose-50/90 border-rose-400 text-rose-800'
                   }`}
                 >
-                  <span>👨‍💼</span>
-                  <span>{state.profile?.husbandName || 'Chồng'}</span>
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setOperator('wife')}
-                  className={`py-2 px-3 rounded-xl border flex items-center justify-center gap-2 font-medium text-sm transition-all cursor-pointer ${
-                    operator === 'wife'
-                      ? 'bg-rose-50/90 border-rose-400 text-rose-800 shadow-sm font-bold'
-                      : 'bg-family-bg/80 border-family-accent/20 text-family-textMuted hover:text-family-text'
-                  }`}
-                >
-                  <span>👩‍💼</span>
-                  <span>{state.profile?.wifeName || 'Vợ'}</span>
-                </button>
+                  <span>{operator === 'husband' ? '👨‍💼' : '👩‍💼'}</span>
+                  <span>{operator === 'husband' ? state.profile?.husbandName || 'Chồng' : state.profile?.wifeName || 'Vợ'}</span>
+                </div>
               </div>
             </div>
 
