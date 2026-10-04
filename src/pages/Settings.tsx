@@ -607,9 +607,9 @@ export const Settings: React.FC = () => {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-3xl font-serif font-bold text-family-text">Cấu hình hệ thống</h1>
+        <h1 className="text-3xl font-serif font-bold text-family-text">Cài đặt & Đồng bộ</h1>
         <p className="text-sm text-family-textMuted mt-1">
-          Quản lý LocalStorage, sao lưu dữ liệu và kiểm soát phiên bản của Hệ điều hành tài chính gia đình.
+          Quản lý cài đặt ứng dụng PWA, đồng bộ Cloud, sao lưu dữ liệu và kiểm soát phiên bản của Hệ điều hành tài chính gia đình.
         </p>
       </div>
 

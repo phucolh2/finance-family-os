@@ -6,7 +6,6 @@ import { LoveCorner } from '../modules/LoveCorner';
 import { CopilotChat } from '../copilot/CopilotChat';
 import { OnboardingModal } from '../ui/OnboardingModal';
 import { OfflineAndSyncBanner } from './OfflineAndSyncBanner';
-import { PwaInstallButton } from '../ui/PwaInstallButton';
 
 interface LayoutProps {
   activeTab: string;
@@ -31,7 +30,6 @@ export const Layout: React.FC<LayoutProps> = ({ activeTab, setActiveTab, childre
             <span>👨‍👩‍👧‍👦</span> Family OS
           </h1>
           <div className="flex items-center gap-1.5">
-            <PwaInstallButton variant="compact" />
             <button
               onClick={() => setIsCopilotOpen(true)}
               className="flex items-center gap-1 px-2 py-1 rounded-xl bg-white/80 border border-indigo-200/60 text-indigo-900 hover:bg-indigo-50 transition-colors shadow-2xs cursor-pointer"
@@ -75,7 +73,6 @@ export const Layout: React.FC<LayoutProps> = ({ activeTab, setActiveTab, childre
       <main className="flex-1 overflow-y-auto overflow-x-hidden p-4 md:p-8 relative print:overflow-visible print:p-0 print:m-0">
         {/* Cloud Sync Status Bar & Desktop Copilot Access */}
         <div className="hidden md:flex items-center justify-end gap-3 mb-4 max-w-6xl mx-auto print:hidden">
-          <PwaInstallButton variant="button" />
           <button
             onClick={() => setIsOnboardingOpen(true)}
             className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-white hover:bg-slate-50 border border-slate-200 shadow-2xs text-xs font-semibold text-slate-600 cursor-pointer transition-colors"
