@@ -40,15 +40,25 @@ export const ObservationControls: React.FC = () => {
   const currentPeriod = projection.monthlyRows.find(r => r.period.key === nowKey) || projection.monthlyRows[0];
   const activeKey = selectedPeriodKey || currentPeriod?.period.key || '';
 
-  // Generate options for Planning Start Month (e.g. 2025 to 2035)
+  // Generate options for Planning Start Month (e.g. 10/2026 to 2035)
   const startMonthOptions: { month: number; year: number; label: string; key: string }[] = [];
-  for (let y = 2025; y <= 2035; y++) {
+  for (let y = 2026; y <= 2035; y++) {
     for (let m = 1; m <= 12; m++) {
+      if (y === 2026 && m < 10) continue; // Chỉ cho phép chạy từ 10/2026 trở đi
       const label = `${m < 10 ? `0${m}` : m}/${y}`;
       const key = `${y}-${String(m).padStart(2, '0')}`;
       startMonthOptions.push({ month: m, year: y, label, key });
     }
   }
+
+  // Force active start month/year to at least 10/2026
+  useEffect(() => {
+    const currentYear = state.profile.planningStartYear;
+    const currentMonth = state.profile.planningStartMonth;
+    if (currentYear < 2026 || (currentYear === 2026 && currentMonth < 10)) {
+      updateProfile({ ...state.profile, planningStartYear: 2026, planningStartMonth: 10 });
+    }
+  }, [state.profile.planningStartYear, state.profile.planningStartMonth, updateProfile, state.profile]);
 
   const activeStartKey = `${state.profile.planningStartYear}-${String(state.profile.planningStartMonth).padStart(2, '0')}`;
 
