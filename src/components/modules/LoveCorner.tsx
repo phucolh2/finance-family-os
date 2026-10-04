@@ -3,6 +3,7 @@ import { Heart, X, Send, Trash2, Pen, Type, Eraser, RotateCcw, Pin, Search, Spar
 import { useAppContext } from '../../context/AppContext';
 import { useAuth } from '../../context/AuthContext';
 import { LoveAudioPlayer } from './LoveAudioPlayer';
+import { getRoleByEmail } from '../../config/familyMembers';
 
 interface LoveNote {
   id: string;
@@ -41,8 +42,6 @@ const BRUSH_COLORS = ['#0f172a', '#e11d48', '#2563eb', '#16a34a', '#d97706', '#9
 const STICKERS = ['❤️', '🫂', '💋', '🌹', '☕', '🎁', '🎂', '🎉', '✨', '🥺'];
 const REACTION_EMOJIS = ['❤️', '😍', '🥺', '😂', '👏', '💋'];
 const EVENT_EMOJIS = ['✈️', '🏥', '🎂', '💍', '🏖️', '🚗', '🎟️', '💖', '🏠', '🎁', '🎓', '🎈', '🎉', '🌸', '💐'];
-const HUSBAND_EMAILS = ['lhoaiphuoc@gmail.com', 'phuocbaulam@gmail.com'];
-const WIFE_EMAILS = ['que7tam@gmail.com', 'dieuhong1013@gmail.com'];
 
 const LOVE_QUOTES = [
   'Cảm ơn em vì đã luôn ở bên anh, ngay cả khi anh không hoàn hảo...',
@@ -266,10 +265,8 @@ export const LoveCorner: React.FC<LoveCornerProps> = ({ isHidden = false }) => {
 
 
   useEffect(() => {
-    if (user?.email) {
-      if (HUSBAND_EMAILS.includes(user.email)) { setAuthor('husband'); return; }
-      if (WIFE_EMAILS.includes(user.email)) { setAuthor('wife'); return; }
-    }
+    const roleByEmail = getRoleByEmail(user?.email);
+    if (roleByEmail) { setAuthor(roleByEmail); return; }
     if (user?.uid && accountMapping[user.uid]) {
       setAuthor(accountMapping[user.uid]);
     }

@@ -1,29 +1,47 @@
 import React, { useState } from 'react';
 import { useAuth } from '../../context/AuthContext';
 import { useAppContext } from '../../context/AppContext';
-import { ShieldCheck, Cloud, RefreshCw, Sparkles, ArrowRight, Lock } from 'lucide-react';
+import { ShieldCheck, Cloud, RefreshCw, Sparkles, ArrowRight, ShieldAlert } from 'lucide-react';
+import { ACTOR_STORAGE_KEY, getRoleByEmail } from '../../config/familyMembers';
 
 export const AuthGate: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const { user, loading: authLoading, isFirebaseEnabled, signInWithGoogle } = useAuth();
+  const { user, loading: authLoading, isFirebaseEnabled, signInWithGoogle, logout } = useAuth();
   const { isCloudLoading } = useAppContext();
-  const [isGuestMode, setIsGuestMode] = useState(false);
   const [isSigningIn, setIsSigningIn] = useState(false);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
 
-  // Ép vai trò dựa trên email
-  if (user && user.email) {
-    const email = user.email.toLowerCase();
-    const husbandEmails = ['lhoaiphuoc@gmail.com', 'phuocbaulam@gmail.com'];
-    const wifeEmails = ['que7tam@gmail.com', 'dieuhong1013@gmail.com'];
-    if (husbandEmails.includes(email)) {
-      localStorage.setItem('family_active_actor', 'husband');
-    } else if (wifeEmails.includes(email)) {
-      localStorage.setItem('family_active_actor', 'wife');
-    }
+  // Ép vai trò dựa trên email (nguồn: config/familyMembers.ts)
+  const memberRole = getRoleByEmail(user?.email);
+  if (memberRole) {
+    localStorage.setItem(ACTOR_STORAGE_KEY, memberRole);
   }
 
-  // Nếu Firebase chưa được cấu hình hoặc người dùng đã đăng nhập hoặc chọn chế độ khách -> Cho vào app
-  if (!isFirebaseEnabled || user || isGuestMode) {
+  // Tài khoản Google hợp lệ nhưng KHÔNG thuộc gia đình → chặn truy cập
+  if (isFirebaseEnabled && user && !memberRole) {
+    return (
+      <div className="min-h-screen bg-family-bg flex items-center justify-center p-6">
+        <div className="max-w-md w-full bg-white rounded-3xl p-8 shadow-2xl border border-red-200 text-center space-y-5">
+          <div className="w-14 h-14 rounded-2xl bg-red-50 text-red-500 flex items-center justify-center mx-auto">
+            <ShieldAlert className="w-7 h-7" />
+          </div>
+          <h2 className="text-xl font-serif font-bold text-family-text">Tài khoản chưa được cấp quyền</h2>
+          <p className="text-sm text-family-textMuted leading-relaxed">
+            Email <strong>{user.email}</strong> không nằm trong danh sách thành viên gia đình.
+            Vui lòng đăng xuất và đăng nhập bằng email đã đăng ký.
+          </p>
+          <button
+            onClick={() => { void logout(); }}
+            className="w-full py-3 bg-slate-900 hover:bg-black text-white font-semibold rounded-2xl text-sm cursor-pointer"
+          >
+            Đăng xuất
+          </button>
+        </div>
+      </div>
+    );
+  }
+
+  // Nếu Firebase chưa được cấu hình (bản dev/offline) hoặc đã đăng nhập hợp lệ -> Cho vào app
+  if (!isFirebaseEnabled || user) {
     if (isCloudLoading) {
       return (
         <div className="min-h-screen bg-family-bg flex flex-col items-center justify-center p-6 text-center">
@@ -155,14 +173,9 @@ export const AuthGate: React.FC<{ children: React.ReactNode }> = ({ children }) 
             <span className="text-sm font-semibold">Đăng nhập với Google</span>
             <ArrowRight className="w-4 h-4 text-white/50 group-hover:translate-x-1 transition-transform" />
           </button>
-
-          <button
-            onClick={() => setIsGuestMode(true)}
-            className="w-full py-2.5 px-4 text-xs font-medium text-family-textMuted hover:text-family-text hover:bg-stone-100 rounded-xl transition-colors cursor-pointer flex items-center justify-center gap-1.5"
-          >
-            <Lock className="w-3.5 h-3.5" />
-            Dùng thử chế độ Khách (Lưu trên thiết bị)
-          </button>
+          <p className="text-[11px] text-center text-family-textMuted">
+            Chỉ dành cho 4 email thành viên gia đình đã đăng ký.
+          </p>
         </div>
 
         <div className="text-center">

@@ -1,13 +1,27 @@
 rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
-    // Dữ liệu chung của gia đình (vợ và chồng đã đăng nhập đều có quyền đọc/ghi để đồng bộ PC và điện thoại)
-    match /family/{document=**} {
-      allow read, write: if request.auth != null;
+
+    // Danh sách thành viên gia đình (PHẢI đồng bộ với src/config/familyMembers.ts)
+    function isFamilyMember() {
+      return request.auth != null
+        && request.auth.token.email_verified == true
+        && request.auth.token.email.lower() in [
+          'lhoaiphuoc@gmail.com',
+          'phuocbaulam@gmail.com',
+          'que7tam@gmail.com',
+          'dieuhong1013@gmail.com'
+        ];
     }
-    // Dữ liệu riêng của từng người dùng
+
+    // Dữ liệu chung của gia đình: chỉ 4 email vợ/chồng được đọc/ghi
+    match /family/{document=**} {
+      allow read, write: if isFamilyMember();
+    }
+
+    // Dữ liệu riêng của từng người dùng (chỉ chính chủ và phải là thành viên gia đình)
     match /users/{userId}/data/{document=**} {
-      allow read, write: if request.auth != null && request.auth.uid == userId;
+      allow read, write: if isFamilyMember() && request.auth.uid == userId;
     }
   }
 }
