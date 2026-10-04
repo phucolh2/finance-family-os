@@ -1,9 +1,10 @@
 import React, { useState } from 'react';
 import { Sidebar } from './Sidebar';
-import { Menu, Bot } from 'lucide-react';
+import { Menu, Bot, HelpCircle } from 'lucide-react';
 import { AuthStatusBar } from '../auth/AuthStatusBar';
 import { LoveCorner } from '../modules/LoveCorner';
 import { CopilotChat } from '../copilot/CopilotChat';
+import { OnboardingModal } from '../ui/OnboardingModal';
 
 interface LayoutProps {
   activeTab: string;
@@ -14,6 +15,7 @@ interface LayoutProps {
 export const Layout: React.FC<LayoutProps> = ({ activeTab, setActiveTab, children }) => {
   const [isMobileOpen, setIsMobileOpen] = useState(false);
   const [isCopilotOpen, setIsCopilotOpen] = useState(false);
+  const [isOnboardingOpen, setIsOnboardingOpen] = useState(false);
 
   return (
     <div className="flex flex-col md:flex-row h-[100dvh] w-full max-w-full overflow-hidden bg-family-bg print:h-auto print:w-auto print:overflow-visible print:bg-white">
@@ -67,6 +69,14 @@ export const Layout: React.FC<LayoutProps> = ({ activeTab, setActiveTab, childre
         {/* Cloud Sync Status Bar & Desktop Copilot Access */}
         <div className="hidden md:flex items-center justify-end gap-3 mb-4 max-w-6xl mx-auto print:hidden">
           <button
+            onClick={() => setIsOnboardingOpen(true)}
+            className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-white hover:bg-slate-50 border border-slate-200 shadow-2xs text-xs font-semibold text-slate-600 cursor-pointer transition-colors"
+            title="Xem hướng dẫn sử dụng nhanh"
+          >
+            <HelpCircle className="w-3.5 h-3.5 text-family-accent" />
+            <span>Hướng dẫn</span>
+          </button>
+          <button
             onClick={() => setIsCopilotOpen(prev => !prev)}
             className="flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-white hover:bg-indigo-50/70 border border-indigo-100 shadow-2xs hover:shadow-xs transition-all duration-200 group cursor-pointer text-indigo-950"
             title="Hỏi Trợ lý Gia đình về tài chính và cuộc sống"
@@ -93,6 +103,10 @@ export const Layout: React.FC<LayoutProps> = ({ activeTab, setActiveTab, childre
         activeTab={activeTab} 
         isOpen={isCopilotOpen} 
         onToggleOpen={setIsCopilotOpen} 
+      />
+      <OnboardingModal
+        isOpen={isOnboardingOpen}
+        onClose={() => setIsOnboardingOpen(false)}
       />
     </div>
   );

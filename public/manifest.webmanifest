@@ -1,0 +1,19 @@
+{
+  "name": "Finance Family OS - Quản Trị Tài Chính Gia Đình",
+  "short_name": "Family OS",
+  "description": "Bản sao kỹ thuật số và quản trị tài chính gia đình hạnh phúc của Hoài Phước & Diệu Hồng",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#fdfbf7",
+  "theme_color": "#b45309",
+  "icons": [
+    {
+      "src": "/favicon.svg",
+      "sizes": "192x192 512x512",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
+}

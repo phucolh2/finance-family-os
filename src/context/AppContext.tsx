@@ -1,13 +1,19 @@
-import React, { createContext, useContext } from 'react';
+import React, { createContext, useContext, useEffect } from 'react';
 import { useAppState } from '../hooks/useAppState';
 import type { AppStateHook } from '../hooks/useAppState';
 import { useAuth } from './AuthContext';
+import { setMonthLocks } from '../utils/monthLockStore';
 
 const AppContext = createContext<AppStateHook | null>(null);
 
 export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const { user } = useAuth();
   const appState = useAppState(user?.uid);
+
+  useEffect(() => {
+    setMonthLocks(appState.state.toolConfigs?.monthLock);
+  }, [appState.state.toolConfigs?.monthLock]);
+
   return <AppContext.Provider value={appState}>{children}</AppContext.Provider>;
 };
 

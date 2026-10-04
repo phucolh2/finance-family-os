@@ -236,9 +236,15 @@ export function getSmartContextPrompts(activeTab: string = 'dashboard', state: A
     });
   }
 
+  // Gợi ý phân tích tin tức / giá thị trường người dùng dán vào
+  prompts.push({
+    id: 'analyze_market_news',
+    label: '📋 Dán tin tức/giá vàng phân tích',
+    prompt: 'Dưới đây là tin tức thị trường mới nhất tôi vừa copy: [Dán giá vàng/lãi suất/tin tức vào đây]. Dựa trên bức tranh tài chính gia đình, hãy phân tích tác động và lời khuyên phù hợp.',
+    tag: 'Tin tức & Thị trường',
+  });
 
-
-  return prompts.slice(0, 5);
+  return prompts.slice(0, 6);
 }
 
 /**

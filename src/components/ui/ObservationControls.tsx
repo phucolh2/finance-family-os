@@ -1,8 +1,11 @@
 import React, { useEffect } from 'react';
 import { useAppContext } from '../../context/AppContext';
 import { runProjection } from '../../engines/projectionEngine';
+import { isPeriodKeyLocked } from '../../utils/monthLockStore';
+import { getActiveActor } from '../../config/familyMembers';
+
 export const ObservationControls: React.FC = () => {
-  const { state, updateProfile, selectedPeriodKey, setSelectedPeriodKey } = useAppContext();
+  const { state, updateProfile, selectedPeriodKey, setSelectedPeriodKey, updateToolConfig, pushSystemLog } = useAppContext();
 
   // Run projection dynamically to get the month list
   const projection = runProjection({
@@ -62,6 +65,26 @@ export const ObservationControls: React.FC = () => {
 
   const activeStartKey = `${state.profile.planningStartYear}-${String(state.profile.planningStartMonth).padStart(2, '0')}`;
 
+  const isLocked = isPeriodKeyLocked(activeKey);
+
+  const handleToggleLock = () => {
+    if (!activeKey) return;
+    const currentLocks = { ...(state.toolConfigs?.monthLock || {}) };
+    if (currentLocks[activeKey]) {
+      delete currentLocks[activeKey];
+      updateToolConfig('monthLock', currentLocks);
+      pushSystemLog('CẬP NHẬT', 'Chốt sổ tháng', `Mở khóa sổ tháng ${activeKey} để điều chỉnh số liệu`);
+    } else {
+      const actor = getActiveActor();
+      currentLocks[activeKey] = {
+        by: actor,
+        at: new Date().toISOString()
+      };
+      updateToolConfig('monthLock', currentLocks);
+      pushSystemLog('CẬP NHẬT', 'Chốt sổ tháng', `Đã chốt sổ tháng ${activeKey}`);
+    }
+  };
+
   return (
     <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3">
       {/* Planning Start Date Selector (Mốc bắt đầu) */}
@@ -101,12 +124,39 @@ export const ObservationControls: React.FC = () => {
           <button
             onClick={() => { setSelectedPeriodKey(undefined); }}
             className="ml-1 px-2 py-0.5 text-[10px] font-bold text-white bg-family-accent/80 rounded hover:bg-family-primary transition-colors whitespace-nowrap"
-            title="Trợ về hiện tại"
+            title="Trở về hiện tại"
           >
             Về hiện tại
           </button>
         )}
       </div>
+
+      {/* Month Lock / Unlock toggle (Chốt sổ tháng) */}
+      {activeKey && (
+        <button
+          type="button"
+          onClick={handleToggleLock}
+          className={`flex items-center gap-1 px-2.5 py-1.5 rounded-xl text-xs font-semibold transition-all cursor-pointer shadow-sm ${
+            isLocked
+              ? 'bg-amber-50 text-amber-800 border border-amber-300 hover:bg-amber-100'
+              : 'bg-emerald-50 text-emerald-700 border border-emerald-200 hover:bg-emerald-100'
+          }`}
+          title={isLocked ? `Tháng ${activeKey} đã chốt sổ. Bấm để mở khóa chỉnh sửa tự do` : `Bấm để chốt sổ tháng ${activeKey}`}
+        >
+          {isLocked ? (
+            <>
+              <span className="text-amber-600">🔒</span>
+              <span>Đã chốt</span>
+              <span className="text-[10px] underline ml-0.5 text-amber-700 font-normal hover:font-bold">(Mở khóa)</span>
+            </>
+          ) : (
+            <>
+              <span className="text-emerald-600">🔓</span>
+              <span>Chốt sổ tháng</span>
+            </>
+          )}
+        </button>
+      )}
     </div>
   );
 };

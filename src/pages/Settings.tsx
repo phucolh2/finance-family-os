@@ -15,6 +15,7 @@ import { addBackupHistoryEntry, getBackupHistory, clearBackupHistory, getActionL
 import type { BackupHistoryEntry } from '../utils/backupHistory';
 import { getAutoBackupConfig, saveAutoBackupConfig, getAutoBackupSlots, deleteAutoBackupSlot } from '../utils/scheduledBackup';
 import type { AutoBackupConfig, AutoBackupSlot } from '../utils/scheduledBackup';
+import { exportProjectionCsv, exportSavingsAndDebtsCsv, printFinancialReport } from '../utils/exportReports';
 
 const IncomeCategoriesSettings: React.FC = () => {
   const { state, addIncomeCategory, updateIncomeCategory, deleteIncomeCategory } = useAppContext();
@@ -669,7 +670,32 @@ export const Settings: React.FC = () => {
                     Tải về toàn bộ cấu hình, lịch trình thu nhập, danh mục tài sản và các kịch bản đang chạy của hai vợ chồng dưới dạng tệp JSON.
                   </p>
                 </div>
-                <Button onClick={handleExport} className="w-full text-xs">Tải xuống tệp sao lưu (.json)</Button>
+                <div className="space-y-1.5 mt-2">
+                  <Button onClick={handleExport} className="w-full text-xs">Tải xuống tệp sao lưu (.json)</Button>
+                  <div className="grid grid-cols-2 gap-1.5">
+                    <button
+                      type="button"
+                      onClick={() => exportProjectionCsv(state.resolvedMonthlyDb || [])}
+                      className="px-2 py-1.5 text-[11px] font-semibold rounded-lg border border-family-accent/20 bg-white hover:bg-family-accent/5 text-family-text transition-all cursor-pointer"
+                    >
+                      📊 Xuất RDPD (.csv)
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => exportSavingsAndDebtsCsv(state)}
+                      className="px-2 py-1.5 text-[11px] font-semibold rounded-lg border border-family-accent/20 bg-white hover:bg-family-accent/5 text-family-text transition-all cursor-pointer"
+                    >
+                      🏦 Sổ TK & Nợ (.csv)
+                    </button>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={printFinancialReport}
+                    className="w-full px-2 py-1.5 text-[11px] font-semibold rounded-lg border border-emerald-200 bg-emerald-50 hover:bg-emerald-100 text-emerald-800 transition-all cursor-pointer flex items-center justify-center gap-1"
+                  >
+                    🖨️ In / Lưu Báo cáo (PDF)
+                  </button>
+                </div>
               </div>
 
               {/* Import action */}

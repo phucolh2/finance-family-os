@@ -1,7 +1,8 @@
 import React, { useState } from 'react';
 import { useAppContext } from '../../context/AppContext';
-import { Heart, Plus, Trash2, ArrowRightLeft, Edit3, HeartHandshake, Clock, UserCheck, Filter } from 'lucide-react';
+import { Heart, Plus, Trash2, ArrowRightLeft, Edit3, HeartHandshake, Clock, UserCheck, Filter, Download } from 'lucide-react';
 import type { SystemActivityLog } from '../../types/finance';
+import { exportSystemAuditLogsCsv } from '../../utils/exportReports';
 
 // Hàm tính khoảng thời gian tương đối
 const timeAgo = (dateStr: string) => {
@@ -185,14 +186,25 @@ export const SystemAuditTab: React.FC = () => {
             </button>
           </div>
 
-          <button
-            onClick={handleClearHistory}
-            className="text-xs text-slate-400 hover:text-rose-500 font-medium transition-colors flex items-center gap-1 cursor-pointer"
-            title="Xóa sạch lịch sử để ghi nhận lại từ đầu"
-          >
-            <Trash2 className="w-3.5 h-3.5" />
-            <span>Xóa nhật ký</span>
-          </button>
+          <div className="flex items-center gap-3">
+            <button
+              onClick={() => exportSystemAuditLogsCsv(filteredLogs)}
+              className="text-xs text-indigo-600 hover:text-indigo-800 font-semibold transition-colors flex items-center gap-1 cursor-pointer bg-indigo-50 hover:bg-indigo-100 border border-indigo-200/60 px-2.5 py-1 rounded-lg"
+              title="Xuất nhật ký ra file CSV để mở bằng Excel"
+            >
+              <Download className="w-3.5 h-3.5" />
+              <span>Xuất CSV</span>
+            </button>
+
+            <button
+              onClick={handleClearHistory}
+              className="text-xs text-slate-400 hover:text-rose-500 font-medium transition-colors flex items-center gap-1 cursor-pointer"
+              title="Xóa sạch lịch sử để ghi nhận lại từ đầu"
+            >
+              <Trash2 className="w-3.5 h-3.5" />
+              <span>Xóa nhật ký</span>
+            </button>
+          </div>
         </div>
       )}
 
