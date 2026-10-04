@@ -16,6 +16,7 @@ import type { BackupHistoryEntry } from '../utils/backupHistory';
 import { getAutoBackupConfig, saveAutoBackupConfig, getAutoBackupSlots, deleteAutoBackupSlot } from '../utils/scheduledBackup';
 import type { AutoBackupConfig, AutoBackupSlot } from '../utils/scheduledBackup';
 import { exportProjectionCsv, exportSavingsAndDebtsCsv, printFinancialReport } from '../utils/exportReports';
+import { PwaInstallButton } from '../components/ui/PwaInstallButton';
 
 const IncomeCategoriesSettings: React.FC = () => {
   const { state, addIncomeCategory, updateIncomeCategory, deleteIncomeCategory } = useAppContext();
@@ -614,6 +615,8 @@ export const Settings: React.FC = () => {
 
       {successMsg && <WarningBox type="info" message={successMsg} className="bg-green-50/50 border-green-200 text-green-800" />}
       {errorMsg && <WarningBox type="danger" message={errorMsg} />}
+
+      <PwaInstallButton variant="card" />
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         <AssetAllocationSettings />

@@ -41,6 +41,15 @@ export const AuthStatusBar: React.FC = () => {
   }
 
   const getSyncStatusUI = () => {
+    if (!appContext.isOnline) {
+      return (
+        <>
+          <CloudOff className="w-3.5 h-3.5 text-amber-600" />
+          <span className="text-amber-700 font-medium">Ngoại tuyến</span>
+        </>
+      );
+    }
+
     switch (appContext.syncStatus) {
       case 'syncing':
         return (
@@ -55,7 +64,9 @@ export const AuthStatusBar: React.FC = () => {
         return (
           <>
             <Cloud className="w-3.5 h-3.5 text-emerald-500" />
-            <span className="text-emerald-600 font-medium">Đã đồng bộ</span>
+            <span className="text-emerald-600 font-medium">
+              {appContext.lastPartnerSync ? `Đã đồng bộ (${appContext.lastPartnerSync.by})` : 'Đã đồng bộ'}
+            </span>
           </>
         );
       case 'error':

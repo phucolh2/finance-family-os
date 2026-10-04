@@ -5,6 +5,8 @@ import { AuthStatusBar } from '../auth/AuthStatusBar';
 import { LoveCorner } from '../modules/LoveCorner';
 import { CopilotChat } from '../copilot/CopilotChat';
 import { OnboardingModal } from '../ui/OnboardingModal';
+import { OfflineAndSyncBanner } from './OfflineAndSyncBanner';
+import { PwaInstallButton } from '../ui/PwaInstallButton';
 
 interface LayoutProps {
   activeTab: string;
@@ -18,30 +20,35 @@ export const Layout: React.FC<LayoutProps> = ({ activeTab, setActiveTab, childre
   const [isOnboardingOpen, setIsOnboardingOpen] = useState(false);
 
   return (
-    <div className="flex flex-col md:flex-row h-[100dvh] w-full max-w-full overflow-hidden bg-family-bg print:h-auto print:w-auto print:overflow-visible print:bg-white">
-      {/* Mobile Header Bar */}
-      <header className="flex md:hidden items-center justify-between px-4 sm:px-6 py-3.5 bg-family-bgDark/80 border-b border-family-accent/10 select-none shrink-0 z-40 print:hidden">
-        <h1 className="text-lg font-serif font-bold text-family-text flex items-center gap-2">
-          <span>👨‍👩‍👧‍👦</span> Family OS
-        </h1>
-        <div className="flex items-center gap-2">
-          <button
-            onClick={() => setIsCopilotOpen(true)}
-            className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl bg-white/80 border border-indigo-200/60 text-indigo-900 hover:bg-indigo-50 transition-colors shadow-2xs cursor-pointer"
-            title="Mở Trợ lý Gia đình"
-          >
-            <Bot className="w-4 h-4 text-indigo-600" />
-            <span className="text-[11px] font-bold">Trợ lý</span>
-          </button>
-          <AuthStatusBar />
-          <button
-            onClick={() => { setIsMobileOpen(true); }}
-            className="p-2 rounded-xl hover:bg-family-bgDeep text-family-textMuted focus:outline-none"
-          >
-            <Menu className="w-6 h-6" />
-          </button>
-        </div>
-      </header>
+    <div className="flex flex-col h-[100dvh] w-full max-w-full overflow-hidden bg-family-bg print:h-auto print:w-auto print:overflow-visible print:bg-white">
+      {/* Offline Alert & Real-time Partner Sync Banner */}
+      <OfflineAndSyncBanner />
+
+      <div className="flex flex-1 flex-col md:flex-row h-full w-full overflow-hidden">
+        {/* Mobile Header Bar */}
+        <header className="flex md:hidden items-center justify-between px-3 sm:px-6 py-2.5 bg-family-bgDark/80 border-b border-family-accent/10 select-none shrink-0 z-40 print:hidden">
+          <h1 className="text-base font-serif font-bold text-family-text flex items-center gap-1.5">
+            <span>👨‍👩‍👧‍👦</span> Family OS
+          </h1>
+          <div className="flex items-center gap-1.5">
+            <PwaInstallButton variant="compact" />
+            <button
+              onClick={() => setIsCopilotOpen(true)}
+              className="flex items-center gap-1 px-2 py-1 rounded-xl bg-white/80 border border-indigo-200/60 text-indigo-900 hover:bg-indigo-50 transition-colors shadow-2xs cursor-pointer"
+              title="Mở Trợ lý Gia đình"
+            >
+              <Bot className="w-3.5 h-3.5 text-indigo-600" />
+              <span className="text-[10px] font-bold">Trợ lý</span>
+            </button>
+            <AuthStatusBar />
+            <button
+              onClick={() => { setIsMobileOpen(true); }}
+              className="p-1.5 rounded-xl hover:bg-family-bgDeep text-family-textMuted focus:outline-none"
+            >
+              <Menu className="w-5 h-5" />
+            </button>
+          </div>
+        </header>
 
       {/* Desktop & Mobile Sidebar Container */}
       <div
@@ -68,6 +75,7 @@ export const Layout: React.FC<LayoutProps> = ({ activeTab, setActiveTab, childre
       <main className="flex-1 overflow-y-auto overflow-x-hidden p-4 md:p-8 relative print:overflow-visible print:p-0 print:m-0">
         {/* Cloud Sync Status Bar & Desktop Copilot Access */}
         <div className="hidden md:flex items-center justify-end gap-3 mb-4 max-w-6xl mx-auto print:hidden">
+          <PwaInstallButton variant="button" />
           <button
             onClick={() => setIsOnboardingOpen(true)}
             className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-white hover:bg-slate-50 border border-slate-200 shadow-2xs text-xs font-semibold text-slate-600 cursor-pointer transition-colors"
@@ -108,6 +116,7 @@ export const Layout: React.FC<LayoutProps> = ({ activeTab, setActiveTab, childre
         isOpen={isOnboardingOpen}
         onClose={() => setIsOnboardingOpen(false)}
       />
+      </div>
     </div>
   );
 };

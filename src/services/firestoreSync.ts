@@ -21,7 +21,8 @@ const DOC_ID = 'shared_state';
 export async function saveToFirestore(
   _userId: string,
   state: AppState,
-  schemaVersion: number
+  schemaVersion: number,
+  lastUpdatedBy?: string
 ): Promise<void> {
   if (!db) return;
 
@@ -33,6 +34,7 @@ export async function saveToFirestore(
   const persisted: PersistedAppState = {
     schemaVersion,
     updatedAt: new Date().toISOString(),
+    lastUpdatedBy: lastUpdatedBy || 'Chồng',
     data: dataToSave,
   };
 
