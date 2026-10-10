@@ -236,9 +236,23 @@ export function getSmartContextPrompts(activeTab: string = 'dashboard', state: A
     });
   }
 
+  // 3. Các kịch bản giả định What-If thực tế (Giảm đầu tư, Tăng thu nhập)
+  prompts.push(
+    {
+      id: 'whatif_reduce_invest',
+      label: '📉 Giảm 10tr đầu tư ảnh hưởng gì?',
+      prompt: 'Nếu mỗi tháng gia đình tôi giảm 10 triệu ở kênh đầu tư thì ảnh hưởng như thế nào đến dòng tiền ngắn hạn và mục tiêu tài sản dài hạn?',
+      tag: 'Kịch bản What-If',
+    },
+    {
+      id: 'whatif_boost_income',
+      label: '📈 Tăng 10tr thu nhập giúp ích gì?',
+      prompt: 'Nếu tăng thêm 10 triệu thu nhập mỗi tháng thì giúp ích gì cho kế hoạch tài chính của gia đình? Tôi nên phân bổ số tiền này ra sao và rút ngắn được bao lâu đạt FIRE?',
+      tag: 'Kịch bản What-If',
+    }
+  );
 
-
-  return prompts.slice(0, 5);
+  return prompts.slice(0, 8);
 }
 
 /**
@@ -315,6 +329,14 @@ export function getFallbackFollowUps(lastUserQuestion: string): string[] {
       '⚖️ Tỷ lệ phân bổ tài sản an toàn vs mạo hiểm hiện nay đã hợp lý chưa?',
       '🚀 Thời điểm này có nên mua tích sản vàng hoặc gửi tiết kiệm thêm không?',
       '📊 Hiệu suất đầu tư bình quân hàng năm kỳ vọng nên đặt bao nhiêu %?',
+    ];
+  }
+
+  if (q.includes('giảm') || q.includes('tăng') || q.includes('nếu') || q.includes('ảnh hưởng')) {
+    return [
+      '📈 Nếu tăng thêm 10 triệu thu nhập thì nên phân bổ vào trụ cột nào trước?',
+      '📉 Nếu giảm bớt đầu tư thì số tiền đó chuyển sang dự phòng có tốt hơn không?',
+      '⏳ Mức thay đổi dòng tiền này làm xê dịch ngày đạt FIRE bao nhiêu năm?',
     ];
   }
 

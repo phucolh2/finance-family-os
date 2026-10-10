@@ -77,4 +77,16 @@ describe('copilotSuggestions', () => {
     expect(followUps.length).toBe(3);
     expect(followUps.some(f => f.includes('nuôi con') || f.includes('quỹ'))).toBe(true);
   });
+
+  it('generates What-If prompt chips for simulation scenarios', () => {
+    const prompts = getSmartContextPrompts('dashboard', mockState);
+    expect(prompts.some(p => p.id === 'whatif_reduce_invest')).toBe(true);
+    expect(prompts.some(p => p.id === 'whatif_boost_income')).toBe(true);
+  });
+
+  it('generates fallback follow-up questions for what-if queries', () => {
+    const followUps = getFallbackFollowUps('Nếu giảm 10 triệu ở đầu tư thì sao?');
+    expect(followUps.length).toBe(3);
+    expect(followUps.some(f => f.includes('thu nhập') || f.includes('đầu tư') || f.includes('FIRE'))).toBe(true);
+  });
 });
