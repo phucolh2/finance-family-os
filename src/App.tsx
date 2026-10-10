@@ -48,6 +48,7 @@ const TaxCalculator = lazyWithRetry(() => import('./pages/TaxCalculator').then(m
 const InsuranceManager = lazyWithRetry(() => import('./pages/InsuranceManager').then(m => ({ default: m.InsuranceManager })));
 const LifestyleAssets = lazyWithRetry(() => import('./pages/LifestyleAssets').then(m => ({ default: m.LifestyleAssets })));
 const LoanSimulator = lazyWithRetry(() => import('./pages/LoanSimulator').then(m => ({ default: m.LoanSimulator })));
+const MonthlyReport = lazyWithRetry(() => import('./pages/MonthlyReport').then(m => ({ default: m.MonthlyReport })));
 const YearInReview = lazyWithRetry(() => import('./pages/YearInReview').then(m => ({ default: m.YearInReview })));
 const VacationPlanner = lazyWithRetry(() => import('./pages/VacationPlanner').then(m => ({ default: m.VacationPlanner })));
 const DocumentVault = lazyWithRetry(() => import('./pages/DocumentVault').then(m => ({ default: m.DocumentVault })));
@@ -68,7 +69,9 @@ function AppContent() {
   const renderActivePage = () => {
     switch (activeTab) {
       case 'dashboard':
-        return <Dashboard />;
+        return <Dashboard onNavigate={setActiveTab} />;
+      case 'monthly_report':
+        return <MonthlyReport />;
       case 'year_in_review':
         return <YearInReview />;
       case 'cashflow':

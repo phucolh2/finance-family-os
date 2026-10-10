@@ -36,14 +36,20 @@ import {
   AlertTriangle,
   Scale,
   TrendingDown,
-  ShieldCheck
+  ShieldCheck,
+  FileSpreadsheet
 } from 'lucide-react';
 import { HelpTooltip } from '../components/ui/HelpTooltip';
 import { safeNumber } from '../utils/math';
 import { ObservationControls } from '../components/ui/ObservationControls';
 import { DailyQuote } from '../components/ui/DailyQuote';
 import { ReminderWidget } from '../components/ui/ReminderWidget';
-export const Dashboard: React.FC = () => {
+
+interface DashboardProps {
+  onNavigate?: (tab: string) => void;
+}
+
+export const Dashboard: React.FC<DashboardProps> = ({ onNavigate }) => {
   const { state, selectedPeriodKey } = useAppContext();
   const { totalRemainingSum } = useLiquidityBreakdown('cumulative');
 
@@ -280,6 +286,33 @@ export const Dashboard: React.FC = () => {
       <DailyQuote />
 
       <ReminderWidget />
+
+      {/* Monthly Report Quick Link Banner */}
+      {onNavigate && (
+        <div className="flex items-center justify-between p-3.5 rounded-2xl bg-gradient-to-r from-emerald-500/10 via-teal-500/10 to-indigo-500/10 border border-emerald-500/20 backdrop-blur-sm print:hidden">
+          <div className="flex items-center gap-2.5">
+            <div className="w-8 h-8 rounded-xl bg-emerald-500/20 text-emerald-700 flex items-center justify-center font-bold shrink-0">
+              <FileSpreadsheet className="w-4 h-4" />
+            </div>
+            <div>
+              <p className="text-xs font-bold text-family-text flex items-center gap-1.5">
+                Báo Cáo Tài Chính Tháng T{activeRow?.period.month}/{activeRow?.period.year} đã sẵn sàng
+                <span className="px-1.5 py-0.5 rounded text-[10px] bg-emerald-100 text-emerald-800 font-normal">Mới</span>
+              </p>
+              <p className="text-[11px] text-family-textLight">
+                Xem đánh giá 4 trụ cột, thu chi thực tế, điểm số sức khỏe và in ấn bản tổng kết gia đình.
+              </p>
+            </div>
+          </div>
+          <button
+            onClick={() => onNavigate('monthly_report')}
+            className="px-3.5 py-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold transition-all shadow-2xs hover:shadow-xs cursor-pointer flex items-center gap-1 shrink-0 ml-2"
+          >
+            <span>Mở báo cáo</span>
+            <ChevronRight className="w-3.5 h-3.5" />
+          </button>
+        </div>
+      )}
 
       {/* KPI & Health Score Row */}
       <div className="grid grid-cols-2 md:grid-cols-3 print:grid-cols-3 gap-4">

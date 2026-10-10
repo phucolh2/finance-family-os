@@ -18,6 +18,7 @@ describe('Sidebar', () => {
     
     // Check if main categories are rendered
     expect(screen.getByText('Tổng quan tài chính gia đình')).toBeInTheDocument();
+    expect(screen.getByText('Báo cáo Hàng tháng')).toBeInTheDocument();
     expect(screen.getByText('Kế hoạch Thu nhập')).toBeInTheDocument();
     expect(screen.getByText('Phân Bổ Ngân Sách')).toBeInTheDocument();
     expect(screen.getByText('FIRE Center')).toBeInTheDocument();

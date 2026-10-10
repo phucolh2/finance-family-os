@@ -25,6 +25,7 @@ import {
   Palmtree,
   X,
   Home,
+  FileSpreadsheet,
 } from 'lucide-react';
 
 interface SidebarProps {
@@ -39,6 +40,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ activeTab, setActiveTab, onClo
       title: 'Tổng quan',
       items: [
         { id: 'dashboard', name: 'Tổng quan tài chính gia đình', icon: LayoutDashboard, color: 'text-indigo-500', bg: 'bg-indigo-500/15' },
+        { id: 'monthly_report', name: 'Báo cáo Hàng tháng', icon: FileSpreadsheet, color: 'text-emerald-500', bg: 'bg-emerald-500/15' },
         { id: 'cashflow', name: 'Bức tranh Tài chính (RDPD)', icon: BookOpenText, color: 'text-violet-500', bg: 'bg-violet-500/15' },
         { id: 'event_ledger', name: 'Nhật ký sự kiện (Ledger)', icon: ScrollText, color: 'text-sky-500', bg: 'bg-sky-500/15' },
       ],

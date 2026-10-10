@@ -10,6 +10,7 @@ export interface PromptSuggestion {
 // Bảng ánh xạ tên màn hình sang tiếng Việt thân thiện
 export const TAB_NAMES: Record<string, string> = {
   dashboard: 'Tổng quan tài chính',
+  monthly_report: 'Báo cáo Hàng tháng',
   cashflow: 'Bức tranh tài chính RDPD',
   event_ledger: 'Nhật ký sự kiện & Chung tay',
   income: 'Kế hoạch Thu nhập',
@@ -43,6 +44,29 @@ export function getSmartContextPrompts(activeTab: string = 'dashboard', state: A
 
   // 1. Gợi ý gắn liền với màn hình đang mở (Tab Contextual)
   switch (activeTab) {
+    case 'monthly_report':
+      prompts.push(
+        {
+          id: 'tab_report_digest',
+          label: '📋 Tóm tắt tài chính tháng này?',
+          prompt: 'Hãy tóm tắt ngắn gọn bức tranh tài chính tháng này của gia đình: thu nhập, chi tiêu thực tế so với định mức 4 trụ cột, và tỷ lệ tích lũy.',
+          tag: tabName,
+        },
+        {
+          id: 'tab_report_savings_rate',
+          label: '💰 Tỷ lệ tiết kiệm tháng này đạt bao nhiêu?',
+          prompt: 'Tỷ lệ tích lũy & tiết kiệm của gia đình trong tháng này có đạt mục tiêu tối ưu trên 25% không và nhận xét gì?',
+          tag: tabName,
+        },
+        {
+          id: 'tab_report_top_expense',
+          label: '🔍 Phân tích 3 khoản chi lớn nhất tháng?',
+          prompt: 'Ba khoản chi lớn nhất trong tháng này chiếm bao nhiêu % tổng chi tiêu và gia đình có thể tối ưu gì cho tháng tới?',
+          tag: tabName,
+        }
+      );
+      break;
+
     case 'life_stages':
       prompts.push(
         {
