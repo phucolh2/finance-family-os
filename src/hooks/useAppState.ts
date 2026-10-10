@@ -169,6 +169,7 @@ export function useAppState(userId?: string) {
     }
     return INITIAL_APP_STATE;
   });
+
   const isCloudInitializedRef = useRef(false);
   const isRemoteUpdateRef = useRef(false);
   const [isOnline, setIsOnline] = useState<boolean>(

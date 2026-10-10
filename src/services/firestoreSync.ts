@@ -34,7 +34,7 @@ export async function saveToFirestore(
   const persisted: PersistedAppState = {
     schemaVersion,
     updatedAt: new Date().toISOString(),
-    lastUpdatedBy: lastUpdatedBy || 'Chồng',
+    lastUpdatedBy: lastUpdatedBy || 'Gia đình',
     data: dataToSave,
   };
 

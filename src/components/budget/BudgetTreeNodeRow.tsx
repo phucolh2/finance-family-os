@@ -4,6 +4,8 @@ import { useSortable } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
 import type { BudgetTreeNode } from '../../types/budget';
 import { BUDGET_PILLARS } from '../../constants/pillars';
+import { amountToPercent, percentToAmount, roundAmount, isValidBase } from '../../utils/budgetAmount';
+import { formatTableMoneyVNDMillion } from '../../utils/format';
 
 interface BudgetTreeNodeRowProps {
   node: BudgetTreeNode;
@@ -12,6 +14,10 @@ interface BudgetTreeNodeRowProps {
   onAddChild: (parentId: string) => void;
   isExpanded: boolean;
   onToggleExpand: () => void;
+  /** Chế độ nhập: 'percent' (mặc định, hành vi cũ) hoặc 'amount' (nhập số tiền, triệu VND). */
+  inputMode?: 'percent' | 'amount';
+  /** Gốc phân bổ (triệu VND) dùng để quy đổi giữa % và số tiền. */
+  allocationBase?: number;
 }
 
 export const BudgetTreeNodeRow: React.FC<BudgetTreeNodeRowProps> = ({
@@ -21,12 +27,19 @@ export const BudgetTreeNodeRow: React.FC<BudgetTreeNodeRowProps> = ({
   onAddChild,
   isExpanded,
   onToggleExpand,
+  inputMode = 'percent',
+  allocationBase,
 }) => {
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id: node.id });
   const [isEditing, setIsEditing] = useState(false);
   const [editName, setEditName] = useState(node.name);
   const [editNote, setEditNote] = useState(node.note || '');
   const [editClassification, setEditClassification] = useState<BudgetTreeNode['classification']>(node.classification);
+  // Giá trị đang gõ dở ở ô số tiền (tránh bị định dạng lại khi đang gõ, vd "1.")
+  const [amountDraft, setAmountDraft] = useState<string | null>(null);
+
+  const amountMode = inputMode === 'amount' && isValidBase(allocationBase);
+  const amountValue = amountMode ? roundAmount(percentToAmount(node.ratioPercent, allocationBase as number)) : 0;
 
   // const hasChildren = node.children && node.children.length > 0;
   const isGroup = node.nodeType === 'group';
@@ -97,7 +110,7 @@ export const BudgetTreeNodeRow: React.FC<BudgetTreeNodeRowProps> = ({
               />
               {isGroup && (
                 <select
-                  value={editClassification || BUDGET_PILLARS.debt_reserve.id}
+                  value={editClassification && BUDGET_PILLARS[editClassification] ? editClassification : BUDGET_PILLARS.debt_reserve.id}
                   onChange={(e) => { setEditClassification(e.target.value as any); }}
                   className="text-xs bg-family-bgDeep border border-family-accent/20 rounded-xl px-2 py-1 text-family-text focus:ring-1 focus:ring-family-accent/40"
                 >
@@ -117,7 +130,7 @@ export const BudgetTreeNodeRow: React.FC<BudgetTreeNodeRowProps> = ({
                 </span>
                 {isGroup ? (
                   <select
-                    value={node.classification || BUDGET_PILLARS.debt_reserve.id}
+                    value={node.classification && BUDGET_PILLARS[node.classification] ? node.classification : BUDGET_PILLARS.debt_reserve.id}
                     onChange={(e) => { onUpdate(node.id, { classification: e.target.value as any }); }}
                     className="text-[10px] uppercase font-bold bg-family-bgDeep border border-family-accent/20 rounded-xl px-2.5 py-1 text-family-text focus:outline-none focus:ring-1 focus:ring-family-accent transition-all cursor-pointer"
                   >
@@ -127,14 +140,16 @@ export const BudgetTreeNodeRow: React.FC<BudgetTreeNodeRowProps> = ({
                     <option value={BUDGET_PILLARS.savings.id}>{BUDGET_PILLARS.savings.label}</option>
                     <option value={BUDGET_PILLARS.debt_reserve.id}>{BUDGET_PILLARS.debt_reserve.label}</option>
                   </select>
-                ) : node.classification || node.level === 0 ? (
-                  <span className={`text-[9px] uppercase px-1.5 py-0.5 rounded font-bold tracking-wider ${
-                    node.classification ? `${BUDGET_PILLARS[node.classification].bgClass} ${BUDGET_PILLARS[node.classification].colorClassDark} border ${BUDGET_PILLARS[node.classification].borderClass}` :
-                    `${BUDGET_PILLARS.debt_reserve.bgClass} ${BUDGET_PILLARS.debt_reserve.colorClassDark} border ${BUDGET_PILLARS.debt_reserve.borderClass}`
-                  }`}>
-                    {node.classification ? BUDGET_PILLARS[node.classification].label : BUDGET_PILLARS.debt_reserve.label}
-                  </span>
-                ) : null}
+                ) : node.classification || node.level === 0 ? (() => {
+                  const pillar = node.classification && BUDGET_PILLARS[node.classification] 
+                    ? BUDGET_PILLARS[node.classification] 
+                    : BUDGET_PILLARS.debt_reserve;
+                  return (
+                    <span className={`text-[9px] uppercase px-1.5 py-0.5 rounded font-bold tracking-wider ${pillar.bgClass} ${pillar.colorClassDark} border ${pillar.borderClass}`}>
+                      {pillar.label}
+                    </span>
+                  );
+                })() : null}
                 {!node.isActive && (
                   <span className="text-[9px] bg-family-bgDeep px-2 py-0.5 rounded-full text-family-textMuted font-bold border border-family-accent/5">
                     Tắt
@@ -152,23 +167,55 @@ export const BudgetTreeNodeRow: React.FC<BudgetTreeNodeRowProps> = ({
 
         {/* Right Side: Ratio input, Active toggle, and Modification buttons */}
         <div className="flex items-center justify-end gap-3 shrink-0">
-          {/* Ratio input */}
+          {/* Ratio / Amount input */}
           <div className="flex items-center gap-1.5">
-            <span className="text-xs text-family-textMuted">Tỷ lệ:</span>
-            <input
-              type="number"
-              min={0}
-              max={100}
-              step={0.1}
-              value={node.ratioPercent}
-              onChange={(e) => {
-                const val = Number(e.target.value);
-                const clamped = Math.max(0, Math.min(100, isNaN(val) ? 0 : val));
-                onUpdate(node.id, { ratioPercent: clamped });
-              }}
-              className="w-16 text-right font-bold text-base md:text-sm bg-family-bgDeep border border-family-accent/20 rounded-xl px-2 py-1 text-family-accent focus:ring-1 focus:ring-family-accent"
-            />
-            <span className="text-xs font-bold text-family-accent">%</span>
+            {amountMode ? (
+              <>
+                <span className="text-xs text-family-textMuted">Số tiền:</span>
+                <input
+                  type="number"
+                  min={0}
+                  step={0.1}
+                  value={amountDraft ?? amountValue}
+                  onChange={(e) => {
+                    const raw = e.target.value;
+                    setAmountDraft(raw);
+                    const val = Number(raw);
+                    const amount = raw === '' || isNaN(val) ? 0 : Math.max(0, val);
+                    onUpdate(node.id, { ratioPercent: amountToPercent(amount, allocationBase as number) });
+                  }}
+                  onBlur={() => { setAmountDraft(null); }}
+                  className="w-24 text-right font-bold text-base md:text-sm bg-family-bgDeep border border-family-accent/20 rounded-xl px-2 py-1 text-family-accent focus:ring-1 focus:ring-family-accent"
+                />
+                <span className="text-xs font-bold text-family-accent">triệu</span>
+                <span className="text-[10px] text-family-textMuted w-14 text-right" title="Tỷ lệ tương đương trên gốc phân bổ">
+                  ≈ {node.ratioPercent}%
+                </span>
+              </>
+            ) : (
+              <>
+                <span className="text-xs text-family-textMuted">Tỷ lệ:</span>
+                <input
+                  type="number"
+                  min={0}
+                  max={100}
+                  step={0.1}
+                  value={node.ratioPercent}
+                  onChange={(e) => {
+                    const val = Number(e.target.value);
+                    const clamped = Math.max(0, Math.min(100, isNaN(val) ? 0 : val));
+                    onUpdate(node.id, { ratioPercent: clamped });
+                  }}
+                  className="w-16 text-right font-bold text-base md:text-sm bg-family-bgDeep border border-family-accent/20 rounded-xl px-2 py-1 text-family-accent focus:ring-1 focus:ring-family-accent"
+                />
+                <span className="text-xs font-bold text-family-accent">%</span>
+                {isValidBase(allocationBase) && (
+                  <span className="text-[10px] text-family-textMuted whitespace-nowrap" title="Số tiền tương đương trên gốc phân bổ">
+                    ≈ {formatTableMoneyVNDMillion(percentToAmount(node.ratioPercent, allocationBase))}
+                  </span>
+                )}
+              </>
+            )}
           </div>
 
           {/* Action buttons */}

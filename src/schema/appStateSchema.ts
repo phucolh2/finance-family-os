@@ -11,6 +11,7 @@ const FamilyProfileSchema = z.object({
   planningEndMonth: z.number().default(12),
   planningEndYear: z.number().default(new Date().getFullYear() + 60),
   currency: z.literal('VND_MILLION').default('VND_MILLION'),
+  lockedUntilPeriod: z.string().optional(), // Format 'YYYY-MM', prevents editing historical data
 }).passthrough();
 
 // Ensure these arrays exist and are arrays

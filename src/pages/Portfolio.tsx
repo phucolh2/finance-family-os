@@ -1210,14 +1210,14 @@ export const Portfolio: React.FC = () => {
                                         }
                                         setSettlingDealId(null);
                                       }}
-                                      disabled={!isWithinObservationPeriod(settleForm.endMonth, settleForm.endYear, selectedPeriodKey)}
+                                      disabled={!isWithinObservationPeriod(settleForm.endMonth, settleForm.endYear, selectedPeriodKey, state.profile.lockedUntilPeriod)}
                                       className="ml-auto bg-green-700 hover:bg-green-800 text-white font-bold py-1 px-4 rounded-lg shadow-sm disabled:opacity-50"
                                     >
                                       Xác nhận chốt
                                     </button>
                                   </div>
-                                  {!isWithinObservationPeriod(settleForm.endMonth, settleForm.endYear, selectedPeriodKey) && (
-                                    <div className="text-red-500 text-xs text-right mt-1 w-full">{getPeriodGuardMessage(selectedPeriodKey)}</div>
+                                  {!isWithinObservationPeriod(settleForm.endMonth, settleForm.endYear, selectedPeriodKey, state.profile.lockedUntilPeriod) && (
+                                    <div className="text-red-500 text-xs text-right mt-1 w-full">{getPeriodGuardMessage(selectedPeriodKey, state.profile.lockedUntilPeriod)}</div>
                                   )}
                                 </td>
                               </tr>
@@ -1323,14 +1323,14 @@ export const Portfolio: React.FC = () => {
                                         
                                         setCashflowDealId(null);
                                       }}
-                                      disabled={!isWithinObservationPeriod(cashflowForm.month, cashflowForm.year, selectedPeriodKey)}
+                                      disabled={!isWithinObservationPeriod(cashflowForm.month, cashflowForm.year, selectedPeriodKey, state.profile.lockedUntilPeriod)}
                                       className="ml-auto bg-blue-600 hover:bg-blue-700 text-white font-bold py-1 px-4 rounded-lg shadow-sm disabled:opacity-50"
                                     >
                                       Lưu
                                     </button>
                                   </div>
-                                  {!isWithinObservationPeriod(cashflowForm.month, cashflowForm.year, selectedPeriodKey) && (
-                                    <div className="text-red-500 text-xs text-right mt-1 w-full">{getPeriodGuardMessage(selectedPeriodKey)}</div>
+                                  {!isWithinObservationPeriod(cashflowForm.month, cashflowForm.year, selectedPeriodKey, state.profile.lockedUntilPeriod) && (
+                                    <div className="text-red-500 text-xs text-right mt-1 w-full">{getPeriodGuardMessage(selectedPeriodKey, state.profile.lockedUntilPeriod)}</div>
                                   )}
                                 </td>
                               </tr>

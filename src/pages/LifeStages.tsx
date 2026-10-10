@@ -25,8 +25,6 @@ import { ObservationControls } from '../components/ui/ObservationControls';
 import { SmartAllocationAdvisorModal } from '../components/ui/SmartAllocationAdvisorModal';
 import { createAdvisorSnapshot } from '../engines/SmartAllocationAdvisor';
 import { runProjection } from '../engines/projectionEngine';
-import { BankStatementImporterModal } from '../components/banking/BankStatementImporterModal';
-import { FileSpreadsheet } from 'lucide-react';
 
 import type { BudgetGroup } from '../types/budget';
 import type { LifeEvent } from '../types/finance';
@@ -54,7 +52,6 @@ export const LifeStages: React.FC = () => {
 
   const [isAdvisorOpen, setIsAdvisorOpen] = useState(false);
   const [advisorSnapshot, setAdvisorSnapshot] = useState<AllocationSnapshot | null>(null);
-  const [isBankImporterOpen, setIsBankImporterOpen] = useState(false);
 
   const handleOpenAiExpenseAdvisor = () => {
     const periodKey = `${formData.year}-${String(formData.month).padStart(2, '0')}`;
@@ -238,6 +235,10 @@ export const LifeStages: React.FC = () => {
 
   const handleSave = (e: React.FormEvent) => {
     e.preventDefault();
+    if (state.profile.lockedUntilPeriod && `${formData.year}-${String(formData.month).padStart(2, '0')}` <= state.profile.lockedUntilPeriod) {
+      alert(`Không thể lưu. Tháng ${formData.month}/${formData.year} đã bị chốt sổ.`);
+      return;
+    }
     if (!formData.name.trim()) {
       setFormError('Vui lòng điền tên sự kiện.');
       return;
@@ -503,6 +504,11 @@ export const LifeStages: React.FC = () => {
   };
 
   const handleDelete = (id: string) => {
+    const event = state.lifeEvents?.find(e => e.id === id);
+    if (event && state.profile.lockedUntilPeriod && `${event.year}-${String(event.month).padStart(2, '0')}` <= state.profile.lockedUntilPeriod) {
+      alert(`Không thể xóa. Sự kiện này thuộc tháng đã chốt sổ.`);
+      return;
+    }
     if (window.confirm('Bạn có chắc muốn xóa sự kiện cuộc đời này không?')) {
       deleteLifeEvent(id);
     }
@@ -689,65 +695,48 @@ export const LifeStages: React.FC = () => {
       </div>
 
       {/* Tabs */}
-      <div className="flex flex-wrap items-center justify-between border-b border-gray-200 gap-2 pb-1">
-        <div className="flex space-x-2 overflow-x-auto">
-          <button
-            onClick={() => { setActiveTab('expense_overview'); }}
-            className={`py-2 px-4 text-sm font-semibold transition-colors border-b-2 ${
-              activeTab === 'expense_overview' 
-                ? 'border-family-accent text-family-accent' 
-                : 'border-transparent text-gray-500 hover:text-gray-700'
-            }`}
-          >
-            Tổng quan
-          </button>
-          <button
-            onClick={() => { setActiveTab('monthly_reconciliation'); }}
-            className={`py-2 px-4 text-sm font-semibold transition-colors border-b-2 ${
-              activeTab === 'monthly_reconciliation' 
-                ? 'border-family-accent text-family-accent' 
-                : 'border-transparent text-gray-500 hover:text-gray-700'
-            }`}
-          >
-            Chi tiêu thường xuyên
-          </button>
-          <button
-            onClick={() => { setActiveTab('timeline'); }}
-            className={`py-2 px-4 text-sm font-semibold transition-colors border-b-2 ${
-              activeTab === 'timeline' 
-                ? 'border-family-accent text-family-accent' 
-                : 'border-transparent text-gray-500 hover:text-gray-700'
-            }`}
-          >
-            Chi tiêu linh hoạt
-          </button>
-          <button
-            onClick={() => { setActiveTab('savings_liquidity'); }}
-            className={`py-2 px-4 text-sm font-semibold transition-colors border-b-2 ${
-              activeTab === 'savings_liquidity' 
-                ? 'border-family-accent text-family-accent' 
-                : 'border-transparent text-gray-500 hover:text-gray-700'
-            }`}
-          >
-            Tiết kiệm & Thanh khoản
-          </button>
-        </div>
-
+      <div className="flex space-x-2 border-b border-gray-200">
         <button
-          type="button"
-          onClick={() => setIsBankImporterOpen(true)}
-          className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold rounded-xl bg-indigo-50 hover:bg-indigo-100 text-indigo-700 border border-indigo-200 transition-all cursor-pointer shadow-2xs"
-          title="Tải lên tệp CSV sao kê tài khoản ngân hàng để tự động phân loại chi tiêu"
+          onClick={() => { setActiveTab('expense_overview'); }}
+          className={`py-2 px-4 text-sm font-semibold transition-colors border-b-2 ${
+            activeTab === 'expense_overview' 
+              ? 'border-family-accent text-family-accent' 
+              : 'border-transparent text-gray-500 hover:text-gray-700'
+          }`}
         >
-          <FileSpreadsheet className="w-3.5 h-3.5" />
-          <span>Nhập sao kê ngân hàng (CSV)</span>
+          Tổng quan
+        </button>
+        <button
+          onClick={() => { setActiveTab('monthly_reconciliation'); }}
+          className={`py-2 px-4 text-sm font-semibold transition-colors border-b-2 ${
+            activeTab === 'monthly_reconciliation' 
+              ? 'border-family-accent text-family-accent' 
+              : 'border-transparent text-gray-500 hover:text-gray-700'
+          }`}
+        >
+          Chi tiêu thường xuyên
+        </button>
+        <button
+          onClick={() => { setActiveTab('timeline'); }}
+          className={`py-2 px-4 text-sm font-semibold transition-colors border-b-2 ${
+            activeTab === 'timeline' 
+              ? 'border-family-accent text-family-accent' 
+              : 'border-transparent text-gray-500 hover:text-gray-700'
+          }`}
+        >
+          Chi tiêu linh hoạt
+        </button>
+        <button
+          onClick={() => { setActiveTab('savings_liquidity'); }}
+          className={`py-2 px-4 text-sm font-semibold transition-colors border-b-2 ${
+            activeTab === 'savings_liquidity' 
+              ? 'border-family-accent text-family-accent' 
+              : 'border-transparent text-gray-500 hover:text-gray-700'
+          }`}
+        >
+          Tiết kiệm & Thanh khoản
         </button>
       </div>
-
-      <BankStatementImporterModal
-        isOpen={isBankImporterOpen}
-        onClose={() => setIsBankImporterOpen(false)}
-      />
 
       {activeTab === 'timeline' && (
         <div className="space-y-6">

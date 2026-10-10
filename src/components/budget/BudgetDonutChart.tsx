@@ -7,35 +7,36 @@ export interface BudgetDonutChartProps {
   rootGroups: BudgetTreeNode[];
 }
 
-export const BudgetDonutChart: React.FC<BudgetDonutChartProps> = ({ rootGroups }) => {
+export const BudgetDonutChart: React.FC<BudgetDonutChartProps> = ({ rootGroups = [] }) => {
+  const safeGroups = Array.isArray(rootGroups) ? rootGroups : [];
   const data = [
     {
       name: BUDGET_PILLARS.expense.label,
       key: BUDGET_PILLARS.expense.id,
-      value: rootGroups
+      value: safeGroups
         .filter(g => g.isActive && g.classification === 'expense')
-        .reduce((sum, g) => sum + g.ratioPercent, 0),
+        .reduce((sum, g) => sum + (g.ratioPercent ?? 0), 0),
     },
     {
       name: BUDGET_PILLARS.savings.label,
       key: BUDGET_PILLARS.savings.id,
-      value: rootGroups
-        .filter(g => g.isActive && g.classification === 'savings')
-        .reduce((sum, g) => sum + g.ratioPercent, 0),
+      value: safeGroups
+        .filter(g => g.isActive && (g.classification === 'savings' || g.classification === ('saving' as any)))
+        .reduce((sum, g) => sum + (g.ratioPercent ?? 0), 0),
     },
     {
       name: BUDGET_PILLARS.investment.label,
       key: BUDGET_PILLARS.investment.id,
-      value: rootGroups
+      value: safeGroups
         .filter(g => g.isActive && g.classification === 'investment')
-        .reduce((sum, g) => sum + g.ratioPercent, 0),
+        .reduce((sum, g) => sum + (g.ratioPercent ?? 0), 0),
     },
     {
       name: BUDGET_PILLARS.debt_reserve.label,
       key: BUDGET_PILLARS.debt_reserve.id,
-      value: rootGroups
+      value: safeGroups
         .filter(g => g.isActive && (g.classification === 'debt_reserve' || !g.classification))
-        .reduce((sum, g) => sum + g.ratioPercent, 0),
+        .reduce((sum, g) => sum + (g.ratioPercent ?? 0), 0),
     }
   ].filter(item => item.value > 0);
 

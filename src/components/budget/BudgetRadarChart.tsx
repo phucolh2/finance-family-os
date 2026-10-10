@@ -6,18 +6,19 @@ interface BudgetRadarChartProps {
   rootGroups: BudgetTreeNode[];
 }
 
-export const BudgetRadarChart: React.FC<BudgetRadarChartProps> = ({ rootGroups }) => {
-  const expenseActual = rootGroups
+export const BudgetRadarChart: React.FC<BudgetRadarChartProps> = ({ rootGroups = [] }) => {
+  const safeGroups = Array.isArray(rootGroups) ? rootGroups : [];
+  const expenseActual = safeGroups
     .filter(g => g.isActive && g.classification === 'expense')
-    .reduce((sum, g) => sum + g.ratioPercent, 0);
+    .reduce((sum, g) => sum + (g.ratioPercent ?? 0), 0);
 
-  const savingsActual = rootGroups
-    .filter(g => g.isActive && g.classification === 'savings')
-    .reduce((sum, g) => sum + g.ratioPercent, 0);
+  const savingsActual = safeGroups
+    .filter(g => g.isActive && (g.classification === 'savings' || g.classification === ('saving' as any)))
+    .reduce((sum, g) => sum + (g.ratioPercent ?? 0), 0);
 
-  const investmentActual = rootGroups
+  const investmentActual = safeGroups
     .filter(g => g.isActive && g.classification === 'investment')
-    .reduce((sum, g) => sum + g.ratioPercent, 0);
+    .reduce((sum, g) => sum + (g.ratioPercent ?? 0), 0);
 
   const data = [
     {

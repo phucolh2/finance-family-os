@@ -141,6 +141,10 @@ export const IncomeSchedule: React.FC = () => {
   const yearTicks = Array.from(new Set(timelineResult.periods.map(p => p.year))).filter(y => y % 5 === 0);
 
   const handleSaveChanges = () => {
+    if (state.profile.lockedUntilPeriod && `${editYear}-${String(editMonth).padStart(2, '0')}` <= state.profile.lockedUntilPeriod) {
+      setFormError(`Không thể lưu. Tháng ${editMonth}/${editYear} đã bị chốt sổ.`);
+      return;
+    }
     if (editMonth < 1 || editMonth > 12) {
       setFormError('Tháng hiệu lực phải từ 1 đến 12.');
       return;
@@ -387,11 +391,11 @@ export const IncomeSchedule: React.FC = () => {
                 onChange={(e) => { setNewNote(e.target.value); }}
               />
               <div className="flex justify-end gap-2 items-center">
-                {!isWithinObservationPeriod(newMonth, newYear, selectedPeriodKey) && (
-                  <span className="text-red-500 text-xs flex-1 text-right pr-2">{getPeriodGuardMessage(selectedPeriodKey)}</span>
+                {!isWithinObservationPeriod(newMonth, newYear, selectedPeriodKey, state.profile.lockedUntilPeriod) && (
+                  <span className="text-red-500 text-xs flex-1 text-right pr-2">{getPeriodGuardMessage(selectedPeriodKey, state.profile.lockedUntilPeriod, newMonth, newYear)}</span>
                 )}
                 <Button variant="outline" onClick={() => { setIsCreatingNew(false); }}>Hủy</Button>
-                <Button type="submit" className="gap-2" disabled={!isWithinObservationPeriod(newMonth, newYear, selectedPeriodKey)}>
+                <Button type="submit" className="gap-2" disabled={!isWithinObservationPeriod(newMonth, newYear, selectedPeriodKey, state.profile.lockedUntilPeriod)}>
                   <Check className="w-4 h-4" /> Khởi tạo mốc thu nhập
                 </Button>
               </div>

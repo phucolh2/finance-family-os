@@ -1,13 +1,8 @@
 import React, { useEffect } from 'react';
 import { useAppContext } from '../../context/AppContext';
 import { runProjection } from '../../engines/projectionEngine';
-import { isPeriodKeyLocked } from '../../utils/monthLockStore';
-import { getActiveActor } from '../../config/familyMembers';
-import { Lock, LockOpen, RotateCcw } from 'lucide-react';
-import { HelpTooltip } from './HelpTooltip';
-
 export const ObservationControls: React.FC = () => {
-  const { state, updateProfile, selectedPeriodKey, setSelectedPeriodKey, updateToolConfig, pushSystemLog } = useAppContext();
+  const { state, updateProfile, selectedPeriodKey, setSelectedPeriodKey } = useAppContext();
 
   // Run projection dynamically to get the month list
   const projection = runProjection({
@@ -45,9 +40,6 @@ export const ObservationControls: React.FC = () => {
   const currentPeriod = projection.monthlyRows.find(r => r.period.key === nowKey) || projection.monthlyRows[0];
   const activeKey = selectedPeriodKey || currentPeriod?.period.key || '';
 
-  const [activeYearStr, activeMonthStr] = (activeKey || '2026-10').split('-');
-  const activeMonthLabel = `${activeMonthStr}/${activeYearStr}`;
-
   // Generate options for Planning Start Month (e.g. 10/2026 to 2035)
   const startMonthOptions: { month: number; year: number; label: string; key: string }[] = [];
   for (let y = 2026; y <= 2035; y++) {
@@ -70,34 +62,11 @@ export const ObservationControls: React.FC = () => {
 
   const activeStartKey = `${state.profile.planningStartYear}-${String(state.profile.planningStartMonth).padStart(2, '0')}`;
 
-  const isLocked = isPeriodKeyLocked(activeKey);
-
-  const handleToggleLock = () => {
-    if (!activeKey) return;
-    if (!selectedPeriodKey) {
-      setSelectedPeriodKey(activeKey);
-    }
-    const currentLocks = { ...(state.toolConfigs?.monthLock || {}) };
-    if (currentLocks[activeKey]) {
-      delete currentLocks[activeKey];
-      updateToolConfig('monthLock', currentLocks);
-      pushSystemLog('CẬP NHẬT', 'Chốt sổ tháng', `Mở khóa sổ tháng ${activeMonthLabel} để điều chỉnh số liệu`);
-    } else {
-      const actor = getActiveActor();
-      currentLocks[activeKey] = {
-        by: actor,
-        at: new Date().toISOString()
-      };
-      updateToolConfig('monthLock', currentLocks);
-      pushSystemLog('CẬP NHẬT', 'Chốt sổ tháng', `Đã chốt sổ tháng ${activeMonthLabel}`);
-    }
-  };
-
   return (
-    <div className="flex flex-wrap items-center gap-2 sm:gap-2.5">
-      {/* 1. Planning Start Date Selector (Mốc bắt đầu) */}
-      <div className="h-9 px-3 rounded-xl bg-white border border-family-accent/15 shadow-2xs flex items-center gap-2 text-xs font-semibold text-family-text hover:border-family-accent/30 transition-colors whitespace-nowrap shrink-0">
-        <span className="text-family-textMuted font-medium">Mốc bắt đầu:</span>
+    <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3">
+      {/* Planning Start Date Selector (Mốc bắt đầu) */}
+      <div className="flex items-center gap-2 text-xs font-semibold text-family-text bg-white px-3 py-1.5 rounded-xl border border-family-accent/15 shadow-sm">
+        <span className="text-family-textMuted font-medium whitespace-nowrap">Mốc bắt đầu:</span>
         <select
           value={activeStartKey}
           onChange={(e) => {
@@ -114,9 +83,9 @@ export const ObservationControls: React.FC = () => {
         </select>
       </div>
 
-      {/* 2. Observation Month Selector (Tháng quan sát) */}
-      <div className="h-9 px-3 rounded-xl bg-white border border-family-accent/15 shadow-2xs flex items-center gap-2 text-xs font-semibold text-family-text hover:border-family-accent/30 transition-colors whitespace-nowrap shrink-0">
-        <span className="text-family-textMuted font-medium">Tháng quan sát:</span>
+      {/* Observation Month Selector (Tháng quan sát) */}
+      <div className="flex items-center gap-2 text-xs font-semibold text-family-text bg-white px-3 py-1.5 rounded-xl border border-family-accent/15 shadow-sm">
+        <span className="text-family-textMuted font-medium whitespace-nowrap">Tháng quan sát:</span>
         <select
           value={activeKey}
           onChange={(e) => { setSelectedPeriodKey(e.target.value); }}
@@ -128,53 +97,36 @@ export const ObservationControls: React.FC = () => {
             </option>
           ))}
         </select>
+        
+        {/* Lock/Unlock Button */}
+        {state.profile.lockedUntilPeriod && activeKey <= state.profile.lockedUntilPeriod ? (
+          <button
+            onClick={() => updateProfile({ ...state.profile, lockedUntilPeriod: undefined })}
+            className="ml-1 px-2 py-0.5 text-[10px] font-bold text-amber-700 bg-amber-100 border border-amber-200 rounded flex items-center gap-1 hover:bg-amber-200 transition-colors whitespace-nowrap"
+            title="Sổ đang chốt. Nhấn để mở khóa."
+          >
+            🔒 Đã chốt sổ
+          </button>
+        ) : (
+          <button
+            onClick={() => updateProfile({ ...state.profile, lockedUntilPeriod: activeKey })}
+            className="ml-1 px-2 py-0.5 text-[10px] font-bold text-slate-500 bg-slate-100 border border-slate-200 rounded flex items-center gap-1 hover:bg-slate-200 transition-colors whitespace-nowrap"
+            title="Nhấn để chốt sổ tháng này (Khóa không cho chỉnh sửa quá khứ)"
+          >
+            🔓 Chốt sổ
+          </button>
+        )}
+
         {activeKey !== currentPeriod?.period.key && (
           <button
             onClick={() => { setSelectedPeriodKey(undefined); }}
-            className="ml-1 px-1.5 py-0.5 text-[10px] font-bold text-white bg-family-accent/85 rounded-md hover:bg-family-accent transition-colors whitespace-nowrap flex items-center gap-1 cursor-pointer"
-            title="Trở về tháng quan sát hiện tại"
+            className="ml-1 px-2 py-0.5 text-[10px] font-bold text-white bg-family-accent/80 rounded hover:bg-family-primary transition-colors whitespace-nowrap"
+            title="Trợ về hiện tại"
           >
-            <RotateCcw className="w-2.5 h-2.5" />
-            <span>Hiện tại</span>
+            Về hiện tại
           </button>
         )}
       </div>
-
-      {/* 3. Month Lock / Unlock toggle (Chốt sổ theo tháng quan sát) */}
-      {activeKey && (
-        <div className="flex items-center gap-1 shrink-0">
-          <button
-            type="button"
-            onClick={handleToggleLock}
-            className={`h-9 px-3 rounded-xl text-xs font-semibold flex items-center gap-1.5 whitespace-nowrap shrink-0 shadow-2xs transition-all active:scale-95 cursor-pointer border ${
-              isLocked
-                ? 'bg-amber-50/90 hover:bg-amber-100 text-amber-900 border-amber-300'
-                : 'bg-emerald-50/90 hover:bg-emerald-100 text-emerald-800 border-emerald-300'
-            }`}
-            title={
-              isLocked
-                ? `Tháng quan sát (${activeMonthLabel}) đã chốt sổ. Bấm để mở khóa chỉnh sửa dữ liệu`
-                : `Bấm để chốt sổ tháng quan sát (${activeMonthLabel})`
-            }
-          >
-            {isLocked ? (
-              <>
-                <Lock className="w-3.5 h-3.5 text-amber-600 shrink-0" />
-                <span>Đã chốt {activeMonthLabel}</span>
-                <span className="text-[10px] font-bold px-1.5 py-0.5 rounded-md bg-amber-200/80 hover:bg-amber-300 text-amber-900 ml-0.5 transition-colors">
-                  Mở khóa
-                </span>
-              </>
-            ) : (
-              <>
-                <LockOpen className="w-3.5 h-3.5 text-emerald-600 shrink-0" />
-                <span>Chốt sổ {activeMonthLabel}</span>
-              </>
-            )}
-          </button>
-          <HelpTooltip text={`Chốt sổ tháng quan sát (${activeMonthLabel}): Khóa các số liệu của tháng này để bảo toàn sổ sách tài chính gia đình. Khi cần điều chỉnh thu chi hay giao dịch, hai vợ chồng có thể mở khóa bất kỳ lúc nào.`} />
-        </div>
-      )}
     </div>
   );
 };

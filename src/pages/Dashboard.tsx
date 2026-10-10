@@ -42,7 +42,6 @@ import { HelpTooltip } from '../components/ui/HelpTooltip';
 import { safeNumber } from '../utils/math';
 import { ObservationControls } from '../components/ui/ObservationControls';
 import { DailyQuote } from '../components/ui/DailyQuote';
-import { ReminderWidget } from '../components/ui/ReminderWidget';
 export const Dashboard: React.FC = () => {
   const { state, selectedPeriodKey } = useAppContext();
   const { totalRemainingSum } = useLiquidityBreakdown('cumulative');
@@ -278,8 +277,6 @@ export const Dashboard: React.FC = () => {
       </div>
 
       <DailyQuote />
-
-      <ReminderWidget />
 
       {/* KPI & Health Score Row */}
       <div className="grid grid-cols-2 md:grid-cols-3 print:grid-cols-3 gap-4">

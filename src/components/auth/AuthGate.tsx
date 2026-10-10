@@ -1,8 +1,8 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useAuth } from '../../context/AuthContext';
 import { useAppContext } from '../../context/AppContext';
-import { ShieldCheck, Cloud, RefreshCw, Sparkles, ArrowRight, ShieldAlert } from 'lucide-react';
-import { ACTOR_STORAGE_KEY, getRoleByEmail } from '../../config/familyMembers';
+import { ShieldCheck, Cloud, RefreshCw, Sparkles, ArrowRight } from 'lucide-react';
+import { getRoleByEmail, ALLOWED_EMAILS } from '../../config/familyMembers';
 
 export const AuthGate: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const { user, loading: authLoading, isFirebaseEnabled, signInWithGoogle, logout } = useAuth();
@@ -10,38 +10,26 @@ export const AuthGate: React.FC<{ children: React.ReactNode }> = ({ children }) 
   const [isSigningIn, setIsSigningIn] = useState(false);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
 
-  // Ép vai trò dựa trên email (nguồn: config/familyMembers.ts)
-  const memberRole = getRoleByEmail(user?.email);
-  if (memberRole) {
-    localStorage.setItem(ACTOR_STORAGE_KEY, memberRole);
+  // Check if logged in user is allowed
+  const isAllowedUser = user && user.email && ALLOWED_EMAILS.includes(user.email.toLowerCase());
+
+  // Show error if user is logged in but not allowed
+  useEffect(() => {
+    if (user && user.email && !isAllowedUser) {
+      setErrorMsg(`Tài khoản ${user.email} không có quyền truy cập vào hệ thống nội bộ của gia đình.`);
+    }
+  }, [user, isAllowedUser]);
+
+  // Ép vai trò dựa trên email
+  if (isAllowedUser) {
+    const role = getRoleByEmail(user.email);
+    if (role) {
+      localStorage.setItem('family_active_actor', role);
+    }
   }
 
-  // Tài khoản Google hợp lệ nhưng KHÔNG thuộc gia đình → chặn truy cập
-  if (isFirebaseEnabled && user && !memberRole) {
-    return (
-      <div className="min-h-screen bg-family-bg flex items-center justify-center p-6">
-        <div className="max-w-md w-full bg-white rounded-3xl p-8 shadow-2xl border border-red-200 text-center space-y-5">
-          <div className="w-14 h-14 rounded-2xl bg-red-50 text-red-500 flex items-center justify-center mx-auto">
-            <ShieldAlert className="w-7 h-7" />
-          </div>
-          <h2 className="text-xl font-serif font-bold text-family-text">Tài khoản chưa được cấp quyền</h2>
-          <p className="text-sm text-family-textMuted leading-relaxed">
-            Email <strong>{user.email}</strong> không nằm trong danh sách thành viên gia đình.
-            Vui lòng đăng xuất và đăng nhập bằng email đã đăng ký.
-          </p>
-          <button
-            onClick={() => { void logout(); }}
-            className="w-full py-3 bg-slate-900 hover:bg-black text-white font-semibold rounded-2xl text-sm cursor-pointer"
-          >
-            Đăng xuất
-          </button>
-        </div>
-      </div>
-    );
-  }
-
-  // Nếu Firebase chưa được cấu hình (bản dev/offline) hoặc đã đăng nhập hợp lệ -> Cho vào app
-  if (!isFirebaseEnabled || user) {
+  // Nếu Firebase chưa được cấu hình hoặc người dùng hợp lệ đã đăng nhập -> Cho vào app
+  if (!isFirebaseEnabled || isAllowedUser) {
     if (isCloudLoading) {
       return (
         <div className="min-h-screen bg-family-bg flex flex-col items-center justify-center p-6 text-center">
@@ -173,9 +161,19 @@ export const AuthGate: React.FC<{ children: React.ReactNode }> = ({ children }) 
             <span className="text-sm font-semibold">Đăng nhập với Google</span>
             <ArrowRight className="w-4 h-4 text-white/50 group-hover:translate-x-1 transition-transform" />
           </button>
-          <p className="text-[11px] text-center text-family-textMuted">
-            Chỉ dành cho 4 email thành viên gia đình đã đăng ký.
-          </p>
+
+          {user && !isAllowedUser && (
+            <button
+              type="button"
+              onClick={async () => {
+                await logout();
+                setErrorMsg(null);
+              }}
+              className="w-full py-2.5 px-4 bg-stone-100 hover:bg-stone-200 text-stone-700 text-xs font-semibold rounded-xl transition-all cursor-pointer flex items-center justify-center gap-2 border border-stone-300"
+            >
+              <span>🚪 Đăng xuất ({user.email}) để đổi tài khoản</span>
+            </button>
+          )}
         </div>
 
         <div className="text-center">

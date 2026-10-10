@@ -1,6 +1,8 @@
 import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
 import {
   signInWithPopup,
+  signInWithRedirect,
+  getRedirectResult,
   signOut,
   onAuthStateChanged,
   type User,
@@ -14,7 +16,7 @@ interface AuthContextValue {
   loading: boolean;
   /** True if Firebase is configured and available */
   isFirebaseEnabled: boolean;
-  /** Sign in with Google popup */
+  /** Sign in with Google popup or redirect */
   signInWithGoogle: () => Promise<void>;
   /** Sign out */
   logout: () => Promise<void>;
@@ -32,6 +34,17 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       return;
     }
 
+    // Process redirect result if returning from Google redirect on mobile/PWA
+    getRedirectResult(auth)
+      .then((res) => {
+        if (res?.user) {
+          setUser(res.user);
+        }
+      })
+      .catch((err) => {
+        console.warn('[Auth] getRedirectResult note:', err?.message);
+      });
+
     const unsubscribe = onAuthStateChanged(auth, (firebaseUser) => {
       setUser(firebaseUser);
       setLoading(false);
@@ -44,8 +57,18 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     if (!auth || !googleProvider) return;
     try {
       await signInWithPopup(auth, googleProvider);
-    } catch (error: unknown) {
-      console.error('[Auth] Google sign-in failed:', error);
+    } catch (error: any) {
+      console.warn('[Auth] Google popup failed, trying redirect fallback:', error);
+      // Fallback to redirect if popup was blocked or unsupported (especially in mobile PWA)
+      if (
+        error?.code === 'auth/popup-blocked' ||
+        error?.code === 'auth/popup-closed-by-user' ||
+        error?.code === 'auth/cancelled-popup-request' ||
+        typeof navigator !== 'undefined' && /iPhone|iPad|iPod|Android/i.test(navigator.userAgent)
+      ) {
+        await signInWithRedirect(auth, googleProvider);
+        return;
+      }
       throw error;
     }
   }, []);

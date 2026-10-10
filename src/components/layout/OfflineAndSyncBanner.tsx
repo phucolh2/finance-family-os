@@ -3,9 +3,22 @@ import { useAppContext } from '../../context/AppContext';
 import { WifiOff, RefreshCw, CheckCircle2, X } from 'lucide-react';
 
 export const OfflineAndSyncBanner: React.FC = () => {
-  const { isOnline, lastPartnerSync } = useAppContext();
+  const context = useAppContext() as any;
+  const lastPartnerSync = context.lastPartnerSync;
+  const [isOnline, setIsOnline] = useState(typeof navigator !== 'undefined' ? navigator.onLine : true);
   const [partnerNotice, setPartnerNotice] = useState<{ by: string; at: string } | null>(null);
   const [showNotice, setShowNotice] = useState(false);
+
+  useEffect(() => {
+    const handleOnline = () => setIsOnline(true);
+    const handleOffline = () => setIsOnline(false);
+    window.addEventListener('online', handleOnline);
+    window.addEventListener('offline', handleOffline);
+    return () => {
+      window.removeEventListener('online', handleOnline);
+      window.removeEventListener('offline', handleOffline);
+    };
+  }, []);
 
   useEffect(() => {
     if (!lastPartnerSync) return;

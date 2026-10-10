@@ -13,12 +13,14 @@ import { BudgetDonutChart } from '../components/budget/BudgetDonutChart';
 import { BudgetRadarChart } from '../components/budget/BudgetRadarChart';
 import { BudgetTreeNodeRow } from '../components/budget/BudgetTreeNodeRow';
 import { rebuildTreeFromFlatRatios } from '../engines/budgetEngine';
-import { DEFAULT_BUDGET_TREE } from '../data/defaultInputs';
+import { DEFAULT_BUDGET_TREE, DEFAULT_FAMILY_PROFILE, DEFAULT_ASSUMPTIONS } from '../data/defaultInputs';
 import { ObservationControls } from '../components/ui/ObservationControls';
 import { HelpTooltip } from '../components/ui/HelpTooltip';
 import { SmartAllocationAdvisorModal } from '../components/ui/SmartAllocationAdvisorModal';
 import { createAdvisorSnapshot } from '../engines/SmartAllocationAdvisor';
 import { runProjection } from '../engines/projectionEngine';
+import { isValidBase, roundRatio } from '../utils/budgetAmount';
+import { formatTableMoneyVNDMillion } from '../utils/format';
 import { DndContext, closestCenter, KeyboardSensor, PointerSensor, useSensor, useSensors } from '@dnd-kit/core';
 import type { DragEndEvent } from '@dnd-kit/core';
 import { arrayMove, SortableContext, sortableKeyboardCoordinates, verticalListSortingStrategy } from '@dnd-kit/sortable';
@@ -33,7 +35,7 @@ export const BudgetHistory: React.FC = () => {
   } = useAppContext();
 
   // Sort schedule items by date
-  const sortedHistory = [...state.budgetSchedule].sort((a, b) => {
+  const sortedHistory = [...(state.budgetSchedule || [])].sort((a, b) => {
     if (a.effectiveYear !== b.effectiveYear) {
       return a.effectiveYear - b.effectiveYear;
     }
@@ -64,14 +66,36 @@ export const BudgetHistory: React.FC = () => {
   const [editBaseAmount, setEditBaseAmount] = useState<number | ''>('');
   
   // Find the real resolved income at the active milestone month using O(1) index map
+  const activeVersionKey = activeVersion 
+    ? `${activeVersion.effectiveYear}-${String(activeVersion.effectiveMonth).padStart(2, '0')}`
+    : (selectedPeriodKey || '2026-10');
   const previewPeriodKey = workspaceTab === 'charts' && selectedPeriodKey 
     ? selectedPeriodKey 
-    : `${activeVersion.effectiveYear}-${String(activeVersion.effectiveMonth).padStart(2, '0')}`;
+    : activeVersionKey;
   const activeDbItem = state.resolvedMonthlyDbMap?.[previewPeriodKey];
   const actualIncome = activeDbItem ? activeDbItem.income : 80;
   const allocationBase = activeVersion?.allocationBaseAmount && activeVersion.allocationBaseAmount > 0 
     ? activeVersion.allocationBaseAmount 
     : actualIncome;
+
+  // Chế độ nhập cây tỷ lệ: theo % (mặc định) hoặc theo số tiền (triệu). Chỉ là tuỳ chọn hiển thị,
+  // dữ liệu vẫn lưu ratioPercent. Nhớ lựa chọn ở localStorage (không đồng bộ lên Firestore).
+  const [inputMode, setInputModeState] = useState<'percent' | 'amount'>(() => {
+    try {
+      return localStorage.getItem('budget_input_mode') === 'amount' ? 'amount' : 'percent';
+    } catch {
+      return 'percent';
+    }
+  });
+  const setInputMode = (mode: 'percent' | 'amount') => {
+    setInputModeState(mode);
+    try { localStorage.setItem('budget_input_mode', mode); } catch { /* ignore */ }
+  };
+  // Gốc "sống" để quy đổi: ô "Số tiền phân bổ" đang gõ (nếu > 0) hoặc thu nhập tháng của mốc.
+  const liveBase = typeof editBaseAmount === 'number' && editBaseAmount > 0 ? editBaseAmount : actualIncome;
+  const canUseAmountMode = isValidBase(liveBase);
+  const effectiveInputMode: 'percent' | 'amount' = inputMode === 'amount' && canUseAmountMode ? 'amount' : 'percent';
+  const isBaseFromIncome = !(typeof editBaseAmount === 'number' && editBaseAmount > 0);
   const [formError, setFormError] = useState<string | null>(null);
 
   // New version creator state
@@ -106,19 +130,19 @@ export const BudgetHistory: React.FC = () => {
   const handleOpenAiAdvisor = () => {
     const periodKey = `${editYear}-${String(editMonth).padStart(2, '0')}`;
     const proj = runProjection({
-      profile: state.profile,
-      incomeSchedule: state.incomeSchedule,
-      budgetSchedule: state.budgetSchedule,
-      lifeStages: state.lifeStages,
-      lifeEvents: state.lifeEvents,
-      assets: state.assets,
-      assumptions: state.assumptions,
-      investmentDeals: state.investmentDeals,
-      savingsDeposits: state.savingsDeposits,
-      sinkingFunds: state.sinkingFunds,
-      debts: state.debts,
-      fundTransfers: state.fundTransfers,
-      expenseSchedule: state.expenseSchedule,
+      profile: state.profile || DEFAULT_FAMILY_PROFILE,
+      incomeSchedule: state.incomeSchedule || [],
+      budgetSchedule: state.budgetSchedule || [],
+      lifeStages: state.lifeStages || [],
+      lifeEvents: state.lifeEvents || [],
+      assets: state.assets || [],
+      assumptions: state.assumptions || DEFAULT_ASSUMPTIONS,
+      investmentDeals: state.investmentDeals || [],
+      savingsDeposits: state.savingsDeposits || [],
+      sinkingFunds: state.sinkingFunds || [],
+      debts: state.debts || [],
+      fundTransfers: state.fundTransfers || [],
+      expenseSchedule: state.expenseSchedule || [],
     });
     setAdvisorSnapshot(createAdvisorSnapshot(state, proj, periodKey));
     setIsAdvisorOpen(true);
@@ -199,6 +223,7 @@ export const BudgetHistory: React.FC = () => {
       ratioPercent: 0,
       isActive: true,
       sortOrder: rootGroups.length + 1,
+      classification: 'expense',
       children: []
     };
     setRootGroups([...rootGroups, newGroup]);
@@ -228,8 +253,8 @@ export const BudgetHistory: React.FC = () => {
               updatedNode.children = node.children.map((child) => {
                 if (!child.isActive) return child;
                 
-                const scaled = Math.round((child.ratioPercent / originalChildrenSum) * parentRatio * 10) / 10;
-                remaining = Math.round((remaining - scaled) * 10) / 10;
+                const scaled = Math.round((child.ratioPercent / originalChildrenSum) * parentRatio * 100) / 100;
+                remaining = Math.round((remaining - scaled) * 100) / 100;
                 
                 return {
                   ...child,
@@ -244,7 +269,7 @@ export const BudgetHistory: React.FC = () => {
                     .slice(0, -1)
                     .reduce((sum, c) => sum + c.ratioPercent, 0);
                   
-                  const targetLastRatio = Math.max(0, Math.round((parentRatio - newChildrenSumWithoutLast) * 10) / 10);
+                  const targetLastRatio = Math.max(0, Math.round((parentRatio - newChildrenSumWithoutLast) * 100) / 100);
                   
                   let activeCount = 0;
                   updatedNode.children = updatedNode.children.map(c => {
@@ -260,14 +285,14 @@ export const BudgetHistory: React.FC = () => {
             } else {
               const activeCount = activeChildren.length;
               if (activeCount > 0) {
-                const equalShare = Math.round((parentRatio / activeCount) * 10) / 10;
+                const equalShare = Math.round((parentRatio / activeCount) * 100) / 100;
                 let remaining = parentRatio;
                 
                 updatedNode.children = node.children.map((child, idx) => {
                   if (!child.isActive) return child;
                   const isLastActive = idx === node.children!.map(c => c.isActive).lastIndexOf(true);
                   const share = isLastActive ? remaining : equalShare;
-                  remaining = Math.round((remaining - share) * 10) / 10;
+                  remaining = Math.round((remaining - share) * 100) / 100;
                   return {
                     ...child,
                     ratioPercent: share,
@@ -288,7 +313,7 @@ export const BudgetHistory: React.FC = () => {
             return {
               ...node,
               children: updatedChildren,
-              ratioPercent: Math.round(childrenSum * 10) / 10,
+              ratioPercent: Math.round(childrenSum * 100) / 100,
             };
           }
           
@@ -365,7 +390,7 @@ export const BudgetHistory: React.FC = () => {
         const childrenSum = activeChildren.reduce((sum, c) => sum + c.ratioPercent, 0);
         return {
           ...group,
-          ratioPercent: Math.round(childrenSum * 10) / 10,
+          ratioPercent: Math.round(childrenSum * 100) / 100,
         };
       }
       return group;
@@ -404,6 +429,14 @@ export const BudgetHistory: React.FC = () => {
   };
 
   const handleSaveChanges = () => {
+    if (!activeVersion) {
+      setFormError('Không tìm thấy mốc ngân sách để cập nhật.');
+      return;
+    }
+    if (state.profile?.lockedUntilPeriod && `${editYear}-${String(editMonth).padStart(2, '0')}` <= state.profile.lockedUntilPeriod) {
+      setFormError(`Không thể lưu. Tháng ${editMonth}/${editYear} đã bị chốt sổ.`);
+      return;
+    }
     if (editMonth < 1 || editMonth > 12) {
       setFormError('Tháng hiệu lực phải từ 1 đến 12.');
       return;
@@ -613,11 +646,13 @@ export const BudgetHistory: React.FC = () => {
                   <span className="text-xs text-family-textMuted uppercase font-bold tracking-wider">KẾ HOẠCH PHÂN BỔ ÁP DỤNG</span>
                 </div>
                 <h2 className="text-lg font-bold text-family-accent mt-0.5">
-                  Tháng {workspaceTab === 'charts' && selectedPeriodKey ? `${selectedPeriodKey.split('-')[1]}/${selectedPeriodKey.split('-')[0]}` : `${activeVersion?.effectiveMonth}/${activeVersion?.effectiveYear}`}
+                  Tháng {workspaceTab === 'charts' && selectedPeriodKey 
+                    ? `${selectedPeriodKey.split('-')[1]}/${selectedPeriodKey.split('-')[0]}` 
+                    : (activeVersion ? `${activeVersion.effectiveMonth}/${activeVersion.effectiveYear}` : '—')}
                 </h2>
-                {workspaceTab === 'charts' && selectedPeriodKey && previewPeriodKey !== `${activeVersion?.effectiveYear}-${String(activeVersion?.effectiveMonth).padStart(2, '0')}` ? (
+                {workspaceTab === 'charts' && selectedPeriodKey && activeVersion && previewPeriodKey !== activeVersionKey ? (
                   <p className="text-xs text-family-textMuted mt-1">
-                    Kế thừa cơ cấu tỷ lệ từ mốc <strong>Tháng {activeVersion?.effectiveMonth}/{activeVersion?.effectiveYear}</strong> ({activeVersion?.note || 'Không có ghi chú'}).
+                    Kế thừa cơ cấu tỷ lệ từ mốc <strong>Tháng {activeVersion.effectiveMonth}/{activeVersion.effectiveYear}</strong> ({activeVersion.note || 'Không có ghi chú'}).
                   </p>
                 ) : (
                   <p className="text-xs text-family-textMuted mt-1">{activeVersion?.note || 'Không có ghi chú'}</p>
@@ -852,10 +887,11 @@ export const BudgetHistory: React.FC = () => {
                                 e.stopPropagation();
                                 deleteBudgetScheduleItem(item.id);
                                 if (selectedVersionId === item.id) {
-                                  setSelectedVersionId(null);
+                                  const remaining = sortedHistory.filter(h => h.id !== item.id);
+                                  setSelectedVersionId(remaining.length > 0 ? remaining[0].id : null);
                                 }
                               }}
-                              disabled={state.budgetSchedule.length <= 1}
+                              disabled={sortedHistory.length <= 1}
                               className="p-1 rounded-md text-family-textMuted hover:text-red-500 hover:bg-red-500/10 transition-all disabled:opacity-50"
                               title="Xóa mốc"
                             >
@@ -958,10 +994,64 @@ export const BudgetHistory: React.FC = () => {
                 </CardHeader>
 
                 <CardContent className="pt-6 space-y-4">
+                  {/* Bộ chuyển chế độ nhập: % hoặc số tiền (triệu) */}
+                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-family-bgDark/30 border border-family-accent/10 rounded-2xl px-4 py-3">
+                    <div className="flex items-center gap-2 flex-wrap">
+                      <span className="text-xs font-bold text-family-text flex items-center gap-1">
+                        Nhập theo
+                        <HelpTooltip text="Chọn nhập tỷ lệ (%) hoặc số tiền (triệu VND). Dữ liệu luôn được lưu dưới dạng tỷ lệ %, số tiền chỉ là giá trị quy đổi theo gốc phân bổ: số tiền = gốc × % / 100. Khi thu nhập các tháng sau thay đổi, số tiền sẽ thay đổi theo tỷ lệ; nhập 'Số tiền phân bổ' ở trên để ghim gốc cố định." />
+                      </span>
+                      <div className="inline-flex rounded-xl border border-family-accent/20 overflow-hidden text-xs font-bold">
+                        <button
+                          type="button"
+                          onClick={() => { setInputMode('percent'); }}
+                          className={`px-3 py-1.5 transition-colors ${effectiveInputMode === 'percent' ? 'bg-family-accent text-white' : 'bg-white text-family-textMuted hover:bg-family-bgDark/40'}`}
+                        >
+                          Tỷ lệ (%)
+                        </button>
+                        <button
+                          type="button"
+                          disabled={!canUseAmountMode}
+                          onClick={() => { setInputMode('amount'); }}
+                          title={canUseAmountMode ? undefined : 'Cần có thu nhập hoặc Số tiền phân bổ lớn hơn 0 để quy đổi'}
+                          className={`px-3 py-1.5 transition-colors disabled:opacity-40 disabled:cursor-not-allowed ${effectiveInputMode === 'amount' ? 'bg-family-accent text-white' : 'bg-white text-family-textMuted hover:bg-family-bgDark/40'}`}
+                        >
+                          Số tiền (triệu)
+                        </button>
+                      </div>
+                    </div>
+                    {canUseAmountMode ? (
+                      <div className="text-xs text-family-textMuted sm:text-right space-y-0.5">
+                        <div>
+                          Quy đổi theo {isBaseFromIncome ? `thu nhập tháng ${editMonth}/${editYear}` : 'số tiền phân bổ đã nhập'} ={' '}
+                          <span className="font-bold text-family-text">{formatTableMoneyVNDMillion(liveBase)}</span>
+                        </div>
+                        <div>
+                          Đã phân bổ{' '}
+                          <span className="font-bold text-family-text">{formatTableMoneyVNDMillion((liveBase * roundRatio(totalRatio)) / 100)}</span>
+                          {' '}({roundRatio(totalRatio)}%)
+                          {Math.abs(totalRatio - 100) > 0.05 && (
+                            <span className="font-bold text-amber-600">
+                              {' '}— {totalRatio < 100 ? 'còn thiếu' : 'vượt'}{' '}
+                              {formatTableMoneyVNDMillion(Math.abs(liveBase - (liveBase * roundRatio(totalRatio)) / 100))}
+                            </span>
+                          )}
+                        </div>
+                      </div>
+                    ) : (
+                      <div className="text-xs text-amber-600 font-medium">
+                        Chưa có thu nhập hoặc số tiền phân bổ để quy đổi sang số tiền.
+                      </div>
+                    )}
+                  </div>
                   {Math.abs(totalRatio - 100) > 0.05 && (
                     <WarningBox
                       type="warning"
-                      message={`Tổng tỷ lệ phân bổ của các nhóm chính hiện tại là ${totalRatio}%, khác biệt so với mức chuẩn 100%. Vui lòng chỉnh sửa để có thể Lưu mốc.`}
+                      message={
+                        effectiveInputMode === 'amount'
+                          ? `Tổng số tiền phân bổ của các nhóm chính hiện là ${formatTableMoneyVNDMillion((liveBase * roundRatio(totalRatio)) / 100)} (${roundRatio(totalRatio)}%), khác so với gốc ${formatTableMoneyVNDMillion(liveBase)} (100%). Vui lòng chỉnh sửa để có thể Lưu mốc.`
+                          : `Tổng tỷ lệ phân bổ của các nhóm chính hiện tại là ${roundRatio(totalRatio)}%, khác biệt so với mức chuẩn 100%. Vui lòng chỉnh sửa để có thể Lưu mốc.`
+                      }
                     />
                   )}
                   <div className="space-y-4">
@@ -979,6 +1069,8 @@ export const BudgetHistory: React.FC = () => {
                                 onAddChild={handleAddChild}
                                 isExpanded={isExpanded}
                                 onToggleExpand={() => { handleToggleExpand(group.id); }}
+                                inputMode={effectiveInputMode}
+                                allocationBase={liveBase}
                               />
                               {isExpanded && group.children && group.children.length > 0 && (
                                 <SortableContext items={childIds} strategy={verticalListSortingStrategy}>
@@ -991,6 +1083,8 @@ export const BudgetHistory: React.FC = () => {
                                       onAddChild={handleAddChild}
                                       isExpanded={false}
                                       onToggleExpand={() => {}}
+                                      inputMode={effectiveInputMode}
+                                      allocationBase={liveBase}
                                     />
                                   ))}
                                 </SortableContext>

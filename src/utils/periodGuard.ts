@@ -1,18 +1,24 @@
-import { isMonthYearLocked, isPeriodKeyLocked } from './monthLockStore';
-
 /**
- * Kiểm tra xem tháng/năm mục tiêu có được phép thay đổi không:
- *  - Tháng đã "Chốt sổ" → KHÔNG cho phép (bấm "Mở khóa" ở thanh quan sát để chỉnh sửa).
- *  - Tháng mục tiêu phải >= tháng quan sát.
- * @returns true nếu hợp lệ (cho phép thay đổi), false nếu vi phạm.
+ * Kiểm tra xem tháng/năm mục tiêu có được phép chỉnh sửa hay không.
+ * Nó phụ thuộc vào 2 yếu tố:
+ * 1. Tháng quan sát (selectedPeriodKey) - UX guard.
+ * 2. Khóa sổ (lockedUntilPeriod) - Data lock guard.
  */
 export function isWithinObservationPeriod(
   targetMonth: number,
   targetYear: number,
-  selectedPeriodKey: string | undefined
+  selectedPeriodKey: string | undefined,
+  lockedUntilPeriod?: string
 ): boolean {
-  if (isMonthYearLocked(targetMonth, targetYear)) return false;
-  if (!selectedPeriodKey) return true; // Chưa chọn tháng QS → cho phép tự do
+  const targetKey = `${targetYear}-${String(targetMonth).padStart(2, '0')}`;
+  
+  // 1. Data lock guard (Chốt sổ)
+  if (lockedUntilPeriod && targetKey <= lockedUntilPeriod) {
+    return false;
+  }
+
+  // 2. UX guard (Tháng quan sát)
+  if (!selectedPeriodKey) return true;
   const [obsYear, obsMonth] = selectedPeriodKey.split('-').map(Number);
   const targetValue = targetYear * 12 + targetMonth;
   const obsValue = obsYear * 12 + obsMonth;
@@ -22,11 +28,16 @@ export function isWithinObservationPeriod(
 /**
  * Thông báo lỗi chuẩn khi vi phạm rule.
  */
-export function getPeriodGuardMessage(selectedPeriodKey: string | undefined): string {
-  if (!selectedPeriodKey) return 'Tháng này đã chốt sổ. Bấm "Mở khóa" ở thanh Tháng quan sát để điều chỉnh.';
-  const [y, m] = selectedPeriodKey.split('-');
-  if (isPeriodKeyLocked(selectedPeriodKey)) {
-    return `Tháng ${parseInt(m)}/${y} đã chốt sổ. Bấm "Mở khóa" ở thanh Tháng quan sát để điều chỉnh.`;
+export function getPeriodGuardMessage(selectedPeriodKey: string | undefined, lockedUntilPeriod?: string, targetMonth?: number, targetYear?: number): string {
+  if (lockedUntilPeriod && targetMonth && targetYear) {
+    const targetKey = `${targetYear}-${String(targetMonth).padStart(2, '0')}`;
+    if (targetKey <= lockedUntilPeriod) {
+      const [y, m] = lockedUntilPeriod.split('-');
+      return `Dữ liệu thuộc tháng đã chốt sổ (đến T${parseInt(m)}/${y}).`;
+    }
   }
+
+  if (!selectedPeriodKey) return '';
+  const [y, m] = selectedPeriodKey.split('-');
   return `Không thể thao tác trước tháng quan sát (T${parseInt(m)}/${y}). Vui lòng chọn lại tháng quan sát phù hợp để điều chỉnh dữ liệu quá khứ.`;
 }

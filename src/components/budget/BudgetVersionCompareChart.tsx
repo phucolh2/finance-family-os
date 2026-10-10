@@ -6,9 +6,10 @@ interface BudgetVersionCompareChartProps {
   schedule: BudgetRatioScheduleItem[];
 }
 
-export const BudgetVersionCompareChart: React.FC<BudgetVersionCompareChartProps> = ({ schedule }) => {
+export const BudgetVersionCompareChart: React.FC<BudgetVersionCompareChartProps> = ({ schedule = [] }) => {
+  const safeSchedule = Array.isArray(schedule) ? schedule : [];
   // 1. Sort schedule by effective date
-  const sorted = [...schedule].sort((a, b) => {
+  const sorted = [...safeSchedule].sort((a, b) => {
     if (a.effectiveYear !== b.effectiveYear) {
       return a.effectiveYear - b.effectiveYear;
     }

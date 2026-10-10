@@ -12,6 +12,7 @@ export interface FamilyProfile {
   planningEndMonth: number;   // 1-12
   planningEndYear: number;
   currency: 'VND_MILLION';
+  lockedUntilPeriod?: string;
   startingCapital?: number;
 }
 

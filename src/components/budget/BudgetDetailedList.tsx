@@ -7,23 +7,27 @@ interface BudgetDetailedListProps {
   income: number;
 }
 
-export const BudgetDetailedList: React.FC<BudgetDetailedListProps> = ({ rootGroups, income }) => {
+export const BudgetDetailedList: React.FC<BudgetDetailedListProps> = ({ rootGroups = [], income = 0 }) => {
+  const safeGroups = Array.isArray(rootGroups) ? rootGroups : [];
+  const safeIncome = typeof income === 'number' && Number.isFinite(income) ? income : 0;
+
   // Sort groups: Expense first, then Investment, then Saving.
   // Within the same classification, sort by ratioPercent descending.
-  const sortedGroups = [...rootGroups].sort((a, b) => {
-    const classOrder: Record<string, number> = { expense: 1, investment: 2, saving: 3 };
+  const sortedGroups = [...safeGroups].sort((a, b) => {
+    const classOrder: Record<string, number> = { expense: 1, investment: 2, savings: 3, saving: 3, debt_reserve: 4 };
     const orderA = a.classification ? classOrder[a.classification] || 99 : 99;
     const orderB = b.classification ? classOrder[b.classification] || 99 : 99;
     
     if (orderA !== orderB) return orderA - orderB;
-    return b.ratioPercent - a.ratioPercent;
+    return (b.ratioPercent ?? 0) - (a.ratioPercent ?? 0);
   });
 
   return (
     <div className="w-full h-auto">
       <div className="columns-1 md:columns-2 xl:columns-3 gap-4 space-y-4">
         {sortedGroups.map((group, _groupIdx) => {
-          const groupAmt = (group.ratioPercent / 100) * income;
+          const groupRatio = group.ratioPercent ?? 0;
+          const groupAmt = (groupRatio / 100) * safeIncome;
           return (
             <div key={group.id} className="break-inside-avoid border border-family-accent/10 rounded-xl overflow-hidden bg-family-bgDeep flex flex-col">
               {/* Group Header */}
@@ -46,7 +50,7 @@ export const BudgetDetailedList: React.FC<BudgetDetailedListProps> = ({ rootGrou
                 </div>
                 <div className="flex flex-col items-end">
                   <span className="font-bold text-family-text text-sm">{formatTableMoneyVNDMillion(groupAmt)}</span>
-                  <span className="text-[10px] text-family-textMuted font-bold">{group.ratioPercent.toFixed(1)}% Tổng Thu</span>
+                  <span className="text-[10px] text-family-textMuted font-bold">{groupRatio.toFixed(1)}% Tổng Thu</span>
                 </div>
               </div>
 
@@ -55,8 +59,8 @@ export const BudgetDetailedList: React.FC<BudgetDetailedListProps> = ({ rootGrou
                 {group.children?.map((item) => {
                   // item.ratioPercent is ABSOLUTE % of total income (same unit as group.ratioPercent)
                   // group.ratioPercent = sum of its children's ratioPercent
-                  const itemAmt = (item.ratioPercent / 100) * income;
-                  const absRatio = item.ratioPercent; // already absolute % of income
+                  const absRatio = item.ratioPercent ?? 0;
+                  const itemAmt = (absRatio / 100) * safeIncome;
                   return (
                     <div key={item.id} className="px-4 py-2.5 flex justify-between items-center hover:bg-family-accent/5 transition-colors">
                       <span className="text-xs text-family-textMuted font-medium pl-4 relative">

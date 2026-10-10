@@ -111,7 +111,10 @@ export const Sidebar: React.FC<SidebarProps> = ({ activeTab, setActiveTab, onClo
 
   return (
     <aside className="w-64 bg-family-bgDark border-r border-family-accent/10 flex flex-col h-full overflow-y-auto shrink-0 select-none">
-      <div className="relative p-6 border-b border-family-accent/10 flex items-center justify-between overflow-hidden">
+      <div 
+        style={{ paddingTop: 'calc(env(safe-area-inset-top, 0px) + 1.25rem)' }}
+        className="relative px-6 pb-6 pt-5 border-b border-family-accent/10 flex items-center justify-between overflow-hidden"
+      >
         {/* Subtle Romantic Background */}
         <div className="absolute inset-0 opacity-25">
           <img src="/images/family_love.jpg" alt="Love" className="w-full h-full object-cover object-[center_30%]" />

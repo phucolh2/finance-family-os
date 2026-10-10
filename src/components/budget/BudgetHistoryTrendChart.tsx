@@ -9,11 +9,14 @@ interface BudgetHistoryTrendChartProps {
   resolvedMonthlyDb: ResolvedMonthlyDbItem[];
 }
 
-export const BudgetHistoryTrendChart: React.FC<BudgetHistoryTrendChartProps> = ({ schedule, resolvedMonthlyDb }) => {
+export const BudgetHistoryTrendChart: React.FC<BudgetHistoryTrendChartProps> = ({ schedule = [], resolvedMonthlyDb = [] }) => {
   const [selectedGroupKey, setSelectedGroupKey] = useState<string | null>(null);
 
+  const safeSchedule = Array.isArray(schedule) ? schedule : [];
+  const safeDb = Array.isArray(resolvedMonthlyDb) ? resolvedMonthlyDb : [];
+
   // Sort schedule by effective date
-  const sorted = [...schedule].sort((a, b) => {
+  const sorted = [...safeSchedule].sort((a, b) => {
     if (a.effectiveYear !== b.effectiveYear) {
       return a.effectiveYear - b.effectiveYear;
     }
@@ -64,8 +67,8 @@ export const BudgetHistoryTrendChart: React.FC<BudgetHistoryTrendChartProps> = (
 
   // Map over resolvedMonthlyDb to plot time-series.
   // We sample every 12 months (January) plus the very first and last month to prevent too many points.
-  const data = resolvedMonthlyDb.filter((item, index) => {
-    return index === 0 || item.month === 1 || index === resolvedMonthlyDb.length - 1;
+  const data = safeDb.filter((item, index) => {
+    return index === 0 || item.month === 1 || index === safeDb.length - 1;
   }).map((dbItem) => {
     const key = `${dbItem.month}/${dbItem.year}`;
     const income = dbItem.income;
