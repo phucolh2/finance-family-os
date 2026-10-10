@@ -9,6 +9,7 @@ import { formatMoneyVNDMillion } from '../../utils/format';
 import { WarningBox } from '../ui/WarningBox';
 import { useLiquidityBreakdown } from '../../hooks/useLiquidityBreakdown';
 import { Sparkles } from 'lucide-react';
+import { isPeriodLocked } from '../../utils/lockSystem';
 
 interface TransferFormProps {
   onSuccess: () => void;
@@ -149,6 +150,11 @@ export const TransferForm: React.FC<TransferFormProps> = ({ onSuccess, onCancel 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     
+    if (isPeriodLocked(state.profile.lockedUntilPeriod, currentMonth, currentYear)) {
+      setFormError(`Không thể điều chuyển. Kỳ T${currentMonth}/${currentYear} đã bị chốt sổ.`);
+      return;
+    }
+
     if (sourceValue === destinationValue) {
       setFormError('Không thể điều chuyển tiền vào chính nguồn đó. Vui lòng chọn nguồn hoặc đích khác.');
       return;
