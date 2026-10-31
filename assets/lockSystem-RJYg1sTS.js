@@ -1,0 +1,1 @@
+var e=(e,t,n)=>e?`${n}-${String(t).padStart(2,`0`)}`<=e:!1;export{e as t};
