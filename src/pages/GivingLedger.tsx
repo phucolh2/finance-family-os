@@ -1,5 +1,5 @@
 import React, { useState, useMemo } from 'react';
-import { useAppState } from '../hooks/useAppState';
+import { useAppContext } from '../context/AppContext';
 import { 
   Gift, Search, ArrowUpRight, ArrowDownLeft, 
   Calendar, User, Edit2, Trash2, X, HeartHandshake,
@@ -33,7 +33,7 @@ const EVENT_TYPES = {
 };
 
 export const GivingLedger: React.FC = () => {
-  const { state, updateToolConfig } = useAppState();
+  const { state, updateToolConfig } = useAppContext();
   
   const config = state.toolConfigs?.givingLedger || { records: [] };
   const records: GiftRecord[] = config.records || [];

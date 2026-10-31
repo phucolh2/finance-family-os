@@ -7,7 +7,7 @@ import { migrateState, validateAppState } from '../utils/migration';
 import { generateResolvedMonthlyDb } from '../engines/databaseResolver';
 import { runProjection } from '../engines/projectionEngine';
 import { isBackupDue, createAutoBackup } from '../utils/scheduledBackup';
-import { loadFromFirestore, saveToFirestore, subscribeToFirestore } from '../services/firestoreSync';
+import { loadFromFirestore, loadFromFirestoreStrict, saveToFirestore, subscribeToFirestore } from '../services/firestoreSync';
 import { getActiveActor } from '../config/familyMembers';
 import {
   DEFAULT_FAMILY_PROFILE,
@@ -171,11 +171,40 @@ export function useAppState(userId?: string) {
   });
 
   const isCloudInitializedRef = useRef(false);
-  const isRemoteUpdateRef = useRef(false);
+  // Bản JSON của trạng thái đã khớp với Cloud gần nhất (nhận về hoặc đã lưu lên).
+  // Dùng so sánh NỘI DUNG thay cho cờ isRemoteUpdate cũ: cờ cũ có thể "nuốt" mất
+  // thao tác của người dùng nếu họ chỉnh sửa trong vòng 500ms sau khi nhận dữ liệu từ đối tác.
+  const lastCloudJsonRef = useRef<string | null>(null);
   const [isOnline, setIsOnline] = useState<boolean>(
     typeof navigator !== 'undefined' ? navigator.onLine : true
   );
   const [lastPartnerSync, setLastPartnerSync] = useState<{ by: string; at: string } | null>(null);
+
+  const serializeForCloud = (s: AppState): string => {
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    const { resolvedMonthlyDb: _list, resolvedMonthlyDbMap: _map, ...rest } = s;
+    return JSON.stringify(rest);
+  };
+
+  // Áp dụng dữ liệu nhận từ Cloud vào state cục bộ
+  const applyCloudData = (data: PersistedAppState) => {
+    const migrated = migrateState(data.data, INITIAL_APP_STATE);
+    const dbResult = generateResolvedMonthlyDb(
+      migrated.profile, migrated.incomeSchedule, migrated.budgetSchedule, migrated.expenseSchedule,
+      migrated.assets, migrated.assumptions, migrated.lifeStages
+    );
+    migrated.resolvedMonthlyDb = dbResult.list;
+    migrated.resolvedMonthlyDbMap = dbResult.map;
+    lastCloudJsonRef.current = serializeForCloud(migrated); // Đánh dấu: nội dung này đã có trên Cloud
+    if (data.lastUpdatedBy) {
+      setLastPartnerSync({
+        by: data.lastUpdatedBy,
+        at: data.updatedAt || new Date().toISOString(),
+      });
+    }
+    setState(migrated);
+    setSyncStatus('synced');
+  };
 
   // Lắng nghe trạng thái Mạng (Online / Offline)
   useEffect(() => {
@@ -184,24 +213,7 @@ export function useAppState(userId?: string) {
       if (userId) {
         setSyncStatus('syncing');
         loadFromFirestore(userId).then((data) => {
-          if (data) {
-            const migrated = migrateState(data.data, INITIAL_APP_STATE);
-            const dbResult = generateResolvedMonthlyDb(
-              migrated.profile, migrated.incomeSchedule, migrated.budgetSchedule, migrated.expenseSchedule,
-              migrated.assets, migrated.assumptions, migrated.lifeStages
-            );
-            migrated.resolvedMonthlyDb = dbResult.list;
-            migrated.resolvedMonthlyDbMap = dbResult.map;
-            isRemoteUpdateRef.current = true;
-            if (data.lastUpdatedBy) {
-              setLastPartnerSync({
-                by: data.lastUpdatedBy,
-                at: data.updatedAt || new Date().toISOString(),
-              });
-            }
-            setState(migrated);
-            setSyncStatus('synced');
-          }
+          if (data) applyCloudData(data);
         });
       }
     };
@@ -217,64 +229,54 @@ export function useAppState(userId?: string) {
       window.removeEventListener('online', handleOnline);
       window.removeEventListener('offline', handleOffline);
     };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [userId]);
 
   // Firestore Sync Effect
   useEffect(() => {
     if (!userId) return;
-    
+
+    // Reset khi đổi tài khoản: chưa được phép lưu cho tới khi đọc Cloud thành công
+    isCloudInitializedRef.current = false;
+    lastCloudJsonRef.current = null;
+
     let isMounted = true;
     const initCloudSync = async () => {
       setIsCloudLoading(true);
-      const data = await loadFromFirestore(userId);
-      if (data && isMounted) {
-        const migrated = migrateState(data.data, INITIAL_APP_STATE);
-        const dbResult = generateResolvedMonthlyDb(
-          migrated.profile, migrated.incomeSchedule, migrated.budgetSchedule, migrated.expenseSchedule,
-          migrated.assets, migrated.assumptions, migrated.lifeStages
-        );
-        migrated.resolvedMonthlyDb = dbResult.list;
-        migrated.resolvedMonthlyDbMap = dbResult.map;
-        isRemoteUpdateRef.current = true; // Đánh dấu dữ liệu từ Cloud, không lưu lặp lại
-        if (data.lastUpdatedBy) {
-          setLastPartnerSync({
-            by: data.lastUpdatedBy,
-            at: data.updatedAt || new Date().toISOString(),
-          });
-        }
-        setState(migrated);
-        setSyncStatus('synced');
+      try {
+        const data = await loadFromFirestoreStrict();
+        if (!isMounted) return;
+        if (data) applyCloudData(data);
+        // Chỉ cho phép lưu khi đã ĐỌC THÀNH CÔNG (kể cả khi chưa có tài liệu nào)
+        isCloudInitializedRef.current = true;
+      } catch (error) {
+        // Đọc lỗi (mất mạng / bị từ chối quyền): KHÔNG bật cờ khởi tạo để tránh
+        // đè dữ liệu cũ trên máy lên dữ liệu mới của đối tác. Chờ subscription.
+        console.error('[Firestore] Initial load failed, waiting for live snapshot:', error);
+        if (isMounted) setSyncStatus('error');
+      } finally {
+        if (isMounted) setIsCloudLoading(false);
       }
-      isCloudInitializedRef.current = true; // Hoàn tất khởi tạo Cloud, cho phép lưu an toàn
-      setIsCloudLoading(false);
     };
     initCloudSync();
 
-    const unsubscribe = subscribeToFirestore(userId, (data) => {
-      if (isMounted) {
-        const migrated = migrateState(data.data, INITIAL_APP_STATE);
-        const dbResult = generateResolvedMonthlyDb(
-          migrated.profile, migrated.incomeSchedule, migrated.budgetSchedule, migrated.expenseSchedule,
-          migrated.assets, migrated.assumptions, migrated.lifeStages
-        );
-        migrated.resolvedMonthlyDb = dbResult.list;
-        migrated.resolvedMonthlyDbMap = dbResult.map;
-        isRemoteUpdateRef.current = true; // Tránh vòng lặp bounce-back lưu đè
-        if (data.lastUpdatedBy) {
-          setLastPartnerSync({
-            by: data.lastUpdatedBy,
-            at: data.updatedAt || new Date().toISOString(),
-          });
-        }
-        setState(migrated);
-        setSyncStatus('synced');
+    const unsubscribe = subscribeToFirestore(
+      userId,
+      (data) => {
+        if (!isMounted) return;
+        applyCloudData(data);
+        isCloudInitializedRef.current = true;
+      },
+      () => {
+        if (isMounted) setSyncStatus('error');
       }
-    });
+    );
 
     return () => {
       isMounted = false;
       if (unsubscribe) unsubscribe();
     };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [userId]);
 
   // Debounced auto-save effect to prevent disk drag on frequent inputs
@@ -296,13 +298,13 @@ export function useAppState(userId?: string) {
         }
 
         // BẢO VỆ ĐỒNG BỘ HAI VỢ CHỒNG:
-        // 1. Chỉ lưu lên Cloud khi đã tải xong dữ liệu Cloud ban đầu (tránh đè localStorage cũ lên dữ liệu mới của đối tác).
-        // 2. Không lưu nếu lần cập nhật này vừa nhận từ Cloud về (chống bounce-back).
+        // 1. Chỉ lưu lên Cloud khi đã đọc Cloud thành công (tránh đè localStorage cũ lên dữ liệu mới của đối tác).
+        // 2. Chỉ lưu khi nội dung KHÁC với bản đã khớp Cloud (chống bounce-back mà không làm mất thao tác).
         if (userId && isCloudInitializedRef.current) {
-          if (isRemoteUpdateRef.current) {
-            isRemoteUpdateRef.current = false;
-            return;
-          }
+          const json = serializeForCloud(state);
+          if (json === lastCloudJsonRef.current) return;
+          lastCloudJsonRef.current = json;
+
           setSyncStatus('syncing');
           const activeRole = getActiveActor();
           const currentActorName = activeRole === 'wife'
@@ -313,6 +315,8 @@ export function useAppState(userId?: string) {
             .then(() => setSyncStatus('synced'))
             .catch(err => {
               console.error('Failed to save to firestore:', err);
+              // Cho phép thử lưu lại ở lần thay đổi kế tiếp
+              if (lastCloudJsonRef.current === json) lastCloudJsonRef.current = null;
               setSyncStatus('error');
             });
         }
@@ -322,14 +326,15 @@ export function useAppState(userId?: string) {
     };
 
     const handler = setTimeout(saveToLocalStorage, 500); // 500ms debounce
-    
+
     // Force save on page unload/refresh to prevent data loss in race condition
     window.addEventListener('beforeunload', saveToLocalStorage);
-    
-    return () => { 
-      clearTimeout(handler); 
+
+    return () => {
+      clearTimeout(handler);
       window.removeEventListener('beforeunload', saveToLocalStorage);
     };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [state, userId]);
 
 

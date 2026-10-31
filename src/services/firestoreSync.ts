@@ -66,6 +66,18 @@ export async function loadFromFirestore(
 }
 
 /**
+ * Strict variant: throws on network/permission errors so callers can tell
+ * "no document yet" (returns null) apart from "failed to read" (throws).
+ * Dùng khi khởi tạo đồng bộ để KHÔNG BAO GIỜ đè dữ liệu máy cũ lên Cloud khi đọc lỗi.
+ */
+export async function loadFromFirestoreStrict(): Promise<PersistedAppState | null> {
+  if (!db) return null;
+  const docRef = doc(db, COLLECTION, DOC_ID);
+  const docSnap = await getDoc(docRef);
+  return docSnap.exists() ? (docSnap.data() as PersistedAppState) : null;
+}
+
+/**
  * Subscribe to real-time changes on a user's app state in Firestore.
  * Returns an unsubscribe function.
  */

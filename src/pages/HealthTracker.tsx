@@ -1,5 +1,5 @@
 import React, { useState, useMemo } from 'react';
-import { useAppState } from '../hooks/useAppState';
+import { useAppContext } from '../context/AppContext';
 import { 
   Activity, Plus, Search, 
   Calendar, User, Edit2, Trash2, X,
@@ -30,7 +30,7 @@ const RECORD_TYPES = {
 };
 
 export const HealthTracker: React.FC = () => {
-  const { state, updateToolConfig } = useAppState();
+  const { state, updateToolConfig } = useAppContext();
   
   const config = state.toolConfigs?.healthTracker || { records: [] };
   const records: HealthRecord[] = config.records || [];

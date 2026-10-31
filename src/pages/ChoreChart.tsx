@@ -1,5 +1,5 @@
 import React, { useState, useMemo } from 'react';
-import { useAppState } from '../hooks/useAppState';
+import { useAppContext } from '../context/AppContext';
 import { CheckSquare, Plus, Trash2, Trophy, Star, X, Check } from 'lucide-react';
 import { HelpTooltip } from '../components/ui/HelpTooltip';
 import { Button } from '../components/ui/Button';
@@ -16,7 +16,7 @@ interface Chore {
 }
 
 export const ChoreChart: React.FC = () => {
-  const { state, updateToolConfig } = useAppState();
+  const { state, updateToolConfig } = useAppContext();
   
   const config = state.toolConfigs?.choreChart || { chores: [], members: [] };
   const chores: Chore[] = config.chores || [];

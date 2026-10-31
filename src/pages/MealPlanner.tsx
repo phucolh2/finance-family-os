@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { useAppState } from '../hooks/useAppState';
+import { useAppContext } from '../context/AppContext';
 import { Utensils, ShoppingCart, Plus, Trash2, CheckCircle2, Circle } from 'lucide-react';
 import { HelpTooltip } from '../components/ui/HelpTooltip';
 import { Button } from '../components/ui/Button';
@@ -26,7 +26,7 @@ const TYPES = [
 ];
 
 export const MealPlanner: React.FC = () => {
-  const { state, updateToolConfig } = useAppState();
+  const { state, updateToolConfig } = useAppContext();
   
   const config = state.toolConfigs?.mealPlanner || { meals: [], groceries: [] };
   const meals: Meal[] = config.meals || [];

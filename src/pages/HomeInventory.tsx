@@ -1,5 +1,5 @@
 import React, { useState, useMemo } from 'react';
-import { useAppState } from '../hooks/useAppState';
+import { useAppContext } from '../context/AppContext';
 import { 
   Wrench, Plus, Search, 
   Calendar, Edit2, Trash2, X,
@@ -32,7 +32,7 @@ const CATEGORIES = {
 };
 
 export const HomeInventory: React.FC = () => {
-  const { state, updateToolConfig } = useAppState();
+  const { state, updateToolConfig } = useAppContext();
   
   const config = state.toolConfigs?.homeInventory || { items: [] };
   const items: InventoryItem[] = config.items || [];

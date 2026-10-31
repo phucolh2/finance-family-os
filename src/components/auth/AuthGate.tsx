@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useAuth } from '../../context/AuthContext';
 import { useAppContext } from '../../context/AppContext';
 import { ShieldCheck, Cloud, RefreshCw, Sparkles, ArrowRight } from 'lucide-react';
-import { getRoleByEmail, ALLOWED_EMAILS } from '../../config/familyMembers';
+import { getRoleByEmail, isAllowedEmail } from '../../config/familyMembers';
 
 export const AuthGate: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const { user, loading: authLoading, isFirebaseEnabled, signInWithGoogle, logout } = useAuth();
@@ -11,7 +11,7 @@ export const AuthGate: React.FC<{ children: React.ReactNode }> = ({ children }) 
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
 
   // Check if logged in user is allowed
-  const isAllowedUser = user && user.email && ALLOWED_EMAILS.includes(user.email.toLowerCase());
+  const isAllowedUser = user && user.email && isAllowedEmail(user.email);
 
   // Show error if user is logged in but not allowed
   useEffect(() => {

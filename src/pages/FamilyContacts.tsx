@@ -1,5 +1,5 @@
 import React, { useState, useMemo } from 'react';
-import { useAppState } from '../hooks/useAppState';
+import { useAppContext } from '../context/AppContext';
 import { 
   Contact, Plus, Search, PhoneCall,
   Edit2, Trash2, X, AlertTriangle, 
@@ -28,7 +28,7 @@ const CATEGORIES = {
 };
 
 export const FamilyContacts: React.FC = () => {
-  const { state, updateToolConfig } = useAppState();
+  const { state, updateToolConfig } = useAppContext();
   
   const config = state.toolConfigs?.familyContacts || { items: [] };
   const items: ContactItem[] = config.items || [];

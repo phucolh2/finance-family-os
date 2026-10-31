@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { useAppState } from '../hooks/useAppState';
+import { useAppContext } from '../context/AppContext';
 import { Target, Heart, CheckCircle2, Plus, Trash2, Map, Star, Gift, BookHeart, ShieldCheck } from 'lucide-react';
 import { HelpTooltip } from '../components/ui/HelpTooltip';
 import { Button } from '../components/ui/Button';
@@ -25,7 +25,7 @@ const CATEGORIES = {
 };
 
 export const VisionBoard: React.FC = () => {
-  const { state, updateToolConfig } = useAppState();
+  const { state, updateToolConfig } = useAppContext();
   
   const config = state.toolConfigs?.visionBoard || { bucketList: [], rules: [] };
   const bucketList: BucketItem[] = config.bucketList || [];

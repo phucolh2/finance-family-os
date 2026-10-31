@@ -1,5 +1,5 @@
 import React, { useState, useMemo } from 'react';
-import { useAppState } from '../hooks/useAppState';
+import { useAppContext } from '../context/AppContext';
 import { 
   FolderOpen, Plus, Search, AlertCircle, CheckCircle2, 
   Clock, MapPin, Edit2, Trash2, X, IdCard, Home, FileSignature, 
@@ -43,7 +43,7 @@ const COMMON_LOCATIONS = [
 ];
 
 export const DocumentVault: React.FC = () => {
-  const { state, updateToolConfig } = useAppState();
+  const { state, updateToolConfig } = useAppContext();
   
   const config = state.toolConfigs?.documentVault || { documents: [] };
   const documents: DocumentItem[] = config.documents || [];

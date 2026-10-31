@@ -1,5 +1,5 @@
 import React, { useState, useMemo } from 'react';
-import { useAppState } from '../hooks/useAppState';
+import { useAppContext } from '../context/AppContext';
 import { 
   Repeat, Plus, Search, 
   Calendar, Edit2, Trash2,
@@ -32,7 +32,7 @@ const CATEGORIES = {
 };
 
 export const SubscriptionTracker: React.FC = () => {
-  const { state, updateToolConfig } = useAppState();
+  const { state, updateToolConfig } = useAppContext();
   
   const config = state.toolConfigs?.subscriptionTracker || { items: [] };
   const items: SubscriptionItem[] = config.items || [];

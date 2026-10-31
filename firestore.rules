@@ -2,9 +2,11 @@ rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
     // Chi cho phep dung cac tai khoan cua gia dinh (vo & chong) truy cap, khong phan biet chu hoa/thuong
+    // LUU Y: token.email giu nguyen dau cham nhu luc tao tai khoan Google -> phai liet ke ca 2 dang.
     function isFamilyMember() {
-      return request.auth != null && 
-        request.auth.token.email.matches('(?i)^(lhoaiphuoc@gmail\\.com|phuocbaulam@gmail\\.com|que7tam@gmail\\.com|dieuhong1013@gmail\\.com|dieuhong1013@gmail\\.co)$');
+      return request.auth != null &&
+        request.auth.token.email_verified == true &&
+        request.auth.token.email.matches('(?i)^(lhoaiphuoc@gmail\\.com|phuocbaulam@gmail\\.com|que7tam@gmail\\.com|dieuhong\\.?1013@gmail\\.com)$');
     }
 
     match /family/{document=**} {

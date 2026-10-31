@@ -1,5 +1,5 @@
 import React, { useState, useMemo } from 'react';
-import { useAppState } from '../hooks/useAppState';
+import { useAppContext } from '../context/AppContext';
 import { Baby, Plus, Calendar, Trophy, Trash2, X, Ruler } from 'lucide-react';
 import { HelpTooltip } from '../components/ui/HelpTooltip';
 import { Button } from '../components/ui/Button';
@@ -23,7 +23,7 @@ interface Milestone {
 }
 
 export const ChildGrowth: React.FC = () => {
-  const { state, updateToolConfig } = useAppState();
+  const { state, updateToolConfig } = useAppContext();
   
   const config = state.toolConfigs?.childGrowth || { children: [], records: [], milestones: [] };
   const childrenNames: string[] = config.children || [];
