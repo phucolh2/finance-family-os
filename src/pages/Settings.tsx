@@ -4,7 +4,7 @@ import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '../co
 import { Button } from '../components/ui/Button';
 import { Input } from '../components/ui/Input';
 import { WarningBox } from '../components/ui/WarningBox';
-import { Download, Upload, ShieldAlert, CheckCircle2, Plus, Trash2, Edit2, X, Save } from 'lucide-react';
+import { Download, Upload, ShieldAlert, CheckCircle2, Plus, Trash2, Edit2, X, Save, Cloud } from 'lucide-react';
 import { validateAppState } from '../utils/migration';
 import type { NonTermInterestRatePeriod, IncomeCategory } from '../types/finance';
 import { Clock, RotateCcw, History, Shield, Timer } from 'lucide-react';
@@ -71,7 +71,15 @@ const IncomeCategoriesSettings: React.FC = () => {
   return (
     <Card className="lg:col-span-3">
       <CardHeader>
-        <CardTitle>Cấu hình Danh mục Thu nhập</CardTitle>
+        <CardTitle className="flex flex-wrap items-center justify-between gap-2">
+          <div className="flex items-center gap-2">
+            <span>Cấu hình Danh mục Thu nhập</span>
+            <HelpTooltip text="Quản lý các nguồn thu nhập chủ động và thụ động. Danh mục này được tự động đồng bộ thời gian thực giữa hai vợ chồng trên Firebase Cloud." />
+          </div>
+          <span className="inline-flex items-center gap-1.5 text-[11px] font-semibold text-emerald-700 bg-emerald-50 px-2.5 py-1 rounded-full border border-emerald-200">
+            <Cloud className="w-3.5 h-3.5 text-emerald-600" /> Đồng bộ Cloud hai vợ chồng
+          </span>
+        </CardTitle>
         <CardDescription>Quản lý các loại thu nhập và phân loại Chủ động/Thụ động để phục vụ Bức tranh Tài chính.</CardDescription>
       </CardHeader>
       <CardContent className="space-y-4">
@@ -224,7 +232,15 @@ const AssumptionsSettings: React.FC = () => {
   return (
     <Card className="lg:col-span-3">
       <CardHeader>
-        <CardTitle>Cấu hình Tham số Dòng tiền (Assumptions)</CardTitle>
+        <CardTitle className="flex flex-wrap items-center justify-between gap-2">
+          <div className="flex items-center gap-2">
+            <span>Cấu hình Tham số Dòng tiền (Assumptions)</span>
+            <HelpTooltip text="Các tham số lãi suất không kỳ hạn và giả định tài chính. Mọi điều chỉnh đều được tự động đồng bộ thời gian thực giữa hai vợ chồng trên Firebase Cloud." />
+          </div>
+          <span className="inline-flex items-center gap-1.5 text-[11px] font-semibold text-emerald-700 bg-emerald-50 px-2.5 py-1 rounded-full border border-emerald-200">
+            <Cloud className="w-3.5 h-3.5 text-emerald-600" /> Đồng bộ Cloud hai vợ chồng
+          </span>
+        </CardTitle>
         <CardDescription>Cấu hình Lịch sử Lãi suất không kỳ hạn để hệ thống tự động tính toán số tiền lãi khi rút gốc từng phần hoặc tất toán trước hạn.</CardDescription>
       </CardHeader>
       <CardContent className="space-y-4">
@@ -340,7 +356,15 @@ const AssetAllocationSettings: React.FC = () => {
   return (
     <Card className="lg:col-span-3">
       <CardHeader>
-        <CardTitle>Cấu hình Tỷ trọng Mục tiêu (Asset Allocation Target)</CardTitle>
+        <CardTitle className="flex flex-wrap items-center justify-between gap-2">
+          <div className="flex items-center gap-2">
+            <span>Cấu hình Tỷ trọng Mục tiêu (Asset Allocation Target)</span>
+            <HelpTooltip text="Thiết lập cấu trúc danh mục đầu tư kỳ vọng (%). Mọi thay đổi tỷ trọng tại đây đều được tự động đồng bộ thời gian thực giữa hai vợ chồng trên Firebase Cloud và lưu trong toàn bộ các bản sao lưu Snapshot." />
+          </div>
+          <span className="inline-flex items-center gap-1.5 text-[11px] font-semibold text-emerald-700 bg-emerald-50 px-2.5 py-1 rounded-full border border-emerald-200">
+            <Cloud className="w-3.5 h-3.5 text-emerald-600" /> Đồng bộ Cloud hai vợ chồng
+          </span>
+        </CardTitle>
         <CardDescription>
           Thiết lập cấu trúc danh mục đầu tư kỳ vọng (%). Biểu đồ Radar trên màn hình Danh mục Đầu tư sẽ lấy số liệu này làm tham chiếu.
         </CardDescription>
