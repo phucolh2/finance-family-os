@@ -7,6 +7,7 @@ import { migrateState, validateAppState } from '../utils/migration';
 import { generateResolvedMonthlyDb } from '../engines/databaseResolver';
 import { runProjection } from '../engines/projectionEngine';
 import { isBackupDue, createAutoBackup } from '../utils/scheduledBackup';
+import { saveCloudSnapshot, type CloudSnapshotItem } from '../services/cloudBackup';
 import { loadFromFirestore, loadFromFirestoreStrict, saveToFirestore, subscribeToFirestore } from '../services/firestoreSync';
 import { getActiveActor } from '../config/familyMembers';
 import {
@@ -175,6 +176,7 @@ export function useAppState(userId?: string) {
   // Dùng so sánh NỘI DUNG thay cho cờ isRemoteUpdate cũ: cờ cũ có thể "nuốt" mất
   // thao tác của người dùng nếu họ chỉnh sửa trong vòng 500ms sau khi nhận dữ liệu từ đối tác.
   const lastCloudJsonRef = useRef<string | null>(null);
+  const lastCloudStateRef = useRef<PersistedAppState | null>(null);
   const [isOnline, setIsOnline] = useState<boolean>(
     typeof navigator !== 'undefined' ? navigator.onLine : true
   );
@@ -196,6 +198,7 @@ export function useAppState(userId?: string) {
     migrated.resolvedMonthlyDb = dbResult.list;
     migrated.resolvedMonthlyDbMap = dbResult.map;
     lastCloudJsonRef.current = serializeForCloud(migrated); // Đánh dấu: nội dung này đã có trên Cloud
+    lastCloudStateRef.current = data;
     if (data.lastUpdatedBy) {
       setLastPartnerSync({
         by: data.lastUpdatedBy,
@@ -310,6 +313,35 @@ export function useAppState(userId?: string) {
           const currentActorName = activeRole === 'wife'
             ? (state.profile?.wifeName ? `Vợ (${state.profile.wifeName})` : 'Vợ (Diệu Hồng)')
             : (state.profile?.husbandName ? `Chồng (${state.profile.husbandName})` : 'Chồng (Hoài Phước)');
+
+          // LƯỚI AN TOÀN CHỐNG GHI ĐÈ (PRE-SYNC SAFETY SNAPSHOT):
+          // Nếu dữ liệu hiện tại trên Cloud là do ĐỐI TÁC vừa cập nhật,
+          // tự động chụp lại 1 bản snapshot dữ liệu đối tác lên Cloud Vault trước khi ghi đè!
+          if (
+            lastCloudStateRef.current &&
+            lastCloudStateRef.current.lastUpdatedBy &&
+            !lastCloudStateRef.current.lastUpdatedBy.includes(activeRole === 'wife' ? 'Vợ' : 'Chồng')
+          ) {
+            const partnerName = lastCloudStateRef.current.lastUpdatedBy;
+            saveCloudSnapshot(
+              lastCloudStateRef.current,
+              partnerName,
+              `Bản của ${partnerName} (Lưu tự động trước khi ${activeRole === 'wife' ? 'Vợ' : 'Chồng'} cập nhật)`,
+              'pre_sync_safety'
+            ).catch(err => console.warn('[CloudBackup] Pre-sync safety snapshot failed:', err));
+          }
+
+          // Tự động sao lưu Cloud định kỳ (mỗi 12 tiếng nếu có chỉnh sửa)
+          try {
+            const lastSnap = Number(localStorage.getItem('family_last_cloud_snap_ts') || 0);
+            if (Date.now() - lastSnap > 12 * 3600 * 1000) {
+              saveCloudSnapshot(persisted, currentActorName, undefined, 'auto_schedule')
+                .then(snap => {
+                  if (snap) localStorage.setItem('family_last_cloud_snap_ts', Date.now().toString());
+                })
+                .catch(() => {});
+            }
+          } catch {}
 
           saveToFirestore(userId, state, CURRENT_SCHEMA_VERSION, currentActorName)
             .then(() => setSyncStatus('synced'))
@@ -1350,6 +1382,20 @@ export function useAppState(userId?: string) {
     isCloudLoading,
     isOnline,
     lastPartnerSync,
+    createCloudSnapshot: async (label?: string): Promise<CloudSnapshotItem | null> => {
+      const activeRole = getActiveActor();
+      const currentActorName = activeRole === 'wife'
+        ? (state.profile?.wifeName ? `Vợ (${state.profile.wifeName})` : 'Vợ (Diệu Hồng)')
+        : (state.profile?.husbandName ? `Chồng (${state.profile.husbandName})` : 'Chồng (Hoài Phước)');
+
+      const persisted: PersistedAppState = {
+        schemaVersion: CURRENT_SCHEMA_VERSION,
+        updatedAt: new Date().toISOString(),
+        lastUpdatedBy: currentActorName,
+        data: state,
+      };
+      return await saveCloudSnapshot(persisted, currentActorName, label, 'manual');
+    },
   };
 }
 export type AppStateHook = ReturnType<typeof useAppState>;

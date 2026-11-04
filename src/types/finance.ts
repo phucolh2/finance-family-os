@@ -319,5 +319,6 @@ export interface PersistedAppState {
   schemaVersion: number;
   updatedAt: string;
   lastUpdatedBy?: string;
+  revision?: number;
   data: AppState;
 }

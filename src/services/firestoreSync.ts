@@ -22,7 +22,8 @@ export async function saveToFirestore(
   _userId: string,
   state: AppState,
   schemaVersion: number,
-  lastUpdatedBy?: string
+  lastUpdatedBy?: string,
+  revision?: number
 ): Promise<void> {
   if (!db) return;
 
@@ -35,6 +36,7 @@ export async function saveToFirestore(
     schemaVersion,
     updatedAt: new Date().toISOString(),
     lastUpdatedBy: lastUpdatedBy || 'Gia đình',
+    revision: revision ?? Date.now(),
     data: dataToSave,
   };
 

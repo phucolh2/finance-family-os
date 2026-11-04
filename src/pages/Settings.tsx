@@ -17,6 +17,7 @@ import { getAutoBackupConfig, saveAutoBackupConfig, getAutoBackupSlots, deleteAu
 import type { AutoBackupConfig, AutoBackupSlot } from '../utils/scheduledBackup';
 import { exportProjectionCsv, exportSavingsAndDebtsCsv, printFinancialReport } from '../utils/exportReports';
 import { PwaInstallButton } from '../components/ui/PwaInstallButton';
+import { CloudSnapshotVault } from '../components/settings/CloudSnapshotVault';
 
 const IncomeCategoriesSettings: React.FC = () => {
   const { state, addIncomeCategory, updateIncomeCategory, deleteIncomeCategory } = useAppContext();
@@ -582,6 +583,22 @@ export const Settings: React.FC = () => {
     }
   };
 
+  const handleDownloadAutoBackup = (slot: AutoBackupSlot) => {
+    try {
+      const blob = new Blob([JSON.stringify(slot.data, null, 2)], { type: 'application/json' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `finance_family_local_backup_${slot.timestamp.slice(0, 10)}.json`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+    } catch (e) {
+      console.error(e);
+    }
+  };
+
   const handleDeleteAutoBackup = (timestamp: string) => {
     deleteAutoBackupSlot(timestamp);
     setAutoBackupSlots(getAutoBackupSlots());
@@ -730,6 +747,9 @@ export const Settings: React.FC = () => {
               </div>
             </div>
 
+            {/* Cloud Snapshot Vault Section */}
+            <CloudSnapshotVault onRestoreSuccess={() => setSuccessMsg('Đã khôi phục dữ liệu từ Cloud Snapshot thành công!')} />
+
             {/* Scheduled Auto-Backup Section */}
             <div className="border-t border-family-accent/10 pt-6">
               <h4 className="font-bold text-xs text-family-text flex items-center gap-1.5 mb-3">
@@ -786,6 +806,14 @@ export const Settings: React.FC = () => {
                         >
                           <RotateCcw className="w-3 h-3" /> Khôi phục
                         </Button>
+                        <button
+                          type="button"
+                          onClick={() => { handleDownloadAutoBackup(slot); }}
+                          className="px-2.5 py-1 text-[10px] font-semibold rounded-lg border border-family-accent/20 bg-white hover:bg-family-accent/5 text-family-text flex items-center gap-1 transition-colors cursor-pointer"
+                          title="Tải tệp JSON của bản sao lưu cục bộ này"
+                        >
+                          <Download className="w-3 h-3 text-family-accent" /> Tải JSON
+                        </button>
                         <button
                           onClick={() => { handleDeleteAutoBackup(slot.timestamp); }}
                           className="text-red-400 hover:text-red-600 transition-colors p-1"
