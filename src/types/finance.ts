@@ -344,6 +344,11 @@ export interface FamilyDecisionRecord {
   category: 'investment' | 'property' | 'lifestyle' | 'education' | 'career' | 'relatives' | 'dispute_resolution';
   contextType: 'clear' | 'complicated' | 'complex' | 'chaotic';
   
+  // Thông tin người khởi tạo & cập nhật
+  createdBy?: 'husband' | 'wife';
+  createdByName?: string;
+  lastUpdatedBy?: 'husband' | 'wife';
+
   // Quan điểm 2 vợ chồng
   husbandPerspective: {
     wants: string;
@@ -370,10 +375,26 @@ export interface FamilyDecisionRecord {
     mediatorView: string;     // Hòa giải, dung hòa cảm xúc vợ chồng
   };
 
+  // Tâm thư đồng thuận & lời nhắn gửi từ Gemini AI
+  tenderLetter?: string;
+
   // 3 Lựa chọn
   options: DecisionOption[];
   chosenOptionId?: string;
   chosenRationale?: string;
+
+  // Nội dung chốt lưu lại (Final Consensus Resolution)
+  finalResolution?: {
+    agreedOptionId?: string;
+    agreedOptionName?: string;
+    agreedSummary: string; // Nội dung chốt là gì
+    keyCommitments: string[]; // Các cam kết then chốt
+    guardrails: string; // Hàng rào an toàn & điểm dừng
+    agreedAt: string; // Ngày chốt
+    agreedBy: string; // Người duyệt/ký
+    executor: string; // Người thực thi
+    reviewDate: string; // Mốc ngồi lại kiểm tra
+  };
 
   // Quyết định & Thực thi (RAPID + OODA)
   governance: {
@@ -398,5 +419,5 @@ export interface FamilyDecisionRecord {
     verdict: 'APPROVED' | 'NEEDS_REVISION' | 'PROCEED_WITH_CAUTION';
   };
 
-  status: 'draft' | 'analyzing' | 'decided' | 'reviewing' | 'completed';
+  status: 'initiated' | 'discussing' | 'agreed' | 'draft' | 'analyzing' | 'decided' | 'reviewing' | 'completed';
 }

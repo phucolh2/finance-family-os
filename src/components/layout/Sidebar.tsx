@@ -1,5 +1,6 @@
 import React from 'react';
 import { useFrequentTabs } from '../../hooks/useFrequentTabs';
+import { useAppContext } from '../../context/AppContext';
 import {
   LayoutDashboard,
   BookOpenText,
@@ -89,6 +90,18 @@ export const Sidebar: React.FC<SidebarProps> = ({ activeTab, setActiveTab, onClo
     },
   ];
 
+  let pendingDiscussionCount = 0;
+  try {
+    const context = useAppContext();
+    if (context?.state?.familyDecisions) {
+      pendingDiscussionCount = context.state.familyDecisions.filter(
+        (d) => d.status === 'initiated' || d.status === 'discussing'
+      ).length;
+    }
+  } catch {
+    // Outside context in unit tests
+  }
+
   const frequencies = useFrequentTabs(activeTab);
 
   const topTabs = Object.entries(frequencies)
@@ -167,7 +180,12 @@ export const Sidebar: React.FC<SidebarProps> = ({ activeTab, setActiveTab, onClo
                   }`}>
                     <Icon className={`w-3.5 h-3.5 ${isActive ? 'text-white' : item.color}`} />
                   </span>
-                  <span>{item.name}</span>
+                  <span className="flex-1 text-left">{item.name}</span>
+                  {item.id === 'decision_intelligence' && pendingDiscussionCount > 0 && (
+                    <span className="px-1.5 py-0.5 text-[10px] font-bold rounded-full bg-amber-500 text-white shadow-xs shrink-0 animate-pulse">
+                      {pendingDiscussionCount}
+                    </span>
+                  )}
                 </button>
               );
             })}

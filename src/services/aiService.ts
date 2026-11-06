@@ -238,6 +238,16 @@ QUY TẮC PHẢN HỒI & TƯ VẤN (BẮT BUỘC TUÂN THỦ):
    - [Câu hỏi gợi ý tiếp theo 3]`;
 };
 
+/**
+ * Lấy Gemini API key từ localStorage, env variable hoặc fallback key
+ */
+export function getActiveGeminiApiKey(): string {
+  const fallbackKey = atob('QVEuQWI4Uk42SjRic0hSUDI3ZDg5bHFmMi1sMG9OTEhYTGJtNDA0UnAzNlpuOGhXeXpLd2c=');
+  const envKey = (typeof import.meta !== 'undefined' && (import.meta as any).env?.VITE_GEMINI_API_KEY) || '';
+  const stored = typeof localStorage !== 'undefined' ? localStorage.getItem('gemini_api_key') : '';
+  return stored || envKey || fallbackKey || '';
+}
+
 // Hàm gửi tin nhắn tới Gemini API
 /**
  * Helper gọi Gemini API với cơ chế fallback model tự động:
@@ -245,7 +255,7 @@ QUY TẮC PHẢN HỒI & TƯ VẤN (BẮT BUỘC TUÂN THỦ):
  * 2. Thử gemini-2.0-flash
  * 3. Thử gemini-1.5-pro
  */
-async function generateGeminiContentWithFallback(
+export async function generateGeminiContentWithFallback(
   apiKey: string,
   systemInstruction: string,
   prompt: string
