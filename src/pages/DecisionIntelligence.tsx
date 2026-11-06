@@ -200,6 +200,22 @@ export const DecisionIntelligence: React.FC = () => {
     setTimeout(() => setSuccessNotice(null), 3500);
   };
 
+  // Xóa phiên quyết định hiện tại
+  const handleDeleteCurrentDecision = () => {
+    const decisionTitle = title.trim() || 'này';
+    if (window.confirm(`Bạn có chắc chắn muốn xóa phiên quyết định "${decisionTitle}" không? Thao tác này không thể hoàn tác.`)) {
+      if (activeDecisionId) {
+        deleteDecisionRecord(activeDecisionId);
+        if (pushSystemLog) {
+          pushSystemLog('XÓA', 'Quyết định', `${currentActorName} đã xóa phiên: "${decisionTitle}"`);
+        }
+      }
+      handleResetFormNew();
+      setSuccessNotice(`Đã xóa phiên "${decisionTitle}" thành công!`);
+      setTimeout(() => setSuccessNotice(null), 3000);
+    }
+  };
+
   // Reset form để tạo phiên mới
   const handleResetFormNew = () => {
     setActiveDecisionId(null);
@@ -672,6 +688,17 @@ export const DecisionIntelligence: React.FC = () => {
                 className="text-xs text-stone-600 hover:text-stone-900"
               >
                 <Plus className="w-3.5 h-3.5" /> Tạo Phiên Mới
+              </Button>
+
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={handleDeleteCurrentDecision}
+                className="text-xs text-rose-600 hover:text-rose-700 hover:bg-rose-50 border-rose-200 gap-1 cursor-pointer"
+                title="Xóa phiên quyết định này"
+              >
+                <Trash2 className="w-3.5 h-3.5" /> Xóa Phiên
               </Button>
 
               {decisionStatus !== 'agreed' ? (
@@ -1364,18 +1391,25 @@ export const DecisionIntelligence: React.FC = () => {
                           <MessageSquare className="w-3.5 h-3.5" />
                           {dec.status === 'agreed' || dec.status === 'decided' ? 'Xem Chi Tiết' : 'Vào Thảo Luận'}
                         </Button>
-                        <button
+                        <Button
                           type="button"
+                          variant="outline"
+                          size="sm"
                           onClick={() => {
-                            if (window.confirm(`Xóa quyết định "${dec.title}" khỏi sổ tay?`)) {
+                            if (window.confirm(`Bạn có chắc chắn muốn xóa quyết định "${dec.title}" khỏi sổ tay? Thao tác này sẽ đồng bộ xóa trên Cloud của cả hai vợ chồng.`)) {
                               deleteDecisionRecord(dec.id);
+                              if (pushSystemLog) {
+                                pushSystemLog('XÓA', 'Quyết định', `${currentActorName} đã xóa quyết định: "${dec.title}"`);
+                              }
+                              setSuccessNotice(`Đã xóa quyết định "${dec.title}" khỏi sổ tay.`);
+                              setTimeout(() => setSuccessNotice(null), 3000);
                             }
                           }}
-                          className="p-1.5 text-stone-400 hover:text-red-600 rounded-lg hover:bg-red-50 transition-colors cursor-pointer"
-                          title="Xóa quyết định"
+                          className="text-xs text-rose-600 hover:text-rose-700 hover:bg-rose-50 border-rose-200 gap-1 cursor-pointer"
+                          title="Xóa quyết định khỏi sổ tay"
                         >
-                          <Trash2 className="w-4 h-4" />
-                        </button>
+                          <Trash2 className="w-3.5 h-3.5" /> Xóa
+                        </Button>
                       </div>
                     </div>
 
