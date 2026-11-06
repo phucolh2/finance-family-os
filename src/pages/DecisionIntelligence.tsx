@@ -248,7 +248,7 @@ export const DecisionIntelligence: React.FC = () => {
       case 'APPROVED':
         return (
           <span className="inline-flex items-center gap-1.5 text-xs font-bold text-emerald-800 bg-emerald-100 px-3 py-1 rounded-full border border-emerald-300">
-            <CheckCircle2 className="w-4 h-4 text-emerald-700" /> ĐỦ ĐIỀU KIỆN CHỐT QUYẾT ĐỊNH (APPROVED)
+            <CheckCircle2 className="w-4 h-4 text-emerald-700" /> ĐỒNG THUẬN AN TOÀN (APPROVED)
           </span>
         );
       case 'PROCEED_WITH_CAUTION':
@@ -277,12 +277,12 @@ export const DecisionIntelligence: React.FC = () => {
               <Scale className="w-6 h-6" />
             </span>
             <h1 className="text-2xl md:text-3xl font-serif font-bold text-family-text flex items-center gap-2">
-              Trí tuệ Quyết định & Hòa giải Gia đình
-              <HelpTooltip text="Áp dụng chuẩn mực AI Decision Intelligence (Cynefin, Bằng chứng số liệu thật, Phản biện 5 lăng kính, Ma trận 3 phương án, RAPID + OODA loop) để giải quyết bất đồng và đưa ra quyết định vững chắc cho hai vợ chồng." />
+              La Bàn Đồng Thuận & Quyết Định Tổ Ấm
+              <HelpTooltip text="La Bàn Đồng Thuận giúp hai vợ chồng cùng ngồi lại, đối thoại cởi mở, thấu hiểu nỗi lo và mong muốn của nhau dựa trên số liệu thực tế để đưa ra quyết định an tâm, êm ấm cho cả nhà." />
             </h1>
           </div>
           <p className="text-xs md:text-sm text-family-textMuted max-w-3xl">
-            Chuyển từ tranh cãi cảm xúc sang quyết định minh bạch & thấu cảm: <strong className="text-family-text">Vấn đề → Bằng chứng số liệu thật → Phản biện độc lập → 3 Phương án dung hòa → Cam kết thực thi & Giới hạn rủi ro</strong>.
+            Chuyển từ băn khoăn lo lắng sang tiếng nói chung đồng lòng: <strong className="text-family-text">Sẻ chia mong muốn → Bằng chứng số liệu thật → Đa chiều thấu cảm → 3 Phương án dung hòa → Cam kết yêu thương & Giới hạn an toàn</strong>.
           </p>
         </div>
 
@@ -295,7 +295,7 @@ export const DecisionIntelligence: React.FC = () => {
               activeSubTab === 'wizard' ? 'bg-white text-family-accent shadow-xs' : 'text-stone-600 hover:text-stone-900'
             }`}
           >
-            <BrainCircuit className="w-4 h-4" /> Phiên Phân tích
+            <Compass className="w-4 h-4" /> Phiên Đồng Thuận
           </button>
           <button
             type="button"
@@ -304,7 +304,7 @@ export const DecisionIntelligence: React.FC = () => {
               activeSubTab === 'vault' ? 'bg-white text-family-accent shadow-xs' : 'text-stone-600 hover:text-stone-900'
             }`}
           >
-            <Bookmark className="w-4 h-4" /> Sổ tay Quyết định ({decisions.length})
+            <Bookmark className="w-4 h-4" /> Sổ Tay Đồng Thuận ({decisions.length})
           </button>
           <button
             type="button"
@@ -313,7 +313,7 @@ export const DecisionIntelligence: React.FC = () => {
               activeSubTab === 'templates' ? 'bg-white text-family-accent shadow-xs' : 'text-stone-600 hover:text-stone-900'
             }`}
           >
-            <Sparkles className="w-4 h-4 text-amber-500" /> Kịch bản Mẫu
+            <Sparkles className="w-4 h-4 text-amber-500" /> Tình Huống Điển Hình
           </button>
         </div>
       </div>
@@ -368,7 +368,7 @@ export const DecisionIntelligence: React.FC = () => {
                     <option value="education">🎓 Giáo dục & Tương lai Con cái</option>
                     <option value="relatives">🤝 Tài chính Gia tộc & Cho người thân vay</option>
                     <option value="career">💼 Chuyển đổi Nghề nghiệp & Khởi nghiệp</option>
-                    <option value="dispute_resolution">⚖️ Hòa giải Bất đồng quan điểm khác</option>
+                    <option value="dispute_resolution">🌱 Lắng nghe & Đồng thuận băn khoăn khác</option>
                   </select>
                 </div>
               </div>
@@ -581,7 +581,7 @@ export const DecisionIntelligence: React.FC = () => {
                   className="text-xs bg-amber-600 hover:bg-amber-700 text-white gap-2 shadow-md"
                 >
                   <Sparkles className="w-4 h-4" />
-                  Chạy Phản Biện & Tổng Hợp 5 Lăng Kính AI
+                  Cùng Thấu Cảm & Khám Phá Phương Án Dung Hòa
                 </Button>
               </div>
             </CardContent>
@@ -629,7 +629,7 @@ export const DecisionIntelligence: React.FC = () => {
                   {/* Mediator */}
                   <div className="p-3.5 bg-amber-50/80 rounded-2xl border border-amber-300 text-xs space-y-1.5">
                     <div className="font-bold text-amber-950 flex items-center gap-1.5">
-                      <Heart className="w-4 h-4 text-amber-600" /> 4. Trọng tài Hòa giải Thấu cảm (Mediator - Red & Blue Hat)
+                      <Heart className="w-4 h-4 text-amber-600" /> 4. Cầu Nối Thấu Cảm & Dung Hòa (Empathetic Bridge - Red & Blue Hat)
                     </div>
                     <p className="text-slate-800 leading-relaxed font-medium">{perspectives.mediatorView}</p>
                   </div>
@@ -866,7 +866,7 @@ export const DecisionIntelligence: React.FC = () => {
                     className="w-full sm:w-auto text-xs bg-emerald-600 hover:bg-emerald-700 text-white gap-2 shadow-lg cursor-pointer"
                   >
                     <Bookmark className="w-4 h-4" />
-                    Lưu Quyết Định Vào Sổ Tay Gia Đình
+                    Lưu Thỏa Thuận Vào Sổ Tay Đồng Thuận
                   </Button>
                 </div>
               </CardContent>
