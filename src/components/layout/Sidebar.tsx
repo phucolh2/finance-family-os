@@ -26,6 +26,7 @@ import {
   X,
   Home,
   FileSpreadsheet,
+  Scale,
 } from 'lucide-react';
 
 interface SidebarProps {
@@ -76,6 +77,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ activeTab, setActiveTab, onClo
       title: 'Nhà Mình',
       items: [
         { id: 'family_hub', name: '🏠 Nhà Mình', icon: Home, color: 'text-family-accent', bg: 'bg-family-accent/15' },
+        { id: 'decision_intelligence', name: '⚖️ Quyết định & Hòa giải', icon: Scale, color: 'text-amber-600', bg: 'bg-amber-500/15' },
       ],
     },
     {

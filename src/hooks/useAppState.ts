@@ -1378,6 +1378,35 @@ export function useAppState(userId?: string) {
         systemLogs: []
       }));
     },
+    addDecisionRecord: (record: Omit<import('../types/finance').FamilyDecisionRecord, 'id' | 'createdAt' | 'updatedAt'>) => {
+      const now = new Date().toISOString();
+      const newRec: import('../types/finance').FamilyDecisionRecord = {
+        ...record,
+        id: `dec_${Date.now()}_${Math.random().toString(36).substring(2, 7)}`,
+        createdAt: now,
+        updatedAt: now,
+      };
+      saveState({
+        ...state,
+        familyDecisions: [newRec, ...(state.familyDecisions || [])],
+      });
+      return newRec;
+    },
+
+    updateDecisionRecord: (updated: import('../types/finance').FamilyDecisionRecord) => {
+      const now = new Date().toISOString();
+      saveState({
+        ...state,
+        familyDecisions: (state.familyDecisions || []).map(d => d.id === updated.id ? { ...updated, updatedAt: now } : d),
+      });
+    },
+
+    deleteDecisionRecord: (id: string) => {
+      saveState({
+        ...state,
+        familyDecisions: (state.familyDecisions || []).filter(d => d.id !== id),
+      });
+    },
     syncStatus,
     isCloudLoading,
     isOnline,

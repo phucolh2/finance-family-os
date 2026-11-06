@@ -43,6 +43,7 @@ const FireCenter = lazyWithRetry(() => import('./pages/FireCenter').then(m => ({
 const HealthAndFinalRest = lazyWithRetry(() => import('./pages/HealthAndFinalRest').then(m => ({ default: m.HealthAndFinalRest })));
 const KnowledgeCenter = lazyWithRetry(() => import('./pages/KnowledgeCenter').then(m => ({ default: m.KnowledgeCenter })));
 const Settings = lazyWithRetry(() => import('./pages/Settings').then(m => ({ default: m.Settings })));
+const DecisionIntelligence = lazyWithRetry(() => import('./pages/DecisionIntelligence').then(m => ({ default: m.DecisionIntelligence })));
 const DebtManagement = lazyWithRetry(() => import('./pages/DebtManagement').then(m => ({ default: m.DebtManagement })));
 const TaxCalculator = lazyWithRetry(() => import('./pages/TaxCalculator').then(m => ({ default: m.TaxCalculator })));
 const InsuranceManager = lazyWithRetry(() => import('./pages/InsuranceManager').then(m => ({ default: m.InsuranceManager })));
@@ -115,6 +116,8 @@ function AppContent() {
         return <VacationPlanner />;
       case 'family_hub':
         return <FamilyHub />;
+      case 'decision_intelligence':
+        return <DecisionIntelligence />;
       case 'document_vault':
         return <DocumentVault />;
       case 'giving_ledger':

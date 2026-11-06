@@ -313,6 +313,7 @@ export interface AppState {
   resolvedMonthlyDbMap?: Record<string, ResolvedMonthlyDbItem>;
   toolConfigs?: Record<string, any>;
   systemLogs?: SystemActivityLog[];
+  familyDecisions?: FamilyDecisionRecord[];
 }
 
 export interface PersistedAppState {
@@ -321,4 +322,81 @@ export interface PersistedAppState {
   lastUpdatedBy?: string;
   revision?: number;
   data: AppState;
+}
+
+export interface DecisionOption {
+  id: string;
+  name: string;
+  description: string;
+  pros: string[];
+  cons: string[];
+  costEstimate: number; // triệu VNĐ
+  riskLevel: 'low' | 'medium' | 'high' | 'critical';
+  reversibility: 'easy' | 'moderate' | 'difficult' | 'irreversible';
+  score: number; // 0 - 100
+}
+
+export interface FamilyDecisionRecord {
+  id: string;
+  createdAt: string;
+  updatedAt: string;
+  title: string;
+  category: 'investment' | 'property' | 'lifestyle' | 'education' | 'career' | 'relatives' | 'dispute_resolution';
+  contextType: 'clear' | 'complicated' | 'complex' | 'chaotic';
+  
+  // Quan điểm 2 vợ chồng
+  husbandPerspective: {
+    wants: string;
+    concerns: string;
+    targetOutcome: string;
+  };
+  wifePerspective: {
+    wants: string;
+    concerns: string;
+    targetOutcome: string;
+  };
+
+  // Kỷ luật Bằng chứng & Dữ liệu
+  evidenceItems: {
+    type: 'FACT' | 'CALCULATION' | 'ASSUMPTION' | 'EMOTIONAL_CONCERN';
+    content: string;
+  }[];
+
+  // 5 Lăng kính Phân tích & Phản biện
+  perspectives: {
+    analystView: string;      // Con số, dòng tiền thực tế
+    skepticView: string;      // Rủi ro xấu nhất, điểm mù
+    strategistView: string;   // Tiềm năng, cơ hội bứt phá
+    mediatorView: string;     // Hòa giải, dung hòa cảm xúc vợ chồng
+  };
+
+  // 3 Lựa chọn
+  options: DecisionOption[];
+  chosenOptionId?: string;
+  chosenRationale?: string;
+
+  // Quyết định & Thực thi (RAPID + OODA)
+  governance: {
+    decider: 'husband' | 'wife' | 'both';
+    approver: string;
+    executor: string;
+    reviewDate: string; // YYYY-MM-DD
+    guardrails: string; // Giới hạn rủi ro/điểm cắt lỗ
+  };
+
+  // Scorecard Đánh giá chất lượng (100đ)
+  qualityScore: {
+    problemFraming: number; // /10
+    evidenceTraceability: number; // /20
+    dataIntegrity: number; // /15
+    criticalThinking: number; // /15
+    decisionQuality: number; // /15
+    executionGuardrails: number; // /10
+    communicationFairness: number; // /10
+    safetyPrivacy: number; // /5
+    total: number;
+    verdict: 'APPROVED' | 'NEEDS_REVISION' | 'PROCEED_WITH_CAUTION';
+  };
+
+  status: 'draft' | 'analyzing' | 'decided' | 'reviewing' | 'completed';
 }
