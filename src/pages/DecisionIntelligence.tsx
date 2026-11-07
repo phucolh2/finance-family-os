@@ -50,6 +50,8 @@ export const DecisionIntelligence: React.FC = () => {
 
   // Form State cho Session phân tích (mới hoặc chỉnh sửa từ vault)
   const [activeDecisionId, setActiveDecisionId] = useState<string | null>(null);
+  const [isCreatingNew, setIsCreatingNew] = useState(false);
+  const isWizardOpen = activeDecisionId !== null || isCreatingNew;
   const [decisionStatus, setDecisionStatus] = useState<'initiated' | 'discussing' | 'agreed'>('initiated');
   const [createdByRole, setCreatedByRole] = useState<'husband' | 'wife'>(activeActor);
 
@@ -128,6 +130,7 @@ export const DecisionIntelligence: React.FC = () => {
   // Nạp kịch bản mẫu
   const handleApplyTemplate = (tmpl: DecisionTemplate) => {
     setActiveDecisionId(null);
+    setIsCreatingNew(true);
     setDecisionStatus('initiated');
     setCreatedByRole(activeActor);
     setTitle(tmpl.title);
@@ -161,6 +164,7 @@ export const DecisionIntelligence: React.FC = () => {
   // Mở quyết định từ Vault để cùng thảo luận hoặc chốt
   const handleLoadDecisionForDiscussion = (rec: FamilyDecisionRecord) => {
     setActiveDecisionId(rec.id);
+    setIsCreatingNew(true);
     setDecisionStatus((rec.status as any) || 'initiated');
     setCreatedByRole(rec.createdBy || 'husband');
     setTitle(rec.title);
@@ -200,25 +204,48 @@ export const DecisionIntelligence: React.FC = () => {
     setTimeout(() => setSuccessNotice(null), 3500);
   };
 
-  // Xóa phiên quyết định hiện tại
-  const handleDeleteCurrentDecision = () => {
-    const decisionTitle = title.trim() || 'này';
-    if (window.confirm(`Bạn có chắc chắn muốn xóa phiên quyết định "${decisionTitle}" không? Thao tác này không thể hoàn tác.`)) {
-      if (activeDecisionId) {
-        deleteDecisionRecord(activeDecisionId);
-        if (pushSystemLog) {
-          pushSystemLog('XÓA', 'Quyết định', `${currentActorName} đã xóa phiên: "${decisionTitle}"`);
-        }
+  // Xóa vĩnh viễn một quyết định theo ID
+  const handleDeleteDecision = (id: string, titleToDelete?: string) => {
+    const name = titleToDelete || 'quyết định này';
+    if (window.confirm(`Bạn có chắc chắn muốn xóa vĩnh viễn phiên "${name}" không? Thao tác này sẽ đồng bộ xóa trên Cloud của cả hai vợ chồng.`)) {
+      deleteDecisionRecord(id);
+      if (activeDecisionId === id) {
+        handleResetFormNew();
       }
-      handleResetFormNew();
-      setSuccessNotice(`Đã xóa phiên "${decisionTitle}" thành công!`);
+      if (pushSystemLog) {
+        pushSystemLog('XÓA', 'Quyết định', `${currentActorName} đã xóa phiên: "${name}"`);
+      }
+      setSuccessNotice(`Đã xóa vĩnh viễn phiên "${name}" thành công!`);
       setTimeout(() => setSuccessNotice(null), 3000);
     }
   };
 
-  // Reset form để tạo phiên mới
+  // Xóa phiên quyết định đang mở
+  const handleDeleteCurrentDecision = () => {
+    const decisionTitle = title.trim() || 'này';
+    if (window.confirm(`Bạn có chắc chắn muốn xóa phiên quyết định "${decisionTitle}" không? Thao tác này sẽ xóa vĩnh viễn và đóng phiên ngay lập tức.`)) {
+      if (activeDecisionId) {
+        deleteDecisionRecord(activeDecisionId);
+      } else if (title.trim()) {
+        const found = decisions.find((d) => d.title.trim().toLowerCase() === title.trim().toLowerCase());
+        if (found) {
+          deleteDecisionRecord(found.id);
+        }
+      }
+      if (pushSystemLog) {
+        pushSystemLog('XÓA', 'Quyết định', `${currentActorName} đã xóa phiên: "${decisionTitle}"`);
+      }
+      handleResetFormNew();
+      setActiveSubTab('vault');
+      setSuccessNotice(`Đã xóa phiên "${decisionTitle}" thành công!`);
+      setTimeout(() => setSuccessNotice(null), 3500);
+    }
+  };
+
+  // Reset form và đóng wizard
   const handleResetFormNew = () => {
     setActiveDecisionId(null);
+    setIsCreatingNew(false);
     setDecisionStatus('initiated');
     setCreatedByRole(activeActor);
     setTitle('');
@@ -240,6 +267,12 @@ export const DecisionIntelligence: React.FC = () => {
     setAgreedSummary('');
     setKeyCommitments('');
     setIsFinalizingConsensus(false);
+  };
+
+  // Mở phiên mới
+  const handleStartNewSession = () => {
+    handleResetFormNew();
+    setIsCreatingNew(true);
     setActiveSubTab('wizard');
   };
 
@@ -657,49 +690,152 @@ export const DecisionIntelligence: React.FC = () => {
 
       {/* SUB-TAB 1: PHIÊN ĐỒNG THUẬN (WIZARD) */}
       {activeSubTab === 'wizard' && (
-        <div className="space-y-6">
-          {/* Status Bar of Current Decision */}
-          <div className="bg-white p-4 rounded-2xl border border-stone-200 flex flex-wrap items-center justify-between gap-3 shadow-xs">
-            <div className="flex items-center gap-3">
-              <div className="text-xs">
-                <span className="text-stone-400 block text-[10px] uppercase font-semibold">Trạng thái phiên</span>
-                <div className="flex items-center gap-2 mt-0.5">
-                  {getStatusBadge(decisionStatus)}
-                  {activeDecisionId && (
-                    <span className="text-[11px] text-stone-500 font-mono">ID: {activeDecisionId.slice(-6)}</span>
-                  )}
+        <>
+          {!isWizardOpen ? (
+            <div className="space-y-6">
+              {/* Welcome / Hub Banner */}
+              <div className="p-6 md:p-8 bg-gradient-to-br from-amber-50/70 via-white to-stone-50 border border-stone-200 rounded-3xl shadow-sm text-center space-y-4">
+                <div className="w-14 h-14 bg-amber-500/15 rounded-2xl flex items-center justify-center text-amber-700 mx-auto shadow-xs">
+                  <Compass className="w-7 h-7" />
+                </div>
+                <div className="max-w-xl mx-auto space-y-1.5">
+                  <h3 className="text-base md:text-lg font-serif font-bold text-family-text">
+                    Bàn Tròn Đồng Thuận & Quyết Định Tổ Ấm
+                  </h3>
+                  <p className="text-xs text-family-textMuted leading-relaxed">
+                    Hiện tại chưa có phiên nào đang mở. Hãy bắt đầu một phiên mới để sẻ chia băn khoăn, nhờ Cố vấn Gemini AI phân tích 4 lăng kính khách quan và chốt giải pháp dung hòa yêu thương.
+                  </p>
+                </div>
+                <div className="flex flex-wrap items-center justify-center gap-3 pt-2">
+                  <Button
+                    type="button"
+                    onClick={handleStartNewSession}
+                    className="text-xs bg-amber-600 hover:bg-amber-700 text-white gap-2 shadow-md cursor-pointer px-5 py-2.5"
+                  >
+                    <Plus className="w-4 h-4" /> Bắt Đầu Mở Phiên Mới
+                  </Button>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={() => setActiveSubTab('templates')}
+                    className="text-xs text-stone-700 hover:text-stone-900 border-stone-300 gap-1.5 px-4 py-2.5 cursor-pointer"
+                  >
+                    <Sparkles className="w-4 h-4 text-amber-500" /> Chọn Kịch Bản Mẫu
+                  </Button>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={() => setActiveSubTab('vault')}
+                    className="text-xs text-stone-700 hover:text-stone-900 border-stone-300 gap-1.5 px-4 py-2.5 cursor-pointer"
+                  >
+                    <Bookmark className="w-4 h-4 text-amber-600" /> Xem Sổ Tay ({decisions.length})
+                  </Button>
                 </div>
               </div>
-              <div className="h-6 w-px bg-stone-200 hidden sm:block" />
-              <div className="text-xs hidden sm:block">
-                <span className="text-stone-400 block text-[10px] uppercase font-semibold">Người khởi tạo</span>
-                <span className="font-semibold text-family-text">
-                  {createdByRole === 'husband' ? `👨‍💼 ${husbandName}` : `👩‍💼 ${wifeName}`}
-                </span>
-              </div>
+
+              {/* Các phiên hiện có đang chờ thảo luận */}
+              {decisions.length > 0 && (
+                <div className="space-y-3">
+                  <div className="flex items-center justify-between">
+                    <h4 className="text-xs font-bold uppercase tracking-wider text-stone-600 flex items-center gap-1.5">
+                      <MessageSquare className="w-3.5 h-3.5 text-amber-600" />
+                      Các phiên quyết định của gia đình ({decisions.length})
+                    </h4>
+                    <span className="text-[11px] text-stone-400">Bấm "Vào Thảo Luận" để mở phiên hoặc "Xóa" để dọn dẹp</span>
+                  </div>
+
+                  <div className="space-y-2.5">
+                    {decisions.map((dec) => (
+                      <div
+                        key={dec.id}
+                        className="p-4 bg-white border border-stone-200 hover:border-amber-300 rounded-2xl flex flex-col sm:flex-row sm:items-center justify-between gap-3 shadow-2xs transition-all"
+                      >
+                        <div className="space-y-1">
+                          <div className="flex flex-wrap items-center gap-2">
+                            <span className="font-bold text-xs text-family-text">{dec.title}</span>
+                            {getStatusBadge(dec.status)}
+                            <span className="text-[10px] bg-stone-100 text-stone-600 px-2 py-0.5 rounded-md">
+                              {dec.category}
+                            </span>
+                          </div>
+                          <div className="text-[11px] text-stone-500 flex flex-wrap items-center gap-3">
+                            <span>📅 {new Date(dec.createdAt).toLocaleDateString('vi-VN')}</span>
+                            <span>👤 Tạo bởi: {dec.createdBy === 'husband' ? `👨‍💼 ${husbandName}` : `👩‍💼 ${wifeName}`}</span>
+                          </div>
+                        </div>
+
+                        <div className="flex items-center gap-2 shrink-0 self-end sm:self-center">
+                          <Button
+                            type="button"
+                            size="sm"
+                            onClick={() => handleLoadDecisionForDiscussion(dec)}
+                            className="text-xs bg-amber-600 hover:bg-amber-700 text-white gap-1 cursor-pointer"
+                          >
+                            <MessageSquare className="w-3.5 h-3.5" />
+                            {dec.status === 'agreed' || dec.status === 'decided' ? 'Xem Chi Tiết' : 'Vào Thảo Luận'}
+                          </Button>
+                          <Button
+                            type="button"
+                            variant="outline"
+                            size="sm"
+                            onClick={() => handleDeleteDecision(dec.id, dec.title)}
+                            className="text-xs text-rose-600 hover:text-rose-700 hover:bg-rose-50 border-rose-200 gap-1 cursor-pointer"
+                            title="Xóa vĩnh viễn phiên này"
+                          >
+                            <Trash2 className="w-3.5 h-3.5" /> Xóa
+                          </Button>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
             </div>
+          ) : (
+            <div className="space-y-6">
+              {/* Status Bar of Current Decision */}
+              <div className="bg-white p-4 rounded-2xl border border-stone-200 flex flex-wrap items-center justify-between gap-3 shadow-xs">
+                <div className="flex items-center gap-3">
+                  <div className="text-xs">
+                    <span className="text-stone-400 block text-[10px] uppercase font-semibold">Trạng thái phiên</span>
+                    <div className="flex items-center gap-2 mt-0.5">
+                      {getStatusBadge(decisionStatus)}
+                      {activeDecisionId && (
+                        <span className="text-[11px] text-stone-500 font-mono">ID: {activeDecisionId.slice(-6)}</span>
+                      )}
+                    </div>
+                  </div>
+                  <div className="h-6 w-px bg-stone-200 hidden sm:block" />
+                  <div className="text-xs hidden sm:block">
+                    <span className="text-stone-400 block text-[10px] uppercase font-semibold">Người khởi tạo</span>
+                    <span className="font-semibold text-family-text">
+                      {createdByRole === 'husband' ? `👨‍💼 ${husbandName}` : `👩‍💼 ${wifeName}`}
+                    </span>
+                  </div>
+                </div>
 
-            <div className="flex items-center gap-2">
-              <Button
-                type="button"
-                variant="outline"
-                size="sm"
-                onClick={handleResetFormNew}
-                className="text-xs text-stone-600 hover:text-stone-900"
-              >
-                <Plus className="w-3.5 h-3.5" /> Tạo Phiên Mới
-              </Button>
+                <div className="flex items-center gap-2">
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    onClick={handleResetFormNew}
+                    className="text-xs text-stone-600 hover:text-stone-900 cursor-pointer"
+                    title="Đóng phiên làm việc này"
+                  >
+                    ← Đóng Lại
+                  </Button>
 
-              <Button
-                type="button"
-                variant="outline"
-                size="sm"
-                onClick={handleDeleteCurrentDecision}
-                className="text-xs text-rose-600 hover:text-rose-700 hover:bg-rose-50 border-rose-200 gap-1 cursor-pointer"
-                title="Xóa phiên quyết định này"
-              >
-                <Trash2 className="w-3.5 h-3.5" /> Xóa Phiên
-              </Button>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    onClick={handleDeleteCurrentDecision}
+                    className="text-xs text-rose-600 hover:text-rose-700 hover:bg-rose-50 border-rose-200 gap-1 cursor-pointer"
+                    title="Xóa vĩnh viễn phiên quyết định này"
+                  >
+                    <Trash2 className="w-3.5 h-3.5" /> Xóa Phiên
+                  </Button>
 
               {decisionStatus !== 'agreed' ? (
                 <>
@@ -1307,7 +1443,9 @@ export const DecisionIntelligence: React.FC = () => {
               </CardContent>
             </Card>
           )}
-        </div>
+            </div>
+          )}
+        </>
       )}
 
       {/* SUB-TAB 2: SỔ TAY QUYẾT ĐỊNH GIA ĐÌNH (VAULT) */}
@@ -1395,16 +1533,7 @@ export const DecisionIntelligence: React.FC = () => {
                           type="button"
                           variant="outline"
                           size="sm"
-                          onClick={() => {
-                            if (window.confirm(`Bạn có chắc chắn muốn xóa quyết định "${dec.title}" khỏi sổ tay? Thao tác này sẽ đồng bộ xóa trên Cloud của cả hai vợ chồng.`)) {
-                              deleteDecisionRecord(dec.id);
-                              if (pushSystemLog) {
-                                pushSystemLog('XÓA', 'Quyết định', `${currentActorName} đã xóa quyết định: "${dec.title}"`);
-                              }
-                              setSuccessNotice(`Đã xóa quyết định "${dec.title}" khỏi sổ tay.`);
-                              setTimeout(() => setSuccessNotice(null), 3000);
-                            }
-                          }}
+                          onClick={() => handleDeleteDecision(dec.id, dec.title)}
                           className="text-xs text-rose-600 hover:text-rose-700 hover:bg-rose-50 border-rose-200 gap-1 cursor-pointer"
                           title="Xóa quyết định khỏi sổ tay"
                         >
