@@ -1001,7 +1001,7 @@ export const Settings: React.FC = () => {
               </span>
             </div>
             <div className="p-3 bg-family-bgDark/40 rounded-xl border border-family-accent/5 text-[10px] leading-relaxed">
-              *Hệ thống tự động lưu giữ thay đổi của bạn sau mỗi 500ms dừng gõ để tránh nghẽn luồng xử lý và tối ưu hóa thời lượng pin cho thiết bị di động.
+              *Hệ thống tự động đồng bộ dữ liệu lên Cloud sau mỗi 5s khi có người thao tác để tối ưu băng thông và đảm bảo dữ liệu đồng nhất giữa hai vợ chồng.
             </div>
           </CardContent>
         </Card>

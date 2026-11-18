@@ -282,7 +282,7 @@ export function useAppState(userId?: string) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [userId]);
 
-  // Debounced auto-save effect to prevent disk drag on frequent inputs
+  // 1. Debounced local storage save (500ms) để không bị mất dữ liệu cục bộ khi đóng trình duyệt
   useEffect(() => {
     const saveToLocalStorage = () => {
       try {
@@ -295,76 +295,116 @@ export function useAppState(userId?: string) {
         localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(persisted));
         setLastSaved(timestamp);
 
-        // Check if scheduled auto-backup is due
         if (isBackupDue()) {
           createAutoBackup(persisted);
-        }
-
-        // BẢO VỆ ĐỒNG BỘ HAI VỢ CHỒNG:
-        // 1. Chỉ lưu lên Cloud khi đã đọc Cloud thành công (tránh đè localStorage cũ lên dữ liệu mới của đối tác).
-        // 2. Chỉ lưu khi nội dung KHÁC với bản đã khớp Cloud (chống bounce-back mà không làm mất thao tác).
-        if (userId && isCloudInitializedRef.current) {
-          const json = serializeForCloud(state);
-          if (json === lastCloudJsonRef.current) return;
-          lastCloudJsonRef.current = json;
-
-          setSyncStatus('syncing');
-          const activeRole = getActiveActor();
-          const currentActorName = activeRole === 'wife'
-            ? (state.profile?.wifeName ? `Vợ (${state.profile.wifeName})` : 'Vợ (Diệu Hồng)')
-            : (state.profile?.husbandName ? `Chồng (${state.profile.husbandName})` : 'Chồng (Hoài Phước)');
-
-          // LƯỚI AN TOÀN CHỐNG GHI ĐÈ (PRE-SYNC SAFETY SNAPSHOT):
-          // Nếu dữ liệu hiện tại trên Cloud là do ĐỐI TÁC vừa cập nhật,
-          // tự động chụp lại 1 bản snapshot dữ liệu đối tác lên Cloud Vault trước khi ghi đè!
-          if (
-            lastCloudStateRef.current &&
-            lastCloudStateRef.current.lastUpdatedBy &&
-            !lastCloudStateRef.current.lastUpdatedBy.includes(activeRole === 'wife' ? 'Vợ' : 'Chồng')
-          ) {
-            const partnerName = lastCloudStateRef.current.lastUpdatedBy;
-            saveCloudSnapshot(
-              lastCloudStateRef.current,
-              partnerName,
-              `Bản của ${partnerName} (Lưu tự động trước khi ${activeRole === 'wife' ? 'Vợ' : 'Chồng'} cập nhật)`,
-              'pre_sync_safety'
-            ).catch(err => console.warn('[CloudBackup] Pre-sync safety snapshot failed:', err));
-          }
-
-          // Tự động sao lưu Cloud định kỳ (mỗi 12 tiếng nếu có chỉnh sửa)
-          try {
-            const lastSnap = Number(localStorage.getItem('family_last_cloud_snap_ts') || 0);
-            if (Date.now() - lastSnap > 12 * 3600 * 1000) {
-              saveCloudSnapshot(persisted, currentActorName, undefined, 'auto_schedule')
-                .then(snap => {
-                  if (snap) localStorage.setItem('family_last_cloud_snap_ts', Date.now().toString());
-                })
-                .catch(() => {});
-            }
-          } catch {}
-
-          saveToFirestore(userId, state, CURRENT_SCHEMA_VERSION, currentActorName)
-            .then(() => setSyncStatus('synced'))
-            .catch(err => {
-              console.error('Failed to save to firestore:', err);
-              // Cho phép thử lưu lại ở lần thay đổi kế tiếp
-              if (lastCloudJsonRef.current === json) lastCloudJsonRef.current = null;
-              setSyncStatus('error');
-            });
         }
       } catch (err) {
         console.error('Failed to write to localStorage:', err);
       }
     };
 
-    const handler = setTimeout(saveToLocalStorage, 500); // 500ms debounce
-
-    // Force save on page unload/refresh to prevent data loss in race condition
+    const handler = setTimeout(saveToLocalStorage, 500);
     window.addEventListener('beforeunload', saveToLocalStorage);
 
     return () => {
       clearTimeout(handler);
       window.removeEventListener('beforeunload', saveToLocalStorage);
+    };
+  }, [state]);
+
+  // 2. Đồng bộ Cloud Firestore 5S 1 LẦN KHI CÓ NGƯỜI THAO TÁC (5000ms debounce/throttle)
+  const pendingCloudSyncRef = useRef<{ state: AppState; json: string; firstDirtyTime: number } | null>(null);
+
+  useEffect(() => {
+    if (!userId || !isCloudInitializedRef.current) return;
+
+    const json = serializeForCloud(state);
+    if (json === lastCloudJsonRef.current) return;
+
+    // Có người thao tác thay đổi dữ liệu -> Đánh dấu đang chờ đồng bộ
+    setSyncStatus('syncing');
+
+    const now = Date.now();
+    if (!pendingCloudSyncRef.current) {
+      pendingCloudSyncRef.current = { state, json, firstDirtyTime: now };
+    } else {
+      pendingCloudSyncRef.current.state = state;
+      pendingCloudSyncRef.current.json = json;
+    }
+
+    const performCloudSync = async () => {
+      if (!pendingCloudSyncRef.current) return;
+      const { state: stateToSync, json: jsonToSync } = pendingCloudSyncRef.current;
+      pendingCloudSyncRef.current = null;
+
+      try {
+        lastCloudJsonRef.current = jsonToSync;
+        const activeRole = getActiveActor();
+        const currentActorName = activeRole === 'wife'
+          ? (stateToSync.profile?.wifeName ? `Vợ (${stateToSync.profile.wifeName})` : 'Vợ (Diệu Hồng)')
+          : (stateToSync.profile?.husbandName ? `Chồng (${stateToSync.profile.husbandName})` : 'Chồng (Hoài Phước)');
+
+        // LƯỚI AN TOÀN CHỐNG GHI ĐÈ (PRE-SYNC SAFETY SNAPSHOT):
+        if (
+          lastCloudStateRef.current &&
+          lastCloudStateRef.current.lastUpdatedBy &&
+          !lastCloudStateRef.current.lastUpdatedBy.includes(activeRole === 'wife' ? 'Vợ' : 'Chồng')
+        ) {
+          const partnerName = lastCloudStateRef.current.lastUpdatedBy;
+          saveCloudSnapshot(
+            lastCloudStateRef.current,
+            partnerName,
+            `Bản của ${partnerName} (Lưu tự động trước khi ${activeRole === 'wife' ? 'Vợ' : 'Chồng'} cập nhật)`,
+            'pre_sync_safety'
+          ).catch(err => console.warn('[CloudBackup] Pre-sync safety snapshot failed:', err));
+        }
+
+        // Tự động sao lưu Cloud định kỳ (mỗi 12 tiếng nếu có chỉnh sửa)
+        try {
+          const lastSnap = Number(localStorage.getItem('family_last_cloud_snap_ts') || 0);
+          if (Date.now() - lastSnap > 12 * 3600 * 1000) {
+            const timestamp = new Date().toISOString();
+            const persisted: PersistedAppState = {
+              schemaVersion: CURRENT_SCHEMA_VERSION,
+              updatedAt: timestamp,
+              data: stateToSync,
+            };
+            saveCloudSnapshot(persisted, currentActorName, undefined, 'auto_schedule')
+              .then(snap => {
+                if (snap) localStorage.setItem('family_last_cloud_snap_ts', Date.now().toString());
+              })
+              .catch(() => {});
+          }
+        } catch {}
+
+        await saveToFirestore(userId, stateToSync, CURRENT_SCHEMA_VERSION, currentActorName);
+        setSyncStatus('synced');
+      } catch (err) {
+        console.error('Failed to save to firestore:', err);
+        // Cho phép thử lưu lại ở lần thay đổi kế tiếp
+        if (lastCloudJsonRef.current === jsonToSync) lastCloudJsonRef.current = null;
+        setSyncStatus('error');
+      }
+    };
+
+    // ĐỒNG BỘ 5S 1 LẦN:
+    // Đảm bảo không ghi liên tục từng phím gõ, mà gom lại đồng bộ mỗi 5s
+    const elapsed = now - (pendingCloudSyncRef.current?.firstDirtyTime || now);
+    const delay = Math.max(0, 5000 - elapsed);
+
+    const handler = setTimeout(performCloudSync, delay > 0 ? delay : 5000);
+
+    const handleBeforeUnload = () => {
+      // Khi người dùng tắt hoặc làm mới trang: đẩy đồng bộ ngay lập tức để không mất thao tác
+      if (pendingCloudSyncRef.current) {
+        performCloudSync();
+      }
+    };
+    window.addEventListener('beforeunload', handleBeforeUnload);
+
+    return () => {
+      clearTimeout(handler);
+      window.removeEventListener('beforeunload', handleBeforeUnload);
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [state, userId]);
