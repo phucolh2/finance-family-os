@@ -6,7 +6,6 @@ import type { AssetConfig } from '../types/portfolio';
 import { migrateState, validateAppState } from '../utils/migration';
 import { generateResolvedMonthlyDb } from '../engines/databaseResolver';
 import { runProjection } from '../engines/projectionEngine';
-import { isBackupDue, createAutoBackup } from '../utils/scheduledBackup';
 import { saveCloudSnapshot, type CloudSnapshotItem } from '../services/cloudBackup';
 import { loadFromFirestore, loadFromFirestoreStrict, saveToFirestore, subscribeToFirestore } from '../services/firestoreSync';
 import { getActiveActor } from '../config/familyMembers';
@@ -114,62 +113,19 @@ export function useAppState(userId?: string) {
   }, []);
 
   // Tracking the last saved date
-  const [lastSaved, setLastSaved] = useState<string>(() => {
-    try {
-      const stored = localStorage.getItem(LOCAL_STORAGE_KEY);
-      if (stored) {
-        const parsed = JSON.parse(stored) as Record<string, unknown>;
-        if (parsed.updatedAt) {
-          return parsed.updatedAt as string;
-        }
-      }
-    } catch {
-      // ignore
-    }
-    return new Date().toISOString();
-  });
+  const [lastSaved, setLastSaved] = useState<string>(() => new Date().toISOString());
 
   const [syncStatus, setSyncStatus] = useState<'idle' | 'syncing' | 'error' | 'success' | 'synced'>('idle');
   const [isCloudLoading, setIsCloudLoading] = useState(false);
 
-  const [state, setState] = useState<AppState>(() => {
+  const [state, setState] = useState<AppState>(INITIAL_APP_STATE);
+
+  // Vận hành 100% trên Cloud Firestore - Không lưu trữ cục bộ (localStorage)
+  useEffect(() => {
     try {
-      const stored = localStorage.getItem(LOCAL_STORAGE_KEY);
-      if (stored) {
-        let parsed: unknown;
-        try {
-          parsed = JSON.parse(stored);
-        } catch (parseError) {
-          console.error('Failed to parse localStorage state. Saving backup and resetting:', parseError);
-          // Save a backup of the corrupted data
-          localStorage.setItem(`${LOCAL_STORAGE_KEY}_backup_${Date.now()}`, stored);
-          // Show alert to user (if possible, though this is during initial render, so alert might block)
-          // alert('Dữ liệu lưu trữ cục bộ bị hỏng. Đã tự động tạo bản sao lưu và khôi phục về mặc định.');
-          return INITIAL_APP_STATE;
-        }
-
-        const migrated = migrateState(parsed, INITIAL_APP_STATE);
-
-        // Always regenerate the DB on load to ensure it's perfectly in sync
-        // with any migrations or source of truth changes in the schedules.
-        const dbResult = generateResolvedMonthlyDb(
-          migrated.profile,
-          migrated.incomeSchedule,
-          migrated.budgetSchedule,
-          migrated.expenseSchedule,
-          migrated.assets,
-          migrated.assumptions,
-          migrated.lifeStages
-        );
-        migrated.resolvedMonthlyDb = dbResult.list;
-        migrated.resolvedMonthlyDbMap = dbResult.map;
-        return migrated;
-      }
-    } catch (e) {
-      console.error('Failed to access localStorage:', e);
-    }
-    return INITIAL_APP_STATE;
-  });
+      localStorage.removeItem(LOCAL_STORAGE_KEY);
+    } catch {}
+  }, []);
 
   const isCloudInitializedRef = useRef(false);
   // Bản JSON của trạng thái đã khớp với Cloud gần nhất (nhận về hoặc đã lưu lên).
@@ -204,6 +160,9 @@ export function useAppState(userId?: string) {
         by: data.lastUpdatedBy,
         at: data.updatedAt || new Date().toISOString(),
       });
+    }
+    if (data.updatedAt) {
+      setLastSaved(data.updatedAt);
     }
     setState(migrated);
     setSyncStatus('synced');
@@ -282,35 +241,7 @@ export function useAppState(userId?: string) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [userId]);
 
-  // 1. Debounced local storage save (500ms) để không bị mất dữ liệu cục bộ khi đóng trình duyệt
-  useEffect(() => {
-    const saveToLocalStorage = () => {
-      try {
-        const timestamp = new Date().toISOString();
-        const persisted: PersistedAppState = {
-          schemaVersion: CURRENT_SCHEMA_VERSION,
-          updatedAt: timestamp,
-          data: state,
-        };
-        localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(persisted));
-        setLastSaved(timestamp);
-
-        if (isBackupDue()) {
-          createAutoBackup(persisted);
-        }
-      } catch (err) {
-        console.error('Failed to write to localStorage:', err);
-      }
-    };
-
-    const handler = setTimeout(saveToLocalStorage, 500);
-    window.addEventListener('beforeunload', saveToLocalStorage);
-
-    return () => {
-      clearTimeout(handler);
-      window.removeEventListener('beforeunload', saveToLocalStorage);
-    };
-  }, [state]);
+  // Đã loại bỏ lưu trữ cục bộ (localStorage) - Toàn bộ dữ liệu được quản lý tập trung trên Cloud Firestore
 
   // 2. Đồng bộ Cloud Firestore 5S 1 LẦN KHI CÓ NGƯỜI THAO TÁC (5000ms debounce/throttle)
   const pendingCloudSyncRef = useRef<{ state: AppState; json: string; firstDirtyTime: number } | null>(null);
@@ -378,6 +309,7 @@ export function useAppState(userId?: string) {
         } catch {}
 
         await saveToFirestore(userId, stateToSync, CURRENT_SCHEMA_VERSION, currentActorName);
+        setLastSaved(new Date().toISOString());
         setSyncStatus('synced');
       } catch (err) {
         console.error('Failed to save to firestore:', err);

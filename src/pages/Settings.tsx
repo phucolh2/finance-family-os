@@ -7,14 +7,12 @@ import { WarningBox } from '../components/ui/WarningBox';
 import { Download, Upload, ShieldAlert, CheckCircle2, Plus, Trash2, Edit2, X, Save, Cloud } from 'lucide-react';
 import { validateAppState } from '../utils/migration';
 import type { NonTermInterestRatePeriod, IncomeCategory } from '../types/finance';
-import { Clock, RotateCcw, History, Shield, Timer } from 'lucide-react';
+import { Clock, History } from 'lucide-react';
 import { HelpTooltip } from '../components/ui/HelpTooltip';
 import { createDataSummary, formatSummaryLines } from '../utils/dataSummary';
 import type { DataSummary } from '../utils/dataSummary';
 import { addBackupHistoryEntry, getBackupHistory, clearBackupHistory, getActionLabel } from '../utils/backupHistory';
 import type { BackupHistoryEntry } from '../utils/backupHistory';
-import { getAutoBackupConfig, saveAutoBackupConfig, getAutoBackupSlots, deleteAutoBackupSlot } from '../utils/scheduledBackup';
-import type { AutoBackupConfig, AutoBackupSlot } from '../utils/scheduledBackup';
 import { exportProjectionCsv, exportSavingsAndDebtsCsv, printFinancialReport } from '../utils/exportReports';
 import { PwaInstallButton } from '../components/ui/PwaInstallButton';
 import { CloudSnapshotVault } from '../components/settings/CloudSnapshotVault';
@@ -445,8 +443,6 @@ export const Settings: React.FC = () => {
   const [lastImportSummary, setLastImportSummary] = useState<{ filename: string; summary: DataSummary } | null>(null);
   const [backupHistory, setBackupHistory] = useState<BackupHistoryEntry[]>(() => getBackupHistory());
   const [showHistory, setShowHistory] = useState(false);
-  const [autoBackupConfig, setAutoBackupConfig] = useState<AutoBackupConfig>(() => getAutoBackupConfig());
-  const [autoBackupSlots, setAutoBackupSlots] = useState<AutoBackupSlot[]>(() => getAutoBackupSlots());
 
   const handleExport = () => {
     try {
@@ -578,54 +574,6 @@ export const Settings: React.FC = () => {
       setSuccessMsg('Dữ liệu Tài sản và Đầu tư đã được làm sạch.');
       setErrorMsg(null);
     }
-  };
-
-  const handleToggleAutoBackup = () => {
-    const newConfig = { ...autoBackupConfig, enabled: !autoBackupConfig.enabled };
-    saveAutoBackupConfig(newConfig);
-    setAutoBackupConfig(newConfig);
-  };
-
-  const handleChangeBackupInterval = (hours: number) => {
-    const newConfig = { ...autoBackupConfig, intervalHours: hours };
-    saveAutoBackupConfig(newConfig);
-    setAutoBackupConfig(newConfig);
-  };
-
-  const handleRestoreAutoBackup = (slot: AutoBackupSlot) => {
-    if (window.confirm(`Bạn có chắc chắn muốn khôi phục dữ liệu từ bản sao lưu lúc ${slot.label}? Dữ liệu hiện tại sẽ bị ghi đè.`)) {
-      const result = importState(slot.data);
-      if (result.success) {
-        const summary = createDataSummary(state);
-        addBackupHistoryEntry({ action: 'import', status: 'success', summary });
-        setBackupHistory(getBackupHistory());
-        setSuccessMsg(`Đã khôi phục dữ liệu từ bản sao lưu lúc ${slot.label}.`);
-        setErrorMsg(null);
-      } else {
-        setErrorMsg(result.error || 'Lỗi khôi phục từ bản sao lưu.');
-      }
-    }
-  };
-
-  const handleDownloadAutoBackup = (slot: AutoBackupSlot) => {
-    try {
-      const blob = new Blob([JSON.stringify(slot.data, null, 2)], { type: 'application/json' });
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = `finance_family_local_backup_${slot.timestamp.slice(0, 10)}.json`;
-      document.body.appendChild(a);
-      a.click();
-      document.body.removeChild(a);
-      URL.revokeObjectURL(url);
-    } catch (e) {
-      console.error(e);
-    }
-  };
-
-  const handleDeleteAutoBackup = (timestamp: string) => {
-    deleteAutoBackupSlot(timestamp);
-    setAutoBackupSlots(getAutoBackupSlots());
   };
 
   const handleClearBackupHistory = () => {
@@ -774,85 +722,6 @@ export const Settings: React.FC = () => {
             {/* Cloud Snapshot Vault Section */}
             <CloudSnapshotVault onRestoreSuccess={() => setSuccessMsg('Đã khôi phục dữ liệu từ Cloud Snapshot thành công!')} />
 
-            {/* Scheduled Auto-Backup Section */}
-            <div className="border-t border-family-accent/10 pt-6">
-              <h4 className="font-bold text-xs text-family-text flex items-center gap-1.5 mb-3">
-                <Timer className="w-4 h-4 text-family-accent" /> Sao lưu tự động (Scheduled Backup)
-                <HelpTooltip text="Hệ thống tự động lưu bản sao dữ liệu theo chu kỳ. Tối đa 3 bản, xoay vòng FIFO. Dữ liệu lưu trong localStorage." />
-              </h4>
-              <div className="flex flex-wrap items-center gap-4 mb-4">
-                <label className="flex items-center gap-2 cursor-pointer">
-                  <input
-                    type="checkbox"
-                    checked={autoBackupConfig.enabled}
-                    onChange={handleToggleAutoBackup}
-                    className="w-4 h-4 rounded border-family-accent/30 text-family-accent focus:ring-family-accent/30"
-                  />
-                  <span className="text-xs font-semibold text-family-text">Bật sao lưu tự động</span>
-                </label>
-                {autoBackupConfig.enabled && (
-                  <div className="flex items-center gap-2">
-                    <span className="text-[11px] text-family-textMuted">Chu kỳ:</span>
-                    <select
-                      value={autoBackupConfig.intervalHours}
-                      onChange={(e) => { handleChangeBackupInterval(Number(e.target.value)); }}
-                      className="bg-family-bgDeep border border-family-accent/20 rounded-lg px-2 py-1 text-xs text-family-text focus:outline-none focus:border-family-accent/60"
-                    >
-                      <option value={6}>6 giờ</option>
-                      <option value={12}>12 giờ</option>
-                      <option value={24}>24 giờ</option>
-                      <option value={48}>48 giờ</option>
-                    </select>
-                  </div>
-                )}
-                {autoBackupConfig.lastBackupTimestamp && (
-                  <span className="text-[10px] text-family-textMuted">
-                    Lần cuối: {formatSavedTime(autoBackupConfig.lastBackupTimestamp)}
-                  </span>
-                )}
-              </div>
-
-              {autoBackupSlots.length > 0 ? (
-                <div className="space-y-2">
-                  {autoBackupSlots.map((slot, idx) => (
-                    <div key={slot.timestamp} className="flex items-center justify-between p-3 bg-family-bgDark/20 border border-family-accent/10 rounded-xl">
-                      <div className="flex items-center gap-2">
-                        <Shield className="w-3.5 h-3.5 text-emerald-600" />
-                        <span className="text-xs font-semibold text-family-text">Bản #{idx + 1}</span>
-                        <span className="text-[10px] text-family-textMuted">{slot.label}</span>
-                      </div>
-                      <div className="flex items-center gap-2">
-                        <Button
-                          onClick={() => { handleRestoreAutoBackup(slot); }}
-                          variant="secondary"
-                          size="sm"
-                          className="text-[10px] h-7 px-2.5 gap-1"
-                        >
-                          <RotateCcw className="w-3 h-3" /> Khôi phục
-                        </Button>
-                        <button
-                          type="button"
-                          onClick={() => { handleDownloadAutoBackup(slot); }}
-                          className="px-2.5 py-1 text-[10px] font-semibold rounded-lg border border-family-accent/20 bg-white hover:bg-family-accent/5 text-family-text flex items-center gap-1 transition-colors cursor-pointer"
-                          title="Tải tệp JSON của bản sao lưu cục bộ này"
-                        >
-                          <Download className="w-3 h-3 text-family-accent" /> Tải JSON
-                        </button>
-                        <button
-                          onClick={() => { handleDeleteAutoBackup(slot.timestamp); }}
-                          className="text-red-400 hover:text-red-600 transition-colors p-1"
-                          title="Xóa bản sao lưu"
-                        >
-                          <X className="w-3.5 h-3.5" />
-                        </button>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              ) : (
-                <p className="text-[11px] text-family-textMuted italic">Chưa có bản sao lưu tự động nào.</p>
-              )}
-            </div>
 
             {/* Backup History */}
             <div className="border-t border-family-accent/10 pt-6">
@@ -985,23 +854,26 @@ export const Settings: React.FC = () => {
             </div>
             <div className="flex justify-between border-b border-family-accent/5 pb-2">
               <span>Trạng thái lưu trữ:</span>
-              <span className="text-green-700 font-bold flex items-center gap-1">
-                <CheckCircle2 className="w-3.5 h-3.5" /> Tự động lưu (Auto-save)
+              <span className="text-emerald-700 font-bold flex items-center gap-1">
+                <CheckCircle2 className="w-3.5 h-3.5" /> 100% Cloud Firestore
               </span>
+            </div>
+            <div className="flex justify-between border-b border-family-accent/5 pb-2">
+              <span>Chu kỳ đồng bộ:</span>
+              <span className="text-family-accent font-semibold flex items-center gap-1">
+                <Clock className="w-3.5 h-3.5" /> 5 giây (khi có người thao tác)
+              </span>
+            </div>
+            <div className="flex justify-between border-b border-family-accent/5 pb-2">
+              <span>Cơ chế đồng bộ:</span>
+              <strong className="text-family-text">Hai chiều Chồng ↔ Vợ thời gian thực</strong>
             </div>
             <div className="flex justify-between border-b border-family-accent/5 pb-2">
               <span>Mốc cập nhật cuối:</span>
               <strong className="text-family-text">{formatSavedTime(lastSaved)}</strong>
             </div>
-            <div className="flex justify-between border-b border-family-accent/5 pb-2">
-              <span>Sao lưu tự động:</span>
-              <span className={`font-bold flex items-center gap-1 ${autoBackupConfig.enabled ? 'text-emerald-700' : 'text-gray-400'}`}>
-                <Clock className="w-3.5 h-3.5" />
-                {autoBackupConfig.enabled ? `Mỗi ${autoBackupConfig.intervalHours}h · ${autoBackupSlots.length} bản` : 'Tắt'}
-              </span>
-            </div>
             <div className="p-3 bg-family-bgDark/40 rounded-xl border border-family-accent/5 text-[10px] leading-relaxed">
-              *Hệ thống tự động đồng bộ dữ liệu lên Cloud sau mỗi 5s khi có người thao tác để tối ưu băng thông và đảm bảo dữ liệu đồng nhất giữa hai vợ chồng.
+              *Hệ thống vận hành 100% trên Cloud Firestore với chu kỳ đồng bộ 5s khi có người thao tác. Không lưu trữ dữ liệu vào bộ nhớ cục bộ (localStorage) để ngăn ngừa xung đột và đảm bảo hai vợ chồng luôn làm việc trên cùng một phiên bản thực tế duy nhất.
             </div>
           </CardContent>
         </Card>
